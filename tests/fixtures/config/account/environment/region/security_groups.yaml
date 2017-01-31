@@ -1,0 +1,6 @@
+parameters:
+  param1: {{ var.user_variable }}
+  param2: {{ environment_variable.TEST_ENV_VAR }}
+  param3: {{ environment_path.0 }}
+  param4: {{ environment_path.1 }}
+  param5: {{ environment_path.2 }}

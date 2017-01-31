@@ -1,0 +1,28 @@
+machine:
+  environment:
+    AWS_DEFAULT_REGION: eu-west-1
+  python:
+    version: 2.7.11
+dependencies:
+  override:
+    - pip install -r requirements.txt
+    - pip install -r requirements_tests.txt
+test:
+  pre:
+    - python setup.py install
+  override:
+    - make lint
+    - make test-all
+    - cd integration-tests && behave --junit --junit-directory $CIRCLE_TEST_REPORTS/behave/junit.xml
+    - make docs
+deployment:
+    production:
+        branch: master
+        commands:
+            - make docs
+            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/docs/ --delete
+    develop:
+        branch: develop
+        commands:
+            - make docs
+            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/dev/docs/ --delete

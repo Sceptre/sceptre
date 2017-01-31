@@ -1,0 +1,26 @@
+=======
+Credits
+=======
+
+Owner
+-----
+
+* Henry Bell `@henrybell <https://github.com/henrybell>`_
+
+Development Leads
+-----------------
+
+* James Routley `@jamesroutley <https://github.com/jamesroutley>`_
+* Sean Rankine `@theseanything <https://github.com/theseanything>`_
+
+Contributors
+------------
+
+* Olivier Van Goethem `@oliviervg1 <https://github.com/oliviervg1>`_
+* Adrian Fernandez `@afdezl <https://github.com/afdezl>`_
+* Luke Plausin `@lukeplausin <https://github.com/lukeplausin>`_
+* Amy Bruce-Gardner <amy.bruce-gardner@cloudreach.com>
+* Marius Galbinasu `@galbinasu <https://github.com/galbinasu>`_
+* Matthew Taylor <matthew.taylor@cloudreach.com>
+* Yvonne Beumer <yvonne.beumer@cloudreach.com>
+* Max Eskenazi <max@eskenazi.net>
