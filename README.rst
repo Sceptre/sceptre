@@ -6,7 +6,7 @@ Sceptre
 About
 -----
 
-Sceptre is a tool to drive CloudFormation. It automates away some of the more mundane, repetitive and error-prone tasks, allowing you to concentrate on building better infrastructure.
+Sceptre is a tool to drive AWS `CloudFormation <https://aws.amazon.com/cloudformation/>`_. It automates away some of the more mundane, repetitive and error-prone tasks, allowing you to concentrate on building better infrastructure.
 
 Features:
 
@@ -84,9 +84,7 @@ Usage
 
 Sceptre can be used from the CLI, or imported as a Python package.
 
-CLI:
-
-.. code-block:: shell
+CLI::
 
   Usage: sceptre [OPTIONS] COMMAND [ARGS]...
 
