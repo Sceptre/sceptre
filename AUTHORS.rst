@@ -21,6 +21,6 @@ Contributors
 * Luke Plausin `@lukeplausin <https://github.com/lukeplausin>`_
 * Amy Bruce-Gardner <amy.bruce-gardner@cloudreach.com>
 * Marius Galbinasu `@galbinasu <https://github.com/galbinasu>`_
-* Matthew Taylor <matthew.taylor@cloudreach.com>
-* Yvonne Beumer <yvonne.beumer@cloudreach.com>
+* Matthew Taylor `@matalo33 <https://github.com/matalo33>`_
+* Yvonne Beumer `@pinkee <https://github.com/pinkieee>`_
 * Max Eskenazi <max@eskenazi.net>
