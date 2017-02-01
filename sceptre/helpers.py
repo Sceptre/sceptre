@@ -184,22 +184,22 @@ def get_external_stack_name(project_code, stack_name):
     ])
 
 
-def anonymise_key(key):
+def mask_key(key):
     """
-    Returns an anonymised version of ``key``.
+    Returns an masked version of ``key``.
 
     Returned version has all but the last four characters are replaced with the
     character "*".
 
-    :param key: The string to anonymise.
+    :param key: The string to mask.
     :type key: str
-    :returns: An anonymised version of the key
+    :returns: An masked version of the key
     :rtype: str
     """
-    num_anonymised_chars = len(key) - 4
+    num_mask_chars = len(key) - 4
 
     return "".join([
-        "*" if i < num_anonymised_chars else c
+        "*" if i < num_mask_chars else c
         for i, c in enumerate(key)
     ])
 
