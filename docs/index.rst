@@ -14,7 +14,6 @@ Contents:
    introduction
    installation
    get_started
-   examples
    terminology
    command_line
    python_module

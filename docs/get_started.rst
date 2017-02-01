@@ -136,6 +136,4 @@ Delete the stack::
 Next Steps
 ----------
 
-An example directory structure can be found in :ref:`examples`.
-
 Full details about Sceptre's capabilities can be found in the full documentation.
