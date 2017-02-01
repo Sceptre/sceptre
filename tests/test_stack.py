@@ -763,20 +763,20 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
 
         assert template_details == {"TemplateBody": sentinel.cfn}
 
-    def test_get_role_details_without_role(self):
+    def test_get_role_arn_without_role(self):
         self.stack._template = Mock(spec=Template)
         self.stack._config = {
             "template_path": sentinel.template_path,
         }
-        assert self.stack._get_role_details() == {}
+        assert self.stack._get_role_arn() == {}
 
-    def test_get_role_details_with_role(self):
+    def test_get_role_arn_with_role(self):
         self.stack._template = Mock(spec=Template)
         self.stack._config = {
             "template_path": sentinel.template_path,
         }
         self.stack.config["role_arn"] = sentinel.role_arn
-        assert self.stack._get_role_details() == {"RoleARN": sentinel.role_arn}
+        assert self.stack._get_role_arn() == {"RoleARN": sentinel.role_arn}
 
     @patch("sceptre.stack.time")
     @patch("sceptre.stack.Stack._log_new_events")
