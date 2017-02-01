@@ -27,6 +27,6 @@ For a tutorial on using Sceptre, see Get Started, or find out more information a
 Code
 ----
 
-Sceptre's source code can be found on `BitBucket <https://bitbucket.org/cloudreach/sceptre/>`_. Note that the source code is currently closed source, and will only be visible to Cloudreach employees.
+Sceptre's source code can be found on `Github <https://github.com/cloudreach/sceptre/>`_. Note that the source code is currently closed source, and will only be visible to Cloudreach employees.
 
-Bugs and feature requests should be raised via our `Issues <https://bitbucket.org/cloudreach/sceptre/issues?status=new&status=open>`_ page.
+Bugs and feature requests should be raised via our `Issues <https://github.com/cloudreach/sceptre/issues?q=is%3Aopen>`_ page.
