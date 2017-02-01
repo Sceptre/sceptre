@@ -87,7 +87,7 @@ Add the following config to ``vpc.yaml``:
 
 .. code-block:: yaml
 
-  template_path: templates/vpc.yaml
+  template_path: templates/vpc.json
   parameters:
     CidrBlock: 10.0.0.0/16
 
