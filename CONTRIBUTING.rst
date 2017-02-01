@@ -101,7 +101,7 @@ Commit messages should follow `these guidelines <https://github.com/erlang/otp/w
 
 Push your branch to GitHub::
 
-    $ git push origin sptr-<GitHub issue number>
+    $ git push origin <description of pull request>
 
 8. Submit a pull request through the GitHub website.
 
