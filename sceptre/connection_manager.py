@@ -13,7 +13,7 @@ import threading
 
 import boto3
 
-from .helpers import anonymise_key
+from .helpers import mask_key
 from .helpers import exponential_backoff
 
 
@@ -85,10 +85,10 @@ class ConnectionManager(object):
                     self.logger.debug(
                         "Using temporary credential set: %s",
                         {
-                            "AccessKeyId": anonymise_key(
+                            "AccessKeyId": mask_key(
                                 credentials["AccessKeyId"]
                             ),
-                            "SecretAccessKey": anonymise_key(
+                            "SecretAccessKey": mask_key(
                                 credentials["SecretAccessKey"]
                             )
                         }
@@ -102,10 +102,10 @@ class ConnectionManager(object):
                         "Using credential set from %s: %s",
                         self._boto_session.get_credentials().method,
                         {
-                            "AccessKeyId": anonymise_key(
+                            "AccessKeyId": mask_key(
                                 self._boto_session.get_credentials().access_key
                             ),
-                            "SecretAccessKey": anonymise_key(
+                            "SecretAccessKey": mask_key(
                                 self._boto_session.get_credentials().secret_key
                             ),
                             "Region": self._boto_session.region_name
