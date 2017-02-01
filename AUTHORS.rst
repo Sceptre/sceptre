@@ -19,7 +19,7 @@ Contributors
 * Olivier Van Goethem `@oliviervg1 <https://github.com/oliviervg1>`_
 * Adrian Fernandez `@afdezl <https://github.com/afdezl>`_
 * Luke Plausin `@lukeplausin <https://github.com/lukeplausin>`_
-* Amy Bruce-Gardner <amy.bruce-gardner@cloudreach.com>
+* Amy Bruce-Gardner `@amybg <https://github.com/amybg>`_
 * Marius Galbinasu `@galbinasu <https://github.com/galbinasu>`_
 * Matthew Taylor `@matalo33 <https://github.com/matalo33>`_
 * Yvonne Beumer `@pinkee <https://github.com/pinkieee>`_
