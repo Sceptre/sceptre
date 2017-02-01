@@ -16,4 +16,4 @@ Validate installation by printing out Sceptre's version number::
 
 Update Sceptre::
 
-  $ pip install -U
+  $ pip install sceptre -U
