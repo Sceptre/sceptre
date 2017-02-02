@@ -198,7 +198,7 @@ class Stack(object):
             ]
         }
         create_stack_kwargs.update(self._get_template_details())
-        create_stack_kwargs.update(self._get_role_details())
+        create_stack_kwargs.update(self._get_role_arn())
         response = self.connection_manager.call(
             service="cloudformation",
             command="create_stack",
@@ -232,7 +232,7 @@ class Stack(object):
             ]
         }
         update_stack_kwargs.update(self._get_template_details())
-        update_stack_kwargs.update(self._get_role_details())
+        update_stack_kwargs.update(self._get_role_arn())
         response = self.connection_manager.call(
             service="cloudformation",
             command="update_stack",
@@ -324,7 +324,7 @@ class Stack(object):
             return status
 
         delete_stack_kwargs = {"StackName": self.external_name}
-        delete_stack_kwargs.update(self._get_role_details())
+        delete_stack_kwargs.update(self._get_role_arn())
         self.connection_manager.call(
             service="cloudformation",
             command="delete_stack",
@@ -435,7 +435,7 @@ class Stack(object):
         """
         self.logger.debug("%s - Continuing update rollback", self.name)
         continue_update_rollback_kwargs = {"StackName": self.external_name}
-        continue_update_rollback_kwargs.update(self._get_role_details())
+        continue_update_rollback_kwargs.update(self._get_role_arn())
         self.connection_manager.call(
             service="cloudformation",
             command="continue_update_rollback",
@@ -524,7 +524,7 @@ class Stack(object):
             ]
         }
         create_change_set_kwargs.update(self._get_template_details())
-        create_change_set_kwargs.update(self._get_role_details())
+        create_change_set_kwargs.update(self._get_role_arn())
         self.logger.debug(
             "%s - Creating change set '%s'", self.name, change_set_name
         )
@@ -677,7 +677,7 @@ class Stack(object):
         else:
             return {"TemplateBody": self.template.cfn}
 
-    def _get_role_details(self):
+    def _get_role_arn(self):
         """
         Returns the role arn assumed by CloudFormation when building a stack.
 
