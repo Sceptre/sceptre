@@ -51,15 +51,12 @@ Syntax:
     <parameter3_name>:
       - "value1"
       - "value2"
-      - "value3"
     <parameter4_name>:
-      - !<resolver_name> <resolver_value>
       - !<resolver_name> <resolver_value>
       - !<resolver_name> <resolver_value>
     <parameter5_name>:
       - !<resolver_name> <resolver_value>
       - "value1"
-      - !<resolver_name> <resolver_value>
 
 Example:
 
@@ -71,7 +68,6 @@ Example:
       subnet_ids:
         - "subnet-12345678"
         - "subnet-87654321"
-        - "subnet-11111111"
       security_group_ids:
         - "sg-12345678"
         - !stack_output security-groups::BaseSecurityGroupId
