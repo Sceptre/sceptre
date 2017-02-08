@@ -26,11 +26,11 @@ More information can be found at the API specification for :class:`sceptre.envir
 
 A list of an Environment's Stack names can be obtained from::
 
-  env.available_stacks
+  env.stacks.keys()
 
 A particular Stack object can be accessed using the following syntax::
 
-  stack = env.<stack_name>
+  stack = env.stacks[<stack_name>]
 
 More information can be found at the API specification for :class:`sceptre.stack.Stack`.
 
