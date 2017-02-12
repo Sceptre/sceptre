@@ -111,7 +111,7 @@ A dictionary of Tags to be applied to the stack.
 ``role_arn``
 ````````````
 
-The ARN of a `CloudFormation Service Role http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-iam-servicerole.html`_ that is assumed by CloudFormation to create, update or delete resources.
+The ARN of a `CloudFormation Service Role <http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-iam-servicerole.html>`_ that is assumed by CloudFormation to create, update or delete resources.
 
 ``template_path``
 `````````````````
