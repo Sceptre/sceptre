@@ -1,5 +1,3 @@
-.. highlight:: shell
-
 ============
 Command Line
 ============
@@ -13,11 +11,11 @@ Running sceptre without a subcommand will display help, showing a list of the av
 Global Options
 --------------
 
-``--debug/--no-debug``: Turn on debug logging.
+``--debug``: Turn on debug logging.
 
-``--dir``: Specify sceptre directory via absolute or relative path.
+``--dir``: Specify the sceptre directory with an absolute or relative path.
 
-``--no-colour``: Disable coloured stdout.
+``--no-colour``: Disable coloured output.
 
 ``--output``: Specify the output format. Available formats: ``[yaml, json]``.
 
@@ -37,8 +35,8 @@ The available commands are::
   $ sceptre delete-change-set
   $ sceptre delete-env
   $ sceptre delete-stack
-  $ sceptre describe-env
   $ sceptre describe-change-set
+  $ sceptre describe-env
   $ sceptre describe-env-resources
   $ sceptre describe-stack-outputs
   $ sceptre describe-stack-resources
@@ -51,8 +49,8 @@ The available commands are::
   $ sceptre lock-stack
   $ sceptre set-stack-policy
   $ sceptre unlock-stack
-  $ sceptre update-stack-cs
   $ sceptre update-stack
+  $ sceptre update-stack-cs
   $ sceptre validate-template
 
 
@@ -71,6 +69,7 @@ Stack outputs can be exported as environment variables with the command::
 
   $ eval $(sceptre describe-stack-outputs ENVIRONMENT STACK --export=envvar)
 
-Note that Sceptre prepends the string "SCEPTRE_" to the name of the environment variable::
+Note that Sceptre prepends the string ``SCEPTRE_`` to the name of the environment variable::
+
   $ env | grep SCEPTRE
   SCEPTRE_<output_name>=<output_value>
