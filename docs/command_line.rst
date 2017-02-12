@@ -72,5 +72,6 @@ Stack outputs can be exported as environment variables with the command::
   $ eval $(sceptre describe-stack-outputs ENVIRONMENT STACK --export=envvar)
 
 Note that Sceptre prepends the string "SCEPTRE_" to the name of the environment variable::
+
   $ env | grep SCEPTRE
   SCEPTRE_<output_name>=<output_value>
