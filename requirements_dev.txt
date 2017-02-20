@@ -6,3 +6,4 @@ setuptools==20.8.1
 flake8==2.5.1
 tox==2.3.1
 coverage==4.0.3
+pygments==2.2.0
