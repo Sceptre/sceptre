@@ -60,7 +60,7 @@ The following python module template can be copied and used:
   class CustomResolver(Resolver):
 
       def __init__(self, *args, **kwargs):
-        super(EnvironmentVariable, self).__init__(*args, **kwargs)
+        super(CustomResolver, self).__init__(*args, **kwargs)
 
       def resolve(self):
         """
@@ -83,11 +83,10 @@ This resolver can be used in a stack config file with the following syntax::
 
   template_path: <...>
   parameters:
-    param1:
-      <your resolver name>: <value>  # <your resolver name>
-                                     # should match Hook.name.
-                                     # <value> will be passed to the
-                                     # resolver's resolve() method.
+    param1: !<your_resolver_name> <value> # <your resolver name> is the lower camel-case version
+                                          # of your class name, e.g `custom_resolver`
+                                          # <value> will be passed to the
+                                          # resolver's resolve() method.
 
 
 .. _user_defined_sceptre_hooks:
