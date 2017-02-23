@@ -248,9 +248,8 @@ class Template(object):
                 )
         else:
             raise UnsupportedTemplateFileTypeError(
-                "Template has file extension %s. Only .py, .yaml, and .json "
-                "are supported.",
-                os.path.splitext(self.path)[1]
+                "Template has file extension `{0}`. Only .py, .yaml, and "
+                ".json are supported.".format(os.path.splitext(self.path)[1])
             )
 
         for directory in relpaths_to_add:
