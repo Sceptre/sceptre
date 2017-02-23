@@ -41,6 +41,8 @@ def step_impl(context):
     assert "CreationTime" in response
     del response["CreationTime"]
 
+    print(response)
+
     assert response == {
         "ChangeSetName": "test-change-set",
         "Changes": [
@@ -48,14 +50,16 @@ def step_impl(context):
                 "ResourceChange": {
                     "Action": "Add",
                     "LogicalResourceId": "IGWAttachment",
-                    "ResourceType": "AWS::EC2::VPCGatewayAttachment"
+                    "ResourceType": "AWS::EC2::VPCGatewayAttachment",
+                    "Scope": []
                 }
             },
             {
                 "ResourceChange": {
                     "Action": "Add",
                     "LogicalResourceId": "InternetGateway",
-                    "ResourceType": "AWS::EC2::InternetGateway"
+                    "ResourceType": "AWS::EC2::InternetGateway",
+                    "Scope": []
                 }
             }
         ],
