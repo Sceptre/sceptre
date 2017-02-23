@@ -41,8 +41,6 @@ def step_impl(context):
     assert "CreationTime" in response
     del response["CreationTime"]
 
-    print(response)
-
     assert response == {
         "ChangeSetName": "test-change-set",
         "Changes": [
