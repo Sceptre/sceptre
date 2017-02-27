@@ -105,7 +105,7 @@ class Template(object):
             environment_path,
             "{stack_name}-{time_stamp}.json".format(
                 stack_name=stack_name,
-                time_stamp=_get_time_stamp()
+                time_stamp=datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%fZ")
             )
         ])
 
@@ -256,14 +256,3 @@ class Template(object):
             sys.path.remove(os.path.join(os.getcwd(), directory))
 
         return cfn
-
-
-def _get_time_stamp():  # pragma: no cover
-    """
-    Return UTC date and time formatted as a string.
-
-    :returns: str
-    """
-    # Used for unit tests - datetime.datetime is a C struct and so utcnow()
-    # cannot be mocked out.
-    return datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%fZ")
