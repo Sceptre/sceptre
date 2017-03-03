@@ -112,15 +112,15 @@ class TestEnvironment(object):
     @patch("sceptre.environment.Environment._build")
     @patch("sceptre.environment.Environment._check_for_circular_dependencies")
     @patch("sceptre.environment.Environment._get_launch_dependencies")
-    @patch("sceptre.environment.Environment._get_stack_statuses")
+    @patch("sceptre.environment.Environment._get_initial_statuses")
     @patch("sceptre.environment.Environment._get_threading_events")
     def test_launch_calls_build_with_correct_args(
-            self, mock_get_threading_events, mock_get_stack_statuses,
+            self, mock_get_threading_events, mock_get_initial_statuses,
             mock_get_launch_dependencies, mock_check_for_circular_dependencies,
             mock_build
     ):
         mock_get_threading_events.return_value = sentinel.threading_events
-        mock_get_stack_statuses.return_value = sentinel.stack_statuses
+        mock_get_initial_statuses.return_value = sentinel.stack_statuses
         mock_get_launch_dependencies.return_value = \
             sentinel.dependencies
 
@@ -137,15 +137,15 @@ class TestEnvironment(object):
     @patch("sceptre.environment.Environment._build")
     @patch("sceptre.environment.Environment._check_for_circular_dependencies")
     @patch("sceptre.environment.Environment._get_delete_dependencies")
-    @patch("sceptre.environment.Environment._get_stack_statuses")
+    @patch("sceptre.environment.Environment._get_initial_statuses")
     @patch("sceptre.environment.Environment._get_threading_events")
     def test_delete_calls_build_with_correct_args(
-            self, mock_get_threading_events, mock_get_stack_statuses,
+            self, mock_get_threading_events, mock_get_initial_statuses,
             mock_get_delete_dependencies, mock_check_for_circular_dependencies,
             mock_build
     ):
         mock_get_threading_events.return_value = sentinel.threading_events
-        mock_get_stack_statuses.return_value = sentinel.stack_statuses
+        mock_get_initial_statuses.return_value = sentinel.stack_statuses
         mock_get_delete_dependencies.return_value = \
             sentinel.dependencies
 
@@ -325,13 +325,13 @@ class TestEnvironment(object):
             "name": sentinel.event
         }
 
-    def test_get_stack_statuses(self):
+    def test_get_initial_statuses(self):
         mock_stack = Mock()
         mock_stack.name = "name"
 
         self.environment.stacks = {"name": mock_stack}
 
-        response = self.environment._get_stack_statuses()
+        response = self.environment._get_initial_statuses()
         assert response == {
             "name": StackStatus.PENDING
         }
