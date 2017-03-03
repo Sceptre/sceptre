@@ -399,7 +399,8 @@ def _simplify_change_set_description(response):
         "LogicalResourceId",
         "PhysicalResourceId",
         "Replacement",
-        "ResourceType"
+        "ResourceType",
+        "Scope"
     ]
     formatted_response = {
         k: v

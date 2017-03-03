@@ -8,6 +8,7 @@ import threading
 import pytest
 from mock import patch, sentinel, Mock
 
+from freezegun import freeze_time
 from botocore.exceptions import ClientError
 
 from sceptre.template import Template
@@ -56,13 +57,10 @@ class TestTemplate(object):
         body = self.template.body
         assert body == sentinel.body
 
-    @patch("sceptre.template._get_time_stamp")
+    @freeze_time("2012-01-01")
     @patch("sceptre.template.Template._create_bucket")
-    def test_upload_to_s3_with_valid_arguments(
-            self, mock_create_bucket, mock_get_timestamp
-    ):
-        self.template._body = '{"template": "mock"}'
-        mock_get_timestamp.return_value = "2016-10-10-14-32-30-0-Z"
+    def test_upload_to_s3_with_valid_arguments(self, mock_create_bucket):
+        self.template._cfn = '{"template": "mock"}'
 
         url = self.template.upload_to_s3(
             region="eu-west-1",
@@ -75,7 +73,7 @@ class TestTemplate(object):
 
         expected_template_key = (
             "prefix/eu-west-1/environment/path/"
-            "stack-name-2016-10-10-14-32-30-0-Z.json"
+            "stack-name-2012-01-01-00-00-00-000000Z.json"
         )
 
         mock_create_bucket.assert_called_once_with(

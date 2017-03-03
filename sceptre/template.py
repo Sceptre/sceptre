@@ -105,7 +105,7 @@ class Template(object):
             environment_path,
             "{stack_name}-{time_stamp}.json".format(
                 stack_name=stack_name,
-                time_stamp=_get_time_stamp()
+                time_stamp=datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%fZ")
             )
         ])
 
@@ -248,23 +248,11 @@ class Template(object):
                 )
         else:
             raise UnsupportedTemplateFileTypeError(
-                "Template has file extension %s. Only .py, .yaml, and .json "
-                "are supported.",
-                os.path.splitext(self.path)[1]
+                "Template has file extension `{0}`. Only .py, .yaml, and "
+                ".json are supported.".format(os.path.splitext(self.path)[1])
             )
 
         for directory in relpaths_to_add:
             sys.path.remove(os.path.join(os.getcwd(), directory))
 
         return body
-
-
-def _get_time_stamp():  # pragma: no cover
-    """
-    Return UTC date and time formatted as a string.
-
-    :returns: str
-    """
-    # Used for unit tests - datetime.datetime is a C struct and so utcnow()
-    # cannot be mocked out.
-    return datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%fZ")

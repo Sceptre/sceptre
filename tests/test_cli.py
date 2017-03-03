@@ -272,7 +272,8 @@ class TestCli(object):
                         "Replacement": "True",
                         "PhysicalResourceId": "igw-04a59561",
                         "Action": "Remove",
-                        "LogicalResourceId": "InternetGateway"
+                        "LogicalResourceId": "InternetGateway",
+                        "Scope": []
                     }
                 }
             ],

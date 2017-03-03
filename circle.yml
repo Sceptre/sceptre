@@ -17,12 +17,10 @@ test:
     - make docs
 deployment:
     production:
-        branch: master
+        tag: /v*/
         commands:
-            - make docs
             - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/docs/ --delete
     develop:
-        branch: develop
+        branch: master
         commands:
-            - make docs
             - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/dev/docs/ --delete
