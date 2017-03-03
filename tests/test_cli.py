@@ -43,7 +43,7 @@ class TestCli(object):
         mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
 
         assert result.output == "{0}\n".format(
-            mock_get_env.return_value.stacks["vpc"].template.cfn
+            mock_get_env.return_value.stacks["vpc"].template.body
         )
 
     @patch("sceptre.cli.os.getcwd")
