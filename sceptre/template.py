@@ -125,7 +125,6 @@ class Template(object):
             }
         )
 
-        # get url from response
         url = "https://{0}.s3.amazonaws.com/{1}".format(
             bucket_name, template_key
         )
@@ -136,18 +135,18 @@ class Template(object):
 
     def _bucket_exists(self, bucket_name, connection_manager):
         """
-        Create the bucket ``bucket_name`` in the region ``region``.
+        Checks if the bucket ``bucket_name`` exists.
 
         This is done in a thread-safe way. No error is raised if the bucket
         already exists.
 
-        :param region: The AWS region to create the bucket in.
-        :type region: str
-        :param bucket_name: The name of the bucket to create.
+        :param bucket_name: The name of the bucket to check.
         :type bucket_name: str
         :param connection_manager: The connection manager used to make
             AWS calls.
         :type connection_manager: sceptre.connection_manager.ConnectionManager
+        :returns: Boolean whether the bucket exists
+        :rtype: bool
         :raises: botocore.exception.ClientError
 
         """
