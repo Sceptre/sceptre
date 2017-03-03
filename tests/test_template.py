@@ -58,9 +58,10 @@ class TestTemplate(object):
         assert body == sentinel.body
 
     @freeze_time("2012-01-01")
-    @patch("sceptre.template.Template._create_bucket")
-    def test_upload_to_s3_with_valid_arguments(self, mock_create_bucket):
-        self.template._cfn = '{"template": "mock"}'
+    @patch("sceptre.template.Template._bucket_exists")
+    def test_upload_to_s3_with_valid_arguments(self, mock_bucket_exists):
+        self.template._body = '{"template": "mock"}'
+        mock_bucket_exists.return_value = True
 
         url = self.template.upload_to_s3(
             region="eu-west-1",
@@ -76,9 +77,6 @@ class TestTemplate(object):
             "stack-name-2012-01-01-00-00-00-000000Z.json"
         )
 
-        mock_create_bucket.assert_called_once_with(
-            "eu-west-1", "bucket-name", self.connection_manager
-        )
         self.connection_manager.call.assert_called_once_with(
             service="s3",
             command="put_object",
@@ -94,12 +92,10 @@ class TestTemplate(object):
             expected_template_key
         )
 
-    def test_create_bucket_with_bucket_that_exists(self):
+    def test_bucket_exists_with_bucket_that_exists(self):
         # connection_manager.call doesn't raise an exception, mimicing the
         # behaviour when head_bucket successfully executes.
-        self.template._create_bucket(
-            "region", "bucket_name", self.connection_manager
-        )
+        self.template._bucket_exists("bucket_name", self.connection_manager)
 
     def test_create_bucket_with_unreadable_bucket(self):
         self.connection_manager.call.side_effect = ClientError(
@@ -118,7 +114,7 @@ class TestTemplate(object):
             assert e.value.response["Error"]["Code"] == 500
             assert e.value.response["Error"]["Message"] == "Bucket Unreadable"
 
-    def test_create_bucket_with_non_existent_bucket(self):
+    def test_bucket_exists_with_non_existent_bucket(self):
         # connection_manager.call is called twice, and should throw the
         # Not Found ClientError only for the first call.
         self.connection_manager.call.side_effect = [
@@ -134,38 +130,16 @@ class TestTemplate(object):
             None
         ]
 
-        self.template._create_bucket(
-            self.region,
+        existance = self.template._bucket_exists(
             self.bucket_name,
             self.connection_manager
         )
 
-        self.connection_manager.call.assert_any_call(
-            service="s3",
-            command="create_bucket",
-            kwargs={
-                "Bucket": self.bucket_name,
-                "CreateBucketConfiguration": {
-                    "LocationConstraint": self.region
-                },
-            }
-        )
+        assert existance is False
 
-    def test_create_bucket_with_non_existent_us_east_1_bucket(self):
+    def test_create_bucket_in_us_east_1(self):
         # connection_manager.call is called twice, and should throw the
         # Not Found ClientError only for the first call.
-        self.connection_manager.call.side_effect = [
-            ClientError(
-                {
-                    "Error": {
-                        "Code": 404,
-                        "Message": "Not Found"
-                    }
-                },
-                sentinel.operation
-            ),
-            None
-        ]
 
         self.template._create_bucket(
             "us-east-1",
