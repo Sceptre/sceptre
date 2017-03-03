@@ -685,7 +685,7 @@ class Stack(object):
             )
             return {"TemplateURL": template_url}
         else:
-            return {"TemplateBody": self.template.cfn}
+            return {"TemplateBody": self.template.body}
 
     def _get_role_arn(self):
         """

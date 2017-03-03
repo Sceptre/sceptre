@@ -825,14 +825,14 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
 
     def test_get_template_details_without_upload(self):
         self.stack._template = Mock(spec=Template)
-        self.stack._template.cfn = sentinel.cfn
+        self.stack._template.body = sentinel.body
         self.stack.environment_config = {
             "template_key_prefix": sentinel.template_key_prefix
         }
 
         template_details = self.stack._get_template_details()
 
-        assert template_details == {"TemplateBody": sentinel.cfn}
+        assert template_details == {"TemplateBody": sentinel.body}
 
     def test_get_role_arn_without_role(self):
         self.stack._template = Mock(spec=Template)

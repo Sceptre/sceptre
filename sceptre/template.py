@@ -41,7 +41,7 @@ class Template(object):
         self.path = path
         self.sceptre_user_data = sceptre_user_data
         self.name = os.path.basename(path).split(".")[0]
-        self._cfn = None
+        self._body = None
 
     def __repr__(self):
         return (
@@ -52,16 +52,16 @@ class Template(object):
         )
 
     @property
-    def cfn(self):
+    def body(self):
         """
         Returns the CloudFormation template.
 
         :returns: The CloudFormation template.
         :rtype: str
         """
-        if self._cfn is None:
-            self._cfn = self._get_cfn()
-        return self._cfn
+        if self._body is None:
+            self._body = self._get_body()
+        return self._body
 
     def upload_to_s3(
             self, region, bucket_name, key_prefix, environment_path,
@@ -119,7 +119,7 @@ class Template(object):
             kwargs={
                 "Bucket": bucket_name,
                 "Key": template_key,
-                "Body": self.cfn,
+                "Body": self.body,
                 "ServerSideEncryption": "AES256"
             }
         )
@@ -191,7 +191,7 @@ class Template(object):
                 else:
                     raise
 
-    def _get_cfn(self):
+    def _get_body(self):
         """
         Reads in a CloudFormation template directly from a file or as a string
         from an external Python script (such as Troposphere).
@@ -223,7 +223,7 @@ class Template(object):
         if self.file_extension in (".json", ".yaml"):
             self.logger.debug("%s - Opening file %s", self.name, self.path)
             with open(self.path) as template_file:
-                cfn = template_file.read()
+                body = template_file.read()
         elif self.file_extension == ".py":
             self.logger.debug(
                 "%s - Getting CloudFormation from %s", self.name, self.path
@@ -240,7 +240,7 @@ class Template(object):
             module = imp.load_source(self.name, self.path)
 
             if hasattr(module, "sceptre_handler"):
-                    cfn = module.sceptre_handler(self.sceptre_user_data)
+                    body = module.sceptre_handler(self.sceptre_user_data)
             else:
                 raise TemplateSceptreHandlerError(
                     "The template does not have the required "
@@ -255,4 +255,4 @@ class Template(object):
         for directory in relpaths_to_add:
             sys.path.remove(os.path.join(os.getcwd(), directory))
 
-        return cfn
+        return body

@@ -164,7 +164,7 @@ def generate_template(ctx, environment, stack):
     Prints ENVIRONMENT/STACK's template.
     """
     env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    template_output = env.stacks[stack].template.cfn
+    template_output = env.stacks[stack].template.body
     write(template_output)
 
 
