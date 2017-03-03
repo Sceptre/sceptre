@@ -94,7 +94,8 @@ class Template(object):
         """
         self.logger.debug("%s - Uploading template to S3...", self.name)
 
-        self._create_bucket(region, bucket_name, connection_manager)
+        if not self._bucket_exists(bucket_name, connection_manager):
+            self._create_bucket(region, bucket_name, connection_manager)
 
         # Remove any leading or trailing slashes the user may have added.
         key_prefix = key_prefix.strip("/")
@@ -124,6 +125,7 @@ class Template(object):
             }
         )
 
+        # get url from response
         url = "https://{0}.s3.amazonaws.com/{1}".format(
             bucket_name, template_key
         )
@@ -132,9 +134,7 @@ class Template(object):
 
         return url
 
-    def _create_bucket(
-            self, region, bucket_name, connection_manager
-    ):
+    def _bucket_exists(self, bucket_name, connection_manager):
         """
         Create the bucket ``bucket_name`` in the region ``region``.
 
@@ -165,31 +165,54 @@ class Template(object):
                 self.logger.debug(
                     "%s - Found template bucket '%s'", self.name, bucket_name
                 )
+                return True
             except botocore.exceptions.ClientError as exp:
                 if exp.response["Error"]["Message"] == "Not Found":
                     self.logger.debug(
-                        "%s - No bucket found. Creating new template "
-                        "bucket '%s'", self.name, bucket_name
+                        "%s - %s bucket not found.", self.name, bucket_name
                     )
-                    if region == "us-east-1":
-                        connection_manager.call(
-                            service="s3",
-                            command="create_bucket",
-                            kwargs={"Bucket": bucket_name}
-                        )
-                    else:
-                        connection_manager.call(
-                            service="s3",
-                            command="create_bucket",
-                            kwargs={
-                                "Bucket": bucket_name,
-                                "CreateBucketConfiguration": {
-                                    "LocationConstraint": region
-                                }
-                            }
-                        )
+                    return False
                 else:
                     raise
+
+    def _create_bucket(self, region, bucket_name, connection_manager):
+        """
+        Create the bucket ``bucket_name`` in the region ``region``.
+
+        This is done in a thread-safe way. No error is raised if the bucket
+        already exists.
+
+        :param region: The AWS region to create the bucket in.
+        :type region: str
+        :param bucket_name: The name of the bucket to create.
+        :type bucket_name: str
+        :param connection_manager: The connection manager used to make
+            AWS calls.
+        :type connection_manager: sceptre.connection_manager.ConnectionManager
+        :raises: botocore.exception.ClientError
+
+        """
+        with self._create_bucket_lock:
+            self.logger.debug(
+                "%s - Creating new bucket '%s'", self.name, bucket_name
+            )
+            if region == "us-east-1":
+                connection_manager.call(
+                    service="s3",
+                    command="create_bucket",
+                    kwargs={"Bucket": bucket_name}
+                )
+            else:
+                connection_manager.call(
+                    service="s3",
+                    command="create_bucket",
+                    kwargs={
+                        "Bucket": bucket_name,
+                        "CreateBucketConfiguration": {
+                            "LocationConstraint": region
+                        }
+                    }
+                )
 
     def _get_body(self):
         """
