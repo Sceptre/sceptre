@@ -60,7 +60,7 @@ class TestTemplate(object):
     @freeze_time("2012-01-01")
     @patch("sceptre.template.Template._create_bucket")
     def test_upload_to_s3_with_valid_arguments(self, mock_create_bucket):
-        self.template._cfn = '{"template": "mock"}'
+        self.template._body = '{"template": "mock"}'
 
         url = self.template.upload_to_s3(
             region="eu-west-1",
