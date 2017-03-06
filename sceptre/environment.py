@@ -118,7 +118,7 @@ class Environment(object):
         """
         self.logger.debug("Launching environment '%s'", self.path)
         threading_events = self._get_threading_events()
-        stack_statuses = self._get_stack_statuses()
+        stack_statuses = self._get_initial_statuses()
         launch_dependencies = self._get_launch_dependencies(self.path)
 
         self._check_for_circular_dependencies(launch_dependencies)
@@ -135,7 +135,7 @@ class Environment(object):
         """
         self.logger.debug("Deleting environment '%s'", self.path)
         threading_events = self._get_threading_events()
-        stack_statuses = self._get_stack_statuses()
+        stack_statuses = self._get_initial_statuses()
         delete_dependencies = self._get_delete_dependencies()
 
         self._check_for_circular_dependencies(delete_dependencies)
@@ -266,7 +266,7 @@ class Environment(object):
         }
 
     @recurse_into_sub_environments
-    def _get_stack_statuses(self):
+    def _get_initial_statuses(self):
         """
         Returns a "pending" sceptre.stack_status.StackStatus for each stack
         in every sub-environment.
