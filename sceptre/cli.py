@@ -461,10 +461,10 @@ def list_change_sets(ctx, environment, stack):
 @catch_exceptions
 def update_with_change_set(ctx, environment, stack, verbose):
     """
-    Updates the stack via change set.
+    Updates the stack using a change set.
 
-    Updates ENVIRONMENT/STACK with prompt via change set and
-    description.
+    Creates a change set for ENVIRONMENT/STACK, prints out a description of the
+    changes, and prompts the user to decide whether to execute or delete it.
     """
     env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
     change_set_name = "-".join(["change-set", uuid1().hex])
