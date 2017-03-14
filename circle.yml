@@ -13,7 +13,7 @@ test:
   override:
     - make lint
     - make test-all
-    - cd integration-tests && behave --include:
+    - cd integration-tests && behave:
         parallel: true
         files:
           - integration-tests/features/*.feature
