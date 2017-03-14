@@ -13,7 +13,7 @@ test:
   override:
     - make lint
     - make test-all
-    - cd integration-tests && behave --junit --junit-directory $CIRCLE_TEST_REPORTS/behave/junit.xml --include:
+    - cd integration-tests && behave --include:
       parallel: true
       files:
         - features/*.feature
