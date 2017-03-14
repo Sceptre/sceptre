@@ -16,7 +16,7 @@ test:
     - cd integration-tests && behave --include:
         parallel: true
         files:
-          - features/*.feature
+          - test-change-set.feature
     - make docs
 deployment:
     production:
