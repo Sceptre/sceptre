@@ -14,9 +14,9 @@ test:
     - make lint
     - make test-all
     - cd integration-tests && behave --include:
-      parallel: true
-      files:
-        - features/*.feature
+        parallel: true
+        files:
+          - features/*.feature
     - make docs
 deployment:
     production:
