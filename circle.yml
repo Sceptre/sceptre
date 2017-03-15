@@ -9,11 +9,8 @@ dependencies:
     - pip install -r requirements_tests.txt
     - python setup.py install
 test:
-  # pre:
-  #   - python setup.py install
   override:
     - make lint
-    - make test-all
     - behave:
         parallel: true
         files:
