@@ -12,7 +12,7 @@ test:
   override:
     - make lint
     - make test-all
-    - behave:
+    - behave --junit --junit-directory:
         parallel: true
         files:
           - integration-tests/features/*.feature
