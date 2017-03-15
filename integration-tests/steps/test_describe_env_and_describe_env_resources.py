@@ -8,7 +8,7 @@ import yaml
 @then("the env is described")
 def step_impl(context):
     raw_response = subprocess.check_output([
-        "sceptre", "describe-env", "test-env"
+        "sceptre", "--dir", context.sceptre_dir, "describe-env", "test-env"
     ])
     response = yaml.safe_load(raw_response)
 

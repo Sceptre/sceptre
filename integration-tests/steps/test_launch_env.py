@@ -5,7 +5,9 @@ import boto3
 
 @when("we run launch env")
 def step_impl(context):
-    subprocess.call(["sceptre", "launch-env", "test-env"])
+    subprocess.call([
+        "sceptre", "--dir", context.sceptre_dir, "launch-env", "test-env"
+    ])
 
 
 @then("an env is created")
