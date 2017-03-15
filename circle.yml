@@ -7,13 +7,14 @@ dependencies:
   override:
     - pip install -r requirements.txt
     - pip install -r requirements_tests.txt
-test:
-  pre:
     - python setup.py install
+test:
+  # pre:
+  #   - python setup.py install
   override:
     - make lint
     - make test-all
-    - python setup.py install && behave:
+    - behave:
         parallel: true
         files:
           - integration-tests/features/*.feature
