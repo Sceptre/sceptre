@@ -9,7 +9,7 @@ dependencies:
     - pip install -r requirements_tests.txt
     - python setup.py install
 test:
-  override:
+  post:
     - make lint
     - behave:
         parallel: true
