@@ -171,14 +171,12 @@ class TestConfig(object):
                  call(u'!class_3', "class")]
         mock_add_constructors.assert_has_calls(calls, any_order=True)
 
-    @patch("sceptre.config.os.getcwd")
     @patch("sceptre.config.os.path.dirname")
     @patch("sceptre.config.Config.add_yaml_constructors")
     def test_add_resolver_constructors(
-        self, mock_add_yaml_constructors, mock_dirname, mock_getcwd
+        self, mock_add_yaml_constructors, mock_dirname
     ):
         mock_dirname.return_value = "folder/with/file"
-        mock_getcwd.return_value = "current/working/directory"
         environment_config = sentinel.environment_config
         connection_manager = sentinel.connection_manager
         self.config.add_resolver_constructors(
@@ -186,18 +184,16 @@ class TestConfig(object):
         )
         calls = [
             call("folder/with/file/resolvers", Resolver, ANY),
-            call("current/working/directory/resolvers", Resolver, ANY)
+            call("sceptre_dir/resolvers", Resolver, ANY)
         ]
         mock_add_yaml_constructors.assert_has_calls(calls, any_order=False)
 
-    @patch("sceptre.config.os.getcwd")
     @patch("sceptre.config.os.path.dirname")
     @patch("sceptre.config.Config.add_yaml_constructors")
     def test_add_hook_constructors(
-        self, mock_add_yaml_constructors, mock_dirname, mock_getcwd
+        self, mock_add_yaml_constructors, mock_dirname
     ):
         mock_dirname.return_value = "folder/with/file"
-        mock_getcwd.return_value = "current/working/directory"
         environment_config = sentinel.environment_config
         connection_manager = sentinel.connection_manager
         self.config.add_hook_constructors(
@@ -205,6 +201,6 @@ class TestConfig(object):
         )
         calls = [
             call("folder/with/file/hooks", Hook, ANY),
-            call("current/working/directory/hooks", Hook, ANY)
+            call("sceptre_dir/hooks", Hook, ANY)
         ]
         mock_add_yaml_constructors.assert_has_calls(calls, any_order=False)
