@@ -33,7 +33,7 @@ class Template(object):
     :type sceptre_user_data: dict
     """
 
-    _create_bucket_lock = threading.Lock()
+    _boto_s3_lock = threading.Lock()
 
     def __init__(self, path, sceptre_user_data):
         self.logger = logging.getLogger(__name__)
@@ -94,8 +94,9 @@ class Template(object):
         """
         self.logger.debug("%s - Uploading template to S3...", self.name)
 
-        if not self._bucket_exists(bucket_name, connection_manager):
-            self._create_bucket(region, bucket_name, connection_manager)
+        with self._boto_s3_lock:
+            if not self._bucket_exists(bucket_name, connection_manager):
+                self._create_bucket(region, bucket_name, connection_manager)
 
         # Remove any leading or trailing slashes the user may have added.
         key_prefix = key_prefix.strip("/")
@@ -150,29 +151,28 @@ class Template(object):
         :raises: botocore.exception.ClientError
 
         """
-        with self._create_bucket_lock:
-            try:
+        try:
+            self.logger.debug(
+                "%s - Attempting to find template bucket '%s'",
+                self.name, bucket_name
+            )
+            connection_manager.call(
+                service="s3",
+                command="head_bucket",
+                kwargs={"Bucket": bucket_name}
+            )
+            self.logger.debug(
+                "%s - Found template bucket '%s'", self.name, bucket_name
+            )
+            return True
+        except botocore.exceptions.ClientError as exp:
+            if exp.response["Error"]["Message"] == "Not Found":
                 self.logger.debug(
-                    "%s - Attempting to find template bucket '%s'",
-                    self.name, bucket_name
+                    "%s - %s bucket not found.", self.name, bucket_name
                 )
-                connection_manager.call(
-                    service="s3",
-                    command="head_bucket",
-                    kwargs={"Bucket": bucket_name}
-                )
-                self.logger.debug(
-                    "%s - Found template bucket '%s'", self.name, bucket_name
-                )
-                return True
-            except botocore.exceptions.ClientError as exp:
-                if exp.response["Error"]["Message"] == "Not Found":
-                    self.logger.debug(
-                        "%s - %s bucket not found.", self.name, bucket_name
-                    )
-                    return False
-                else:
-                    raise
+                return False
+            else:
+                raise
 
     def _create_bucket(self, region, bucket_name, connection_manager):
         """
@@ -191,27 +191,26 @@ class Template(object):
         :raises: botocore.exception.ClientError
 
         """
-        with self._create_bucket_lock:
-            self.logger.debug(
-                "%s - Creating new bucket '%s'", self.name, bucket_name
+        self.logger.debug(
+            "%s - Creating new bucket '%s'", self.name, bucket_name
+        )
+        if region == "us-east-1":
+            connection_manager.call(
+                service="s3",
+                command="create_bucket",
+                kwargs={"Bucket": bucket_name}
             )
-            if region == "us-east-1":
-                connection_manager.call(
-                    service="s3",
-                    command="create_bucket",
-                    kwargs={"Bucket": bucket_name}
-                )
-            else:
-                connection_manager.call(
-                    service="s3",
-                    command="create_bucket",
-                    kwargs={
-                        "Bucket": bucket_name,
-                        "CreateBucketConfiguration": {
-                            "LocationConstraint": region
-                        }
+        else:
+            connection_manager.call(
+                service="s3",
+                command="create_bucket",
+                kwargs={
+                    "Bucket": bucket_name,
+                    "CreateBucketConfiguration": {
+                        "LocationConstraint": region
                     }
-                )
+                }
+            )
 
     def _get_body(self):
         """
