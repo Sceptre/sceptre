@@ -54,9 +54,9 @@ class Template(object):
     @property
     def body(self):
         """
-        Returns the CloudFormation template.
+        Represents body of the CloudFormation template.
 
-        :returns: The CloudFormation template.
+        :returns: The body of the CloudFormation template.
         :rtype: str
         """
         if self._body is None:
@@ -78,6 +78,15 @@ class Template(object):
         return self._body
 
     def _call_sceptre_handler(self):
+        """
+        Calls the function `sceptre_handler` within templates that are python
+        scripts.
+
+        :returns: The string returned from sceptre_handler in the template.
+        :rtype: str
+        :raises: IOError
+        :raises: TemplateSceptreHandlerError
+        """
         # Get relative path as list between current working directory and where
         # the template is
         # NB: this is a horrible hack...
