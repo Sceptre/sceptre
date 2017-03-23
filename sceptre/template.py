@@ -60,8 +60,53 @@ class Template(object):
         :rtype: str
         """
         if self._body is None:
-            self._body = self._get_body()
+            file_extension = os.path.splitext(self.path)[1]
+
+            if file_extension in {".json", ".yaml"}:
+                self.logger.debug("%s - Opening file %s", self.name, self.path)
+                with open(self.path) as template_file:
+                    self._body = template_file.read()
+            elif file_extension == ".py":
+                self._body = self._call_sceptre_handler()
+
+            else:
+                raise UnsupportedTemplateFileTypeError(
+                    "Template has file extension %s. Only .py, .yaml, "
+                    "and .json are supported.",
+                    os.path.splitext(self.path)[1]
+                )
         return self._body
+
+    def _call_sceptre_handler(self):
+        # Get relative path as list between current working directory and where
+        # the template is
+        # NB: this is a horrible hack...
+        relpath = os.path.relpath(self.path, os.getcwd()).split(os.path.sep)
+        relpaths_to_add = [
+            os.path.sep.join(relpath[:i+1])
+            for i in range(len(relpath[:-1]))
+        ]
+        # Add any directory between the current working directory and where
+        # the template is to the python path
+        for directory in relpaths_to_add:
+            sys.path.append(os.path.join(os.getcwd(), directory))
+        self.logger.debug(
+            "%s - Getting CloudFormation from %s", self.name, self.path
+        )
+        try:
+            module = imp.load_source(self.name, self.path)
+        except IOError:
+            raise IOError("No such file or directory: '%s'", self.path)
+        try:
+            body = module.sceptre_handler(self.sceptre_user_data)
+        except AttributeError:
+            raise TemplateSceptreHandlerError(
+                "The template does not have the required "
+                "'sceptre_handler(sceptre_user_data)' function."
+            )
+        for directory in relpaths_to_add:
+            sys.path.remove(os.path.join(os.getcwd(), directory))
+        return body
 
     def upload_to_s3(
             self, region, bucket_name, key_prefix, environment_path,
