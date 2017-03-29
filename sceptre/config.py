@@ -231,7 +231,7 @@ class Config(dict):
         self.add_yaml_constructors(
             resolvers_folder, Resolver, resolver_constructor_factory
         )
-        external_resolver_folder = os.path.join(os.getcwd(), "resolvers")
+        external_resolver_folder = os.path.join(self.sceptre_dir, "resolvers")
         self.add_yaml_constructors(
             external_resolver_folder, Resolver, resolver_constructor_factory
         )
@@ -270,7 +270,7 @@ class Config(dict):
             library_hook_folder, Hook, hook_constructor_factory
         )
 
-        project_hook_folder = os.path.join(os.getcwd(), "hooks")
+        project_hook_folder = os.path.join(self.sceptre_dir, "hooks")
         self.add_yaml_constructors(
             project_hook_folder, Hook, hook_constructor_factory
         )
