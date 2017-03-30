@@ -192,9 +192,6 @@ class Template(object):
         """
         Checks if the bucket ``bucket_name`` exists.
 
-        This is done in a thread-safe way. No error is raised if the bucket
-        already exists.
-
         :param bucket_name: The name of the bucket to check.
         :type bucket_name: str
         :param connection_manager: The connection manager used to make
@@ -205,20 +202,16 @@ class Template(object):
         :raises: botocore.exception.ClientError
 
         """
+        self.logger.debug(
+            "%s - Attempting to find template bucket '%s'",
+            self.name, bucket_name
+        )
         try:
-            self.logger.debug(
-                "%s - Attempting to find template bucket '%s'",
-                self.name, bucket_name
-            )
             connection_manager.call(
                 service="s3",
                 command="head_bucket",
                 kwargs={"Bucket": bucket_name}
             )
-            self.logger.debug(
-                "%s - Found template bucket '%s'", self.name, bucket_name
-            )
-            return True
         except botocore.exceptions.ClientError as exp:
             if exp.response["Error"]["Message"] == "Not Found":
                 self.logger.debug(
@@ -227,13 +220,14 @@ class Template(object):
                 return False
             else:
                 raise
+        self.logger.debug(
+            "%s - Found template bucket '%s'", self.name, bucket_name
+        )
+        return True
 
     def _create_bucket(self, region, bucket_name, connection_manager):
         """
         Create the bucket ``bucket_name`` in the region ``region``.
-
-        This is done in a thread-safe way. No error is raised if the bucket
-        already exists.
 
         :param region: The AWS region to create the bucket in.
         :type region: str
