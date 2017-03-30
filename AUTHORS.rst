@@ -23,5 +23,5 @@ Contributors
 * Amy Bruce-Gardner `@amybg <https://github.com/amybg>`_
 * Marius Galbinasu `@galbinasu <https://github.com/galbinasu>`_
 * Matthew Taylor `@matalo33 <https://github.com/matalo33>`_
-* Yvonne Beumer `@pinkee <https://github.com/pinkieee>`_
+* Yvonne Beumer `@pinkeee <https://github.com/pinkieee>`_
 * Max Eskenazi <max@eskenazi.net>
