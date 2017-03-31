@@ -8,7 +8,7 @@ import yaml
 @then("the stack resources are listed")
 def step_impl(context):
     raw_response = subprocess.check_output([
-        "sceptre", "describe-stack-resources",
+        "sceptre", "--dir", context.sceptre_dir, "describe-stack-resources",
         "test-env/a", "wait-condition-handle"
     ])
     response = yaml.safe_load(raw_response)

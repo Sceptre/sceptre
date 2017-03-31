@@ -92,7 +92,7 @@ def step_impl(context):
 def step_impl(context):
     subprocess.call(
         [
-            "sceptre",
+            "sceptre", "--dir", context.sceptre_dir,
             "continue-update-rollback",
             "test-env/a",
             "security-group"

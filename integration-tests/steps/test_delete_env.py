@@ -5,7 +5,9 @@ import boto3
 
 @when("we run delete env")
 def step_impl(context):
-    subprocess.call(["sceptre", "delete-env", "test-env"])
+    subprocess.call([
+        "sceptre", "--dir", context.sceptre_dir, "delete-env", "test-env"
+    ])
 
 
 @then("the env is deleted")

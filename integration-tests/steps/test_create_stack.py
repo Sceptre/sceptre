@@ -1,13 +1,16 @@
 from behave import *
 import subprocess
 import boto3
+import os
 
 
 @when("we run create stack")
 def step_impl(context):
-    subprocess.call(
-        ["sceptre", "create-stack", "test-env/a", "wait-condition-handle"]
-    )
+    print(os.getcwd())
+    subprocess.call([
+        "sceptre", "--dir", context.sceptre_dir, "create-stack",
+        "test-env/a", "wait-condition-handle"
+    ])
 
 
 @then("a stack is created")
