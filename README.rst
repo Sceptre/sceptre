@@ -145,6 +145,8 @@ Install
 
   $ pip install sceptre
 
+More information on installing sceptre can be found in our `Installation Guide <http://sceptre.cloudreach.com/docs/installation.html>`_.
+
 
 Tutorial and Documentation
 --------------------------
