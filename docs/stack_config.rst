@@ -375,7 +375,7 @@ Suspends or resumes autoscaling scaling processes.
 
 Syntax:
 
-.. code-block::
+.. code-block:: yaml
 
     <hook_point>:
       - !asg_scaling_processes <suspend|resume>::<process-name>
