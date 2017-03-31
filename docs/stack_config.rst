@@ -37,9 +37,11 @@ A list of arbitrary shell or python commands or scripts to run. Find out more in
 ``parameters``
 ``````````````
 
+.. warning:: Sensitive data such as passwords or secret keys should not be stored in plaintext in stack config files. Instead, they should be passed in from the CLI using :ref:`templating`, or set via an environment variable with the `environment_variable`_ resolver.
+
 A dictionary of key-value pairs to be supplied to a CloudFormation or Troposphere template as parameters. The keys must match up with the name of the parameter, and the value must be of the type as defined in the template. Note that Boto3 throws an exception if parameters are supplied to a template that are not required by that template. Resolvers can be used to add functionality to this key. Find out more in the `Resolvers`_ section.
 
-A parameter can be specified either as a single value/resolver or a list of values/resolvers. Lists of values/resolvers will be formatted into an AWS compatible comma separated string e.g. "value1,value2,value3". Lists can contain a mixture of values and resolvers.
+A parameter can be specified either as a single value/resolver or a list of values/resolvers. Lists of values/resolvers will be formatted into an AWS compatible comma separated string e.g. ``value1,value2,value3``. Lists can contain a mixture of values and resolvers.
 
 Syntax:
 
@@ -190,9 +192,6 @@ Example:
 
     sceptre_user_data:
       iam_policy: !file_contents /path/to/policy.json
-
-
-.. warning:: ``file_path`` resolver has been renamed to ``file_contents``
 
 
 ``stack_output``
