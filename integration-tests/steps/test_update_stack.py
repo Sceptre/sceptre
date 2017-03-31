@@ -23,7 +23,10 @@ def step_impl(context):
 
 @when("we run update stack")
 def step_impl(context):
-    subprocess.call(["sceptre", "update-stack", "test-env/a", "vpc"])
+    subprocess.call([
+        "sceptre", "--dir", context.sceptre_dir, "update-stack", "test-env/a",
+        "vpc"
+    ])
 
 
 @then("the stack is updated")

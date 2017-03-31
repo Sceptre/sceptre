@@ -7,13 +7,15 @@ dependencies:
   override:
     - pip install -r requirements.txt
     - pip install -r requirements_tests.txt
+    - make install
 test:
-  pre:
-    - python setup.py install
   override:
     - make lint
     - make test-all
-    - cd integration-tests && behave --junit --junit-directory $CIRCLE_TEST_REPORTS/behave/junit.xml
+    - behave --junit --junit-directory $CIRCLE_TEST_REPORTS/behave/junit.xml:
+        parallel: true
+        files:
+          - integration-tests/features/*.feature
     - make docs
 deployment:
     production:

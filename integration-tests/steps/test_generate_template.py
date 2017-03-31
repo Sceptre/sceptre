@@ -8,7 +8,8 @@ import json
 @given("the generate-template command is run")
 def step_impl(context):
     context.template_json_str = subprocess.check_output([
-        "sceptre", "generate-template", "test-env/a", "vpc"
+        "sceptre", "--dir", context.sceptre_dir, "generate-template",
+        "test-env/a", "vpc"
     ])
 
 

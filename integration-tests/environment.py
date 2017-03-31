@@ -14,6 +14,7 @@ def before_all(context):
     integration tests can be run in parallel without stack name clashes.
     """
     build_uuid = uuid.uuid1().hex
+    context.sceptre_dir = os.path.dirname(__file__)
     context.environment_path_a = "test-env-a"
     context.environment_path_b = "test-env-b"
     context.project_code = "sceptre-integration-tests-{0}".format(

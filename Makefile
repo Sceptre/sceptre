@@ -58,7 +58,7 @@ test-all:
 	tox
 
 test-integration: install
-	cd integration-tests && behave && cd ..
+	behave integration-tests/
 
 coverage:
 	coverage run --source sceptre setup.py test

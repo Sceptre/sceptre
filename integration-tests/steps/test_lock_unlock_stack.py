@@ -7,7 +7,8 @@ import os
 @when("we run lock stack")
 def step_impl(context):
     subprocess.call([
-        "sceptre", "lock-stack", "test-env/a", "wait-condition-handle"
+        "sceptre", "--dir", context.sceptre_dir, "lock-stack", "test-env/a",
+        "wait-condition-handle"
     ])
 
 
@@ -33,7 +34,8 @@ def step_impl(context):
 @when("we run unlock stack")
 def step_impl(context):
     subprocess.call([
-        "sceptre", "unlock-stack", "test-env/a", "wait-condition-handle"
+        "sceptre", "--dir", context.sceptre_dir, "unlock-stack", "test-env/a",
+        "wait-condition-handle"
     ])
 
 
