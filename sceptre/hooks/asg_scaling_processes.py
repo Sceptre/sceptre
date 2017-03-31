@@ -8,16 +8,9 @@ from sceptre.exceptions import InvalidHookArgumentValueError
 
 class ASGScalingProcesses(Hook):
     """
-    A command to resume or suspend autoscaling group scaling processes. This is
+    Resumes or suspends autoscaling group scaling processes. This is
     useful as scheduled actions must be suspended when updating stacks with
     autoscaling groups.
-    This command supports all autoscaling scaling processes.
-    Example configuration:
-    hooks:
-      before_update:
-        - !asg_scaling_processes suspend::ScheduledActions
-    Full documentation on the suspend and resume processes
-    http://docs.aws.amazon.com/autoscaling/latest/userguide/as-suspend-resume-processes.html
     """
 
     def __init__(self, *args, **kwargs):
@@ -26,7 +19,11 @@ class ASGScalingProcesses(Hook):
     def run(self):
         """
         Either suspends or resumes any scaling processes on all autoscaling
-        groups with in the current stack.
+        groups within the current stack.
+
+        :raises: InvalidHookArgumentSyntaxError, when syntax is not using "::".
+        :raises: InvalidHookArgumentTypeError, if argument is not a string.
+        :raises: InvalidHookArgumentValueError, if not using resume or suspend.
         """
 
         if not isinstance(self.argument, basestring):
@@ -37,7 +34,9 @@ class ASGScalingProcesses(Hook):
         if "::" not in str(self.argument):
             raise InvalidHookArgumentSyntaxError(
                 'Wrong syntax for the argument "{0}" - asg_scaling_processes '
-                'hooks use the format: "suspend::Terminate".'.format(self.argument)
+                'hooks use:'
+                '- !asg_scaling_processes <suspend|resume>::<process-name>'
+                .format(self.argument)
             )
 
         action, scaling_processes = self.argument.split("::")

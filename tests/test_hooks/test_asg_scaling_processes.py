@@ -103,7 +103,7 @@ class TestASGScalingProcesses(object):
         ".ASGScalingProcesses._find_autoscaling_groups"
     )
     def test_run_with_suspend_argument(self, mock_find_autoscaling_groups):
-        self.mock_asg_scaling_processes.argument = u"suspend::ScheduledActions"
+        self.mock_asg_scaling_processes.argument = "suspend::ScheduledActions"
         mock_find_autoscaling_groups.return_value = ["autoscaling_group_1"]
         self.mock_asg_scaling_processes.connection_manager = Mock()
         self.mock_asg_scaling_processes.run()
