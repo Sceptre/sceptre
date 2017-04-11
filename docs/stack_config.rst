@@ -367,6 +367,28 @@ Example:
       - !asg_scheduled_actions "suspend"
 
 
+``asg_scaling_processes``
+*************************
+
+Suspends or resumes autoscaling scaling processes.
+
+Syntax:
+
+.. code-block:: yaml
+
+    <hook_point>:
+      - !asg_scaling_processes <suspend|resume>::<process-name>
+
+Example:
+
+.. code-block:: yaml
+
+    before_update:
+      - !asg_scaling_processes suspend::ScheduledActions
+
+Full documentation on the suspend and resume processes:
+http://docs.aws.amazon.com/autoscaling/latest/userguide/as-suspend-resume-processes.html
+
 Hook Examples
 `````````````
 
