@@ -139,5 +139,6 @@ The following python module template can be copied and used:
 This hook can be used in a stack config file with the following syntax::
 
   template_path: <...>
-  before_create:
-    - !custom_hook <argument>  # The argument is accessible via self.argument
+  hooks:
+    before_create:
+      - !custom_hook <argument>  # The argument is accessible via self.argument
