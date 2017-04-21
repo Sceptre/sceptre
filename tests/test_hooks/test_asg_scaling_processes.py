@@ -136,7 +136,7 @@ class TestASGScalingProcesses(object):
         "sceptre.hooks.asg_scaling_processes"
         ".ASGScalingProcesses._find_autoscaling_groups"
     )
-    def test_run_with_non_supported_argument(self, mock_find_autoscaling_groups):
+    def test_run_with_unsupported_argument(self, mock_find_autoscaling_groups):
         self.mock_asg_scaling_processes.argument = "start::Healthcheck"
         mock_find_autoscaling_groups.return_value = ["autoscaling_group_1"]
         self.mock_asg_scaling_processes.connection_manager = Mock()
