@@ -572,6 +572,7 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         self.stack.environment_config = {
             "template_bucket_name": sentinel.template_bucket_name
         }
+        self.stack.connection_manager.call.return_value = {}
         self.stack.validate_template()
         self.stack.connection_manager.call.assert_called_with(
             service="cloudformation",
