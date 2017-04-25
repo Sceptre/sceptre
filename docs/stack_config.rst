@@ -103,7 +103,7 @@ A custom name name to use instead of the Sceptre default.
     parameters:
       VpcID: !stack_output_external <custom-named-vpc-stack>::VpcID
     dependencies:
-      - <stack/name>
+      - <environment>/<stack>
 
 ``stack_tags``
 ``````````````
