@@ -23,6 +23,8 @@ An environment config file is a yaml object of key-value pairs configuring Scept
 
 - `require_version`_ *(optional)*
 
+- `user_variables`_ *(optional)*
+
 Sceptre only checks for and uses the above keys in environment config files, but any others added by the user are read in and are made available to the user via the ``sceptre.environment.Environment().config`` attribute.
 
 
@@ -67,6 +69,11 @@ require_version
 ```````````````
 
 A `PEP 440 compatible version specifier <https://www.python.org/dev/peps/pep-0440/#version-specifiers>`. If the Sceptre version does not fall within the given version requirement it will abort.
+
+user_variables
+``````````````
+
+It adds default user variables to `var`_ dictonary 
 
 Cascading Config
 ----------------
