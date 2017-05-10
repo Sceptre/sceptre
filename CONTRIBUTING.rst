@@ -49,7 +49,7 @@ Contributing Code
 
 Contributions should be made in response to a particular GitHub Issue. We find it easier to review code if we've already discussed what it should do, and assessed if it fits with the wider codebase.
 
-
+Beginner friendly issues are marked with the ``beginner friendly`` tag. We'll endeavour to write clear instructions on what we want to do, why we want to do it, and roughly how to do it. Feel free to ask us any questions that may arise.
 
 A good pull request:
 
@@ -82,7 +82,7 @@ Get Started
 
 4. Create a branch for local development::
 
-    $ git checkout -b sptr-<GitHub issue number>
+    $ git checkout -b <GitHub issue number>-<short description>
 
 5. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox::
 
