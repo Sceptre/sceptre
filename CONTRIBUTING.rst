@@ -1,16 +1,14 @@
-.. highlight:: shell
-
 =======================
 Contributing to Sceptre
 =======================
 
-* `Code of Conduct`_
-* `How to Contribute`_
-   * `Report Bugs`_
-   * `Enhancement Proposal`_
-   * `Contributing Code`_
-* `Get Started`_
-* `Credits`_
+- `Code of Conduct`_
+- `How to Contribute`_
+   - `Report Bugs`_
+   - `Enhancement Proposal`_
+   - `Contributing Code`_
+- `Get Started`_
+- `Credits`_
 
 
 Code of Conduct
@@ -48,6 +46,8 @@ Contributing Code
 *****************
 
 Contributions should be made in response to a particular GitHub Issue. We find it easier to review code if we've already discussed what it should do, and assessed if it fits with the wider codebase.
+
+
 
 A good pull request:
 
