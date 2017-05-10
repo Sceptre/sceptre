@@ -99,7 +99,6 @@ Get Started
     $ make lint
     $ make test
     $ make test-all
-    $ make test-integration
     $ make coverage  # coverage should be 100%
 
 6. Make sure the changes comply with the pull request guidelines in the section on `Contributing Code`_.
