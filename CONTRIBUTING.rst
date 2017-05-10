@@ -4,9 +4,11 @@ Contributing to Sceptre
 
 - `Code of Conduct`_
 - `How to Contribute`_
+
    - `Report Bugs`_
    - `Enhancement Proposal`_
    - `Contributing Code`_
+
 - `Get Started`_
 - `Credits`_
 
