@@ -71,20 +71,30 @@ Get Started
 
     $ git clone git@github.org:your_name_here/sceptre.git
 
-3. Install your local copy into a `virtualenv <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_. Assuming you have virtualenv installed, this is how you set up your fork for local development::
+3. Install your local copy into a `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_. Assuming you have virtualenv installed, this is how you set up your fork for local development:
+
+.. code-block:: shell
 
     $ cd sceptre/
+    $ # Enable your virtual environment
     $ virtualenv env
     $ source env/bin/activate
+    $ # Install Sceptre's development requirements
     $ pip install -r requirements_dev.txt
+    $ # Install Sceptre's test requirements
     $ pip install -r requirements_tests.txt
+    $ # Install sceptre locally, so you can test your changes
     $ pip install -e .
 
-4. Create a branch for local development::
+4. Create a branch for local development:
+
+.. code-block:: shell
 
     $ git checkout -b <GitHub issue number>-<short description>
 
-5. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox::
+5. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox:
+
+.. code-block:: shell
 
     $ make lint
     $ make test
@@ -94,7 +104,9 @@ Get Started
 
 6. Make sure the changes comply with the pull request guidelines in the section on `Contributing Code`_.
 
-7. Commit your changes::
+7. Commit your changes:
+
+.. code-block:: shell
 
     $ git add .
     $ git commit
