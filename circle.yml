@@ -19,7 +19,7 @@ test:
     - make docs
 deployment:
     production:
-        tag: /v*/
+        tag: /v[0-9]+(\.[0-9]+)*/
         commands:
             - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/docs/ --delete
     develop:

@@ -110,6 +110,12 @@ class InvalidHookArgumentTypeError(SceptreException):
     """
 
 
+class InvalidHookArgumentSyntaxError(SceptreException):
+    """
+    Error raised if a hook's argument syntax is invalid.
+    """
+
+
 class InvalidHookArgumentValueError(SceptreException):
     """
     Error raised if a hook's argument value is invalid.
