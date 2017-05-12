@@ -102,10 +102,12 @@ class Template(object):
         self.logger.debug(
             "%s - Getting CloudFormation from %s", self.name, self.path
         )
-        try:
-            module = imp.load_source(self.name, self.path)
-        except IOError:
+
+        if not os.path.isfile(self.path):
             raise IOError("No such file or directory: '%s'", self.path)
+
+        module = imp.load_source(self.name, self.path)
+
         try:
             body = module.sceptre_handler(self.sceptre_user_data)
         except AttributeError:
