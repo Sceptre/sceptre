@@ -13,8 +13,14 @@ def before_all(context):
     is used by Sceptre when creating resources. This ensures that the
     integration tests can be run in parallel without stack name clashes.
     """
+    context.cloudformation = boto3.resource('cloudformation')
+    context.client = boto3.client("cloudformation")
+    context.sceptre_dir = os.path.join(
+        os.getcwd(), "integration-tests", "sceptre-project"
+    )
+    context.default_environment = "default"
     build_uuid = uuid.uuid1().hex
-    context.sceptre_dir = os.path.dirname(__file__)
+    # context.sceptre_dir = os.path.dirname(__file__)
     context.environment_path_a = "test-env-a"
     context.environment_path_b = "test-env-b"
     context.project_code = "sceptre-integration-tests-{0}".format(
