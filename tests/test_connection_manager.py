@@ -9,7 +9,6 @@ import botocore
 
 
 class TestConnectionManager(object):
-
     def setup_method(self, test_method):
         self.iam_role = None
         self.region = "eu-west-1"
@@ -20,11 +19,12 @@ class TestConnectionManager(object):
 
     def test_connection_manager_initialised_with_all_parameters(self):
         connection_manager = ConnectionManager(
-            region=self.region, iam_role=self.iam_role
+            region=self.region, iam_role=self.iam_role, require_mfa=True
         )
         assert connection_manager.iam_role == self.iam_role
         assert connection_manager.region == self.region
         assert connection_manager._boto_session is None
+        assert connection_manager._require_mfa is True
         assert connection_manager.clients == {}
 
     def test_connection_manager_initialised_with_no_optional_parameters(self):
@@ -33,14 +33,17 @@ class TestConnectionManager(object):
         assert connection_manager.iam_role is None
         assert connection_manager.region == sentinel.region
         assert connection_manager._boto_session is None
+        assert connection_manager._require_mfa is False
         assert connection_manager.clients == {}
 
     def test_repr(self):
         self.connection_manager.iam_role = "role"
         self.connection_manager.region = "region"
+        self.connection_manager._require_mfa = True
         response = self.connection_manager.__repr__()
         assert response == "sceptre.connection_manager.ConnectionManager(" \
-            "region='region', iam_role='role')"
+                           "region='region', iam_role='role', require_mfa" \
+                           "='True')"
 
     def test_boto_session_with_cache(self):
         self.connection_manager._boto_session = sentinel.boto_session
@@ -69,7 +72,7 @@ class TestConnectionManager(object):
 
     @patch("sceptre.connection_manager.boto3.session.Session")
     @patch("sceptre.connection_manager.boto3.client")
-    def test_boto_session_with_iam_role_and_no_cache(
+    def test_boto_session_with_iam_role_and_no_cache_and_no_mfa(
             self, mock_client, mock_Session
     ):
         mock_Session.return_value = sentinel.session
@@ -95,6 +98,141 @@ class TestConnectionManager(object):
             region_name=self.region
         )
 
+    @patch("sceptre.connection_manager.input")
+    @patch("sceptre.connection_manager.boto3.session.Session")
+    @patch("sceptre.connection_manager.boto3.client")
+    def test_boto_session_with_iam_role_and_no_cache_and_mfa(
+            self, mock_client, mock_Session, mock_input
+    ):
+        mock_Session.return_value = sentinel.session
+        self.connection_manager.iam_role = "non-default"
+        self.connection_manager._require_mfa = True
+        mock_credentials = {
+            "Credentials": {
+                "AccessKeyId": "id",
+                "SecretAccessKey": "key",
+                "SessionToken": "token"
+            }
+        }
+        mock_user_data = {
+            'User': {
+                'Arn': 'arn:aws:iam::012345678901:user/username'
+            }
+        }
+        mock_sts_client = Mock()
+        mock_sts_client.assume_role.return_value = mock_credentials
+        mock_iam_client = Mock()
+        mock_iam_client.get_user.return_value = mock_user_data
+        mock_client.side_effect = lambda c: \
+            mock_sts_client if c is 'sts' else mock_iam_client
+
+        mock_input.return_value = 123456
+        boto_session = self.connection_manager.boto_session
+
+        assert boto_session == sentinel.session
+        mock_Session.assert_called_once_with(
+            aws_access_key_id="id",
+            aws_secret_access_key="key",
+            aws_session_token="token",
+            region_name=self.region
+        )
+        mock_sts_client.assume_role.assert_called_once_with(
+            RoleArn="non-default",
+            RoleSessionName="non-default-session",
+            SerialNumber='arn:aws:iam::012345678901:mfa/username',
+            TokenCode='123456',
+        )
+
+    @patch("sceptre.connection_manager.input")
+    @patch("sceptre.connection_manager.boto3.session.Session")
+    @patch("sceptre.connection_manager.boto3.client")
+    def test_boto_session_with_iam_role_and_no_cache_mfa_recoverable_error(
+            self, mock_client, mock_Session, mock_input
+    ):
+        mock_Session.return_value = sentinel.session
+        self.connection_manager.iam_role = "non-default"
+        self.connection_manager._require_mfa = True
+        mock_credentials = {
+            "Credentials": {
+                "AccessKeyId": "id",
+                "SecretAccessKey": "key",
+                "SessionToken": "token"
+            }
+        }
+
+        mock_user_data = botocore.exceptions.ClientError(
+            {
+                "Error": {
+                    "Code": "AccessDenied",
+                    "Message": "User: arn:aws:iam::012345678901:user/username "
+                               "is not authorized to perform: sts:AssumeRole "
+                               "on resource: arn:aws:iam::012345678901:role/"
+                               "non-default"
+                }
+            },
+            "AssumeRole"
+        )
+
+        mock_sts_client = Mock()
+        mock_sts_client.assume_role.return_value = mock_credentials
+        mock_iam_client = Mock()
+        mock_iam_client.get_user.side_effect = mock_user_data
+        mock_client.side_effect = lambda c: \
+            mock_sts_client if c is 'sts' else mock_iam_client
+
+        mock_input.return_value = 123456
+        boto_session = self.connection_manager.boto_session
+
+        assert boto_session == sentinel.session
+        mock_Session.assert_called_once_with(
+            aws_access_key_id="id",
+            aws_secret_access_key="key",
+            aws_session_token="token",
+            region_name=self.region
+        )
+        mock_sts_client.assume_role.assert_called_once_with(
+            RoleArn="non-default",
+            RoleSessionName="non-default-session",
+            SerialNumber="arn:aws:iam::012345678901:mfa/username",
+            TokenCode=123456,
+        )
+
+    @patch("sceptre.connection_manager.boto3.session.Session")
+    @patch("sceptre.connection_manager.boto3.client")
+    def test_boto_session_with_iam_role_and_no_cache_mfa_unrecoverable_error(
+            self, mock_client, mock_Session
+    ):
+        mock_Session.return_value = sentinel.session
+        self.connection_manager.iam_role = "non-default"
+        self.connection_manager._require_mfa = True
+        mock_credentials = {
+            "Credentials": {
+                "AccessKeyId": "id",
+                "SecretAccessKey": "key",
+                "SessionToken": "token"
+            }
+        }
+
+        mock_user_data = botocore.exceptions.ClientError(
+            {
+                "Error": {
+                    "Code": "AccessDenied",
+                    "Message": "Not authorized to perform sts:AssumeRole"
+                }
+            },
+            "AssumeRole"
+        )
+
+        mock_sts_client = Mock()
+        mock_sts_client.assume_role.return_value = mock_credentials
+        mock_iam_client = Mock()
+        mock_iam_client.get_user.side_effect = mock_user_data
+        mock_client.side_effect = lambda c: \
+            mock_sts_client if c is 'sts' else mock_iam_client
+
+        with pytest.raises(botocore.exceptions.ClientError):
+            self.connection_manager.boto_session
+
     @patch("sceptre.connection_manager.boto3.session.Session")
     def test_two_boto_sessions(self, mock_Session):
         self.connection_manager._boto_session = None
@@ -104,7 +242,7 @@ class TestConnectionManager(object):
 
     @patch("sceptre.connection_manager.boto3.session.Session.get_credentials")
     def test_get_client_with_no_pre_existing_clients(
-        self, mock_get_credentials
+            self, mock_get_credentials
     ):
         service = "s3"
 

@@ -433,7 +433,7 @@ class TestEnvironment(object):
     ):
         mock_config = {
             "region": sentinel.region,
-            "iam_role": sentinel.iam_role
+            "iam_role": sentinel.iam_role,
         }
         mock_get_config.return_value = mock_config
         mock_ConnectionManager.return_value = sentinel.connection_manager
@@ -445,7 +445,8 @@ class TestEnvironment(object):
         # Check ConnectionManager() is called with correct arguments
         mock_ConnectionManager.assert_called_once_with(
             region=sentinel.region,
-            iam_role=sentinel.iam_role
+            iam_role=sentinel.iam_role,
+            require_mfa=False
         )
 
         # Check Stack() is called with correct arguments
