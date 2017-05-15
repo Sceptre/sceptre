@@ -83,10 +83,10 @@ servedocs: docs
 	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
 website:
-	cd website && bundle exec jekyll build
+	$(MAKE) -C website website
 
 serve-website:
-	cd website && bundle exec jekyll serve
+	$(MAKE) -c website serve
 
 dist: clean
 	python setup.py sdist
