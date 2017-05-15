@@ -1,4 +1,4 @@
-.PHONY: clean-pyc clean-build docs clean
+.PHONY: clean-pyc clean-build docs clean website
 define BROWSER_PYSCRIPT
 import os, webbrowser, sys
 try:
@@ -81,6 +81,12 @@ docs:
 
 servedocs: docs
 	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
+
+website:
+	cd website && bundle exec jekyll build
+
+serve-website:
+	cd website && bundle exec jekyll serve
 
 dist: clean
 	python setup.py sdist
