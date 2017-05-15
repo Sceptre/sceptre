@@ -38,3 +38,8 @@ footer {
     margin-top: 70px;
     padding: 50px;
 }
+
+pre {
+    background-color: #fff;
+    border-radius: 0px;
+}
