@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css?family=Slabo');
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  /*font-family: slabo;*/
+}
+
+.navbar {
+  background-color: #fff;
+  border-bottom-color: #000;
+  padding: 25px;
+}
+
+.navbar-default .navbar-brand {
+    color: #000;
+}
+
+.navbar-default .navbar-nav>li>a {
+    color: #000;
+}
+
+.navbar-default .navbar-nav>li>a:hover {
+    color: #00600f;
+}
+
+.spt-docs-nav {
+    margin-top: 70px;
+}
+
+footer {
+    border-top-width: 2px;
+    border-top-color: #000;
+    /*background-color: #e0e0e0;*/
+    margin-top: 70px;
+    padding: 50px;
+}
