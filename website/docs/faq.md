@@ -7,7 +7,7 @@ layout: docs
 
 ## How do I set AWS region or IAM role via the CLI?
 
-These configuration items, and others, can be set from the CLI using :ref:`templating`. The syntax for setting the AWS region is presented below. The syntax for replacing the other items is the same, with the word `region` substituted out.
+These configuration items, and others, can be set from the CLI using [templating](/docs/environment_config#templating). The syntax for setting the AWS region is presented below. The syntax for replacing the other items is the same, with the word `region` substituted out.
 
 In config.yaml:
 
@@ -17,8 +17,8 @@ In config.yaml:
 
 On the CLI:
 
-```
-sceptre --var "region=<your region name>" COMMAND
+```shell
+$ sceptre --var "region=<your region name>" COMMAND
 ```
 
 
@@ -49,7 +49,7 @@ The first is by using templating, and the syntax `{% raw %}{{ environment_variab
 
 The second is by using a resolver, and the syntax::
 
-```
+```yaml
 parameters:
     param_1: !environment_variable VALUE
 ```
