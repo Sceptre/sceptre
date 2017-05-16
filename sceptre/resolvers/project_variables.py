@@ -4,6 +4,8 @@ import os
 import yaml
 
 from sceptre.resolvers import Resolver
+from warnings import warn, simplefilter
+from colorama import Fore, init
 
 
 class ProjectVariables(Resolver):
@@ -24,6 +26,12 @@ class ProjectVariables(Resolver):
         :returns: Value at argument location.
         :rtype: str
         """
+        init(autoreset=True)
+        simplefilter('always', DeprecationWarning)
+        warn(Fore.YELLOW + (
+                "The project_variables resolver is being deprecated, and will "
+                "be removed in Sceptre version 2.0"
+             ), DeprecationWarning, stacklevel=2)
         file_path = os.path.join(
             self.environment_config.sceptre_dir,
             self.argument
