@@ -12,7 +12,7 @@ This tutorial assumes that you have installed Sceptre. Instructions on how to do
 
 Create the following directory structure in a clean directory named `sceptre-example`:
 
-```
+```shell
 .
 ├── config
 │   └── dev
@@ -101,7 +101,7 @@ parameters:
 
 We can create the VPC stack with the following command:
 
-```
+```shell
 $ sceptre create-stack dev vpc
 ```
 
@@ -112,7 +112,7 @@ This command must be run from the `sceptre-examples` directory.
 
 We can find out information about our running stack:
 
-```
+```shell
 $ sceptre describe-env-resources dev
 $ sceptre describe-stack-resources dev vpc
 $ sceptre describe-stack-outputs dev vpc
@@ -123,7 +123,7 @@ $ sceptre describe-stack-outputs dev vpc
 
 If the stack's config or template is changed in vpc.yaml, the stack can be updated with:
 
-```
+```shell
 $ sceptre update-stack dev vpc
 ```
 
@@ -132,7 +132,7 @@ $ sceptre update-stack dev vpc
 
 Delete the stack:
 
-```
+```shell
 $ sceptre delete-stack dev vpc
 ```
 

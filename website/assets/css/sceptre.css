@@ -44,3 +44,9 @@ pre {
     background-color: #fff;
     border-radius: 0px
 }
+
+code {
+    color: #000;
+    background-color: #F4F4F4;
+    border-radius: 0px;
+}
