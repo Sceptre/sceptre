@@ -97,7 +97,6 @@ Get Started
 .. code-block:: shell
 
     $ make lint
-    $ make test
     $ make test-all
     $ make coverage  # coverage should be 100%
 
