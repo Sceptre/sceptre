@@ -136,4 +136,4 @@ Delete the stack::
 Next Steps
 ----------
 
-Full details about Sceptre's capabilities can be found in the full documentation.
+Further details can be found in the :ref:`index` documentation.

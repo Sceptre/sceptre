@@ -651,8 +651,18 @@ class Stack(object):
         :returns: A list of the formatted parameters.
         :rtype: list
         """
-        return [{"ParameterKey": name, "ParameterValue": value}
-                for name, value in parameters.items() if value is not None]
+        formatted_parameters = []
+        for name, value in parameters.items():
+            if value is None:
+                continue
+            if isinstance(value, list):
+                value = ",".join(value)
+            formatted_parameters.append({
+                "ParameterKey": name,
+                "ParameterValue": value
+            })
+
+        return formatted_parameters
 
     def _get_template_details(self):
         """
@@ -675,7 +685,7 @@ class Stack(object):
             )
             return {"TemplateURL": template_url}
         else:
-            return {"TemplateBody": self.template.cfn}
+            return {"TemplateBody": self.template.body}
 
     def _get_role_arn(self):
         """

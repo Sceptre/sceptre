@@ -164,7 +164,7 @@ def generate_template(ctx, environment, stack):
     Prints ENVIRONMENT/STACK's template.
     """
     env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    template_output = env.stacks[stack].template.cfn
+    template_output = env.stacks[stack].template.body
     write(template_output)
 
 
@@ -399,7 +399,8 @@ def _simplify_change_set_description(response):
         "LogicalResourceId",
         "PhysicalResourceId",
         "Replacement",
-        "ResourceType"
+        "ResourceType",
+        "Scope"
     ]
     formatted_response = {
         k: v
@@ -460,10 +461,10 @@ def list_change_sets(ctx, environment, stack):
 @catch_exceptions
 def update_with_change_set(ctx, environment, stack, verbose):
     """
-    Updates the stack via change set.
+    Updates the stack using a change set.
 
-    Updates ENVIRONMENT/STACK with prompt via change set and
-    description.
+    Creates a change set for ENVIRONMENT/STACK, prints out a description of the
+    changes, and prompts the user to decide whether to execute or delete it.
     """
     env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
     change_set_name = "-".join(["change-set", uuid1().hex])

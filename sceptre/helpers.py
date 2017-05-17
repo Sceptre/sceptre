@@ -218,10 +218,12 @@ def get_subclasses(class_type, directory=None):
     :returns: A dict of classes found.
     :rtype: dict
     """
-    if not isinstance(directory, str):
-        raise TypeError("'directory' object should be a str")
+    try:
+        glob_expression = os.path.join(directory, "*.py")
+    except (AttributeError, TypeError):
+        raise TypeError("'directory' object should be a string")
 
-    module_paths = glob.glob(os.path.join(directory, "*.py"))
+    module_paths = glob.glob(glob_expression)
 
     sys.path.append(directory)
 

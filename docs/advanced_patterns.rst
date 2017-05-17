@@ -60,7 +60,7 @@ The following python module template can be copied and used:
   class CustomResolver(Resolver):
 
       def __init__(self, *args, **kwargs):
-        super(EnvironmentVariable, self).__init__(*args, **kwargs)
+        super(CustomResolver, self).__init__(*args, **kwargs)
 
       def resolve(self):
         """
@@ -83,11 +83,10 @@ This resolver can be used in a stack config file with the following syntax::
 
   template_path: <...>
   parameters:
-    param1:
-      <your resolver name>: <value>  # <your resolver name>
-                                     # should match Hook.name.
-                                     # <value> will be passed to the
-                                     # resolver's resolve() method.
+    param1: !<your_resolver_name> <value> # <your resolver name> is the lower camel-case version
+                                          # of your class name, e.g `custom_resolver`
+                                          # <value> will be passed to the
+                                          # resolver's resolve() method.
 
 
 .. _user_defined_sceptre_hooks:
@@ -140,61 +139,6 @@ The following python module template can be copied and used:
 This hook can be used in a stack config file with the following syntax::
 
   template_path: <...>
-  before_create:
-    - !custom_hook <argument>  # The argument is accessible via self.argument
-
-.. _configuring_an_iam_role_for_sceptre:
-
-Configuring an IAM role for Sceptre
------------------------------------
-
-When Sceptre is used in a situation requiring cross-account access or federation it is possible for it to assume a role before doing anything. This pattern demonstrates how one can use Sceptre itself to perform the initial setup of this role.
-
-We build on previous sections (specifically :ref:`installation`, :doc:`get_started`, :doc:`command_line`, :doc:`environment_config`, :doc:`stack_config`, :doc:`templates`) so it is recommended you read and understand these sections before following this example.
-
-First make sure you are working in the ``account-setup`` directory of the ``sceptre-tools`` repository.::
-
-  $ git clone git@bitbucket.org:cloudreach/sceptre-tools.git
-  $ cd sceptre-tools/account-setup
-
-And ensure your Python environment contains the Troposphere template requirements.::
-
-  $ pip install -U -r requirements.txt
-
-Check Sceptre environment configuration in ``config/config.yaml`` (if desired you can hard-code configuration items rather specifying on the command line)
-
-.. code-block:: yaml
-
-  project_code: "{{ var.my_org | default('example') }}"
-  region: "us-east-1"
-  template_bucket_name: "{{ var.my_org | default('example') }}-sceptre"
-
-Likewise check CloudFormation stack configuration in ``config/sceptre-iam-role.yaml``
-
-.. code-block:: yaml
-
-  template_path: templates/sceptre-iam-role.py
-  sceptre_user_data:
-    trusted_entity: "arn:aws:iam::{{ var.account_id | default('123456789012') }}:root"
-    bucket_prefix: "{{ var.my_org | default('example') }}-sceptre"
-
-You can of course also inspect or modify the Troposphere template in ``templates/sceptre-iam-role.py``
-
-Use Sceptre to launch the CloudFormation stack with the desired variable substitutions::
-
-  sceptre --var "my_org=YOUR-ORG" --var "account_id=TRUSTED-ACCOUNT-ID" launch-stack "" sceptre-iam-role
-
-Finally you can pull the output of the CloudFormation stack into your local shell environment::
-
-  $ eval $(sceptre describe-stack-outputs "" sceptre-iam-role --export=envvar)
-
-And start using ``iam_role`` referencing shell environment variable in your Sceptre environment ``config.yaml``. For example item values will be replaced with environment variables:
-
-.. code-block:: yaml
-
-  iam_role: {{ environment_variable.SCEPTRE_RoleARN }}
-  region: eu-west-1
-  project_code: prj
-  template_bucket_name: sceptre-artifacts
-
-Where ``SCEPTRE_RoleARN`` is the name of exported environment variable.
+  hooks:
+    before_create:
+      - !custom_hook <argument>  # The argument is accessible via self.argument

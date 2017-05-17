@@ -135,7 +135,7 @@ Python:
   stack = env.stacks["stack_name"]
   stack.create()
 
-A full API description of the sceptre package can be found in the `Documentation <http://sceptre.cloudreach.com/docs/sceptre.html>`_.
+A full API description of the sceptre package can be found in the `Documentation <http://sceptre.cloudreach.com/docs/sceptre.html>`__.
 
 
 Install
@@ -145,12 +145,14 @@ Install
 
   $ pip install sceptre
 
+More information on installing sceptre can be found in our `Installation Guide <http://sceptre.cloudreach.com/docs/installation.html>`_.
+
 
 Tutorial and Documentation
 --------------------------
 
 - `Get Started <http://sceptre.cloudreach.com/docs/get_started.html>`_
-- `Documentation <http://sceptre.cloudreach.com/docs/>`_
+- `Documentation <http://sceptre.cloudreach.com/docs/>`__
 
 
 Contributions

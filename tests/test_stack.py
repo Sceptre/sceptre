@@ -682,7 +682,7 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             "tests/fixtures/stack_policies/unlock.json"
         )
 
-    def test_format_parameters(self):
+    def test_format_parameters_with_sting_values(self):
         parameters = {
             "key1": "value1",
             "key2": "value2",
@@ -693,6 +693,77 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             {"ParameterKey": "key1", "ParameterValue": "value1"},
             {"ParameterKey": "key2", "ParameterValue": "value2"},
             {"ParameterKey": "key3", "ParameterValue": "value3"}
+        ])
+
+    def test_format_parameters_with_none_values(self):
+        parameters = {
+            "key1": None,
+            "key2": None,
+            "key3": None
+        }
+        formatted_parameters = self.stack._format_parameters(parameters)
+        assert sorted(formatted_parameters) == []
+
+    def test_format_parameters_with_none_and_string_values(self):
+        parameters = {
+            "key1": "value1",
+            "key2": None,
+            "key3": "value3"
+        }
+        formatted_parameters = self.stack._format_parameters(parameters)
+        assert sorted(formatted_parameters) == sorted([
+            {"ParameterKey": "key1", "ParameterValue": "value1"},
+            {"ParameterKey": "key3", "ParameterValue": "value3"}
+        ])
+
+    def test_format_parameters_with_list_values(self):
+        parameters = {
+            "key1": ["value1", "value2", "value3"],
+            "key2": ["value4", "value5", "value6"],
+            "key3": ["value7", "value8", "value9"]
+        }
+        formatted_parameters = self.stack._format_parameters(parameters)
+        assert sorted(formatted_parameters) == sorted([
+            {"ParameterKey": "key1", "ParameterValue": "value1,value2,value3"},
+            {"ParameterKey": "key2", "ParameterValue": "value4,value5,value6"},
+            {"ParameterKey": "key3", "ParameterValue": "value7,value8,value9"}
+        ])
+
+    def test_format_parameters_with_none_and_list_values(self):
+        parameters = {
+            "key1": ["value1", "value2", "value3"],
+            "key2": None,
+            "key3": ["value7", "value8", "value9"]
+        }
+        formatted_parameters = self.stack._format_parameters(parameters)
+        assert sorted(formatted_parameters) == sorted([
+            {"ParameterKey": "key1", "ParameterValue": "value1,value2,value3"},
+            {"ParameterKey": "key3", "ParameterValue": "value7,value8,value9"}
+        ])
+
+    def test_format_parameters_with_list_and_string_values(self):
+        parameters = {
+            "key1": ["value1", "value2", "value3"],
+            "key2": "value4",
+            "key3": ["value5", "value6", "value7"]
+        }
+        formatted_parameters = self.stack._format_parameters(parameters)
+        assert sorted(formatted_parameters) == sorted([
+            {"ParameterKey": "key1", "ParameterValue": "value1,value2,value3"},
+            {"ParameterKey": "key2", "ParameterValue": "value4"},
+            {"ParameterKey": "key3", "ParameterValue": "value5,value6,value7"}
+        ])
+
+    def test_format_parameters_with_none_list_and_string_values(self):
+        parameters = {
+            "key1": ["value1", "value2", "value3"],
+            "key2": "value4",
+            "key3": None
+        }
+        formatted_parameters = self.stack._format_parameters(parameters)
+        assert sorted(formatted_parameters) == sorted([
+            {"ParameterKey": "key1", "ParameterValue": "value1,value2,value3"},
+            {"ParameterKey": "key2", "ParameterValue": "value4"},
         ])
 
     @patch("sceptre.stack.Stack.describe")
@@ -754,14 +825,14 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
 
     def test_get_template_details_without_upload(self):
         self.stack._template = Mock(spec=Template)
-        self.stack._template.cfn = sentinel.cfn
+        self.stack._template.body = sentinel.body
         self.stack.environment_config = {
             "template_key_prefix": sentinel.template_key_prefix
         }
 
         template_details = self.stack._get_template_details()
 
-        assert template_details == {"TemplateBody": sentinel.cfn}
+        assert template_details == {"TemplateBody": sentinel.body}
 
     def test_get_role_arn_without_role(self):
         self.stack._template = Mock(spec=Template)

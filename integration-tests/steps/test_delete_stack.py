@@ -5,9 +5,10 @@ import boto3
 
 @when("we run delete stack")
 def step_impl(context):
-    subprocess.call(
-        ["sceptre", "delete-stack", "test-env/a", "wait-condition-handle"]
-    )
+    subprocess.call([
+        "sceptre", "--dir", context.sceptre_dir, "delete-stack", "test-env/a",
+        "wait-condition-handle"
+    ])
 
 
 @then("the stack is deleted")

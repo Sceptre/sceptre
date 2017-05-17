@@ -2,6 +2,17 @@
 History
 =======
 
+1.1.1 (2017.2.29)
+-----------------
+
+* Respect --dir when loading custom resolvers and hooks.
+
+1.1.0 (2017.3.3)
+----------------
+
+* Include Scope in ``update-stack-cs`` output.
+* Updates to documentation.
+
 1.0.0 (2017.1.31)
 -----------------
 

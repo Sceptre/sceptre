@@ -37,7 +37,43 @@ A list of arbitrary shell or python commands or scripts to run. Find out more in
 ``parameters``
 ``````````````
 
+.. warning:: Sensitive data such as passwords or secret keys should not be stored in plaintext in stack config files. Instead, they should be passed in from the CLI using :ref:`templating`, or set via an environment variable with the `environment_variable`_ resolver.
+
 A dictionary of key-value pairs to be supplied to a CloudFormation or Troposphere template as parameters. The keys must match up with the name of the parameter, and the value must be of the type as defined in the template. Note that Boto3 throws an exception if parameters are supplied to a template that are not required by that template. Resolvers can be used to add functionality to this key. Find out more in the `Resolvers`_ section.
+
+A parameter can be specified either as a single value/resolver or a list of values/resolvers. Lists of values/resolvers will be formatted into an AWS compatible comma separated string e.g. ``value1,value2,value3``. Lists can contain a mixture of values and resolvers.
+
+Syntax:
+
+.. code-block:: yaml
+
+  parameters:
+    <parameter1_name>: "value"
+    <parameter2_name>: !<resolver_name> <resolver_value>
+    <parameter3_name>:
+      - "value1"
+      - "value2"
+    <parameter4_name>:
+      - !<resolver_name> <resolver_value>
+      - !<resolver_name> <resolver_value>
+    <parameter5_name>:
+      - !<resolver_name> <resolver_value>
+      - "value1"
+
+Example:
+
+.. code-block:: yaml
+
+    parameters:
+      database_username: "mydbuser"
+      database_password: !environment_variable DATABASE_PASSWORD
+      subnet_ids:
+        - "subnet-12345678"
+        - "subnet-87654321"
+      security_group_ids:
+        - "sg-12345678"
+        - !stack_output security-groups::BaseSecurityGroupId
+        - !file_contents /file/with/security_group_id.txt
 
 ``protect``
 ```````````
@@ -67,7 +103,7 @@ A custom name name to use instead of the Sceptre default.
     parameters:
       VpcID: !stack_output_external <custom-named-vpc-stack>::VpcID
     dependencies:
-      - <stack/name>
+      - <environment>/<stack>
 
 ``stack_tags``
 ``````````````
@@ -77,7 +113,7 @@ A dictionary of Tags to be applied to the stack.
 ``role_arn``
 ````````````
 
-The ARN of a `CloudFormation Service Role http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-iam-servicerole.html`_ that is assumed by CloudFormation to create, update or delete resources.
+The ARN of a `CloudFormation Service Role <http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-iam-servicerole.html>`_ that is assumed by CloudFormation to create, update or delete resources.
 
 ``template_path``
 `````````````````
@@ -158,9 +194,6 @@ Example:
       iam_policy: !file_contents /path/to/policy.json
 
 
-.. warning:: ``file_path`` resolver has been renamed to ``file_contents``
-
-
 ``stack_output``
 ****************
 
@@ -235,6 +268,7 @@ Example (config/dev/vpc.yaml):
     parameters:
       Tag: !project_variables /my_config_file.yaml
 
+.. warning:: The project_variables resolver has been deprecated, and will be removed in a later version of Sceptre. Depending on your use case, you may find user variables as seen on the :ref:`templating` section appropiate.
 
 Environment Variables
 ---------------------
@@ -333,6 +367,28 @@ Example:
     before_update:
       - !asg_scheduled_actions "suspend"
 
+
+``asg_scaling_processes``
+*************************
+
+Suspends or resumes autoscaling scaling processes.
+
+Syntax:
+
+.. code-block:: yaml
+
+    <hook_point>:
+      - !asg_scaling_processes <suspend|resume>::<process-name>
+
+Example:
+
+.. code-block:: yaml
+
+    before_update:
+      - !asg_scaling_processes suspend::ScheduledActions
+
+Full documentation on the suspend and resume processes:
+http://docs.aws.amazon.com/autoscaling/latest/userguide/as-suspend-resume-processes.html
 
 Hook Examples
 `````````````

@@ -9,7 +9,8 @@ import os
 @when("we run create change set")
 def step_impl(context):
     subprocess.call([
-        "sceptre", "create-change-set", "test-env/a", "vpc", "test-change-set"
+        "sceptre", "--dir", context.sceptre_dir, "create-change-set",
+        "test-env/a", "vpc", "test-change-set"
     ])
     # Wait for change set to be created
     time.sleep(5)
@@ -31,8 +32,8 @@ def step_impl(context):
 @then("the change set should be described")
 def step_impl(context):
     raw_response = subprocess.check_output([
-        "sceptre", "describe-change-set", "test-env/a",
-        "vpc", "test-change-set"
+        "sceptre", "--dir", context.sceptre_dir, "describe-change-set",
+        "test-env/a", "vpc", "test-change-set"
     ])
 
     response = yaml.safe_load(raw_response)
@@ -48,14 +49,16 @@ def step_impl(context):
                 "ResourceChange": {
                     "Action": "Add",
                     "LogicalResourceId": "IGWAttachment",
-                    "ResourceType": "AWS::EC2::VPCGatewayAttachment"
+                    "ResourceType": "AWS::EC2::VPCGatewayAttachment",
+                    "Scope": []
                 }
             },
             {
                 "ResourceChange": {
                     "Action": "Add",
                     "LogicalResourceId": "InternetGateway",
-                    "ResourceType": "AWS::EC2::InternetGateway"
+                    "ResourceType": "AWS::EC2::InternetGateway",
+                    "Scope": []
                 }
             }
         ],
@@ -70,7 +73,8 @@ def step_impl(context):
 @then("the change set can be listed")
 def step_impl(context):
     raw_response = subprocess.check_output([
-        "sceptre", "list-change-sets", "test-env/a", "vpc"
+        "sceptre", "--dir", context.sceptre_dir, "list-change-sets",
+        "test-env/a", "vpc"
     ])
 
     response = yaml.safe_load(raw_response)
@@ -81,7 +85,8 @@ def step_impl(context):
 @when("the change set is executed")
 def step_impl(context):
     subprocess.call([
-        "sceptre", "execute-change-set", "test-env/a", "vpc", "test-change-set"
+        "sceptre", "--dir", context.sceptre_dir, "execute-change-set",
+        "test-env/a", "vpc", "test-change-set"
     ])
 
 
@@ -117,7 +122,8 @@ def step_impl(context):
 @when("we execute delete change set")
 def step_impl(context):
     subprocess.call([
-        "sceptre", "delete-change-set", "test-env/a", "vpc", "test-change-set"
+        "sceptre", "--dir", context.sceptre_dir, "delete-change-set",
+        "test-env/a", "vpc", "test-change-set"
     ])
     # Wait for change set to be deleted
     time.sleep(5)

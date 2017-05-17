@@ -33,7 +33,7 @@ class Template(object):
     :type sceptre_user_data: dict
     """
 
-    _create_bucket_lock = threading.Lock()
+    _boto_s3_lock = threading.Lock()
 
     def __init__(self, path, sceptre_user_data):
         self.logger = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ class Template(object):
         self.path = path
         self.sceptre_user_data = sceptre_user_data
         self.name = os.path.basename(path).split(".")[0]
-        self._cfn = None
+        self._body = None
 
     def __repr__(self):
         return (
@@ -52,16 +52,72 @@ class Template(object):
         )
 
     @property
-    def cfn(self):
+    def body(self):
         """
-        Returns the CloudFormation template.
+        Represents body of the CloudFormation template.
 
-        :returns: The CloudFormation template.
+        :returns: The body of the CloudFormation template.
         :rtype: str
         """
-        if self._cfn is None:
-            self._cfn = self._get_cfn()
-        return self._cfn
+        if self._body is None:
+            file_extension = os.path.splitext(self.path)[1]
+
+            if file_extension in {".json", ".yaml"}:
+                self.logger.debug("%s - Opening file %s", self.name, self.path)
+                with open(self.path) as template_file:
+                    self._body = template_file.read()
+            elif file_extension == ".py":
+                self._body = self._call_sceptre_handler()
+
+            else:
+                raise UnsupportedTemplateFileTypeError(
+                    "Template has file extension %s. Only .py, .yaml, "
+                    "and .json are supported.",
+                    os.path.splitext(self.path)[1]
+                )
+        return self._body
+
+    def _call_sceptre_handler(self):
+        """
+        Calls the function `sceptre_handler` within templates that are python
+        scripts.
+
+        :returns: The string returned from sceptre_handler in the template.
+        :rtype: str
+        :raises: IOError
+        :raises: TemplateSceptreHandlerError
+        """
+        # Get relative path as list between current working directory and where
+        # the template is
+        # NB: this is a horrible hack...
+        relpath = os.path.relpath(self.path, os.getcwd()).split(os.path.sep)
+        relpaths_to_add = [
+            os.path.sep.join(relpath[:i+1])
+            for i in range(len(relpath[:-1]))
+        ]
+        # Add any directory between the current working directory and where
+        # the template is to the python path
+        for directory in relpaths_to_add:
+            sys.path.append(os.path.join(os.getcwd(), directory))
+        self.logger.debug(
+            "%s - Getting CloudFormation from %s", self.name, self.path
+        )
+
+        if not os.path.isfile(self.path):
+            raise IOError("No such file or directory: '%s'", self.path)
+
+        module = imp.load_source(self.name, self.path)
+
+        try:
+            body = module.sceptre_handler(self.sceptre_user_data)
+        except AttributeError:
+            raise TemplateSceptreHandlerError(
+                "The template does not have the required "
+                "'sceptre_handler(sceptre_user_data)' function."
+            )
+        for directory in relpaths_to_add:
+            sys.path.remove(os.path.join(os.getcwd(), directory))
+        return body
 
     def upload_to_s3(
             self, region, bucket_name, key_prefix, environment_path,
@@ -94,7 +150,9 @@ class Template(object):
         """
         self.logger.debug("%s - Uploading template to S3...", self.name)
 
-        self._create_bucket(region, bucket_name, connection_manager)
+        with self._boto_s3_lock:
+            if not self._bucket_exists(bucket_name, connection_manager):
+                self._create_bucket(region, bucket_name, connection_manager)
 
         # Remove any leading or trailing slashes the user may have added.
         key_prefix = key_prefix.strip("/")
@@ -105,7 +163,7 @@ class Template(object):
             environment_path,
             "{stack_name}-{time_stamp}.json".format(
                 stack_name=stack_name,
-                time_stamp=_get_time_stamp()
+                time_stamp=datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%fZ")
             )
         ])
 
@@ -119,7 +177,7 @@ class Template(object):
             kwargs={
                 "Bucket": bucket_name,
                 "Key": template_key,
-                "Body": self.cfn,
+                "Body": self.body,
                 "ServerSideEncryption": "AES256"
             }
         )
@@ -132,14 +190,46 @@ class Template(object):
 
         return url
 
-    def _create_bucket(
-            self, region, bucket_name, connection_manager
-    ):
+    def _bucket_exists(self, bucket_name, connection_manager):
+        """
+        Checks if the bucket ``bucket_name`` exists.
+
+        :param bucket_name: The name of the bucket to check.
+        :type bucket_name: str
+        :param connection_manager: The connection manager used to make
+            AWS calls.
+        :type connection_manager: sceptre.connection_manager.ConnectionManager
+        :returns: Boolean whether the bucket exists
+        :rtype: bool
+        :raises: botocore.exception.ClientError
+
+        """
+        self.logger.debug(
+            "%s - Attempting to find template bucket '%s'",
+            self.name, bucket_name
+        )
+        try:
+            connection_manager.call(
+                service="s3",
+                command="head_bucket",
+                kwargs={"Bucket": bucket_name}
+            )
+        except botocore.exceptions.ClientError as exp:
+            if exp.response["Error"]["Message"] == "Not Found":
+                self.logger.debug(
+                    "%s - %s bucket not found.", self.name, bucket_name
+                )
+                return False
+            else:
+                raise
+        self.logger.debug(
+            "%s - Found template bucket '%s'", self.name, bucket_name
+        )
+        return True
+
+    def _create_bucket(self, region, bucket_name, connection_manager):
         """
         Create the bucket ``bucket_name`` in the region ``region``.
-
-        This is done in a thread-safe way. No error is raised if the bucket
-        already exists.
 
         :param region: The AWS region to create the bucket in.
         :type region: str
@@ -151,120 +241,23 @@ class Template(object):
         :raises: botocore.exception.ClientError
 
         """
-        with self._create_bucket_lock:
-            try:
-                self.logger.debug(
-                    "%s - Attempting to find template bucket '%s'",
-                    self.name, bucket_name
-                )
-                connection_manager.call(
-                    service="s3",
-                    command="head_bucket",
-                    kwargs={"Bucket": bucket_name}
-                )
-                self.logger.debug(
-                    "%s - Found template bucket '%s'", self.name, bucket_name
-                )
-            except botocore.exceptions.ClientError as exp:
-                if exp.response["Error"]["Message"] == "Not Found":
-                    self.logger.debug(
-                        "%s - No bucket found. Creating new template "
-                        "bucket '%s'", self.name, bucket_name
-                    )
-                    if region == "us-east-1":
-                        connection_manager.call(
-                            service="s3",
-                            command="create_bucket",
-                            kwargs={"Bucket": bucket_name}
-                        )
-                    else:
-                        connection_manager.call(
-                            service="s3",
-                            command="create_bucket",
-                            kwargs={
-                                "Bucket": bucket_name,
-                                "CreateBucketConfiguration": {
-                                    "LocationConstraint": region
-                                }
-                            }
-                        )
-                else:
-                    raise
-
-    def _get_cfn(self):
-        """
-        Reads in a CloudFormation template directly from a file or as a string
-        from an external Python script (such as Troposphere).
-
-        External Python scripts have arbitrary dictionary of data
-        (sceptre_user_data) passed to them.
-
-        :returns: A CloudFormation template
-        :rtype: str
-        :raises: sceptre.stack.UnsupportedTemplateFileTypeException
-        :raises: IOError
-        """
-        # Get relative path as list between current working directory and where
-        # the template is
-        # NB: this is a horrible hack...
-        relpath = os.path.relpath(self.path, os.getcwd()).split(os.path.sep)
-        relpaths_to_add = [
-            os.path.sep.join(relpath[:i+1])
-            for i in range(len(relpath[:-1]))
-        ]
-
-        # Add any directory between the current working directory and where
-        # the template is to the python path
-        for directory in relpaths_to_add:
-            sys.path.append(os.path.join(os.getcwd(), directory))
-
-        self.file_extension = os.path.splitext(self.path)[1]
-
-        if self.file_extension in (".json", ".yaml"):
-            self.logger.debug("%s - Opening file %s", self.name, self.path)
-            with open(self.path) as template_file:
-                cfn = template_file.read()
-        elif self.file_extension == ".py":
-            self.logger.debug(
-                "%s - Getting CloudFormation from %s", self.name, self.path
+        self.logger.debug(
+            "%s - Creating new bucket '%s'", self.name, bucket_name
+        )
+        if region == "us-east-1":
+            connection_manager.call(
+                service="s3",
+                command="create_bucket",
+                kwargs={"Bucket": bucket_name}
             )
-
-            # If imp.load_source cannot find the file at self.path, it throws
-            # an IOError, but doesn't specify which file couldn't be found.
-            # As multiple templates are loaded when an environment is built,
-            # more detail is needed. The following commmand
-            # "looks before we leap", and specifies which file can't be found.
-            if not os.path.isfile(self.path):
-                raise IOError("No such file or directory: '%s'", self.path)
-
-            module = imp.load_source(self.name, self.path)
-
-            if hasattr(module, "sceptre_handler"):
-                    cfn = module.sceptre_handler(self.sceptre_user_data)
-            else:
-                raise TemplateSceptreHandlerError(
-                    "The template does not have the required "
-                    "'sceptre_handler(sceptre_user_data)' function."
-                )
         else:
-            raise UnsupportedTemplateFileTypeError(
-                "Template has file extension %s. Only .py, .yaml, and .json "
-                "are supported.",
-                os.path.splitext(self.path)[1]
+            connection_manager.call(
+                service="s3",
+                command="create_bucket",
+                kwargs={
+                    "Bucket": bucket_name,
+                    "CreateBucketConfiguration": {
+                        "LocationConstraint": region
+                    }
+                }
             )
-
-        for directory in relpaths_to_add:
-            sys.path.remove(os.path.join(os.getcwd(), directory))
-
-        return cfn
-
-
-def _get_time_stamp():  # pragma: no cover
-    """
-    Return UTC date and time formatted as a string.
-
-    :returns: str
-    """
-    # Used for unit tests - datetime.datetime is a C struct and so utcnow()
-    # cannot be mocked out.
-    return datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%fZ")

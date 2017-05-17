@@ -8,7 +8,7 @@ import yaml
 @when("validate template is run")
 def step_impl(context):
     context.response = subprocess.check_output([
-        "sceptre", "validate-template",
+        "sceptre", "--dir", context.sceptre_dir, "validate-template",
         "test-env/a", "wait-condition-handle"
     ])
 
