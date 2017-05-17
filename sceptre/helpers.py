@@ -72,7 +72,7 @@ def execution_protection(func):
     def decorated(self, *args, **kwargs):
         if self.config.get("protect", False):
             logger.error(
-                "%s Stack protected, action skipped", self.full_stack_name
+                "%s Stack protected, action skipped", self.name
             )
             raise ProtectedStackError("Stack protection is currently enabled")
         else:
