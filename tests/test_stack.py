@@ -9,7 +9,7 @@ from dateutil.tz import tzutc
 from botocore.exceptions import ClientError
 
 from sceptre.config import Config
-from sceptre.stack import Stack
+from sceptre.stack import Stack, protect_execution
 from sceptre.template import Template
 from sceptre.stack_status import StackStatus
 from sceptre.stack_status import StackChangeSetStatus
@@ -17,6 +17,7 @@ from sceptre.exceptions import CannotUpdateFailedStackError
 from sceptre.exceptions import UnknownStackStatusError
 from sceptre.exceptions import UnknownStackChangeSetStatusError
 from sceptre.exceptions import StackDoesNotExistError
+from sceptre.exceptions import ProtectedStackError
 
 
 class TestStack(object):
@@ -991,3 +992,13 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         )
         with pytest.raises(ClientError):
             self.stack._get_cs_status(sentinel.change_set_name)
+
+
+def test_protect_execution_without_protection():
+    # Function should do nothing if protect == False
+    protect_execution(False, "name")
+
+
+def test_protect_execution_with_protection():
+    with pytest.raises(ProtectedStackError):
+        protect_execution(True, "name")

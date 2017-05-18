@@ -16,7 +16,6 @@ from concurrent.futures import as_completed
 from botocore.exceptions import ClientError
 
 from .exceptions import RetryLimitExceededError
-from .exceptions import ProtectedStackError
 
 
 def exponential_backoff(func):
@@ -52,31 +51,6 @@ def exponential_backoff(func):
         raise RetryLimitExceededError(
             "Exceeded request limit {0} times. Aborting.".format(max_retries)
         )
-
-    return decorated
-
-
-def execution_protection(func):
-    """
-    Raises an exception if a stack func is called with protection enabled.
-
-    :param func: The function to protect.
-    :type func: func
-    :returns: The execution protected function.
-    :rtype: func
-    :raises: sceptre.exceptions.ProtectedStackError
-    """
-    logger = logging.getLogger(__name__)
-
-    @wraps(func)
-    def decorated(self, *args, **kwargs):
-        if self.config.get("protect", False):
-            logger.error(
-                "%s Stack protected, action skipped", self.name
-            )
-            raise ProtectedStackError("Stack protection is currently enabled")
-        else:
-            return func(self, *args, **kwargs)
 
     return decorated
 
