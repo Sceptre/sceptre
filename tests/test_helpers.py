@@ -133,7 +133,7 @@ class TestHelpers(object):
         mock_stack = Mock(spec=Stack)
         mock_stack.config = {"protect": True}
         mock_function = Mock()
-        mock_stack.full_stack_name = sentinel.name
+        mock_stack.name = sentinel.name
         mock_stack.mock_function = mock_function
         mock_stack.mock_function.__name__ = 'mock_function'
 
