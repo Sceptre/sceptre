@@ -187,7 +187,7 @@ class Stack(object):
         :returns: The stack's status.
         :rtype: sceptre.stack_status.StackStatus
         """
-        protect_execution(self.config.get("protect", False), self.name)
+        _protect_execution(self.config.get("protect", False), self.name)
         self.logger.info("%s - Creating stack", self.name)
         create_stack_kwargs = {
             "StackName": self.external_name,
@@ -221,7 +221,7 @@ class Stack(object):
         :returns: The stack's status.
         :rtype: sceptre.stack_status.StackStatus
         """
-        protect_execution(self.config.get("protect", False), self.name)
+        _protect_execution(self.config.get("protect", False), self.name)
         self.logger.info("%s - Updating stack", self.name)
         update_stack_kwargs = {
             "StackName": self.external_name,
@@ -259,7 +259,7 @@ class Stack(object):
         :returns: The stack's status.
         :rtype: sceptre.stack_status.StackStatus
         """
-        protect_execution(self.config.get("protect", False), self.name)
+        _protect_execution(self.config.get("protect", False), self.name)
         self.logger.info("%s - Launching stack", self.name)
         try:
             existing_status = self.get_status()
@@ -315,7 +315,7 @@ class Stack(object):
         :returns: The stack's status.
         :rtype: sceptre.stack_status.StackStatus
         """
-        protect_execution(self.config.get("protect", False), self.name)
+        _protect_execution(self.config.get("protect", False), self.name)
         self.logger.info("%s - Deleting stack", self.name)
         try:
             status = self.get_status()
@@ -594,7 +594,7 @@ class Stack(object):
         :param change_set_name: The name of the change set.
         :type change_set_name: str
         """
-        protect_execution(self.config.get("protect", False), self.name)
+        _protect_execution(self.config.get("protect", False), self.name)
         self.logger.debug(
             "%s - Executing change set '%s'", self.name, change_set_name
         )
@@ -846,7 +846,7 @@ class Stack(object):
             raise Exception("This else should not be reachable.")
 
 
-def protect_execution(protect, name):
+def _protect_execution(protect, name):
     if protect:
         raise ProtectedStackError(
             "Cannot perform action on '{0}': stack protection is currently "

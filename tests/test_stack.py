@@ -9,7 +9,7 @@ from dateutil.tz import tzutc
 from botocore.exceptions import ClientError
 
 from sceptre.config import Config
-from sceptre.stack import Stack, protect_execution
+from sceptre.stack import Stack, _protect_execution
 from sceptre.template import Template
 from sceptre.stack_status import StackStatus
 from sceptre.stack_status import StackChangeSetStatus
@@ -996,9 +996,9 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
 
 def test_protect_execution_without_protection():
     # Function should do nothing if protect == False
-    protect_execution(False, "name")
+    _protect_execution(False, "name")
 
 
 def test_protect_execution_with_protection():
     with pytest.raises(ProtectedStackError):
-        protect_execution(True, "name")
+        _protect_execution(True, "name")
