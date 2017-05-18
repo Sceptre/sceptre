@@ -713,8 +713,8 @@ class Stack(object):
         """
         if self.config.get("protect", False):
             raise ProtectedStackError(
-                "Cannot perform action on '{0}': stack protection is currently "
-                "enabled".format(self.name)
+                "Cannot perform action on '{0}': stack protection is "
+                "currently enabled".format(self.name)
             )
 
     def _wait_for_completion(self):
