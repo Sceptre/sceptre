@@ -9,7 +9,7 @@ from dateutil.tz import tzutc
 from botocore.exceptions import ClientError
 
 from sceptre.config import Config
-from sceptre.stack import Stack, _protect_execution
+from sceptre.stack import Stack
 from sceptre.template import Template
 from sceptre.stack_status import StackStatus
 from sceptre.stack_status import StackChangeSetStatus
@@ -850,6 +850,16 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         self.stack.config["role_arn"] = sentinel.role_arn
         assert self.stack._get_role_arn() == {"RoleARN": sentinel.role_arn}
 
+    def test_protect_execution_without_protection(self):
+        self.stack._config = {"protect": False}
+        # Function should do nothing if protect == False
+        self.stack._protect_execution()
+
+    def test_protect_execution_with_protection(self):
+        self.stack._config = {"protect": True}
+        with pytest.raises(ProtectedStackError):
+            self.stack._protect_execution()
+
     @patch("sceptre.stack.time")
     @patch("sceptre.stack.Stack._log_new_events")
     @patch("sceptre.stack.Stack.get_status")
@@ -992,13 +1002,3 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         )
         with pytest.raises(ClientError):
             self.stack._get_cs_status(sentinel.change_set_name)
-
-
-def test_protect_execution_without_protection():
-    # Function should do nothing if protect == False
-    _protect_execution(False, "name")
-
-
-def test_protect_execution_with_protection():
-    with pytest.raises(ProtectedStackError):
-        _protect_execution(True, "name")

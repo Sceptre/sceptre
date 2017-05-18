@@ -187,7 +187,7 @@ class Stack(object):
         :returns: The stack's status.
         :rtype: sceptre.stack_status.StackStatus
         """
-        _protect_execution(self.config.get("protect", False), self.name)
+        self._protect_execution()
         self.logger.info("%s - Creating stack", self.name)
         create_stack_kwargs = {
             "StackName": self.external_name,
@@ -221,7 +221,7 @@ class Stack(object):
         :returns: The stack's status.
         :rtype: sceptre.stack_status.StackStatus
         """
-        _protect_execution(self.config.get("protect", False), self.name)
+        self._protect_execution()
         self.logger.info("%s - Updating stack", self.name)
         update_stack_kwargs = {
             "StackName": self.external_name,
@@ -259,7 +259,7 @@ class Stack(object):
         :returns: The stack's status.
         :rtype: sceptre.stack_status.StackStatus
         """
-        _protect_execution(self.config.get("protect", False), self.name)
+        self._protect_execution()
         self.logger.info("%s - Launching stack", self.name)
         try:
             existing_status = self.get_status()
@@ -315,7 +315,7 @@ class Stack(object):
         :returns: The stack's status.
         :rtype: sceptre.stack_status.StackStatus
         """
-        _protect_execution(self.config.get("protect", False), self.name)
+        self._protect_execution()
         self.logger.info("%s - Deleting stack", self.name)
         try:
             status = self.get_status()
@@ -594,7 +594,7 @@ class Stack(object):
         :param change_set_name: The name of the change set.
         :type change_set_name: str
         """
-        _protect_execution(self.config.get("protect", False), self.name)
+        self._protect_execution()
         self.logger.debug(
             "%s - Executing change set '%s'", self.name, change_set_name
         )
@@ -703,6 +703,19 @@ class Stack(object):
             }
         else:
             return {}
+
+    def _protect_execution(self):
+        """
+        Raises a ProtectedStackError if protect == True.
+        This error is meant to stop the
+
+        :parameter protect: Bool indicating whether to
+        """
+        if self.config.get("protect", False):
+            raise ProtectedStackError(
+                "Cannot perform action on '{0}': stack protection is currently "
+                "enabled".format(self.name)
+            )
 
     def _wait_for_completion(self):
         """
@@ -844,11 +857,3 @@ class Stack(object):
             return StackChangeSetStatus.DEFUNCT
         else:  # pragma: no cover
             raise Exception("This else should not be reachable.")
-
-
-def _protect_execution(protect, name):
-    if protect:
-        raise ProtectedStackError(
-            "Cannot perform action on '{0}': stack protection is currently "
-            "enabled".format(name)
-        )
