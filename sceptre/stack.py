@@ -709,7 +709,7 @@ class Stack(object):
         Raises a ProtectedStackError if protect == True.
         This error is meant to stop the
 
-        :parameter protect: Bool indicating whether to
+        :raises: sceptre.exceptions.ProtectedStackError
         """
         if self.config.get("protect", False):
             raise ProtectedStackError(
