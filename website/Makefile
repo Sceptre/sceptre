@@ -10,5 +10,5 @@ clean:
 website:
 	bundle exec jekyll build
 
-serve:	
+serve:
 	bundle exec jekyll serve
