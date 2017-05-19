@@ -247,6 +247,7 @@ def create_stack(ctx, environment, stack):
 
 @cli.command(name="delete-stack")
 @stack_options
+@click.confirmation_option(help='Are you sure you want to delete the stack?')
 @click.pass_context
 @catch_exceptions
 def delete_stack(ctx, environment, stack):

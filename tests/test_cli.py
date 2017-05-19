@@ -128,7 +128,7 @@ class TestCli(object):
     @patch("sceptre.cli.get_env")
     def test_delete_stack(self, mock_get_env, mock_getcwd):
         mock_getcwd.return_value = sentinel.cwd
-        self.runner.invoke(cli, ["delete-stack", "dev", "vpc"])
+        self.runner.invoke(cli, ["delete-stack", "dev", "vpc", "--yes"])
         mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
         mock_get_env.return_value.stacks["vpc"].delete\
             .assert_called_with()
