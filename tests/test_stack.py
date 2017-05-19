@@ -855,6 +855,11 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         # Function should do nothing if protect == False
         self.stack._protect_execution()
 
+    def test_protect_execution_without_explicit_protection(self):
+        self.stack._config = {}
+        # Function should do nothing if protect == False
+        self.stack._protect_execution()
+
     def test_protect_execution_with_protection(self):
         self.stack._config = {"protect": True}
         with pytest.raises(ProtectedStackError):
