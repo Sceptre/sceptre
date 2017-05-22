@@ -111,6 +111,7 @@ CLI::
   describe-env-resources    Describe the env's resources.
   describe-stack-outputs    Describe stack outputs.
   describe-stack-resources  Describe the stack's resources.
+  describe-stack-events     Describe the stack's events.
   execute-change-set        Execute the change set.
   generate-template         Display the template used.
   get-stack-policy          Display the stack policy used.

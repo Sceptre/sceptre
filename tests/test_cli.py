@@ -442,6 +442,15 @@ class TestCli(object):
         mock_get_env.return_value.stacks["vpc"].describe_outputs\
             .assert_called_with()
 
+    @patch("sceptre.cli.os.getcwd")
+    @patch("sceptre.cli.get_env")
+    def test_describe_stack_events(self, mock_get_env, mock_getcwd):
+        mock_getcwd.return_value = sentinel.cwd
+        self.runner.invoke(cli, ["describe-stack-events", "dev", "vpc"])
+        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
+        mock_get_env.return_value.stacks["vpc"].describe_events\
+            .assert_called_with()
+
     @patch("sceptre.cli.get_env")
     def test_describe_stack_outputs_handles_envvar_flag(
             self, mock_get_env
