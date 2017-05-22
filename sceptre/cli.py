@@ -530,9 +530,9 @@ def describe_stack_outputs(ctx, environment, stack, export):
 @catch_exceptions
 def describe_stack_events(ctx, environment, stack):
     """
-    Describes the change set.
+    Describes the stack.
 
-    Describes ENVIRONMENT/STACK's change set with name CHANGE_SET_NAME.
+    Describes ENVIRONMENT/STACK's stack events.
     """
     env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
     description = env.stacks[stack].describe_events()

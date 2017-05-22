@@ -391,7 +391,6 @@ class Stack(object):
             kwargs={"StackName": self.external_name}
         )
 
-
     def describe_resources(self):
         """
         Returns the logical and physical resource IDs of the stack's resources.
