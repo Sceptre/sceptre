@@ -14,17 +14,12 @@ Running sceptre without a subcommand will display help, showing a list of the av
 
 ## Global Options
 
-`--debug`: Turn on debug logging.
-
-`--dir`: Specify the sceptre directory with an absolute or relative path.
-
-`--no-colour`: Disable coloured output.
-
-`--output`: Specify the output format. Available formats: `[yaml, json]`.
-
-`--var`: Overwrite an arbitrary config item. For more information, see the section on :ref:`templating`.
-
-`--var-file`: Overwrite arbitrary config item(s) with data from a variables file. For more information, see the section on :ref:`templating`.
+- `--debug`: Turn on debug logging.
+- `--dir`: Specify the sceptre directory with an absolute or relative path.
+- `--no-colour`: Disable coloured output.
+- `--output`: Specify the output format. Available formats: `[yaml, json]`.
+- `--var`: Overwrite an arbitrary config item. For more information, see the section on [Templating](/docs/environment_config#templating).
+- `--var-file`: Overwrite arbitrary config item(s) with data from a variables file. For more information, see the section on [Templating](/docs/environment_config#templating).
 
 
 ## Commands
@@ -62,7 +57,7 @@ $ sceptre validate-template
 
 Command options differ depending on the command, and can be found by running:
 
-```
+```shell
 $ sceptre COMMAND --help
 ```
 
