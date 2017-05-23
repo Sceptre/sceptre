@@ -28,9 +28,6 @@ h6 {
     .spt-docs-nav {
         padding-top: 70px;
     }
-    header {
-        padding-top: 90px;
-    }
 }
 
 
@@ -56,4 +53,8 @@ code {
     color: #000;
     background-color: #F4F4F4;
     border-radius: 0px;
+}
+
+.jumbotron {
+    background-color: #fff;
 }
