@@ -4,7 +4,7 @@ layout: docs
 
 # Templates
 
-Sceptre uses CloudFormation or Troposphere templates to launch AWS Stacks. Conventionally, templates are stored in a directory named templates, in the same directory as the config directory::
+Sceptre uses CloudFormation or Troposphere templates to launch AWS Stacks. Conventionally, templates are stored in a directory named templates, in the same directory as the config directory:
 
 ```
 .

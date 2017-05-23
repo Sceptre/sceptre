@@ -32,7 +32,7 @@ A list of arbitrary shell or python commands or scripts to run. Find out more in
 ### parameters
 
 <div class="alert alert-danger">
-<strong>Warning</strong>: Sensitive data such as passwords or secret keys should not be stored in plaintext in stack config files. Instead, they should be passed in from the CLI using :ref:`templating`, or set via an environment variable with the <a href="#environment_variable">environment variable resolver</a>.
+<strong>Warning</strong>: Sensitive data such as passwords or secret keys should not be stored in plaintext in stack config files. Instead, they should be passed in from the CLI with <a href="/docs/environment_config#var">User Variables</a>, or set via an environment variable with the <a href="#environment_variable">environment variable resolver</a>.
 </div>
 
 A dictionary of key-value pairs to be supplied to a CloudFormation or Troposphere template as parameters. The keys must match up with the name of the parameter, and the value must be of the type as defined in the template. Note that Boto3 throws an exception if parameters are supplied to a template that are not required by that template. Resolvers can be used to add functionality to this key. Find out more in the [Resolvers](#resolvers) section.
@@ -119,19 +119,19 @@ The path to the CloudFormation or Troposphere template to build the stack from. 
 
 ## Cascading Config
 
-Stack config can be cascaded in the same way Environment config can be, as described in the section in Environment Config on :ref:`cascading_config`.
+Stack config can be cascaded in the same way Environment config can be, as described in the section in Environment Config on [Cascading Config](/docs/environment_config#cascading-config).
 
 
 ## Templating
 
-Stack config supports templating in the same way Environment config can be, as described in the section in Environment Config on :ref:`templating`.
+Stack config supports templating in the same way Environment config can be, as described in the section in Environment Config on [Templating](/docs/environment_config#templating).
 
 
 ## Resolvers
 
 Sceptre implements resolvers, which can be used to resolve a value of a CloudFormation `parameter` or `sceptre_user_data` value at runtime. This is most commonly used to chain the outputs of one stack to the inputs of another.
 
-If required, users can create their own resolvers, as described in the section :ref:`custom_resolvers`.
+If required, users can create their own resolvers, as described in the section on [Custom Resolvers](/docs/advanced_patterns#custom-resolvers).
 
 ### Syntax
 
@@ -257,7 +257,7 @@ parameters:
 Environment Variables
 ---------------------
 
-It is possible to replace values in stack config files with environment variables in two ways. For an explanation on why this is the case, see the FAQ on :ref:`two_envvars`
+It is possible to replace values in stack config files with environment variables in two ways. For an explanation on why this is the case, see the [FAQ](/docs/faq#why-are-there-two-ways-to-supply-environment-variables-in-stack-config-files).
 
 ## Sceptre User Data
 
@@ -281,7 +281,7 @@ Hooks allows the ability for custom commands to be run when Sceptre actions occu
 
 A hook is executed at a particular hook point when Sceptre is run.
 
-If required, users can create their own `hooks`, as described in the section :ref:`custom_hooks`.
+If required, users can create their own `hooks`, as described in the section [Custom Hooks](/docs/advanced_patterns#custom-hooks).
 
 
 ### Hook points
