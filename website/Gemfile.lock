@@ -28,9 +28,13 @@ GEM
     listen (3.0.8)
       rb-fsevent (~> 0.9, >= 0.9.4)
       rb-inotify (~> 0.9, >= 0.9.7)
+    mdl (0.4.0)
+      kramdown (~> 1.12, >= 1.12.0)
+      mixlib-cli (~> 1.7, >= 1.7.0)
+      mixlib-config (~> 2.2, >= 2.2.1)
     mercenary (0.3.6)
-    minima (2.1.1)
-      jekyll (~> 3.3)
+    mixlib-cli (1.7.0)
+    mixlib-config (2.2.4)
     pathutil (0.14.0)
       forwardable-extended (~> 2.6)
     public_suffix (2.0.5)
@@ -47,7 +51,7 @@ PLATFORMS
 DEPENDENCIES
   jekyll (= 3.4.3)
   jekyll-feed (~> 0.6)
-  minima (~> 2.0)
+  mdl (~> 0.4)
   tzinfo-data
 
 RUBY VERSION

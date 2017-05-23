@@ -133,7 +133,7 @@ Sceptre implements resolvers, which can be used to resolve a value of a CloudFor
 
 If required, users can create their own resolvers, as described in the section on [Custom Resolvers](/docs/advanced_patterns#custom-resolvers).
 
-### Syntax
+Syntax:
 
 ```yaml
 parameters:
@@ -227,6 +227,10 @@ parameters:
 
 #### project_variables
 
+<div class="alert alert-danger">
+<strong>Warning</strong>: The project_variables resolver has been deprecated, and will be removed in a later version of Sceptre. Depending on your use case, you may find <a href="/docs/environment_config#var">User Variables</a> appropriate.
+</div>
+
 Keys through the YAML object stored at `/path/to/file.yaml` with the segments of the stack name.
 
 Syntax:
@@ -265,7 +269,7 @@ Troposphere templates can contain data which should be parameterised, but can't 
 
 Sceptre user data allows users to store arbitrary key-value pairs in their `<stack-name>.yaml` file. This data is then passed as a Python `dict` to the `sceptre_handler(sceptre_user_data)` function in Troposphere templates.
 
-### Syntax
+Syntax:
 
 ```yaml
 sceptre_user_data:
@@ -293,9 +297,9 @@ If required, users can create their own `hooks`, as described in the section [Cu
 `before_delete` or `after_delete` - run hook before or after stack deletion.
 
 
-### Syntax
+Syntax:
 
-Hooks are specified in a stack's config file, using the following syntax::
+Hooks are specified in a stack's config file, using the following syntax:
 
 ```yaml
 hooks:
