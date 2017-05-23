@@ -2,7 +2,7 @@
 layout: docs
 ---
 
-## Command Line Interface
+# Command Line Interface
 
 Sceptre can be used as a command line tool. Sceptre commands take the format:
 

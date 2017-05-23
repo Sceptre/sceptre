@@ -86,7 +86,7 @@ website:
 	$(MAKE) -C website website
 
 serve-website:
-	$(MAKE) -c website serve
+	$(MAKE) -C website serve
 
 dist: clean
 	python setup.py sdist

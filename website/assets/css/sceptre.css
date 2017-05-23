@@ -23,9 +23,16 @@ h6 {
     color: #000;
 }
 
-.spt-docs-nav {
-    margin-top: 70px;
+/* Include padding when screens are larger than bootstrap 'sm' */
+@media (min-width: 768px) {
+    .spt-docs-nav {
+        padding-top: 70px;
+    }
+    header {
+        padding-top: 90px;
+    }
 }
+
 
 footer {
     border-top-width: 2px;
@@ -43,4 +50,10 @@ pre {
 .alert {
     background-color: #fff;
     border-radius: 0px
+}
+
+code {
+    color: #000;
+    background-color: #F4F4F4;
+    border-radius: 0px;
 }

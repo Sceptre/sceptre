@@ -95,12 +95,14 @@ A custom name name to use instead of the Sceptre default.
 <strong>Warning</strong>: Outputs from stacks with custom names can't be resolved using the standard <a href="#stack_output">stack output resolver</a>. Outputs should be resolved using the <a href="#stack_output_external">stack output external resolver</a>. An explicit dependency should be added, using the <a href="#dependencies">dependencies</a> parameter, to make sure the stacks are launched in the correct order.
 </div>
 
-  e.g::
+e.g:
 
-    parameters:
-      VpcID: !stack_output_external <custom-named-vpc-stack>::VpcID
-    dependencies:
-      - <environment>/<stack>
+```yaml
+parameters:
+    VpcID: !stack_output_external <custom-named-vpc-stack>::VpcID
+dependencies:
+    - <environment>/<stack>
+```
 
 ### stack_tags
 
@@ -236,7 +238,7 @@ parameters | sceptre_user_data:
 
 For example, given the stack `dev/vpc`, and the following file (`/my_config_file.yaml`):
 
-```
+```yaml
 dev:
     vpc:
         Name: my_vpc
@@ -332,7 +334,7 @@ Syntax:
 
 ```yaml
 <hook_point>:
-    - !asg_scheduled_actions "resume" | "suspend"
+    - !asg_scheduled_actions "resume | suspend"
 ```
 
 Example:
