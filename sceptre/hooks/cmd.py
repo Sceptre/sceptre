@@ -20,7 +20,7 @@ class Cmd(Hook):
         """
         if not isinstance(self.argument, basestring):
             raise InvalidHookArgumentTypeError(
-                'The argument "{0}" is the wrong type - Bash hooks require '
+                'The argument "{0}" is the wrong type - cmd hooks require '
                 'arguments of type string.'.format(self.argument)
             )
         subprocess.check_call(["/bin/bash", "-c", self.argument])
