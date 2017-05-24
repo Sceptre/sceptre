@@ -380,7 +380,7 @@ class Stack(object):
 
     def describe_events(self):
         """
-        Returns a dictionary contianing the stack events.
+        Returns a dictionary containing the stack events.
 
         :returns: The CloudFormation events for a stack.
         :rtype: dict
