@@ -83,9 +83,19 @@ servedocs: docs
 	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
 website:
+	rm -f website/_api/sceptre.rst
+	rm -f website/_api/modules.rst
+	sphinx-apidoc -o website/_api sceptre
+	mkdir -p website/docs/api
+	rm -rf website/docs/api/_static
+	cp -r website/_api/_build/html/_static website/docs/api/_static/
+	rm -f website/docs/api/sceptre.html
+	cp website/_api/_build/html/sceptre.html website/docs/api/sceptre.html
+	$(MAKE) -C website/_api clean
+	$(MAKE) -C website/_api html
 	$(MAKE) -C website website
 
-serve-website:
+serve-website: website
 	$(MAKE) -C website serve
 
 dist: clean
