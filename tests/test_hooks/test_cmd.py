@@ -21,4 +21,3 @@ class TestCmd(object):
         self.cmd.argument = u"echo hello"
         self.cmd.run()
         mock_call.assert_called_once_with(['/bin/bash', '-c', "echo hello"])
-
