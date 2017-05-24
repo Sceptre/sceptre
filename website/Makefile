@@ -11,4 +11,4 @@ website:
 	bundle exec jekyll build
 
 serve:
-	bundle exec jekyll serve
+	bundle exec jekyll serve --skip-initial-build

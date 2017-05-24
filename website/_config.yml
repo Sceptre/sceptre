@@ -33,3 +33,6 @@ exclude:
   - Gemfile
   - Gemfile.lock
   - vendor
+  - _api/
+include:
+  - _static
