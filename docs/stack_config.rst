@@ -348,6 +348,26 @@ Example:
       - !bash "echo hello"
 
 
+``cmd``
+********
+
+Executes string as a shell or PowerShell command.
+
+Syntax:
+
+.. code-block:: yaml
+
+    <hook_point>:
+      - !cmd <bash_command>
+
+Example:
+
+.. code-block:: yaml
+
+    before_create:
+      - !cmd "echo hello"
+
+
 ``asg_scheduled_actions``
 *************************
 
