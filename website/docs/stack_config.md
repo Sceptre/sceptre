@@ -32,7 +32,7 @@ A list of arbitrary shell or python commands or scripts to run. Find out more in
 ### parameters
 
 <div class="alert alert-danger">
-<strong>Warning</strong>: Sensitive data such as passwords or secret keys should not be stored in plaintext in stack config files. Instead, they should be passed in from the CLI with <a href="/docs/environment_config#var">User Variables</a>, or set via an environment variable with the <a href="#environment_variable">environment variable resolver</a>.
+<strong>Danger</strong>: Sensitive data such as passwords or secret keys should not be stored in plaintext in stack config files. Instead, they should be passed in from the CLI with <a href="/docs/environment_config#var">User Variables</a>, or set via an environment variable with the <a href="#environment_variable">environment variable resolver</a>.
 </div>
 
 A dictionary of key-value pairs to be supplied to a CloudFormation or Troposphere template as parameters. The keys must match up with the name of the parameter, and the value must be of the type as defined in the template. Note that Boto3 throws an exception if parameters are supplied to a template that are not required by that template. Resolvers can be used to add functionality to this key. Find out more in the [Resolvers](#resolvers) section.
@@ -91,7 +91,7 @@ A dictionary of arbitrary key-value pairs to be passed to the `sceptre_handler(s
 
 A custom name name to use instead of the Sceptre default.
 
-<div class="alert alert-danger">
+<div class="alert alert-warning">
 <strong>Warning</strong>: Outputs from stacks with custom names can't be resolved using the standard <a href="#stack_output">stack output resolver</a>. Outputs should be resolved using the <a href="#stack_output_external">stack output external resolver</a>. An explicit dependency should be added, using the <a href="#dependencies">dependencies</a> parameter, to make sure the stacks are launched in the correct order.
 </div>
 
@@ -227,7 +227,7 @@ parameters:
 
 #### project_variables
 
-<div class="alert alert-danger">
+<div class="alert alert-warning">
 <strong>Warning</strong>: The project_variables resolver has been deprecated, and will be removed in a later version of Sceptre. Depending on your use case, you may find <a href="/docs/environment_config#var">User Variables</a> appropriate.
 </div>
 
