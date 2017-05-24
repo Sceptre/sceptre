@@ -9,6 +9,7 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
+venv/
 build/
 develop-eggs/
 dist/
@@ -108,3 +109,7 @@ website/vendor/*
 _site/
 .sass-cache/
 .jekyll-metadata
+
+# Sphinx docs
+/website/docs/api
+/website/_api/_build/
