@@ -10,17 +10,17 @@ h6 {
 }
 
 .navbar {
-  background-color: #fff;
-  border-bottom-color: #000;
+  background-color: #00796b;
+  border-bottom-color: #004c40;
   padding: 25px;
 }
 
 .navbar-default .navbar-brand {
-    color: #000;
+    color: #fff;
 }
 
 .navbar-default .navbar-nav>li>a {
-    color: #000;
+    color: #fff;
 }
 
 /* Include padding when screens are larger than bootstrap 'sm' */
@@ -30,6 +30,13 @@ h6 {
     }
 }
 
+a {
+    color: #00796b;
+}
+
+a:hover {
+    color: #004c40;
+}
 
 footer {
     border-top-width: 2px;
