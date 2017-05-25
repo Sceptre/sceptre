@@ -64,3 +64,19 @@ code {
 .jumbotron {
     background-color: #fff;
 }
+
+.alert-success::before {
+    content: "Success: ";
+}
+
+.alert-info::before {
+    content: "Info: ";
+}
+
+.alert-warning::before {
+    content: "Warning: ";
+}
+
+.alert-danger::before {
+    content: "Danger: ";
+}
