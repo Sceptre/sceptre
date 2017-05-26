@@ -17,6 +17,7 @@ from sceptre.exceptions import CannotUpdateFailedStackError
 from sceptre.exceptions import UnknownStackStatusError
 from sceptre.exceptions import UnknownStackChangeSetStatusError
 from sceptre.exceptions import StackDoesNotExistError
+from sceptre.exceptions import ProtectedStackError
 
 
 class TestStack(object):
@@ -848,6 +849,21 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         }
         self.stack.config["role_arn"] = sentinel.role_arn
         assert self.stack._get_role_arn() == {"RoleARN": sentinel.role_arn}
+
+    def test_protect_execution_without_protection(self):
+        self.stack._config = {"protect": False}
+        # Function should do nothing if protect == False
+        self.stack._protect_execution()
+
+    def test_protect_execution_without_explicit_protection(self):
+        self.stack._config = {}
+        # Function should do nothing if protect isn't explicitly set
+        self.stack._protect_execution()
+
+    def test_protect_execution_with_protection(self):
+        self.stack._config = {"protect": True}
+        with pytest.raises(ProtectedStackError):
+            self.stack._protect_execution()
 
     @patch("sceptre.stack.time")
     @patch("sceptre.stack.Stack._log_new_events")
