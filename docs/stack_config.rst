@@ -351,14 +351,14 @@ Example:
 ``cmd``
 ********
 
-Executes string as a shell or PowerShell command.
+Runs a command.
 
 Syntax:
 
 .. code-block:: yaml
 
     <hook_point>:
-      - !cmd <bash_command>
+      - !cmd <command>
 
 Example:
 

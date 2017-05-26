@@ -5,7 +5,7 @@ from sceptre.exceptions import InvalidHookArgumentTypeError
 
 class Cmd(Hook):
     """
-    Cmd implements a Sceptre hook which can run arbitrary shell commands.
+    Cmd implements a Sceptre hook which can run arbitrary commands.
     """
 
     def __init__(self, *args, **kwargs):
@@ -13,7 +13,7 @@ class Cmd(Hook):
 
     def run(self):
         """
-        Runs the argument string in child process.
+        Runs the argument string in a subprocess.
 
         :raises: sceptre.exceptions.InvalidTaskArgumentTypeException
         :raises: subprocess.CalledProcessError
