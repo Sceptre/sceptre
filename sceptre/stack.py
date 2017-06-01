@@ -505,6 +505,8 @@ class Stack(object):
         self.logger.debug(
             "%s - Validate template response: %s", self.name, response
         )
+        if "ResponseMetadata" in response:
+            del response["ResponseMetadata"]
         return response
 
     def create_change_set(self, change_set_name):
