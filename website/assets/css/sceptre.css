@@ -6,21 +6,25 @@ h3,
 h4,
 h5,
 h6 {
-  /*font-family: slabo;*/
+    font-family: 'Roboto', sans-serif;
+}
+
+body {
+    font-family: 'Open Sans', sans-serif;
 }
 
 .navbar {
-  background-color: #00796b;
-  border-bottom-color: #004c40;
+  background-color: #fff;
+  border-bottom-color: #fff;
   padding: 25px;
 }
 
 .navbar-default .navbar-brand {
-    color: #fff;
+    color: #00701a;
 }
 
 .navbar-default .navbar-nav>li>a {
-    color: #fff;
+    color: #00701a;
 }
 
 /* Include padding when screens are larger than bootstrap 'sm' */
@@ -31,7 +35,7 @@ h6 {
 }
 
 a {
-    color: #00796b;
+    color: #00701a;
 }
 
 a:hover {
