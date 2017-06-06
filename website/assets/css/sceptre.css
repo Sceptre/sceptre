@@ -30,7 +30,7 @@ body {
 /* Include padding when screens are larger than bootstrap 'sm' */
 @media (min-width: 768px) {
     .spt-docs-nav {
-        padding-top: 70px;
+        padding-top: 40px;
     }
 }
 
