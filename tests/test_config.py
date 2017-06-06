@@ -7,12 +7,49 @@ import os
 from mock import patch, sentinel, call, Mock, ANY
 import pytest
 
+import sceptre.config
 from sceptre.config import Config
 from sceptre.hooks import Hook
 from sceptre.resolvers import Resolver
 from sceptre.exceptions import ConfigItemNotFoundError
 from sceptre.exceptions import EnvironmentPathNotFoundError
 from sceptre.exceptions import VersionIncompatibleError
+
+
+def test_environment_returns_Config(fixtures_dir):
+    conf = sceptre.config.environment(
+        fixtures_dir, "account/environment/region"
+    )
+    assert type(conf) == Config
+
+
+def test_environment_memoizes(fixtures_dir):
+    conf_a = sceptre.config.environment(
+        fixtures_dir, "account/environment/region"
+    )
+    conf_b = sceptre.config.environment(
+        fixtures_dir, "account/environment/region"
+    )
+
+    assert id(conf_a) == id(conf_b)
+
+
+def test_stack_returns_Config(fixtures_dir):
+    conf = sceptre.config.stack(
+        fixtures_dir, "account/environment/region/vpc"
+    )
+    assert type(conf) == Config
+
+
+def test_stack_memoizes(fixtures_dir):
+    conf_a = sceptre.config.stack(
+        fixtures_dir, "account/environment/region/vpc"
+    )
+    conf_b = sceptre.config.stack(
+        fixtures_dir, "account/environment/region/vpc"
+    )
+
+    assert id(conf_a) == id(conf_b)
 
 
 class TestConfig(object):

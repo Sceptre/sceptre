@@ -13,8 +13,29 @@ import threading
 
 import boto3
 
+import config
+from .helpers import _memoize
 from .helpers import mask_key
 from .helpers import exponential_backoff
+
+
+@_memoize
+def connection_manager(sceptre_dir, environment_path):
+    """
+    Returns the ConnectionManager for the environment ``environment_path``.
+
+    :param sceptre_dir: The absolute path to the Sceptre directory.
+    :type sceptre_dir: str
+    :param environment_path: Path to the environment
+    :type environment_path: str
+    :returns: The ConnectionManager for the environment
+    :rtype: sceptre.connection_manager.ConnectionManager
+    """
+    env_config = config.environment(sceptre_dir, environment_path)
+    return ConnectionManager(
+        region=env_config["region"],
+        iam_role=env_config.get("iam_role")
+    )
 
 
 class ConnectionManager(object):

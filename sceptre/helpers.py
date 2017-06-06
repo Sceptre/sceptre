@@ -219,3 +219,29 @@ def get_subclasses(class_type, directory=None):
                         classes[camel_to_snake_case(attr.__name__)] = attr
 
     return classes
+
+
+# XXX: This may not be thread-safe.
+def _memoize(func):
+    """
+    Memoizes the result of calls to connection_manager.connection_manager(),
+    config.environment() and config.stack()
+
+    :param func: a function with the signature (sceptre_dir, name).
+    :type func: func
+    :returns: The memoized function.
+    :rtype: func
+    """
+    store = {}
+
+    @wraps(func)
+    def wrapper(sceptre_dir, name):
+        # hashable combination of sceptre_dir and environment_name used to
+        # uniquely identify the pair of arguments
+        key = (sceptre_dir, name)
+        if key in store:
+            return store[key]
+        return_val = func(sceptre_dir, name)
+        store[key] = return_val
+        return return_val
+    return wrapper
