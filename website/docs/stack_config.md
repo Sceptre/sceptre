@@ -156,6 +156,7 @@ parameters:
 ```
 
 ```yaml
+{% raw %}
 template_path: templates/example.json
 dependencies:
     - vpc
@@ -184,5 +185,6 @@ sceptre_user_data:
 stack_tags:
     tag_1: value_1
     tag_2: value_2
+{% endraw %}
 ```
 
