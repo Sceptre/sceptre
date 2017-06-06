@@ -27,7 +27,7 @@ A list of other stacks in the environment that this stack depends on. Note that 
 
 ### hooks
 
-A list of arbitrary shell or python commands or scripts to run. Find out more in the [Hook](#hook) section.
+A list of arbitrary shell or python commands or scripts to run. Find out more in the [Hooks](/docs/hooks) section.
 
 ### parameters
 
@@ -35,7 +35,7 @@ A list of arbitrary shell or python commands or scripts to run. Find out more in
 Sensitive data such as passwords or secret keys should not be stored in plaintext in stack config files. Instead, they should be passed in from the CLI with <a href="/docs/environment_config#var">User Variables</a>, or set via an environment variable with the <a href="#environment_variable">environment variable resolver</a>.
 </div>
 
-A dictionary of key-value pairs to be supplied to a CloudFormation or Troposphere template as parameters. The keys must match up with the name of the parameter, and the value must be of the type as defined in the template. Note that Boto3 throws an exception if parameters are supplied to a template that are not required by that template. Resolvers can be used to add functionality to this key. Find out more in the [Resolvers](#resolvers) section.
+A dictionary of key-value pairs to be supplied to a CloudFormation or Troposphere template as parameters. The keys must match up with the name of the parameter, and the value must be of the type as defined in the template. Note that Boto3 throws an exception if parameters are supplied to a template that are not required by that template. Resolvers can be used to add functionality to this key. Find out more in the [Resolvers](/docs/resolvers) section.
 
 A parameter can be specified either as a single value/resolver or a list of values/resolvers. Lists of values/resolvers will be formatted into an AWS compatible comma separated string e.g. `value1,value2,value3`. Lists can contain a mixture of values and resolvers.
 
@@ -126,138 +126,6 @@ Stack config can be cascaded in the same way Environment config can be, as descr
 
 Stack config supports templating in the same way Environment config can be, as described in the section in Environment Config on [Templating](/docs/environment_config#templating).
 
-
-## Resolvers
-
-Sceptre implements resolvers, which can be used to resolve a value of a CloudFormation `parameter` or `sceptre_user_data` value at runtime. This is most commonly used to chain the outputs of one stack to the inputs of another.
-
-If required, users can create their own resolvers, as described in the section on [Custom Resolvers](/docs/advanced_patterns#custom-resolvers).
-
-Syntax:
-
-```yaml
-parameters:
-    <parameter_name>: !<resolver_name> <resolver_value>
-sceptre_user_data:
-    <name>: !<resolver_name> <resolver_value>
-```
-
-
-### Available Resolvers
-
-#### environment_variable
-
-Fetches the value from an environment variable.
-
-Syntax:
-
-```yaml
-parameter|sceptre_user_data:
-    <name>: !environment_variable ENVIRONMENT_VARIABLE_NAME
-```
-
-Example:
-
-```
-parameters:
-    database_password: !environment_variable DATABASE_PASSWORD
-```
-
-
-#### file_contents
-
-Reads in the contents of a file.
-
-Syntax:
-
-```yaml
-parameters|sceptre_user_data:
-    <name>: !file_contents /path/to/file.txt
-```
-
-Example:
-
-```yaml
-sceptre_user_data:
-    iam_policy: !file_contents /path/to/policy.json
-```
-
-#### stack_output
-
-Fetches the value of an output from a different stack controlled by Sceptre.
-
-Syntax:
-
-```yaml
-parameters | sceptre_user_data:
-    <name>: !stack_output <stack_name>::<output_name>
-```
-
-Example:
-
-```
-parameters:
-    VpcIdParameter: !stack_output shared/vpc::VpcIdOutput
-```
-
-
-Sceptre infers that the stack to fetch the output value from is a dependency, and builds that stack before the current one.
-This resolver will add a dependency for the stack in which needs the output from.
-
-#### stack\_output\_external
-
-Fetches the value of an output from a different stack in the same account and region.
-
-If the stack whose output is being fetched is in the same environment, the basename of that stack can be used.
-
-Syntax:
-
-```yaml
-parameters/sceptre_user_data:
-    <name>: !stack_output_external <full_stack_name>::<output_name>
-```
-
-Example:
-
-```yaml
-parameters:
-    VpcIdParameter: !stack_output_external prj-network-vpc::VpcIdOutput
-```
-
-
-#### project_variables
-
-<div class="alert alert-warning">
-The project_variables resolver has been deprecated, and will be removed in a later version of Sceptre. Depending on your use case, you may find <a href="/docs/environment_config#var">User Variables</a> appropriate.
-</div>
-
-Keys through the YAML object stored at `/path/to/file.yaml` with the segments of the stack name.
-
-Syntax:
-
-```yaml
-parameters | sceptre_user_data:
-    <name>: !project_variables /path/to/file.yaml
-```
-
-For example, given the stack `dev/vpc`, and the following file (`/my_config_file.yaml`):
-
-```yaml
-dev:
-    vpc:
-        Name: my_vpc
-```
-
-The resolver will return the dictionary `{"Name": "my_vpc"}`.
-
-Example (`config/dev/vpc.yaml`):
-
-```yaml
-parameters:
-    Tag: !project_variables /my_config_file.yaml
-```
-
-
 Environment Variables
 ---------------------
 
@@ -277,121 +145,6 @@ sceptre_user_data:
 ```
 
 When compiled, `sceptre_user_data` would be the dictionary `{"iam_policy_file": "/path/to/policy.json"}`.
-
-
-## Hook
-
-Hooks allows the ability for custom commands to be run when Sceptre actions occur.
-
-A hook is executed at a particular hook point when Sceptre is run.
-
-If required, users can create their own `hooks`, as described in the section [Custom Hooks](/docs/advanced_patterns#custom-hooks).
-
-
-### Hook points
-
-`before_create` or `after_create` - run hook before or after stack creation.
-
-`before_update` or `after_update` - run hook before or after stack update.
-
-`before_delete` or `after_delete` - run hook before or after stack deletion.
-
-
-Syntax:
-
-Hooks are specified in a stack's config file, using the following syntax:
-
-```yaml
-hooks:
-    hook_point:
-        - !command_type command 1
-        - !command_type command 2
-```
-
-
-### Available Hooks
-
-#### bash
-
-Executes string as a bash command.
-
-Syntax:
-
-```yaml
-<hook_point>:
-    - !bash <bash_command>
-```
-
-Example:
-
-```yaml
-before_create:
-    - !bash "echo hello"
-```
-
-
-#### asg\_scheduled\_actions
-
-Pauses or resumes autoscaling scheduled actions.
-
-Syntax:
-
-```yaml
-<hook_point>:
-    - !asg_scheduled_actions "resume | suspend"
-```
-
-Example:
-
-```yaml
-before_update:
-    - !asg_scheduled_actions "suspend"
-```
-
-
-#### asg\_scaling_processes
-
-Suspends or resumes autoscaling scaling processes.
-
-Syntax:
-
-```yaml
-<hook_point>:
-    - !asg_scaling_processes <suspend|resume>::<process-name>
-```
-
-Example:
-
-```yaml
-before_update:
-    - !asg_scaling_processes suspend::ScheduledActions
-```
-
-More information on suspend and resume processes can be found in the AWS [documentation](http://docs.aws.amazon.com/autoscaling/latest/userguide/as-suspend-resume-processes.html).
-
-
-#### Hook Examples
-
-A stack's `config.yml` where multiple hooks with multiple commands are specified:
-
-```yaml
-template_path: templates/example.py
-parameters:
-    ExampleParameter: example_value
-hooks:
-    before_create:
-        - !bash "echo creating..."
-    after_create:
-        - !bash "echo created"
-        - !bash "echo done"
-    before_update:
-        - !asg_scheduled_actions suspend
-    after_update:
-        - !bash "mkdir example"
-        - !bash "touch example.txt"
-        - !asg_scheduled_actions resume
-```
-
 
 ## Examples
 
