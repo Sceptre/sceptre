@@ -119,6 +119,10 @@ The path to the CloudFormation or Troposphere template to build the stack from. 
 
 ## Cascading Config
 
+<div class="alert alert-warning">
+Cascading stack config is being deprecated, and should not be used.
+</div>
+
 Stack config can be cascaded in the same way Environment config can be, as described in the section in Environment Config on [Cascading Config](/docs/environment_config#cascading-config).
 
 
