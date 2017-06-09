@@ -36,4 +36,4 @@ deployment:
     website:
         branch: 111-md-docs
         commands:
-            - aws s3 sync ~/sceptre/website/_site s3://sceptre.cloudreach.com/$SHORT_SHA1/dev/ --delete
+            - aws s3 sync ~/sceptre/website/_site s3://sceptre.cloudreach.com/$SHORT_SHA1/ --delete
