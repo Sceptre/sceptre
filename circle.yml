@@ -8,14 +8,16 @@ dependencies:
     - pip install -r requirements.txt
     - pip install -r requirements_tests.txt
     - make install
+    # Jekyll dependencies
+    - cd website && make install 
 test:
   override:
     - make lint
-    - make test-all
-    - behave --junit --junit-directory $CIRCLE_TEST_REPORTS/behave/junit.xml:
-        parallel: true
-        files:
-          - integration-tests/features/*.feature
+    # - make test-all
+    # - behave --junit --junit-directory $CIRCLE_TEST_REPORTS/behave/junit.xml:
+    #     parallel: true
+    #     files:
+    #       - integration-tests/features/*.feature
     - make docs
 deployment:
     production:
@@ -28,4 +30,8 @@ deployment:
         branch: master
         commands:
             - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/latest/dev/docs/ --delete
+            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/$CIRCLE_SHA1/dev/docs/ --delete
+    website:
+        branch: 111-md-docs
+        commands:
             - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/$CIRCLE_SHA1/dev/docs/ --delete
