@@ -19,6 +19,7 @@ test:
     #     files:
     #       - integration-tests/features/*.feature
     - make docs
+    - make website
 deployment:
     production:
         tag: /v[0-9]+(\.[0-9]+)*/
@@ -34,4 +35,4 @@ deployment:
     website:
         branch: 111-md-docs
         commands:
-            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/$CIRCLE_SHA1/dev/docs/ --delete
+            - aws s3 sync ~/sceptre/website/_site s3://sceptre.cloudreach.com/$CIRCLE_SHA1/dev/ --delete
