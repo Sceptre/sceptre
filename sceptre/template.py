@@ -63,7 +63,7 @@ class Template(object):
             file_extension = os.path.splitext(self.path)[1]
 
             if file_extension in {".json", ".yaml"}:
-                self._body = _render_jinja_template(
+                self._body = self._render_jinja_template(
                     os.path.dirname(self.path),
                     os.path.basename(self.path),
                     {"sceptre_user_data": self.sceptre_user_data}
@@ -264,8 +264,8 @@ class Template(object):
                 }
             )
 
-
-def _render_jinja_template(template_dir, filename, jinja_vars):
+    @staticmethod
+    def _render_jinja_template(template_dir, filename, jinja_vars):
         """
         Renders a jinja template.
 
