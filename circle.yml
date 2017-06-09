@@ -21,8 +21,11 @@ deployment:
     production:
         tag: /v[0-9]+(\.[0-9]+)*/
         commands:
-            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/docs/ --delete
+            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/latest/docs/ --delete
+            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/$CIRCLE_TAG/docs/ --delete
+            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/$CIRCLE_SHA1/dev/docs/ --delete
     develop:
         branch: master
         commands:
-            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/dev/docs/ --delete
+            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/latest/dev/docs/ --delete
+            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/$CIRCLE_SHA1/dev/docs/ --delete
