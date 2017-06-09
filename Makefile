@@ -94,10 +94,13 @@ website:
 	cp -r website/_api/_build/html/_static website/docs/api/_static/
 	rm -f website/docs/api/sceptre.html
 	cp website/_api/_build/html/sceptre.html website/docs/api/sceptre.html
-	$(MAKE) -C website website
+	$(MAKE) -C website build-prod
 
 serve-website: website
 	$(MAKE) -C website serve
+
+serve-website-prod: website
+	$(MAKE) -C website serve-prod
 
 dist: clean
 	python setup.py sdist

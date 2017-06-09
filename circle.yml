@@ -1,6 +1,7 @@
 machine:
   environment:
     AWS_DEFAULT_REGION: eu-west-1
+    SHORT_SHA1="$(git rev-parse --short HEAD)"
   python:
     version: 2.7.11
 dependencies:
@@ -9,7 +10,7 @@ dependencies:
     - pip install -r requirements_tests.txt
     - make install
     # Jekyll dependencies
-    - cd website && make install 
+    - cd website && make install
 test:
   override:
     - make lint
@@ -26,13 +27,13 @@ deployment:
         commands:
             - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/latest/docs/ --delete
             - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/$CIRCLE_TAG/docs/ --delete
-            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/$CIRCLE_SHA1/dev/docs/ --delete
+            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/$SHORT_SHA1/dev/docs/ --delete
     develop:
         branch: master
         commands:
             - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/latest/dev/docs/ --delete
-            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/$CIRCLE_SHA1/dev/docs/ --delete
+            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/$SHORT_SHA1/dev/docs/ --delete
     website:
         branch: 111-md-docs
         commands:
-            - aws s3 sync ~/sceptre/website/_site s3://sceptre.cloudreach.com/$CIRCLE_SHA1/dev/ --delete
+            - aws s3 sync ~/sceptre/website/_site s3://sceptre.cloudreach.com/$SHORT_SHA1/dev/ --delete
