@@ -232,9 +232,9 @@ class Environment(object):
         """
         for dependency in dependencies[stack.name]:
             threading_events[dependency].wait()
-            if stack_statuses[dependency] == StackStatus.FAILED:
+            if stack_statuses[dependency] != StackStatus.COMPLETE:
                 self.logger.debug(
-                    "%s, which %s depends on has failed. Marking "
+                    "%s, which %s depends is not complete. Marking "
                     "%s as failed.", dependency, stack.name, dependency
                 )
                 stack_statuses[stack.name] = StackStatus.FAILED
