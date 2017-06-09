@@ -1,7 +1,7 @@
 machine:
   environment:
     AWS_DEFAULT_REGION: eu-west-1
-    SHORT_SHA1: "$(git rev-parse --short HEAD)"
+    SHORT_SHA1: $(echo $CIRCLE_SHA1 | cut -c -7)
   python:
     version: 2.7.11
 dependencies:
