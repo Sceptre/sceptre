@@ -4,8 +4,9 @@ from contextlib import contextmanager
 from tempfile import mkdtemp
 import shutil
 import os
-from mock import patch, sentinel, call, Mock, ANY
+from mock import patch, sentinel, call, MagicMock, Mock, ANY
 import pytest
+import yaml
 
 from sceptre.config import Config
 from sceptre.hooks import Hook
@@ -204,3 +205,15 @@ class TestConfig(object):
             call("sceptre_dir/hooks", Hook, ANY)
         ]
         mock_add_yaml_constructors.assert_has_calls(calls, any_order=False)
+
+    def test_resolve_node_tag(self):
+        mock_loader = MagicMock(yaml.Loader)
+        mock_loader.resolve.return_value = "new_tag"
+
+        mock_node = MagicMock(yaml.Node)
+        mock_node.tag = "old_tag"
+        mock_node.value = "String"
+        
+        new_node = self.config.resolve_node_tag(mock_loader, mock_node)
+
+        assert new_node.tag == 'new_tag'

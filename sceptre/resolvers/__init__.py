@@ -78,6 +78,8 @@ class Resolver(object):
     """
 
     __metaclass__ = abc.ABCMeta
+    argument = ResolvableProperty("argument")
+    config = {}
 
     def __init__(
         self, argument=None, connection_manager=None,
