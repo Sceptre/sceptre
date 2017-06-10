@@ -79,6 +79,9 @@ class Resolver():
     :type argument: str
     """
 
+    argument = ResolvableProperty("argument")
+    config = {}
+
     def __init__(
         self, argument=None, connection_manager=None,
         environment_config=None, stack_config=None

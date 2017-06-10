@@ -24,6 +24,6 @@ class EnvironmentVariable(Resolver):
         :rtype: str
         """
         value = None
-        if self.argument:
+        if self.argument and self.argument is not {}:
             value = os.environ.get(self.argument)
         return value
