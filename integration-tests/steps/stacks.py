@@ -1,9 +1,24 @@
 from behave import *
 import json
+import time
 import os
 import boto3
+from functools import wraps
 from botocore.exceptions import ClientError, WaiterError
 from sceptre.environment import Environment
+
+
+def wait_for_final_state(context, stack_name):
+    stack = context.cloudformation.Stack(stack_name)
+    delay = 2
+    max_retries = 10
+    attempts = 0
+    while attempts < max_retries:
+        stack.load()
+        if not stack.stack_status.endswith("IN_PROGRESS"):
+            return
+        time.sleep(delay)
+    raise Exception("Timeout waiting for stack to reach final state.")
 
 
 def before_all(context):
@@ -41,15 +56,20 @@ def step_impl(context, stack_name, desired_status):
         delete_stack(context, full_name)
         if desired_status == "CREATE_COMPLETE":
             body = generate_template(path)
-            create_stack(context.client, full_name, body)
+            create_stack(context, full_name, body)
         elif desired_status == "CREATE_FAILED":
-            body = generate_template(path, invaild_resource=True)
+            body = generate_template(path, modification="invaild")
             kwargs = {"OnFailure": "DO_NOTHING"}
-            create_stack(context.client, full_name, body, **kwargs)
+            create_stack(context, full_name, body, **kwargs)
+        elif desired_status == "UPDATE_COMPLETE":
+            body = generate_template(path)
+            create_stack(context, full_name, body)
+            body = generate_template(path, modification="updated")
+            update_stack(context, full_name, body)
         elif desired_status == "ROLLBACK_COMPLETE":
-            body = generate_template(path, invaild_resource=True)
+            body = generate_template(path, modification="invaild")
             kwargs = {"OnFailure": "ROLLBACK"}
-            create_stack(context.client, full_name, body, **kwargs)
+            create_stack(context, full_name, body, **kwargs)
 
     status = get_stack_status(context, full_name)
     print("Comparision " + status + " " + desired_status)
@@ -63,10 +83,30 @@ def step_impl(context, stack_name):
         env.stacks[stack_name].create()
     except ClientError as e:
         if e.response['Error']['Code'] == 'AlreadyExistsException' \
-        and e.response['Error']['Message'].endswith("already exists"):
+          and e.response['Error']['Message'].endswith("already exists"):
             return
         else:
             raise e
+
+
+@when('the user updates stack "{stack_name}"')
+def step_impl(context, stack_name):
+    env = Environment(context.sceptre_dir, context.default_environment)
+
+    path = os.path.join(
+        context.sceptre_dir, "templates", "wait_condition_handle.json"
+    )
+    try:
+        alter_template_file_for_call(
+            path, "updated", env.stacks[stack_name].update
+        )
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'ValidationError' \
+          and e.response['Error']['Message'].endswith("does not exist"):
+            return
+        else:
+            raise e
+
 
 @then('stack "{stack_name}" exists in "{desired_status}" state')
 def step_impl(context, stack_name, desired_status):
@@ -75,8 +115,16 @@ def step_impl(context, stack_name, desired_status):
     )
     status = get_stack_status(context, full_name)
     print("Comparision " + status + " " + desired_status)
-    print(status == desired_status)
     assert (status == desired_status)
+
+
+@then('stack "{stack_name}" does not exist')
+def step_impl(context, stack_name):
+    full_name = "-".join(
+        ["sceptre-integration-tests", context.default_environment, stack_name]
+    )
+    status = get_stack_status(context, full_name)
+    assert (status is None)
 
 
 def get_stack_status(context, stack_name):
@@ -85,42 +133,68 @@ def get_stack_status(context, stack_name):
         stack.load()
     except ClientError as e:
         if e.response['Error']['Code'] == 'ValidationError' \
-        and e.response['Error']['Message'].endswith("does not exist"):
+          and e.response['Error']['Message'].endswith("does not exist"):
             return None
         else:
             raise e
     return stack.stack_status
 
 
-def generate_template(path, invaild_resource=False):
+def alter_template_file_for_call(path, modification, func):
+    with open(path) as template:
+        original_body = template.read()
+    print("OB: " + str(original_body))
+
+    with open(path) as template:
+        body = generate_template(path, modification)
+    print("OG: " + str(body))
+
+    with open(path, "w") as template:
+        template.write(body)
+
+    try:
+        func()
+    finally:
+        with open(path, 'w') as template:
+            template.write(original_body)
+
+
+def generate_template(path, modification=None):
     with open(path) as template:
         data = json.load(template)
 
-    if invaild_resource:
-        invaild_resource = {
+    if modification == "invaild":
+        data["Resources"].update({
             "InvalidWaitConditionHandle": {
                 "Type": "AWS::CloudFormation::WaitConditionHandle",
                 "Properties": {
                   "Invalid": "Invalid"
                 }
             }
-        }
-
-        data["Resources"].update(invaild_resource)
+        })
+    elif modification == "updated":
+        data["Resources"].update({
+            "AnotherWaitConditionHandle": {
+                "Type": "AWS::CloudFormation::WaitConditionHandle",
+                "Properties": {}
+            }
+        })
     return json.dumps(data)
 
 
-def create_stack(client, stack_name, body, **kwargs):
-    response = client.create_stack(
+def create_stack(context, stack_name, body, **kwargs):
+    response = context.client.create_stack(
         StackName=stack_name, TemplateBody=body, **kwargs
     )
 
-    waiter = client.get_waiter('stack_create_complete')
-    for acceptor in waiter.config.acceptors:
-        if acceptor.expected == "CREATE_FAILED":
-            print(acceptor.state)
-    waiter.config.delay = 2
-    waiter.wait(StackName=stack_name)
+    wait_for_final_state(context, stack_name)
+
+
+def update_stack(context, stack_name, body, **kwargs):
+    stack = context.cloudformation.Stack(stack_name)
+    stack.update(TemplateBody=body, **kwargs)
+
+    wait_for_final_state(context, stack_name)
 
 
 def delete_stack(context, stack_name):
