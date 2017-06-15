@@ -62,7 +62,7 @@ class Template(object):
         if self._body is None:
             file_extension = os.path.splitext(self.path)[1]
 
-            if file_extension in {".json", ".yaml"}:
+            if file_extension in {".json", ".yaml", "j2"}:
                 self._body = self._render_jinja_template(
                     os.path.dirname(self.path),
                     os.path.basename(self.path),
@@ -74,7 +74,7 @@ class Template(object):
             else:
                 raise UnsupportedTemplateFileTypeError(
                     "Template has file extension %s. Only .py, .yaml, "
-                    "and .json are supported.",
+                    ".json and .j2 are supported.",
                     os.path.splitext(self.path)[1]
                 )
         return self._body
