@@ -12,11 +12,14 @@ clean:
 website:
 	bundle exec jekyll build
 
-build-prod:
+build:
+	bundle exec jekyll build
+
+build-dev:
 	bundle exec jekyll build --baseurl /$(SHA1)
 
 serve:
-	bundle exec jekyll serve --skip-initial-build
+	bundle exec jekyll serve
 
-serve-prod:
-	bundle exec jekyll serve --skip-initial-build --baseurl /$(SHA1)
+serve-dev:
+	bundle exec jekyll serve --baseurl /$(SHA1)

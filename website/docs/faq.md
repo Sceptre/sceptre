@@ -7,7 +7,7 @@ layout: docs
 
 ## How do I set AWS region or IAM role via the CLI?
 
-These configuration items, and others, can be set from the CLI using [templating](/docs/environment_config.html#templating). The syntax for setting the AWS region is presented below. The syntax for replacing the other items is the same, with the word `region` substituted out.
+These configuration items, and others, can be set from the CLI using [templating]({{ site.baseurl }}/docs/environment_config.html#templating). The syntax for setting the AWS region is presented below. The syntax for replacing the other items is the same, with the word `region` substituted out.
 
 In config.yaml:
 

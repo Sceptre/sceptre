@@ -139,5 +139,5 @@ $ sceptre delete-stack dev vpc
 
 ## Next Steps
 
-Further details can be found in the full [documentation]({{ site.url }}/docs).
+Further details can be found in the full [documentation]({{ site.url }}{{ site.baseurl }}/docs).
 

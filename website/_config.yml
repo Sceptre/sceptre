@@ -30,5 +30,6 @@ exclude:
   - Gemfile.lock
   - vendor
   - _api/
+  - Makefile
 include:
   - _static

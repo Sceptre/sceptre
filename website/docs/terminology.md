@@ -8,7 +8,7 @@ The following terms will be used though the rest of the Sceptre documentation:
 
 - **Environment Path**: A slash ('/') separated list of directory names which details how to move from the top level config directory to an environment directory. For example, with the following directory structure, the environment path would simply be `dev`:
 
-    ```yaml
+    ```
     .
     └── config
         └── dev
@@ -19,7 +19,7 @@ The following terms will be used though the rest of the Sceptre documentation:
 
   In the following directory structure, the environment path would be `account-1/dev/eu-west-1`:
 
-    ```yaml
+    ```
     .
     └── config
         └── account-1

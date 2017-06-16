@@ -32,10 +32,10 @@ A list of arbitrary shell or python commands or scripts to run. Find out more in
 ### parameters
 
 <div class="alert alert-danger">
-Sensitive data such as passwords or secret keys should not be stored in plaintext in stack config files. Instead, they should be passed in from the CLI with <a href="/docs/environment_config.html#var">User Variables</a>, or set via an environment variable with the <a href="#environment_variable">environment variable resolver</a>.
+Sensitive data such as passwords or secret keys should not be stored in plaintext in stack config files. Instead, they should be passed in from the CLI with <a href="{{ site.baseurl }}/docs/environment_config.html#var">User Variables</a>, or set via an environment variable with the <a href="#environment_variable">environment variable resolver</a>.
 </div>
 
-A dictionary of key-value pairs to be supplied to a CloudFormation or Troposphere template as parameters. The keys must match up with the name of the parameter, and the value must be of the type as defined in the template. Note that Boto3 throws an exception if parameters are supplied to a template that are not required by that template. Resolvers can be used to add functionality to this key. Find out more in the [Resolvers](/docs/resolvers.html) section.
+A dictionary of key-value pairs to be supplied to a CloudFormation or Troposphere template as parameters. The keys must match up with the name of the parameter, and the value must be of the type as defined in the template. Note that Boto3 throws an exception if parameters are supplied to a template that are not required by that template. Resolvers can be used to add functionality to this key. Find out more in the [Resolvers]({{ site.baseurl }}/docs/resolvers.html) section.
 
 A parameter can be specified either as a single value/resolver or a list of values/resolvers. Lists of values/resolvers will be formatted into an AWS compatible comma separated string e.g. `value1,value2,value3`. Lists can contain a mixture of values and resolvers.
 
@@ -123,17 +123,17 @@ The path to the CloudFormation or Troposphere template to build the stack from. 
 Cascading stack config is being deprecated, and should not be used.
 </div>
 
-Stack config can be cascaded in the same way Environment config can be, as described in the section in Environment Config on [Cascading Config](/docs/environment_config.html#cascading-config).
+Stack config can be cascaded in the same way Environment config can be, as described in the section in Environment Config on [Cascading Config]({{ site.baseurl }}/docs/environment_config.html#cascading-config).
 
 
 ## Templating
 
-Stack config supports templating in the same way Environment config can be, as described in the section in Environment Config on [Templating](/docs/environment_config.html#templating).
+Stack config supports templating in the same way Environment config can be, as described in the section in Environment Config on [Templating]({{ site.baseurl }}/docs/environment_config.html#templating).
 
 Environment Variables
 ---------------------
 
-It is possible to replace values in stack config files with environment variables in two ways. For an explanation on why this is the case, see the [FAQ](/docs/faq.html#why-are-there-two-ways-to-supply-environment-variables-in-stack-config-files).
+It is possible to replace values in stack config files with environment variables in two ways. For an explanation on why this is the case, see the [FAQ]({{ site.baseurl }}/docs/faq.html#why-are-there-two-ways-to-supply-environment-variables-in-stack-config-files).
 
 ## Sceptre User Data
 

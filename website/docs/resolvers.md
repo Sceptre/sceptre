@@ -103,7 +103,7 @@ parameters:
 ### project_variables
 
 <div class="alert alert-warning">
-The project_variables resolver has been deprecated, and will be removed in a later version of Sceptre. Depending on your use case, you may find <a href="/docs/environment_config.html#var">User Variables</a> appropriate.
+The project_variables resolver has been deprecated, and will be removed in a later version of Sceptre. Depending on your use case, you may find <a href="{{ site.baseurl }}/docs/environment_config.html#var">User Variables</a> appropriate.
 </div>
 
 Keys through the YAML object stored at `/path/to/file.yaml` with the segments of the stack name.
@@ -180,11 +180,11 @@ class CustomResolver(Resolver):
 
 This resolver can be used in a stack config file with the following syntax:
 
-```
+```yaml
 template_path: <...>
 parameters:
-    param1: !<your_resolver_name> <value> # <your resolver name> is the lower camel-case version
-                                          # of your class name, e.g `custom_resolver`
-                                          # <value> will be passed to the
-                                          # resolver's resolve() method.
+    # <your resolver name> is the lower camel-case version of your class name,
+    # e.g `custom_resolver` <value> will be passed to the resolver's resolve()
+    # method.
+    param1: !<your_resolver_name> <value>
 ```
