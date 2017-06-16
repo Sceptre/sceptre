@@ -95,17 +95,29 @@ website-api:
 	rm -f website/docs/api/sceptre.html
 	cp website/_api/_build/html/sceptre.html website/docs/api/sceptre.html
 
-website: website-api
-	$(MAKE) -C website build
+website-latest: website-api
+	$(MAKE) -C website build-latest
+
+website-tag: website-api
+	$(MAKE) -C website build-tag
 
 website-dev: website-api
 	$(MAKE) -C website build-dev
 
-serve-website: website
-	$(MAKE) -C website serve
+website-commit: website-api
+	$(MAKE) -C website build-commit
 
-serve-website-dev: website
+serve-website-latest: website-latest
+	$(MAKE) -C website serve-latest
+
+serve-website-tag: website-tag
+	$(MAKE) -C website serve-tag
+
+serve-website-dev: website-dev
 	$(MAKE) -C website serve-dev
+
+serve-website-commit: website-commit
+	$(MAKE) -C website serve-commit
 
 dist: clean
 	python setup.py sdist

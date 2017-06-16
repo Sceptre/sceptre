@@ -2,6 +2,7 @@ machine:
   environment:
     AWS_DEFAULT_REGION: eu-west-1
     SHORT_SHA1: $(echo $CIRCLE_SHA1 | cut -c -7)
+    GIT_TAG: $(shell git describe --abbrev=0 --tags | sed 's/\./-/g')
   python:
     version: 2.7.11
 dependencies:
@@ -14,11 +15,11 @@ dependencies:
 test:
   override:
     - make lint
-    # - make test-all
-    # - behave --junit --junit-directory $CIRCLE_TEST_REPORTS/behave/junit.xml:
-    #     parallel: true
-    #     files:
-    #       - integration-tests/features/*.feature
+    - make test-all
+    - behave --junit --junit-directory $CIRCLE_TEST_REPORTS/behave/junit.xml:
+        parallel: true
+        files:
+          - integration-tests/features/*.feature
     - make docs
 deployment:
     production:
@@ -30,10 +31,7 @@ deployment:
     develop:
         branch: master
         commands:
-            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/latest/dev/docs/ --delete
-            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/$SHORT_SHA1/dev/docs/ --delete
-    website:
-        branch: 111-md-docs
-        commands:
             - make website-dev
+            - aws s3 sync ~/sceptre/website/_site s3://sceptre.cloudreach.com/dev/ --delete
+            - make website-commit
             - aws s3 sync ~/sceptre/website/_site s3://sceptre.cloudreach.com/$SHORT_SHA1/ --delete
