@@ -103,7 +103,7 @@ parameters:
 ### project_variables
 
 <div class="alert alert-warning">
-The project_variables resolver has been deprecated, and will be removed in a later version of Sceptre. Depending on your use case, you may find <a href="/docs/environment_config#var">User Variables</a> appropriate.
+The project_variables resolver has been deprecated, and will be removed in a later version of Sceptre. Depending on your use case, you may find <a href="/docs/environment_config.html#var">User Variables</a> appropriate.
 </div>
 
 Keys through the YAML object stored at `/path/to/file.yaml` with the segments of the stack name.

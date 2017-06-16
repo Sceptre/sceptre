@@ -18,8 +18,8 @@ Running sceptre without a subcommand will display help, showing a list of the av
 - `--dir`: Specify the sceptre directory with an absolute or relative path.
 - `--no-colour`: Disable coloured output.
 - `--output`: Specify the output format. Available formats: `[yaml, json]`.
-- `--var`: Overwrite an arbitrary config item. For more information, see the section on [Templating](/docs/environment_config#templating).
-- `--var-file`: Overwrite arbitrary config item(s) with data from a variables file. For more information, see the section on [Templating](/docs/environment_config#templating).
+- `--var`: Overwrite an arbitrary config item. For more information, see the section on [Templating](/docs/environment_config.html#templating).
+- `--var-file`: Overwrite arbitrary config item(s) with data from a variables file. For more information, see the section on [Templating](/docs/environment_config.html#templating).
 
 
 ## Commands
