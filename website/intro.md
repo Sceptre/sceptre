@@ -2,8 +2,6 @@
 layout: page
 ---
 
-hi {{ site.baseurl }}
-
 # Introduction
 
 Sceptre is a tool to drive Cloudformation. Sceptre manages the creating, updating and deletion of stacks, and provides meta commands to allow users to get information about their stacks. Sceptre is unopinionated, enterprise ready and designed to be run as part of CI/CD pipelines. Sceptre is accessible as a CLI tool, or as a Python module.
