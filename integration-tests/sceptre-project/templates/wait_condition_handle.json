@@ -1,8 +1,12 @@
 {
     "Resources": {
+        "AnotherWaitConditionHandle": {
+            "Properties": {},
+            "Type": "AWS::CloudFormation::WaitConditionHandle"
+        },
         "WaitConditionHandle": {
-            "Type": "AWS::CloudFormation::WaitConditionHandle",
-            "Properties" : {}
+            "Properties": {},
+            "Type": "AWS::CloudFormation::WaitConditionHandle"
         }
     }
 }
