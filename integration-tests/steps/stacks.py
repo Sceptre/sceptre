@@ -81,6 +81,7 @@ def step_impl(context, stack_name, desired_status):
 
 @given('the template for stack "{stack_name}" is {modification}')
 def step_impl(context, stack_name, modification):
+    # need to edit template depending on stack
     path = os.path.join(
         context.sceptre_dir, "templates", "wait_condition_handle.json"
     )
@@ -187,6 +188,21 @@ def generate_template(path, modification):
                 "WaitConditionHandle": {
                     "Type": "AWS::CloudFormation::WaitConditionHandle",
                     "Properties": {}
+                },
+                "InvalidWaitConditionHandle": {
+                    "Type": "AWS::CloudFormation::WaitConditionHandle",
+                    "Properties": {
+                        "Invalid": "Invalid"
+                    }
+                }
+            }
+        }
+    elif modification == "malformed":
+        data = {
+            "Malformed": {
+                "WaitConditionHandle": {
+                    "Type": "Invalid::Resource::Type",
+                    "NotProperties": {}
                 },
                 "InvalidWaitConditionHandle": {
                     "Type": "AWS::CloudFormation::WaitConditionHandle",

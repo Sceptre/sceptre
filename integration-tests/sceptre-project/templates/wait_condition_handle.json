@@ -1,12 +1,14 @@
 {
-    "Resources": {
-        "AnotherWaitConditionHandle": {
-            "Properties": {},
+    "Malformed": {
+        "InvalidWaitConditionHandle": {
+            "Properties": {
+                "Invalid": "Invalid"
+            },
             "Type": "AWS::CloudFormation::WaitConditionHandle"
         },
         "WaitConditionHandle": {
-            "Properties": {},
-            "Type": "AWS::CloudFormation::WaitConditionHandle"
+            "NotProperties": {},
+            "Type": "Invalid::Resource::Type"
         }
     }
 }
