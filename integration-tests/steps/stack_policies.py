@@ -13,7 +13,7 @@ def step_impl(context, stack_name, state):
         ["sceptre-integration-tests", context.default_environment, stack_name]
     )
     context.client.set_stack_policy(
-        StackName=stack_name,
+        StackName=full_name,
         StackPolicyBody=generate_stack_policy(state)
     )
 
@@ -21,7 +21,23 @@ def step_impl(context, stack_name, state):
 @when('the user unlocks stack "{stack_name}"')
 def step_impl(context, stack_name):
     env = Environment(context.sceptre_dir, context.default_environment)
-    env.stacks[stack_name].unlock()
+    try:
+        env.stacks[stack_name].unlock()
+    except ClientError as e:
+        context.error = e.response['Error']['Message']
+    else:
+        raise e
+
+
+@when('the user locks stack "{stack_name}"')
+def step_impl(context, stack_name):
+    env = Environment(context.sceptre_dir, context.default_environment)
+    try:
+        env.stacks[stack_name].lock()
+    except ClientError as e:
+        context.error = e.response['Error']['Message']
+    else:
+        raise e
 
 
 @then('the policy for stack "{stack_name}" is {state}')
@@ -50,14 +66,25 @@ def get_stack_policy(context, stack_name):
     return response.get("StackPolicyBody")
 
 
-def generate_stack_policy(context, policy_type):
+def generate_stack_policy(policy_type):
     data = ''
     if policy_type == 'allow all':
         data = {
             "Statement": [
                 {
                     "Effect": "Allow",
-                    "NotAction": "Update:Delete",
+                    "Action": "Update:*",
+                    "Principal": "*",
+                    "Resource": "*"
+                }
+             ]
+        }
+    elif policy_type == 'deny all':
+        data = {
+            "Statement": [
+                {
+                    "Effect": "Deny",
+                    "Action": "Update:*",
                     "Principal": "*",
                     "Resource": "*"
                 }

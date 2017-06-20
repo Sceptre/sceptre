@@ -1,6 +1,5 @@
 Feature: Unlock stack
 
-  @wip
   Scenario: unlock a stack that exists with a stack policy
     Given stack "A" exists in "CREATE_COMPLETE" state
     and the policy for stack "A" is deny all

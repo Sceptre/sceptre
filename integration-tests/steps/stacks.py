@@ -27,6 +27,11 @@ def before_all(context):
         os.getcwd(), "integration-tests", "sceptre-project"
     )
     context.default_environment = "default"
+    context.error = None
+
+
+def before_step(context, step):
+    context.error = None
 
 
 @given('stack "{stack_name}" does not exist')
@@ -55,7 +60,6 @@ def step_impl(context, stack_name, desired_status):
         delete_stack(context, full_name)
         if desired_status == "CREATE_COMPLETE":
             body = generate_template(path, "valid")
-            print(body)
             create_stack(context, full_name, body)
         elif desired_status == "CREATE_FAILED":
             body = generate_template(path, "invalid")
@@ -72,7 +76,6 @@ def step_impl(context, stack_name, desired_status):
             create_stack(context, full_name, body, **kwargs)
 
     status = get_stack_status(context, full_name)
-    print("Comparision " + status + " " + desired_status)
     assert (status == desired_status)
 
 
@@ -143,7 +146,6 @@ def step_impl(context, stack_name, desired_status):
         ["sceptre-integration-tests", context.default_environment, stack_name]
     )
     status = get_stack_status(context, full_name)
-    print("Comparision " + status + " " + desired_status)
     assert (status == desired_status)
 
 
@@ -232,7 +234,4 @@ def delete_stack(context, stack_name):
 
     waiter = context.client.get_waiter('stack_delete_complete')
     waiter.config.delay = 2
-    try:
-        waiter.wait(StackName=stack_name)
-    except WaiterError as e:
-        print(e)
+    waiter.wait(StackName=stack_name)
