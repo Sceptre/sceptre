@@ -20,20 +20,6 @@ def wait_for_final_state(context, stack_name):
     raise Exception("Timeout waiting for stack to reach final state.")
 
 
-def before_all(context):
-    context.cloudformation = boto3.resource('cloudformation')
-    context.client = boto3.client("cloudformation")
-    context.sceptre_dir = os.path.join(
-        os.getcwd(), "integration-tests", "sceptre-project"
-    )
-    context.default_environment = "default"
-    context.error = None
-
-
-def before_step(context, step):
-    context.error = None
-
-
 @given('stack "{stack_name}" does not exist')
 def step_impl(context, stack_name):
     full_name = "-".join(

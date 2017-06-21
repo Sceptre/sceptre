@@ -11,5 +11,6 @@ def step_impl(context, message):
         assert context.error.endswith("does not exist")
     elif message == "the template is valid":
         assert context.response["ResponseMetadata"]["HTTPStatusCode"] == 200
+        assert context.error is None
     elif message == "the template is malformed":
         assert context.error.endswith("[Malformed]")
