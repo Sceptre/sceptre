@@ -18,9 +18,10 @@ class Cmd(Hook):
         :raises: sceptre.exceptions.InvalidTaskArgumentTypeException
         :raises: subprocess.CalledProcessError
         """
-        if not isinstance(self.argument, basestring):
+        try:
+            subprocess.check_call(self.argument, shell=True)
+        except TypeError:
             raise InvalidHookArgumentTypeError(
                 'The argument "{0}" is the wrong type - cmd hooks require '
                 'arguments of type string.'.format(self.argument)
             )
-        subprocess.check_call(["/bin/bash", "-c", self.argument])
