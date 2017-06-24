@@ -146,7 +146,7 @@ class TestRetry():
 
         assert response == sentinel.response
 
-    @patch("sceptre.helpers.time.sleep")
+    @patch("sceptre.connection_manager.time.sleep")
     def test_retry_pauses_when_request_limit_hit(
             self, mock_sleep
     ):
@@ -188,7 +188,7 @@ class TestRetry():
         assert e.value.response["Error"]["Code"] == 500
         assert e.value.response["Error"]["Message"] == "Boom!"
 
-    @patch("sceptre.helpers.time.sleep")
+    @patch("sceptre.connection_manager.time.sleep")
     def test_retry_raises_retry_limit_exceeded_exception(self, mock_sleep):
         mock_func = Mock()
         mock_func.side_effect = ClientError(
