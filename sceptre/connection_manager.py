@@ -7,14 +7,55 @@ This module implements a ConnectionManager class, which simplifies and  manages
 Boto3 calls.
 """
 
-
+import functools
 import logging
 import threading
+import time
 
 import boto3
+from botocore.exceptions import ClientError
 
 from .helpers import mask_key
-from .helpers import exponential_backoff
+from .exceptions import RetryLimitExceededError
+
+
+def _retry(func):
+    """
+    Retries a Boto3 call up to 30 times if request rate limits are hit.
+
+    The time waited between retries increases linearly. If rate limits are
+    hit 30 times, _retry raises a
+    sceptre.exceptions.RetryLimitExceededException.
+
+    :param func: a function that uses boto calls
+    :type func: function
+    :returns: The decorated function.
+    :rtype: function
+    :raises: sceptre.exceptions.RetryLimitExceededException
+    """
+    logger = logging.getLogger(__name__)
+
+    @functools.wraps(func)
+    def decorated(*args, **kwargs):
+        max_retries = 30
+        attempts = 1
+        while attempts < max_retries:
+            try:
+                return func(*args, **kwargs)
+            except ClientError as e:
+                if e.response["Error"]["Code"] == "Throttling":
+                    logger.error("Request limit exceeded, pausing...")
+                    time.sleep(attempts)
+                    attempts += 1
+                else:
+                    raise
+        raise RetryLimitExceededError(
+            "Exceeded request limit {0} times. Aborting.".format(
+                max_retries
+            )
+        )
+
+    return decorated
 
 
 class ConnectionManager(object):
@@ -136,7 +177,7 @@ class ConnectionManager(object):
                 self.clients[service] = self.boto_session.client(service)
             return self.clients[service]
 
-    @exponential_backoff
+    @_retry
     def call(self, service, command, kwargs=None):
         """
         Makes a threadsafe Boto3 client call.

@@ -3,9 +3,11 @@ import pytest
 from mock import Mock, patch, sentinel, MagicMock
 from moto import mock_s3
 
-from sceptre.connection_manager import ConnectionManager
+from sceptre.connection_manager import ConnectionManager, _retry
+from sceptre.exceptions import RetryLimitExceededError
 from boto3.session import Session
 import botocore
+from botocore.exceptions import ClientError
 
 
 class TestConnectionManager(object):
@@ -132,3 +134,74 @@ class TestConnectionManager(object):
 
         return_value = self.connection_manager.call(service, command, {})
         assert return_value['ResponseMetadata']['HTTPStatusCode'] == 200
+
+
+class TestRetry():
+
+    def test_retry_returns_response_correctly(self):
+        def func(*args, **kwargs):
+            return sentinel.response
+
+        response = _retry(func)()
+
+        assert response == sentinel.response
+
+    @patch("sceptre.helpers.time.sleep")
+    def test_retry_pauses_when_request_limit_hit(
+            self, mock_sleep
+    ):
+        mock_func = Mock()
+        mock_func.side_effect = [
+            ClientError(
+                {
+                    "Error": {
+                        "Code": "Throttling",
+                        "Message": "Request limit hit"
+                    }
+                },
+                sentinel.operation
+            ),
+            sentinel.response
+        ]
+        # The attribute function.__name__ is required by the decorator @wraps.
+        mock_func.__name__ = "mock_func"
+
+        _retry(mock_func)()
+        mock_sleep.assert_called_once_with(1)
+
+    def test_retry_raises_non_throttling_error(self):
+        mock_func = Mock()
+        mock_func.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": 500,
+                    "Message": "Boom!"
+                }
+            },
+            sentinel.operation
+        )
+        # The attribute function.__name__ is required by the decorator @wraps.
+        mock_func.__name__ = "mock_func"
+
+        with pytest.raises(ClientError) as e:
+            _retry(mock_func)()
+        assert e.value.response["Error"]["Code"] == 500
+        assert e.value.response["Error"]["Message"] == "Boom!"
+
+    @patch("sceptre.helpers.time.sleep")
+    def test_retry_raises_retry_limit_exceeded_exception(self, mock_sleep):
+        mock_func = Mock()
+        mock_func.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": "Throttling",
+                    "Message": "Request limit hit"
+                }
+            },
+            sentinel.operation
+        )
+        # The attribute function.__name__ is required by the decorator @wraps.
+        mock_func.__name__ = "mock_func"
+
+        with pytest.raises(RetryLimitExceededError):
+            _retry(mock_func)()
