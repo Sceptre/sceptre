@@ -1,24 +1,47 @@
 Feature: Generate template
 
-  Scenario: generate template using a invaild json template
-    Given the "json" template for stack "A" is valid
-    When the user generates the template for stack "A"
-    Then the correct template is outputted
+  @now
+  Scenario Outline: Generating static templates
+    Given the template for stack "A" is <filename>
+    When the user generates the template for stack A
+    Then the output is the same as the contents of <filename> template
 
-  Scenario: generate template using a invaild json template
-    Given the "yaml" template for stack "A" is valid
-    When the user generates the template for stack "A"
-    Then the user is told the template is invalid
+  Examples: Json and Yaml
+   | filename                 |
+   | valid_template.json      |
+   | malformed_template.json  |
+   | invalid_template.json    |
+   | valid_template.yaml      |
+   | malformed_template.yaml  |
+   | invalid_template.yaml    |
 
-  Scenario: generate template using a invaild json template
-    Given the "json" template for stack "A" is invalid
-    When the user validates the template for stack "A"
-    Then the user is told the template is invalid
+   @wip
+   Scenario: Generate template using a valid python template file
+     Given the template for stack "A" is valid_template.py
+     Then the output is the same as the string returned by sceptre_handler function
 
-  Scenario: generate template using a invaild json template
-    Given the "yaml" template for stack "A" is invalid
-    When the user validates the template for stack "A"
-    Then the user is told the template is invalid
+   @wip
+   Scenario Outline: Generating erroneous python templates
+     Given the template for stack "A" is <content_type>
+     and the extension for template is .py
+     When the user generates the template
+     Then the user is told the <error_message>
+
+   Examples: Template Errors
+    | content_type                                | error_message                             |
+    | missing sceptre handler                     | missing sceptre handler function          |
+    # | handler accept wrong number of arguments    |
+    # | another attribute error is thrown           | yaml          |
+    # | not a string is return for sceptre handler  |
+    # | another parsing error is thrown             |
+
+
+   @wip
+   Scenario: Generate template using a template file with an unsupported extension
+     Given the template for stack "A" is valid
+     and the extension for template is .unsupported
+     When the user generates the template
+     Then the user is told the template format is unsupported
 
 #   Examples:
 #   | type  | error   |

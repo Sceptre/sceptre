@@ -64,18 +64,18 @@ def step_impl(context, stack_name, desired_status):
     status = get_stack_status(context, full_name)
     assert (status == desired_status)
 
-
-@given('the template for stack "{stack_name}" is {modification}')
-def step_impl(context, stack_name, modification):
-    # need to edit template depending on stack
-    path = os.path.join(
-        context.sceptre_dir, "templates", "wait_condition_handle.json"
-    )
-
-    body = generate_template(path, modification)
-
-    with open(path, 'w') as template:
-        template.write(body)
+# 
+# @given('the template for stack "{stack_name}" is {modification}')
+# def step_impl(context, stack_name, modification):
+#     # need to edit template depending on stack
+#     path = os.path.join(
+#         context.sceptre_dir, "templates", "wait_condition_handle.json"
+#     )
+#
+#     body = generate_template(path, modification)
+#
+#     with open(path, 'w') as template:
+#         template.write(body)
 
 
 @when('the user creates stack "{stack_name}"')

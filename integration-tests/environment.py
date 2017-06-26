@@ -5,6 +5,7 @@ import yaml
 
 import boto3
 
+
 def before_all(context):
     context.cloudformation = boto3.resource('cloudformation')
     context.client = boto3.client("cloudformation")
@@ -17,3 +18,4 @@ def before_all(context):
 def before_scenario(context, scenario):
     context.error = None
     context.response = None
+    context.output = None
