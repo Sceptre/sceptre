@@ -21,7 +21,4 @@ def step_impl(context):
 
 @then("the parameters file contains a valid cidr range")
 def step_impl(context):
-    assert(context.param_json \
-        ["Resources"]["VirtualPrivateCloud"]["Type"] == \
-        "AWS::EC2::VPC"
-    )
+    assert(context.param_json[0]["ParameterValue"] == "10.0.0.0/16")
