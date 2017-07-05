@@ -1,8 +1,5 @@
-import os
-import time
-
-from behave import *
-import boto3
+from sceptre.exceptions import TemplateSceptreHandlerError
+from sceptre.exceptions import UnsupportedTemplateFileTypeError
 
 
 @then('the user is told {message}')
@@ -14,3 +11,11 @@ def step_impl(context, message):
         assert context.error is None
     elif message == "the template is malformed":
         assert context.error.endswith("[Malformed]")
+    elif message == "template does not have sceptre_handler":
+        message = "The template does not have the required "
+        "'sceptre_handler(sceptre_user_data)' function."
+        assert context.error.message == message
+    elif message == "attribute error":
+        assert isinstance(context.error, TemplateSceptreHandlerError)
+    elif message == "template format is unsupported":
+        assert isinstance(context.error, UnsupportedTemplateFileTypeError)

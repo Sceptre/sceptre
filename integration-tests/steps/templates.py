@@ -1,8 +1,7 @@
 from behave import *
 import os
-import json
+import imp
 import yaml
-from botocore.exceptions import ClientError, WaiterError
 from sceptre.environment import Environment
 
 
@@ -34,7 +33,10 @@ def step_impl(context, stack_name):
 @when('the user generates the template for stack {stack_name}')
 def step_impl(context, stack_name):
     env = Environment(context.sceptre_dir, context.default_environment)
-    context.output = env.stacks[stack_name].template.body
+    try:
+        context.output = env.stacks[stack_name].template.body
+    except Exception as e:
+        context.error = e
 
 
 @then('the output is the same as the contents of {filename} template')
@@ -45,4 +47,15 @@ def step_impl(context, filename):
     with open(filepath) as template:
         body = template.read()
 
+    assert body == context.output
+
+
+@then('the output is the same as the string returned by {filename}')
+def step_impl(context, filename):
+    filepath = os.path.join(
+        context.sceptre_dir, "templates", filename
+    )
+
+    module = imp.load_source("template", filepath)
+    body = module.sceptre_handler({})
     assert body == context.output
