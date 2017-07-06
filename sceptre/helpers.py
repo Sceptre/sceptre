@@ -235,13 +235,13 @@ def _memoize(func):
     store = {}
 
     @wraps(func)
-    def wrapper(sceptre_dir, name):
+    def wrapper(sceptre_dir, name, user_variables=None):
         # hashable combination of sceptre_dir and environment_name used to
         # uniquely identify the pair of arguments
         key = (sceptre_dir, name)
         if key in store:
             return store[key]
-        return_val = func(sceptre_dir, name)
+        return_val = func(sceptre_dir, name, user_variables)
         store[key] = return_val
         return return_val
     return wrapper

@@ -27,7 +27,7 @@ from .helpers import get_subclasses
 
 
 @_memoize
-def environment(sceptre_dir, environment_path):
+def environment(sceptre_dir, environment_path, user_variables=None):
     """
     Returns the Config for the environment ``environment_path``.
 
@@ -38,13 +38,14 @@ def environment(sceptre_dir, environment_path):
     :returns: The Config for the environment
     :rtype: sceptre.config.Config
     """
+    user_variables = user_variables if user_variables != None else {}
     env_config = Config(sceptre_dir, environment_path, "config")
-    env_config.read()
+    env_config.read(user_variables)
     return env_config
 
 
 @_memoize
-def stack(sceptre_dir, stack_name):
+def stack(sceptre_dir, stack_name, user_variables=None):
     """
     Returns the Config for the stack ``stack_name``.
 
@@ -55,7 +56,7 @@ def stack(sceptre_dir, stack_name):
     :returns: The Config for the stack
     :rtype: sceptre.config.Config
     """
-
+    user_variables = user_variables if user_variables != None else {}
     environment_path = os.path.dirname(stack_name)
     basename = os.path.basename(stack_name)
     stack_config = Config.with_yaml_constructors(
@@ -63,7 +64,7 @@ def stack(sceptre_dir, stack_name):
         environment(sceptre_dir, environment_path),
         connection_manager.connection_manager(sceptre_dir, environment_path)
     )
-    stack_config.read()
+    stack_config.read(user_variables)
     return stack_config
 
 
