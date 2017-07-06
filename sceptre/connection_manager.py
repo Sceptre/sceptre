@@ -31,7 +31,7 @@ def connection_manager(sceptre_dir, environment_path, user_variables=None):
     :returns: The ConnectionManager for the environment
     :rtype: sceptre.connection_manager.ConnectionManager
     """
-    user_variables = user_variables if user_variables != None else {}
+    user_variables = user_variables if user_variables is not None else {}
     env_config = config.environment(
         sceptre_dir, environment_path, user_variables
     )

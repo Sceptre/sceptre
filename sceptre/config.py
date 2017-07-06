@@ -38,7 +38,7 @@ def environment(sceptre_dir, environment_path, user_variables=None):
     :returns: The Config for the environment
     :rtype: sceptre.config.Config
     """
-    user_variables = user_variables if user_variables != None else {}
+    user_variables = user_variables if user_variables is not None else {}
     env_config = Config(sceptre_dir, environment_path, "config")
     env_config.read(user_variables)
     return env_config
@@ -56,7 +56,7 @@ def stack(sceptre_dir, stack_name, user_variables=None):
     :returns: The Config for the stack
     :rtype: sceptre.config.Config
     """
-    user_variables = user_variables if user_variables != None else {}
+    user_variables = user_variables if user_variables is not None else {}
     environment_path = os.path.dirname(stack_name)
     basename = os.path.basename(stack_name)
     stack_config = Config.with_yaml_constructors(
