@@ -48,6 +48,19 @@ def step_impl(context, stack_name, change_set_name):
     )
 
 
+@given('stack "{stack_name}" has no change sets')
+def step_impl(context, stack_name):
+    full_name = "-".join(
+        ["sceptre-integration-tests", context.default_environment, stack_name]
+    )
+    response = context.client.list_change_sets(StackName=full_name)
+    for change_set in response["Summaries"]:
+        context.client.delete_change_set(
+            ChangeSetName=change_set['ChangeSetName'],
+            StackName=full_name
+        )
+
+
 @when(
     'the user creates change set "{change_set_name}" for stack "{stack_name}"'
 )
@@ -79,8 +92,56 @@ def step_impl(context, change_set_name, stack_name):
             return
         else:
             raise e
-    # wait_for_final_state(context, stack_name, change_set_name)
 
+
+@when(
+    'the user lists change sets for stack "{stack_name}"'
+)
+def step_impl(context, stack_name):
+    env = Environment(context.sceptre_dir, context.default_environment)
+    stack = env.stacks[stack_name]
+    try:
+        response = stack.list_change_sets()
+    except ClientError as e:
+        if e.response['Error']['Code'] in {'ValidationError', 'ChangeSetNotFound'}:
+            context.error = e
+            return
+        else:
+            raise e
+    context.output = response
+
+
+@when(
+    'the user executes change set "{change_set_name}" for stack "{stack_name}"'
+)
+def step_impl(context, change_set_name, stack_name):
+    env = Environment(context.sceptre_dir, context.default_environment)
+    stack = env.stacks[stack_name]
+    try:
+        stack.execute_change_set(change_set_name)
+    except ClientError as e:
+        if e.response['Error']['Code'] in {'ValidationError', 'ChangeSetNotFound'}:
+            context.error = e
+            return
+        else:
+            raise e
+
+
+@when(
+    'the user describes change set "{change_set_name}" for stack "{stack_name}"'
+)
+def step_impl(context, change_set_name, stack_name):
+    env = Environment(context.sceptre_dir, context.default_environment)
+    stack = env.stacks[stack_name]
+    try:
+        response = stack.describe_change_set(change_set_name)
+    except ClientError as e:
+        if e.response['Error']['Code'] in {'ValidationError', 'ChangeSetNotFound'}:
+            context.error = e
+            return
+        else:
+            raise e
+    context.output = response
 
 @then(
     'stack "{stack_name}" has change set "{change_set_name}" in "{state}" state'
@@ -89,16 +150,13 @@ def step_impl(context, stack_name, change_set_name, state):
     full_name = "-".join(
         ["sceptre-integration-tests", context.default_environment, stack_name]
     )
-    response = context.client.describe_change_set(
-        ChangeSetName=change_set_name,
-        StackName=full_name
-    )
-    assert response.get("Status") == state
+
+    status = get_change_set_status(context, full_name, change_set_name)
+
+    assert status == state
 
 
-@then(
-    'stack "{stack_name}" does not have change set "{change_set_name}"'
-)
+@then('stack "{stack_name}" does not have change set "{change_set_name}"')
 def step_impl(context, stack_name, change_set_name):
     full_name = "-".join(
         ["sceptre-integration-tests", context.default_environment, stack_name]
@@ -106,6 +164,54 @@ def step_impl(context, stack_name, change_set_name):
     status = get_change_set_status(context, full_name, change_set_name)
 
     assert status is None
+
+
+@then('the change sets for stack "{stack_name}" are listed')
+def step_impl(context, stack_name):
+    full_name = "-".join(
+        ["sceptre-integration-tests", context.default_environment, stack_name]
+    )
+    response = context.client.list_change_sets(StackName=full_name)
+
+    assert response["Summaries"] == context.output["Summaries"]
+
+
+@then('no change sets for stack "{stack_name}" are listed')
+def step_impl(context, stack_name):
+    full_name = "-".join(
+        ["sceptre-integration-tests", context.default_environment, stack_name]
+    )
+
+    assert context.output["Summaries"] == []
+
+
+@then('change set "{change_set_name}" for stack "{stack_name}" is described')
+def step_impl(context, change_set_name, stack_name):
+    full_name = "-".join(
+        ["sceptre-integration-tests", context.default_environment, stack_name]
+    )
+    response = context.client.describe_change_set(
+        StackName=full_name,
+        ChangeSetName=change_set_name
+    )
+    response.pop("ResponseMetadata")
+    context.output.pop("ResponseMetadata")
+
+    assert response == context.output
+
+
+@then('stack "{stack_name}" was updated with change set "{change_set_name}"')
+def step_impl(context, stack_name, change_set_name):
+    full_name = "-".join(
+        ["sceptre-integration-tests", context.default_environment, stack_name]
+    )
+    response = context.client.describe_stacks(StackName=full_name)
+
+    change_set_id = response["Stacks"][0]["ChangeSetId"]
+    stack_status = response["Stacks"][0]["StackStatus"]
+
+    assert stack_status == "UPDATE_COMPLETE"
+    assert change_set_name == change_set_id.split("/")[1]
 
 
 def get_change_set_status(context, stack_name, change_set_name):

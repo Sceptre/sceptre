@@ -1,6 +1,6 @@
 Feature: Delete change set
 
-  @wip
+  @now
   Scenario: delete a change set that exists
     Given stack "A" exists in "CREATE_COMPLETE" state
     and stack "A" has change set "A" using updated_template.json
