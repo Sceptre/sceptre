@@ -3,6 +3,7 @@ import os
 import imp
 import yaml
 from sceptre.environment import Environment
+from botocore.exceptions import ClientError
 
 
 @given('the template for stack "{stack_name}" is {template_name}')

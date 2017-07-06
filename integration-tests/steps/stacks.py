@@ -5,6 +5,7 @@ import os
 import boto3
 from botocore.exceptions import ClientError, WaiterError
 from sceptre.environment import Environment
+from helpers import read_template_file
 
 
 def wait_for_final_state(context, stack_name):
@@ -37,45 +38,29 @@ def step_impl(context, stack_name, desired_status):
     full_name = "-".join(
         ["sceptre-integration-tests", context.default_environment, stack_name]
     )
-    path = os.path.join(
-        context.sceptre_dir, "templates", "wait_condition_handle.json"
-    )
 
     status = get_stack_status(context, full_name)
     if status != desired_status:
         delete_stack(context, full_name)
         if desired_status == "CREATE_COMPLETE":
-            body = generate_template(path, "valid")
+            body = read_template_file(context, "valid_template.json")
             create_stack(context, full_name, body)
         elif desired_status == "CREATE_FAILED":
-            body = generate_template(path, "invalid")
+            body = read_template_file(context, "invalid_template.json")
             kwargs = {"OnFailure": "DO_NOTHING"}
             create_stack(context, full_name, body, **kwargs)
         elif desired_status == "UPDATE_COMPLETE":
-            body = generate_template(path, "valid")
+            body = read_template_file(context, "valid_template.json")
             create_stack(context, full_name, body)
-            body = generate_template(path, "updated")
+            body = read_template_file(context, "updated_template.json")
             update_stack(context, full_name, body)
         elif desired_status == "ROLLBACK_COMPLETE":
-            body = generate_template(path, "invalid")
+            body = read_template_file(context, "invalid_template.json")
             kwargs = {"OnFailure": "ROLLBACK"}
             create_stack(context, full_name, body, **kwargs)
 
     status = get_stack_status(context, full_name)
     assert (status == desired_status)
-
-# 
-# @given('the template for stack "{stack_name}" is {modification}')
-# def step_impl(context, stack_name, modification):
-#     # need to edit template depending on stack
-#     path = os.path.join(
-#         context.sceptre_dir, "templates", "wait_condition_handle.json"
-#     )
-#
-#     body = generate_template(path, modification)
-#
-#     with open(path, 'w') as template:
-#         template.write(body)
 
 
 @when('the user creates stack "{stack_name}"')
@@ -156,63 +141,6 @@ def get_stack_status(context, stack_name):
         else:
             raise e
     return stack.stack_status
-
-
-def generate_template(path, modification):
-    if modification == "valid":
-        data = {
-            "Resources": {
-                "WaitConditionHandle": {
-                    "Type": "AWS::CloudFormation::WaitConditionHandle",
-                    "Properties": {}
-                }
-            }
-        }
-    elif modification == "invalid":
-        data = {
-            "Resources": {
-                "WaitConditionHandle": {
-                    "Type": "AWS::CloudFormation::WaitConditionHandle",
-                    "Properties": {}
-                },
-                "InvalidWaitConditionHandle": {
-                    "Type": "AWS::CloudFormation::WaitConditionHandle",
-                    "Properties": {
-                        "Invalid": "Invalid"
-                    }
-                }
-            }
-        }
-    elif modification == "malformed":
-        data = {
-            "Malformed": {
-                "WaitConditionHandle": {
-                    "Type": "Invalid::Resource::Type",
-                    "NotProperties": {}
-                },
-                "InvalidWaitConditionHandle": {
-                    "Type": "AWS::CloudFormation::WaitConditionHandle",
-                    "Properties": {
-                        "Invalid": "Invalid"
-                    }
-                }
-            }
-        }
-    elif modification == "updated":
-        data = {
-            "Resources": {
-                "WaitConditionHandle": {
-                    "Type": "AWS::CloudFormation::WaitConditionHandle",
-                    "Properties": {}
-                },
-                "AnotherWaitConditionHandle": {
-                    "Type": "AWS::CloudFormation::WaitConditionHandle",
-                    "Properties": {}
-                }
-            }
-        }
-
-    return json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))
 
 
 def create_stack(context, stack_name, body, **kwargs):

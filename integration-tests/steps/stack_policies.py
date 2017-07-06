@@ -42,7 +42,6 @@ def step_impl(context, stack_name, state):
         ["sceptre-integration-tests", context.default_environment, stack_name]
     )
     policy = get_stack_policy(context, full_name)
-    print(policy)
 
     if state == 'not set':
         assert (policy is None)

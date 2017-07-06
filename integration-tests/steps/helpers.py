@@ -1,3 +1,6 @@
+from behave import *
+import os
+
 from sceptre.exceptions import TemplateSceptreHandlerError
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 
@@ -6,6 +9,9 @@ from sceptre.exceptions import UnsupportedTemplateFileTypeError
 def step_impl(context, message):
     if message == "stack does not exist":
         assert context.error.endswith("does not exist")
+    elif message == "the change set does not exist":
+        error_message = context.error.response['Error']['Message']
+        assert error_message.endswith("does not exist")
     elif message == "the template is valid":
         assert context.response["ResponseMetadata"]["HTTPStatusCode"] == 200
         assert context.error is None
@@ -19,3 +25,11 @@ def step_impl(context, message):
         assert isinstance(context.error, TemplateSceptreHandlerError)
     elif message == "template format is unsupported":
         assert isinstance(context.error, UnsupportedTemplateFileTypeError)
+    elif message == "change set failed to create":
+        assert False
+
+
+def read_template_file(context, template_name):
+    path = os.path.join(context.sceptre_dir, "templates", template_name)
+    with open(path) as template:
+        return template.read()
