@@ -1,9 +1,8 @@
 from behave import *
 import json
-import time
 import os
-import boto3
-from botocore.exceptions import ClientError, WaiterError
+
+from botocore.exceptions import ClientError
 from sceptre.environment import Environment
 from helpers import get_cloudformation_stack_name
 

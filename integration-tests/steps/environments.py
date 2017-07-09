@@ -16,6 +16,7 @@ def step_impl(context, environment_name):
 
     check_stack_status(context, full_stack_names, None)
 
+
 @given('all the stacks in environment "{environment_name}" are in "{status}"')
 def step_impl(context, environment_name, status):
     full_stack_names = get_full_stack_names(context, environment_name).values()

@@ -14,7 +14,8 @@ def wait_for_final_state(context, stack_name, change_set_name):
     attempts = 0
     while attempts < max_retries:
         status = get_change_set_status(context, full_name, change_set_name)
-        if status is None or ("IN_PROGRESS" not in status and "PENDING" not in status):
+        in_progress = "IN_PROGRESS" not in status and "PENDING" not in status
+        if status is None or in_progress:
             return
         time.sleep(delay)
         attempts = attempts + 1
@@ -55,17 +56,16 @@ def step_impl(context, stack_name):
         )
 
 
-@when(
-    'the user creates change set "{change_set_name}" for stack "{stack_name}"'
-)
+@when('the user creates change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
     environment_name, basename = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
     stack = env.stacks[basename]
+    allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
     try:
         stack.create_change_set(change_set_name)
     except ClientError as e:
-        if e.response['Error']['Code'] in {'ValidationError', 'ChangeSetNotFound'}:
+        if e.response['Error']['Code'] in allowed_errors:
             context.error = e
             return
         else:
@@ -73,34 +73,32 @@ def step_impl(context, change_set_name, stack_name):
     wait_for_final_state(context, stack_name, change_set_name)
 
 
-@when(
-    'the user deletes change set "{change_set_name}" for stack "{stack_name}"'
-)
+@when('the user deletes change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
     environment_name, basename = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
     stack = env.stacks[basename]
+    allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
     try:
         stack.delete_change_set(change_set_name)
     except ClientError as e:
-        if e.response['Error']['Code'] in {'ValidationError', 'ChangeSetNotFound'}:
+        if e.response['Error']['Code'] in allowed_errors:
             context.error = e
             return
         else:
             raise e
 
 
-@when(
-    'the user lists change sets for stack "{stack_name}"'
-)
+@when('the user lists change sets for stack "{stack_name}"')
 def step_impl(context, stack_name):
     environment_name, basename = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
     stack = env.stacks[basename]
+    allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
     try:
         response = stack.list_change_sets()
     except ClientError as e:
-        if e.response['Error']['Code'] in {'ValidationError', 'ChangeSetNotFound'}:
+        if e.response['Error']['Code'] in allowed_errors:
             context.error = e
             return
         else:
@@ -108,34 +106,32 @@ def step_impl(context, stack_name):
     context.output = response
 
 
-@when(
-    'the user executes change set "{change_set_name}" for stack "{stack_name}"'
-)
+@when('the user executes change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
     environment_name, basename = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
     stack = env.stacks[basename]
+    allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
     try:
         stack.execute_change_set(change_set_name)
     except ClientError as e:
-        if e.response['Error']['Code'] in {'ValidationError', 'ChangeSetNotFound'}:
+        if e.response['Error']['Code'] in allowed_errors:
             context.error = e
             return
         else:
             raise e
 
 
-@when(
-    'the user describes change set "{change_set_name}" for stack "{stack_name}"'
-)
+@when('the user describes change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
     environment_name, basename = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
     stack = env.stacks[basename]
+    allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
     try:
         response = stack.describe_change_set(change_set_name)
     except ClientError as e:
-        if e.response['Error']['Code'] in {'ValidationError', 'ChangeSetNotFound'}:
+        if e.response['Error']['Code'] in allowed_errors:
             context.error = e
             return
         else:
@@ -143,9 +139,7 @@ def step_impl(context, change_set_name, stack_name):
     context.output = response
 
 
-@then(
-    'stack "{stack_name}" has change set "{change_set_name}" in "{state}" state'
-)
+@then('stack "{stack_name}" has change set "{change_set_name}" in "{state}" state')
 def step_impl(context, stack_name, change_set_name, state):
     full_name = get_cloudformation_stack_name(context, stack_name)
 

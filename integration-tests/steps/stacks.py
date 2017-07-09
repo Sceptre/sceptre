@@ -1,13 +1,9 @@
 from behave import *
-import json
 import time
 import os
-import boto3
-import requests
-from botocore.exceptions import ClientError, WaiterError
+from botocore.exceptions import ClientError
 from sceptre.environment import Environment
 from helpers import read_template_file, get_cloudformation_stack_name
-
 
 
 @given('stack "{stack_name}" does not exist')
