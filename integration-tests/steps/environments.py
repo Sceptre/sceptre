@@ -208,6 +208,7 @@ def delete_stacks(context, stack_names):
     waiter.config.delay = 5
     waiter.config.max_attempts = 240
     for stack_name in stack_names:
+        time.sleep(1)
         waiter.wait(StackName=stack_name)
 
 
