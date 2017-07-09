@@ -204,14 +204,26 @@ def delete_stacks(context, stack_names):
         stack.delete()
 
     waiter = context.client.get_waiter('stack_delete_complete')
-    waiter.config.delay = 2
+    waiter.config.delay = 4
     for stack_name in stack_names:
-        time.sleep(1)
         waiter.wait(StackName=stack_name)
 
 
 def check_stack_status(context, stack_names, desired_status):
-    response = context.client.describe_stacks()
+    delay = 4
+    max_retries = 150
+    attempts = 0
+    response = None
+    while not response and attempts < max_retries:
+        attempts = attempts + 1
+        try:
+            response = context.client.describe_stacks()
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'Throttling':
+                time.sleep(delay)
+            else:
+                raise e
+
     for stack_name in stack_names:
         for stack in response["Stacks"]:
             if stack["StackName"] == stack_name:

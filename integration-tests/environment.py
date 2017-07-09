@@ -41,6 +41,7 @@ def update_project_code(context):
 def after_all(context):
     response = context.client.describe_stacks()
     for stack in response["Stacks"]:
+        time.sleep(2)
         if stack["StackName"].startswith(context.project_code):
             context.client.delete_stack(
                 StackName=stack["StackName"]

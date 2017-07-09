@@ -137,16 +137,24 @@ def step_impl(context, stack_name):
 
 
 def get_stack_status(context, stack_name):
-    try:
-        stack = context.cloudformation.Stack(stack_name)
-        stack.load()
-    except ClientError as e:
-        if e.response['Error']['Code'] == 'ValidationError' \
-          and e.response['Error']['Message'].endswith("does not exist"):
-            return None
-        else:
-            raise e
-    return stack.stack_status
+    delay = 2
+    max_retries = 150
+    attempts = 0
+    while attempts < max_retries:
+        attempts = attempts + 1
+        try:
+            stack = context.cloudformation.Stack(stack_name)
+            stack.load()
+            return stack.stack_status
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'ValidationError' \
+              and e.response['Error']['Message'].endswith("does not exist"):
+                return None
+            elif e.response['Error']['Code'] == 'Throttling':
+                time.sleep(delay)
+            else:
+                raise e
+    return None
 
 
 def create_stack(context, stack_name, body, **kwargs):
