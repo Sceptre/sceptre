@@ -3,29 +3,16 @@ import json
 import time
 import os
 import boto3
+import requests
 from botocore.exceptions import ClientError, WaiterError
 from sceptre.environment import Environment
-from helpers import read_template_file
+from helpers import read_template_file, get_cloudformation_stack_name
 
-
-def wait_for_final_state(context, stack_name):
-    stack = context.cloudformation.Stack(stack_name)
-    delay = 2
-    max_retries = 10
-    attempts = 0
-    while attempts < max_retries:
-        stack.load()
-        if not stack.stack_status.endswith("IN_PROGRESS"):
-            return
-        time.sleep(delay)
-    raise Exception("Timeout waiting for stack to reach final state.")
 
 
 @given('stack "{stack_name}" does not exist')
 def step_impl(context, stack_name):
-    full_name = "-".join(
-        ["sceptre-integration-tests", context.default_environment, stack_name]
-    )
+    full_name = get_cloudformation_stack_name(context, stack_name)
     status = get_stack_status(context, full_name)
     if status is not None:
         delete_stack(context, full_name)
@@ -35,9 +22,7 @@ def step_impl(context, stack_name):
 
 @given('stack "{stack_name}" exists in "{desired_status}" state')
 def step_impl(context, stack_name, desired_status):
-    full_name = "-".join(
-        ["sceptre-integration-tests", context.default_environment, stack_name]
-    )
+    full_name = get_cloudformation_stack_name(context, stack_name)
 
     status = get_stack_status(context, full_name)
     if status != desired_status:
@@ -65,9 +50,10 @@ def step_impl(context, stack_name, desired_status):
 
 @when('the user creates stack "{stack_name}"')
 def step_impl(context, stack_name):
-    env = Environment(context.sceptre_dir, context.default_environment)
+    environment_name, basename = os.path.split(stack_name)
+    env = Environment(context.sceptre_dir, environment_name)
     try:
-        env.stacks[stack_name].create()
+        env.stacks[basename].create()
     except ClientError as e:
         if e.response['Error']['Code'] == 'AlreadyExistsException' \
           and e.response['Error']['Message'].endswith("already exists"):
@@ -78,10 +64,10 @@ def step_impl(context, stack_name):
 
 @when('the user updates stack "{stack_name}"')
 def step_impl(context, stack_name):
-    env = Environment(context.sceptre_dir, context.default_environment)
-
+    environment_name, basename = os.path.split(stack_name)
+    env = Environment(context.sceptre_dir, environment_name)
     try:
-        env.stacks[stack_name].update()
+        env.stacks[basename].update()
     except ClientError as e:
         message = e.response['Error']['Message']
         if e.response['Error']['Code'] == 'ValidationError' \
@@ -94,9 +80,10 @@ def step_impl(context, stack_name):
 
 @when('the user deletes stack "{stack_name}"')
 def step_impl(context, stack_name):
-    env = Environment(context.sceptre_dir, context.default_environment)
+    environment_name, basename = os.path.split(stack_name)
+    env = Environment(context.sceptre_dir, environment_name)
     try:
-        env.stacks[stack_name].delete()
+        env.stacks[basename].delete()
     except ClientError as e:
         if e.response['Error']['Code'] == 'ValidationError' \
           and e.response['Error']['Message'].endswith("does not exist"):
@@ -107,27 +94,46 @@ def step_impl(context, stack_name):
 
 @when('the user launches stack "{stack_name}"')
 def step_impl(context, stack_name):
-    env = Environment(context.sceptre_dir, context.default_environment)
+    environment_name, basename = os.path.split(stack_name)
+    env = Environment(context.sceptre_dir, environment_name)
 
-    env.stacks[stack_name].launch()
+    env.stacks[basename].launch()
+
+
+@when('the user describes the resources of stack "{stack_name}"')
+def step_impl(context, stack_name):
+    environment_name, basename = os.path.split(stack_name)
+    env = Environment(context.sceptre_dir, environment_name)
+
+    context.output = env.stacks[basename].describe_resources()
 
 
 @then('stack "{stack_name}" exists in "{desired_status}" state')
 def step_impl(context, stack_name, desired_status):
-    full_name = "-".join(
-        ["sceptre-integration-tests", context.default_environment, stack_name]
-    )
+    full_name = get_cloudformation_stack_name(context, stack_name)
     status = get_stack_status(context, full_name)
     assert (status == desired_status)
 
 
 @then('stack "{stack_name}" does not exist')
 def step_impl(context, stack_name):
-    full_name = "-".join(
-        ["sceptre-integration-tests", context.default_environment, stack_name]
-    )
+    full_name = get_cloudformation_stack_name(context, stack_name)
     status = get_stack_status(context, full_name)
     assert (status is None)
+
+
+@then('the resources of stack "{stack_name}" are described')
+def step_impl(context, stack_name):
+    full_name = get_cloudformation_stack_name(context, stack_name)
+    response = context.client.describe_stack_resources(StackName=full_name)
+
+    properties = {"LogicalResourceId", "PhysicalResourceId"}
+    formatted_response = [
+            {k: v for k, v in item.items() if k in properties}
+            for item in response["StackResources"]
+    ]
+
+    assert formatted_response == context.output
 
 
 def get_stack_status(context, stack_name):
@@ -165,3 +171,17 @@ def delete_stack(context, stack_name):
     waiter = context.client.get_waiter('stack_delete_complete')
     waiter.config.delay = 2
     waiter.wait(StackName=stack_name)
+
+
+def wait_for_final_state(context, stack_name):
+    stack = context.cloudformation.Stack(stack_name)
+    delay = 2
+    max_retries = 150
+    attempts = 0
+    while attempts < max_retries:
+        stack.load()
+        if not stack.stack_status.endswith("IN_PROGRESS"):
+            return
+        attempts = attempts + 1
+        time.sleep(delay)
+    raise Exception("Timeout waiting for stack to reach final state.")

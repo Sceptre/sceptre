@@ -1,0 +1,3 @@
+dependencies:
+- 3/B
+template_path: templates/valid_template.json

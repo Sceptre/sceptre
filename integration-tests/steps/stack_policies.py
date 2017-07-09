@@ -5,13 +5,12 @@ import os
 import boto3
 from botocore.exceptions import ClientError, WaiterError
 from sceptre.environment import Environment
+from helpers import get_cloudformation_stack_name
 
 
 @given('the policy for stack "{stack_name}" is {state}')
 def step_impl(context, stack_name, state):
-    full_name = "-".join(
-        ["sceptre-integration-tests", context.default_environment, stack_name]
-    )
+    full_name = get_cloudformation_stack_name(context, stack_name)
     context.client.set_stack_policy(
         StackName=full_name,
         StackPolicyBody=generate_stack_policy(state)
@@ -20,27 +19,27 @@ def step_impl(context, stack_name, state):
 
 @when('the user unlocks stack "{stack_name}"')
 def step_impl(context, stack_name):
-    env = Environment(context.sceptre_dir, context.default_environment)
+    environment_name, basename = os.path.split(stack_name)
+    env = Environment(context.sceptre_dir, environment_name)
     try:
-        env.stacks[stack_name].unlock()
+        env.stacks[basename].unlock()
     except ClientError as e:
         context.error = e.response['Error']['Message']
 
 
 @when('the user locks stack "{stack_name}"')
 def step_impl(context, stack_name):
-    env = Environment(context.sceptre_dir, context.default_environment)
+    environment_name, basename = os.path.split(stack_name)
+    env = Environment(context.sceptre_dir, environment_name)
     try:
-        env.stacks[stack_name].lock()
+        env.stacks[basename].lock()
     except ClientError as e:
         context.error = e.response['Error']['Message']
 
 
 @then('the policy for stack "{stack_name}" is {state}')
 def step_impl(context, stack_name, state):
-    full_name = "-".join(
-        ["sceptre-integration-tests", context.default_environment, stack_name]
-    )
+    full_name = get_cloudformation_stack_name(context, stack_name)
     policy = get_stack_policy(context, full_name)
 
     if state == 'not set':

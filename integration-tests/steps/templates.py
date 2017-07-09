@@ -6,11 +6,9 @@ from sceptre.environment import Environment
 from botocore.exceptions import ClientError
 
 
-@given('the template for stack "{stack_name}" is {template_name}')
-def step_impl(context, stack_name, template_name):
+def set_template_path(context, stack_name, template_name):
     config_path = os.path.join(
-        context.sceptre_dir, "config",
-        context.default_environment, stack_name + ".yaml"
+        context.sceptre_dir, "config", stack_name + ".yaml"
     )
     template_path = os.path.join("templates", template_name)
     with open(config_path) as config_file:
@@ -22,20 +20,27 @@ def step_impl(context, stack_name, template_name):
         yaml.safe_dump(stack_config, config_file, default_flow_style=False)
 
 
+@given('the template for stack "{stack_name}" is {template_name}')
+def step_impl(context, stack_name, template_name):
+    set_template_path(context, stack_name, template_name)
+
+
 @when('the user validates the template for stack "{stack_name}"')
 def step_impl(context, stack_name):
-    env = Environment(context.sceptre_dir, context.default_environment)
+    environment_name, basename = os.path.split(stack_name)
+    env = Environment(context.sceptre_dir, environment_name)
     try:
-        context.response = env.stacks[stack_name].validate_template()
+        context.response = env.stacks[basename].validate_template()
     except ClientError as e:
         context.error = e.response['Error']['Message']
 
 
-@when('the user generates the template for stack {stack_name}')
+@when('the user generates the template for stack "{stack_name}"')
 def step_impl(context, stack_name):
-    env = Environment(context.sceptre_dir, context.default_environment)
+    environment_name, basename = os.path.split(stack_name)
+    env = Environment(context.sceptre_dir, environment_name)
     try:
-        context.output = env.stacks[stack_name].template.body
+        context.output = env.stacks[basename].template.body
     except Exception as e:
         context.error = e
 

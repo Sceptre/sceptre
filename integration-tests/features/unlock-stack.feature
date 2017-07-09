@@ -1,14 +1,12 @@
 Feature: Unlock stack
 
-  @now
   Scenario: unlock a stack that exists with a stack policy
-    Given stack "A" exists in "CREATE_COMPLETE" state
-    and the policy for stack "A" is deny all
-    When the user unlocks stack "A"
-    Then the policy for stack "A" is allow all
+    Given stack "1/A" exists in "CREATE_COMPLETE" state
+    and the policy for stack "1/A" is deny all
+    When the user unlocks stack "1/A"
+    Then the policy for stack "1/A" is allow all
 
-  @now
   Scenario: unlock a stack that does not exist
-    Given stack "A" does not exist
-    When the user unlocks stack "A"
+    Given stack "1/A" does not exist
+    When the user unlocks stack "1/A"
     Then the user is told stack does not exist

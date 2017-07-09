@@ -33,3 +33,9 @@ def read_template_file(context, template_name):
     path = os.path.join(context.sceptre_dir, "templates", template_name)
     with open(path) as template:
         return template.read()
+
+
+def get_cloudformation_stack_name(context, stack_name):
+    return "-".join(
+        [context.project_code, stack_name.replace("/", "-")]
+    )
