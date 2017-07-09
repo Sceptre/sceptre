@@ -12,7 +12,10 @@ test:
   override:
     - make lint
     - make test-all
-    - behave integration-tests/ --junit --junit-directory $CIRCLE_TEST_REPORTS/behave/junit.xml
+    - behave --junit --junit-directory $CIRCLE_TEST_REPORTS/behave/junit.xml:
+        parallel: true
+        files:
+          - integration-tests/features/*.feature
     - make docs
 deployment:
     production:

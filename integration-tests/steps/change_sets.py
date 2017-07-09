@@ -48,6 +48,7 @@ def step_impl(context, stack_name):
     full_name = get_cloudformation_stack_name(context, stack_name)
     response = context.client.list_change_sets(StackName=full_name)
     for change_set in response["Summaries"]:
+        time.sleep(1)
         context.client.delete_change_set(
             ChangeSetName=change_set['ChangeSetName'],
             StackName=full_name

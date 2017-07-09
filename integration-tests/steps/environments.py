@@ -1,5 +1,6 @@
 from behave import *
 import os
+import time
 from sceptre.environment import Environment
 from botocore.exceptions import ClientError
 from helpers import read_template_file, get_cloudformation_stack_name
@@ -103,6 +104,7 @@ def step_impl(context, environment_name):
             sceptre_response.append(resource["PhysicalResourceId"])
 
     for short_name, full_name in stacks_names.items():
+        time.sleep(1)
         response = context.client.describe_stack_resources(
             StackName=full_name
         )
@@ -178,8 +180,9 @@ def get_full_stack_names(context, environment_name):
 
 
 def create_stacks(context, stack_names):
+    body = read_template_file(context, "valid_template.json")
     for stack_name in stack_names:
-        body = read_template_file(context, "valid_template.json")
+        time.sleep(1)
         try:
             context.client.create_stack(
                 StackName=stack_name, TemplateBody=body
@@ -196,12 +199,14 @@ def create_stacks(context, stack_names):
 
 def delete_stacks(context, stack_names):
     for stack_name in stack_names:
+        time.sleep(1)
         stack = context.cloudformation.Stack(stack_name)
         stack.delete()
 
     waiter = context.client.get_waiter('stack_delete_complete')
     waiter.config.delay = 2
     for stack_name in stack_names:
+        time.sleep(1)
         waiter.wait(StackName=stack_name)
 
 
