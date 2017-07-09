@@ -204,7 +204,8 @@ def delete_stacks(context, stack_names):
         stack.delete()
 
     waiter = context.client.get_waiter('stack_delete_complete')
-    waiter.config.delay = 4
+    waiter.config.delay = 5
+    waiter.config.max_attempts = 240
     for stack_name in stack_names:
         waiter.wait(StackName=stack_name)
 
