@@ -20,13 +20,14 @@ class TestEnvironment(object):
     @patch(
         "sceptre.environment.Environment.is_leaf", new_callable=PropertyMock
     )
-    @patch("sceptre.environment.Environment._check_env_path_valid")
+    @patch("sceptre.environment.Environment._validate_path")
     def setup_method(
-            self, test_method, mock_check_env_path_valid,
+            self, test_method, mock_validate_path,
             mock_is_leaf, mock_load_stacks
     ):
         mock_is_leaf.return_value = True
         mock_load_stacks.return_value = sentinel.stacks
+        mock_validate_path.return_value = "environment_path"
 
         self.environment = Environment(
             sceptre_dir="sceptre_dir",
@@ -48,9 +49,9 @@ class TestEnvironment(object):
     @patch(
         "sceptre.environment.Environment.is_leaf", new_callable=PropertyMock
     )
-    @patch("sceptre.environment.Environment._check_env_path_valid")
-    def test_initialsie_environment_with_non_leaf_directory(
-            self, mock_check_env_path_valid,
+    @patch("sceptre.environment.Environment._validate_path")
+    def test_initialise_environment_with_non_leaf_directory(
+            self, mock_validate_path,
             mock_is_leaf, mock_load_environments
     ):
         mock_is_leaf.return_value = False
@@ -74,19 +75,34 @@ class TestEnvironment(object):
             "environment_path='path', options={})"
         )
 
-    def test_check_env_path_valid_with_valid_path(self):
-        self.environment._check_env_path_valid("valid/env/path")
+    def test_validate_path_with_valid_path(self):
+        path = self.environment._validate_path("valid/env/path")
+        assert path == "valid/env/path"
 
-    def test_check_env_path_valid_with_invalid_path_leading_slash(self):
+    def test_validate_path_with_backslashes_in_path(self):
+        path = self.environment._validate_path("valid\env\path")
+        assert path == "valid/env/path"
+
+    def test_validate_path_with_double_backslashes_in_path(self):
+        path = self.environment._validate_path("valid\\env\\path")
+        assert path == "valid/env/path"
+
+    def test_validate_path_with_invalid_path_leading_slash(self):
         with pytest.raises(InvalidEnvironmentPathError):
-            self.environment._check_env_path_valid(
+            self.environment._validate_path(
                 "/this/environment/path/is/invalid"
             )
 
-    def test_check_env_path_valid_with_invalid_path_trailing_slash(self):
+    def test_validate_path_with_invalid_path_trailing_slash(self):
         with pytest.raises(InvalidEnvironmentPathError):
-            self.environment._check_env_path_valid(
+            self.environment._validate_path(
                 "this/environment/path/is/invalid/"
+            )
+
+    def test_validate_path_with_path_leading_backslash(self):
+        with pytest.raises(InvalidEnvironmentPathError):
+            self.environment._validate_path(
+                "/this/environment/path/is/invalid\\"
             )
 
     def test_is_leaf_with_leaf_dir(self):

@@ -53,10 +53,8 @@ class Environment(object):
         self.logger = logging.getLogger(__name__)
 
         self.sceptre_dir = sceptre_dir
-        self.path = os.path.normpath(environment_path).replace('\\', '/')
+        self.path = self._validate_path(environment_path)
         self._options = {} if options is None else options
-
-        self._check_env_path_valid(self.path)
 
         self._is_leaf = None
 
@@ -74,20 +72,25 @@ class Environment(object):
         )
 
     @staticmethod
-    def _check_env_path_valid(path):
+    def _validate_path(path):
         """
+        Normalises paths and converts backslashes to forward slashes.
         Raises an InvalidEnvironmentPathError if the path has a leading or
         trailing slash.
 
         :param path: A directory path
         :type path: str
         :raises: sceptre.exceptions.InvalidEnvironmentPathError
+        :returns: A normalised path with forward slashes.
+        :returns: string
         """
+        path = path.replace('\\', '/')
         if path.endswith("/") or path.startswith("/"):
             raise InvalidEnvironmentPathError(
                 "'{0}' is an invalid path string. Environment paths should "
                 "not have leading or trailing slashes.".format(path)
             )
+        return os.path.normpath(path)
 
     @property
     def is_leaf(self):
