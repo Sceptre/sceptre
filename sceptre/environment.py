@@ -369,19 +369,18 @@ class Environment(object):
         config_files = glob(os.path.join(
             self.sceptre_dir, "config", self.path, "*.yaml"
         ))
-        base_config_file_names = [
-            os.path.basename(config_file).split(".")[0]
+        stack_basenames = [
+            os.path.splitext(os.path.basename(config_file))[0]
             for config_file in config_files
         ]
-        stack_basenames = [
-            basename for basename in base_config_file_names
-            if basename != "config"
+
+        if "config" in stack_basenames:
+            stack_basenames.remove("config")
+
+        stack_names = [
+            "/".join([self.path, basename]) for basename in stack_basenames
         ]
-        available_stacks = [
-            "/".join([self.path, basename])
-            for basename in stack_basenames
-        ]
-        return available_stacks
+        return stack_names
 
     def _load_stacks(self):
         """
