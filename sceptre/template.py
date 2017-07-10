@@ -54,14 +54,73 @@ class Template(object):
     @property
     def body(self):
         """
-        Returns the CloudFormation template.
+        Represents body of the CloudFormation template.
 
-        :returns: The CloudFormation template.
+        :returns: The body of the CloudFormation template.
         :rtype: str
         """
         if self._body is None:
-            self._body = self._get_body()
+            file_extension = os.path.splitext(self.path)[1]
+
+            if file_extension in {".json", ".yaml"}:
+                self.logger.debug("%s - Opening file %s", self.name, self.path)
+                with open(self.path) as template_file:
+                    self._body = template_file.read()
+            elif file_extension == ".py":
+                self._body = self._call_sceptre_handler()
+
+            else:
+                raise UnsupportedTemplateFileTypeError(
+                    "Template has file extension %s. Only .py, .yaml, "
+                    "and .json are supported.",
+                    os.path.splitext(self.path)[1]
+                )
         return self._body
+
+    def _call_sceptre_handler(self):
+        """
+        Calls the function `sceptre_handler` within templates that are python
+        scripts.
+
+        :returns: The string returned from sceptre_handler in the template.
+        :rtype: str
+        :raises: IOError
+        :raises: TemplateSceptreHandlerError
+        """
+        # Get relative path as list between current working directory and where
+        # the template is
+        # NB: this is a horrible hack...
+        relpath = os.path.relpath(self.path, os.getcwd()).split(os.path.sep)
+        relpaths_to_add = [
+            os.path.sep.join(relpath[:i+1])
+            for i in range(len(relpath[:-1]))
+        ]
+        # Add any directory between the current working directory and where
+        # the template is to the python path
+        for directory in relpaths_to_add:
+            sys.path.append(os.path.join(os.getcwd(), directory))
+        self.logger.debug(
+            "%s - Getting CloudFormation from %s", self.name, self.path
+        )
+
+        if not os.path.isfile(self.path):
+            raise IOError("No such file or directory: '%s'", self.path)
+
+        module = imp.load_source(self.name, self.path)
+
+        try:
+            body = module.sceptre_handler(self.sceptre_user_data)
+        except AttributeError as e:
+            if 'sceptre_handler' in e.message:
+                raise TemplateSceptreHandlerError(
+                    "The template does not have the required "
+                    "'sceptre_handler(sceptre_user_data)' function."
+                )
+            else:
+                raise e
+        for directory in relpaths_to_add:
+            sys.path.remove(os.path.join(os.getcwd(), directory))
+        return body
 
     def upload_to_s3(
             self, region, bucket_name, key_prefix, environment_path,
@@ -205,72 +264,3 @@ class Template(object):
                     }
                 }
             )
-        self.logger.debug(
-            "%s - Created '%s'", self.name, bucket_name
-        )
-
-    def _get_body(self):
-        """
-        Reads in a CloudFormation template directly from a file or as a string
-        from an external Python script (such as Troposphere).
-
-        External Python scripts have arbitrary dictionary of data
-        (sceptre_user_data) passed to them.
-
-        :returns: A CloudFormation template
-        :rtype: str
-        :raises: sceptre.stack.UnsupportedTemplateFileTypeException
-        :raises: IOError
-        """
-        # Get relative path as list between current working directory and where
-        # the template is
-        # NB: this is a horrible hack...
-        relpath = os.path.relpath(self.path, os.getcwd()).split(os.path.sep)
-        relpaths_to_add = [
-            os.path.sep.join(relpath[:i+1])
-            for i in range(len(relpath[:-1]))
-        ]
-
-        # Add any directory between the current working directory and where
-        # the template is to the python path
-        for directory in relpaths_to_add:
-            sys.path.append(os.path.join(os.getcwd(), directory))
-
-        self.file_extension = os.path.splitext(self.path)[1]
-
-        if self.file_extension in (".json", ".yaml"):
-            self.logger.debug("%s - Opening file %s", self.name, self.path)
-            with open(self.path) as template_file:
-                body = template_file.read()
-        elif self.file_extension == ".py":
-            self.logger.debug(
-                "%s - Getting CloudFormation from %s", self.name, self.path
-            )
-
-            # If imp.load_source cannot find the file at self.path, it throws
-            # an IOError, but doesn't specify which file couldn't be found.
-            # As multiple templates are loaded when an environment is built,
-            # more detail is needed. The following commmand
-            # "looks before we leap", and specifies which file can't be found.
-            if not os.path.isfile(self.path):
-                raise IOError("No such file or directory: '%s'", self.path)
-
-            module = imp.load_source(self.name, self.path)
-
-            if hasattr(module, "sceptre_handler"):
-                    body = module.sceptre_handler(self.sceptre_user_data)
-            else:
-                raise TemplateSceptreHandlerError(
-                    "The template does not have the required "
-                    "'sceptre_handler(sceptre_user_data)' function."
-                )
-        else:
-            raise UnsupportedTemplateFileTypeError(
-                "Template has file extension `{0}`. Only .py, .yaml, and "
-                ".json are supported.".format(os.path.splitext(self.path)[1])
-            )
-
-        for directory in relpaths_to_add:
-            sys.path.remove(os.path.join(os.getcwd(), directory))
-
-        return body

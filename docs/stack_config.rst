@@ -268,6 +268,7 @@ Example (config/dev/vpc.yaml):
     parameters:
       Tag: !project_variables /my_config_file.yaml
 
+.. warning:: The project_variables resolver has been deprecated, and will be removed in a later version of Sceptre. Depending on your use case, you may find user variables as seen on the :ref:`templating` section appropiate.
 
 Environment Variables
 ---------------------

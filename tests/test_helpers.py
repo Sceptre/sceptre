@@ -8,18 +8,15 @@ from mock import Mock, patch, sentinel
 from botocore.exceptions import ClientError
 
 from sceptre.exceptions import RetryLimitExceededError
-from sceptre.exceptions import ProtectedStackError
 from sceptre.helpers import exponential_backoff
 from sceptre.helpers import get_subclasses
 from sceptre.helpers import camel_to_snake_case
-from sceptre.helpers import execution_protection
 from sceptre.helpers import recurse_into_sub_environments
 from sceptre.helpers import get_name_tuple
 from sceptre.helpers import resolve_stack_name
 from sceptre.helpers import get_external_stack_name
 from sceptre.hooks import Hook
 from sceptre.resolvers import Resolver
-from sceptre.stack import Stack
 
 
 class TestHelpers(object):
@@ -117,28 +114,6 @@ class TestHelpers(object):
         assert classes["project_variables"].__name__ == \
             "ProjectVariables"
         assert len(classes) == 5
-
-    def test_execution_protection_allows_function_execution(self):
-        mock_stack = Mock(spec=Stack)
-        mock_stack.config = {"protect": False}
-        mock_function = Mock()
-        mock_stack.mock_function = mock_function
-        mock_stack.mock_function.__name__ = 'mock_function'
-
-        execution_protection(mock_stack.mock_function)(mock_stack)
-
-        assert mock_stack.mock_function.call_count == 1
-
-    def test_execution_protection_raises_exception(self):
-        mock_stack = Mock(spec=Stack)
-        mock_stack.config = {"protect": True}
-        mock_function = Mock()
-        mock_stack.full_stack_name = sentinel.name
-        mock_stack.mock_function = mock_function
-        mock_stack.mock_function.__name__ = 'mock_function'
-
-        with pytest.raises(ProtectedStackError):
-            execution_protection(mock_stack.mock_function)(mock_stack)
 
     def test_camel_to_snake_case(self):
         snake_case_string = camel_to_snake_case("Bash")

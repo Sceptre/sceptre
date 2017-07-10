@@ -50,13 +50,6 @@ class TestTemplate(object):
         body = self.template.body
         assert body == sentinel.body
 
-    @patch("sceptre.template.Template._get_body")
-    def test_body_without_cache(self, mock_get_body):
-        self.template._body = None
-        mock_get_body.return_value = sentinel.body
-        body = self.template.body
-        assert body == sentinel.body
-
     @freeze_time("2012-01-01")
     @patch("sceptre.template.Template._bucket_exists")
     def test_upload_to_s3_with_valid_arguments(self, mock_bucket_exists):
@@ -153,73 +146,60 @@ class TestTemplate(object):
             kwargs={"Bucket": self.bucket_name}
         )
 
-    def test_get_body_with_json_template(self):
+    def test_body_with_json_template(self):
         self.template.name = "vpc"
         self.template.path = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc.json"
         )
-        output = self.template._get_body()
+        output = self.template.body
         output_dict = json.loads(output)
         with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
             expected_output_dict = json.loads(f.read())
         assert output_dict == expected_output_dict
 
-    def test_get_body_with_yaml_template(self):
+    def test_body_with_yaml_template(self):
         self.template.name = "vpc"
         self.template.path = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc.yaml"
         )
-        output = self.template._get_body()
+        output = self.template.body
         output_dict = yaml.load(output)
         with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
             expected_output_dict = json.loads(f.read())
         assert output_dict == expected_output_dict
 
-    def test_get_body_with_missing_file(self):
+    def test_body_with_missing_file(self):
         self.template.path = "incorrect/template/path.py"
         with pytest.raises(IOError):
-            self.template._get_body()
+            self.template.body
 
-    def test_get_body_compiles_troposphere(self):
+    def test_body_with_troposphere(self):
         self.template.sceptre_user_data = None
         self.template.name = "vpc"
         self.template.path = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc.py"
         )
-        output = self.template._get_body()
-        try:
-            json.loads(output)
-        except:
-            assert False
-
-    def test_get_body_with_troposphere(self):
-        self.template.sceptre_user_data = None
-        self.template.name = "vpc"
-        self.template.path = os.path.join(
-            os.getcwd(),
-            "tests/fixtures/templates/vpc.py"
-        )
-        actual_output = json.loads(self.template._get_body())
+        actual_output = json.loads(self.template.body)
         with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
             expected_output = json.loads(f.read())
         assert actual_output == expected_output
 
-    def test_get_body_with_troposphere_with_sgt(self):
+    def test_body_with_troposphere_with_sgt(self):
         self.template.sceptre_user_data = None
         self.template.name = "vpc_sgt"
         self.template.path = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc_sgt.py"
         )
-        actual_output = json.loads(self.template._get_body())
+        actual_output = json.loads(self.template.body)
         with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
             expected_output = json.loads(f.read())
         assert actual_output == expected_output
 
-    def test_get_body_injects_sceptre_user_data(self):
+    def test_body_injects_sceptre_user_data(self):
         self.template.sceptre_user_data = {
             "cidr_block": "10.0.0.0/16"
         }
@@ -229,12 +209,12 @@ class TestTemplate(object):
             "tests/fixtures/templates/vpc_sud.py"
         )
 
-        actual_output = json.loads(self.template._get_body())
+        actual_output = json.loads(self.template.body)
         with open("tests/fixtures/templates/compiled_vpc_sud.json", "r") as f:
             expected_output = json.loads(f.read())
         assert actual_output == expected_output
 
-    def test_get_body_injects_sceptre_user_data_incorrect_function(self):
+    def test_body_injects_sceptre_user_data_incorrect_function(self):
         self.template.sceptre_user_data = {
             "cidr_block": "10.0.0.0/16"
         }
@@ -244,9 +224,9 @@ class TestTemplate(object):
             "tests/fixtures/templates/vpc_sud_incorrect_function.py"
         )
         with pytest.raises(TemplateSceptreHandlerError):
-            self.template._get_body()
+            self.template.body
 
-    def test_get_body_injects_sceptre_user_data_incorrect_handler(self):
+    def test_body_injects_sceptre_user_data_incorrect_handler(self):
         self.template.sceptre_user_data = {
             "cidr_block": "10.0.0.0/16"
         }
@@ -256,11 +236,11 @@ class TestTemplate(object):
             "tests/fixtures/templates/vpc_sud_incorrect_handler.py"
         )
         with pytest.raises(TypeError):
-            self.template._get_body()
+            self.template.body
 
-    def test_get_body_with_incorrect_filetype(self):
+    def test_body_with_incorrect_filetype(self):
         self.template.path = (
             "path/to/something.ext"
         )
         with pytest.raises(UnsupportedTemplateFileTypeError):
-            self.template._get_body()
+            self.template.body
