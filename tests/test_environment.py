@@ -84,25 +84,31 @@ class TestEnvironment(object):
         assert path == "valid/env/path"
 
     def test_validate_path_with_double_backslashes_in_path(self):
-        path = self.environment._validate_path("valid\\env\\path")
+        path = self.environment._validate_path('valid\\env\\path')
         assert path == "valid/env/path"
 
-    def test_validate_path_with_invalid_path_leading_slash(self):
+    def test_validate_path_with_leading_slash(self):
         with pytest.raises(InvalidEnvironmentPathError):
             self.environment._validate_path(
                 "/this/environment/path/is/invalid"
             )
 
-    def test_validate_path_with_invalid_path_trailing_slash(self):
+    def test_validate_path_with_leading_backslash(self):
+        with pytest.raises(InvalidEnvironmentPathError):
+            self.environment._validate_path(
+                '\\this\environment\path\is\invalid'
+            )
+
+    def test_validate_path_with_trailing_slash(self):
         with pytest.raises(InvalidEnvironmentPathError):
             self.environment._validate_path(
                 "this/environment/path/is/invalid/"
             )
 
-    def test_validate_path_with_path_leading_backslash(self):
+    def test_validate_path_with_trailing_backslash(self):
         with pytest.raises(InvalidEnvironmentPathError):
             self.environment._validate_path(
-                "/this/environment/path/is/invalid\\"
+                'this\environment\path\is\invalid\\'
             )
 
     def test_is_leaf_with_leaf_dir(self):

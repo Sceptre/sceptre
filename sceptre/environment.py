@@ -74,7 +74,7 @@ class Environment(object):
     @staticmethod
     def _validate_path(path):
         """
-        Normalises paths and converts backslashes to forward slashes.
+        Converts backslashes to forward slashes.
         Raises an InvalidEnvironmentPathError if the path has a leading or
         trailing slash.
 
@@ -90,7 +90,7 @@ class Environment(object):
                 "'{0}' is an invalid path string. Environment paths should "
                 "not have leading or trailing slashes.".format(path)
             )
-        return os.path.normpath(path)
+        return path
 
     @property
     def is_leaf(self):
