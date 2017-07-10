@@ -4,6 +4,7 @@ import time
 from sceptre.environment import Environment
 from botocore.exceptions import ClientError
 from helpers import read_template_file, get_cloudformation_stack_name
+from helpers import retry_boto_call
 from stacks import wait_for_final_state
 from templates import set_template_path
 
@@ -21,7 +22,7 @@ def step_impl(context, environment_name):
 def step_impl(context, environment_name, status):
     full_stack_names = get_full_stack_names(context, environment_name).values()
 
-    response = context.client.describe_stacks()
+    response = retry_boto_call(context.client.describe_stacks)
 
     stacks_to_delete = []
 
@@ -106,7 +107,8 @@ def step_impl(context, environment_name):
 
     for short_name, full_name in stacks_names.items():
         time.sleep(1)
-        response = context.client.describe_stack_resources(
+        response = retry_boto_call(
+            context.client.describe_stack_resources,
             StackName=full_name
         )
         expected_resources[short_name] = response["StackResources"]
@@ -126,7 +128,8 @@ def step_impl(context, stack_name):
         for resource in stack_resources:
             sceptre_response.append(resource["PhysicalResourceId"])
 
-    response = context.client.describe_stack_resources(
+    response = retry_boto_call(
+        context.client.describe_stack_resources,
         StackName=get_cloudformation_stack_name(context, stack_name)
     )
     expected_resources[stack_name] = response["StackResources"]
@@ -151,7 +154,7 @@ def step_impl(context, first_stack, second_stack):
 
 def get_stack_creation_times(context, stacks):
     creation_times = {}
-    response = context.client.describe_stacks()
+    response = retry_boto_call(context.client.describe_stacks)
     for stack in response["Stacks"]:
         if stack["StackName"] in stacks:
             creation_times[stack["StackName"]] = stack["CreationTime"]
@@ -185,8 +188,10 @@ def create_stacks(context, stack_names):
     for stack_name in stack_names:
         time.sleep(1)
         try:
-            context.client.create_stack(
-                StackName=stack_name, TemplateBody=body
+            retry_boto_call(
+                context.client.create_stack,
+                StackName=stack_name,
+                TemplateBody=body
             )
         except ClientError as e:
             if e.response['Error']['Code'] == 'AlreadyExistsException' \
@@ -201,8 +206,8 @@ def create_stacks(context, stack_names):
 def delete_stacks(context, stack_names):
     for stack_name in stack_names:
         time.sleep(1)
-        stack = context.cloudformation.Stack(stack_name)
-        stack.delete()
+        stack = retry_boto_call(context.cloudformation.Stack, stack_name)
+        retry_boto_call(stack.delete)
 
     waiter = context.client.get_waiter('stack_delete_complete')
     waiter.config.delay = 5
@@ -213,19 +218,7 @@ def delete_stacks(context, stack_names):
 
 
 def check_stack_status(context, stack_names, desired_status):
-    delay = 4
-    max_retries = 150
-    attempts = 0
-    response = None
-    while not response and attempts < max_retries:
-        attempts = attempts + 1
-        try:
-            response = context.client.describe_stacks()
-        except ClientError as e:
-            if e.response['Error']['Code'] == 'Throttling':
-                time.sleep(delay)
-            else:
-                raise e
+    response = retry_boto_call(context.client.describe_stacks)
 
     for stack_name in stack_names:
         for stack in response["Stacks"]:

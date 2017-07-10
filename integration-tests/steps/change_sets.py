@@ -5,6 +5,7 @@ import os
 from sceptre.environment import Environment
 from botocore.exceptions import ClientError
 from helpers import read_template_file, get_cloudformation_stack_name
+from helpers import retry_boto_call
 
 
 def wait_for_final_state(context, stack_name, change_set_name):
@@ -27,7 +28,8 @@ def wait_for_final_state(context, stack_name, change_set_name):
 )
 def step_impl(context, stack_name, change_set_name, filename):
     full_name = get_cloudformation_stack_name(context, stack_name)
-    context.client.create_change_set(
+    retry_boto_call(
+        context.client.create_change_set,
         StackName=full_name,
         ChangeSetName=change_set_name,
         TemplateBody=read_template_file(context, filename)
@@ -38,7 +40,8 @@ def step_impl(context, stack_name, change_set_name, filename):
 @given('stack "{stack_name}" does not have change set "{change_set_name}"')
 def step_impl(context, stack_name, change_set_name):
     full_name = get_cloudformation_stack_name(context, stack_name)
-    context.client.delete_change_set(
+    retry_boto_call(
+        context.client.delete_change_set,
         ChangeSetName=change_set_name,
         StackName=full_name
     )
@@ -47,10 +50,13 @@ def step_impl(context, stack_name, change_set_name):
 @given('stack "{stack_name}" has no change sets')
 def step_impl(context, stack_name):
     full_name = get_cloudformation_stack_name(context, stack_name)
-    response = context.client.list_change_sets(StackName=full_name)
+    response = retry_boto_call(
+        context.client.list_change_sets, StackName=full_name
+    )
     for change_set in response["Summaries"]:
         time.sleep(1)
-        context.client.delete_change_set(
+        retry_boto_call(
+            context.client.delete_change_set,
             ChangeSetName=change_set['ChangeSetName'],
             StackName=full_name
         )
@@ -159,7 +165,10 @@ def step_impl(context, stack_name, change_set_name):
 @then('the change sets for stack "{stack_name}" are listed')
 def step_impl(context, stack_name):
     full_name = get_cloudformation_stack_name(context, stack_name)
-    response = context.client.list_change_sets(StackName=full_name)
+    response = retry_boto_call(
+        context.client.list_change_sets,
+        StackName=full_name
+    )
 
     assert response["Summaries"] == context.output["Summaries"]
 
@@ -174,7 +183,8 @@ def step_impl(context, stack_name):
 @then('change set "{change_set_name}" for stack "{stack_name}" is described')
 def step_impl(context, change_set_name, stack_name):
     full_name = get_cloudformation_stack_name(context, stack_name)
-    response = context.client.describe_change_set(
+    response = retry_boto_call(
+        context.client.describe_change_set,
         StackName=full_name,
         ChangeSetName=change_set_name
     )
@@ -187,7 +197,10 @@ def step_impl(context, change_set_name, stack_name):
 @then('stack "{stack_name}" was updated with change set "{change_set_name}"')
 def step_impl(context, stack_name, change_set_name):
     full_name = get_cloudformation_stack_name(context, stack_name)
-    response = context.client.describe_stacks(StackName=full_name)
+    response = retry_boto_call(
+        context.client.describe_stacks,
+        StackName=full_name
+    )
 
     change_set_id = response["Stacks"][0]["ChangeSetId"]
     stack_status = response["Stacks"][0]["StackStatus"]
@@ -198,7 +211,8 @@ def step_impl(context, stack_name, change_set_name):
 
 def get_change_set_status(context, stack_name, change_set_name):
     try:
-        response = context.client.describe_change_set(
+        response = retry_boto_call(
+            context.client.describe_change_set,
             ChangeSetName=change_set_name,
             StackName=stack_name
         )

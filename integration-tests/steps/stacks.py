@@ -4,6 +4,7 @@ import os
 from botocore.exceptions import ClientError
 from sceptre.environment import Environment
 from helpers import read_template_file, get_cloudformation_stack_name
+from helpers import retry_boto_call
 
 
 @given('stack "{stack_name}" does not exist')
@@ -121,7 +122,10 @@ def step_impl(context, stack_name):
 @then('the resources of stack "{stack_name}" are described')
 def step_impl(context, stack_name):
     full_name = get_cloudformation_stack_name(context, stack_name)
-    response = context.client.describe_stack_resources(StackName=full_name)
+    response = retry_boto_call(
+        context.client.describe_stack_resources,
+        StackName=full_name
+    )
 
     properties = {"LogicalResourceId", "PhysicalResourceId"}
     formatted_response = [
@@ -133,28 +137,21 @@ def step_impl(context, stack_name):
 
 
 def get_stack_status(context, stack_name):
-    delay = 2
-    max_retries = 150
-    attempts = 0
-    while attempts < max_retries:
-        attempts = attempts + 1
-        try:
-            stack = context.cloudformation.Stack(stack_name)
-            stack.load()
-            return stack.stack_status
-        except ClientError as e:
-            if e.response['Error']['Code'] == 'ValidationError' \
-              and e.response['Error']['Message'].endswith("does not exist"):
-                return None
-            elif e.response['Error']['Code'] == 'Throttling':
-                time.sleep(delay)
-            else:
-                raise e
-    return None
+    try:
+        stack = retry_boto_call(context.cloudformation.Stack, stack_name)
+        retry_boto_call(stack.load)
+        return stack.stack_status
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'ValidationError' \
+          and e.response['Error']['Message'].endswith("does not exist"):
+            return None
+        else:
+            raise e
 
 
 def create_stack(context, stack_name, body, **kwargs):
-    context.client.create_stack(
+    retry_boto_call(
+        context.client.create_stack,
         StackName=stack_name, TemplateBody=body, **kwargs
     )
 
@@ -162,15 +159,15 @@ def create_stack(context, stack_name, body, **kwargs):
 
 
 def update_stack(context, stack_name, body, **kwargs):
-    stack = context.cloudformation.Stack(stack_name)
-    stack.update(TemplateBody=body, **kwargs)
+    stack = retry_boto_call(context.cloudformation.Stack, stack_name)
+    retry_boto_call(stack.update, TemplateBody=body, **kwargs)
 
     wait_for_final_state(context, stack_name)
 
 
 def delete_stack(context, stack_name):
-    stack = context.cloudformation.Stack(stack_name)
-    stack.delete()
+    stack = retry_boto_call(context.cloudformation.Stack, stack_name)
+    retry_boto_call(stack.delete)
 
     waiter = context.client.get_waiter('stack_delete_complete')
     waiter.config.delay = 4
@@ -179,12 +176,12 @@ def delete_stack(context, stack_name):
 
 
 def wait_for_final_state(context, stack_name):
-    stack = context.cloudformation.Stack(stack_name)
+    stack = retry_boto_call(context.cloudformation.Stack, stack_name)
     delay = 2
     max_retries = 150
     attempts = 0
     while attempts < max_retries:
-        stack.load()
+        retry_boto_call(stack.load)
         if not stack.stack_status.endswith("IN_PROGRESS"):
             return
         attempts = attempts + 1

@@ -1,6 +1,8 @@
 from behave import *
 import os
+import time
 
+from botocore.exceptions import ClientError
 from sceptre.exceptions import TemplateSceptreHandlerError
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 
@@ -39,3 +41,19 @@ def get_cloudformation_stack_name(context, stack_name):
     return "-".join(
         [context.project_code, stack_name.replace("/", "-")]
     )
+
+
+def retry_boto_call(func, *args, **kwargs):
+    delay = 2
+    max_retries = 150
+    attempts = 0
+    while attempts < max_retries:
+        attempts = attempts + 1
+        try:
+            response = func(*args, **kwargs)
+            return response
+        except ClientError as e:
+            if e.response['Error']['Code'] == 'Throttling':
+                time.sleep(delay)
+            else:
+                raise e

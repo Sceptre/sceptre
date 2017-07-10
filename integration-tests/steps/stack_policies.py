@@ -4,13 +4,14 @@ import os
 
 from botocore.exceptions import ClientError
 from sceptre.environment import Environment
-from helpers import get_cloudformation_stack_name
+from helpers import get_cloudformation_stack_name, retry_boto_call
 
 
 @given('the policy for stack "{stack_name}" is {state}')
 def step_impl(context, stack_name, state):
     full_name = get_cloudformation_stack_name(context, stack_name)
-    context.client.set_stack_policy(
+    retry_boto_call(
+        context.client.set_stack_policy,
         StackName=full_name,
         StackPolicyBody=generate_stack_policy(state)
     )
@@ -47,7 +48,8 @@ def step_impl(context, stack_name, state):
 
 def get_stack_policy(context, stack_name):
     try:
-        response = context.client.get_stack_policy(
+        response = retry_boto_call(
+            context.client.get_stack_policy,
             StackName=stack_name
         )
     except ClientError as e:
