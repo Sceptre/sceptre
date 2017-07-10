@@ -53,7 +53,7 @@ class Environment(object):
         self.logger = logging.getLogger(__name__)
 
         self.sceptre_dir = sceptre_dir
-        self.path = environment_path
+        self.path = os.path.normpath(environment_path).replace('\\', '/')
         self._options = {} if options is None else options
 
         self._check_env_path_valid(self.path)
