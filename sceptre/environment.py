@@ -74,7 +74,7 @@ class Environment(object):
     @staticmethod
     def _validate_path(path):
         """
-        Converts backslashes to forward slashes.
+        Normalises backslashes to forward slashes for non-unix systems.
         Raises an InvalidEnvironmentPathError if the path has a leading or
         trailing slash.
 
@@ -82,9 +82,9 @@ class Environment(object):
         :type path: str
         :raises: sceptre.exceptions.InvalidEnvironmentPathError
         :returns: A normalised path with forward slashes.
-        :returns: string
+        :rtype: string
         """
-        path = path.replace('\\', '/')
+        path = path.replace("\\", "/")
         if path.endswith("/") or path.startswith("/"):
             raise InvalidEnvironmentPathError(
                 "'{0}' is an invalid path string. Environment paths should "
@@ -372,16 +372,16 @@ class Environment(object):
         config_files = glob(os.path.join(
             self.sceptre_dir, "config", self.path, "*.yaml"
         ))
-        stack_basenames = [
+        basenames = [
             os.path.splitext(os.path.basename(config_file))[0]
             for config_file in config_files
         ]
 
-        if "config" in stack_basenames:
-            stack_basenames.remove("config")
+        if "config" in basenames:
+            basenames.remove("config")
 
         stack_names = [
-            "/".join([self.path, basename]) for basename in stack_basenames
+            "/".join([self.path, basename]) for basename in basenames
         ]
         return stack_names
 
