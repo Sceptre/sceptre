@@ -110,11 +110,14 @@ class Template(object):
 
         try:
             body = module.sceptre_handler(self.sceptre_user_data)
-        except AttributeError:
-            raise TemplateSceptreHandlerError(
-                "The template does not have the required "
-                "'sceptre_handler(sceptre_user_data)' function."
-            )
+        except AttributeError as e:
+            if 'sceptre_handler' in e.message:
+                raise TemplateSceptreHandlerError(
+                    "The template does not have the required "
+                    "'sceptre_handler(sceptre_user_data)' function."
+                )
+            else:
+                raise e
         for directory in relpaths_to_add:
             sys.path.remove(os.path.join(os.getcwd(), directory))
         return body
