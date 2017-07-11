@@ -155,13 +155,14 @@ def step_impl(context, stack_name):
         StackName=full_name
     )
 
-    assert response["Summaries"] == context.output["Summaries"]
+    del response["ResponseMetadata"]
+    del context.output["ResponseMetadata"]
+
+    assert response == context.output
 
 
 @then('no change sets for stack "{stack_name}" are listed')
 def step_impl(context, stack_name):
-    full_name = get_cloudformation_stack_name(context, stack_name)
-
     assert context.output["Summaries"] == []
 
 
@@ -173,8 +174,9 @@ def step_impl(context, change_set_name, stack_name):
         StackName=full_name,
         ChangeSetName=change_set_name
     )
-    response.pop("ResponseMetadata")
-    context.output.pop("ResponseMetadata")
+
+    del response["ResponseMetadata"]
+    del context.output["ResponseMetadata"]
 
     assert response == context.output
 
