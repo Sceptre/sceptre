@@ -321,7 +321,7 @@ class Stack(object):
             status = self.get_status()
         except StackDoesNotExistError:
             self.logger.info("%s does not exist.", self.name)
-            status = StackStatus.PENDING
+            status = StackStatus.COMPLETE
             return status
 
         delete_stack_kwargs = {"StackName": self.external_name}
