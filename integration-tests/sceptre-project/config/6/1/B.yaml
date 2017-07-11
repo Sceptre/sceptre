@@ -1,1 +1,3 @@
-template_path: templates/valid_template.json
+template_path: templates/input_output_template.json
+parameters:
+  Input: !stack_output A::Output
