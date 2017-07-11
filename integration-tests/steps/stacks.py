@@ -198,6 +198,6 @@ def wait_for_final_state(context, stack_name):
         retry_boto_call(stack.load)
         if not stack.stack_status.endswith("IN_PROGRESS"):
             return
-        attempts = attempts + 1
+        attempts += 1
         time.sleep(delay)
     raise Exception("Timeout waiting for stack to reach final state.")
