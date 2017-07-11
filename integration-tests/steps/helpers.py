@@ -48,7 +48,7 @@ def retry_boto_call(func, *args, **kwargs):
     max_retries = 150
     attempts = 0
     while attempts < max_retries:
-        attempts = attempts + 1
+        attempts += 1
         try:
             response = func(*args, **kwargs)
             return response

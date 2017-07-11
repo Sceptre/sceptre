@@ -8,21 +8,6 @@ from helpers import read_template_file, get_cloudformation_stack_name
 from helpers import retry_boto_call
 
 
-def wait_for_final_state(context, stack_name, change_set_name):
-    full_name = get_cloudformation_stack_name(context, stack_name)
-    delay = 1
-    max_retries = 10
-    attempts = 0
-    while attempts < max_retries:
-        status = get_change_set_status(context, full_name, change_set_name)
-        in_progress = "IN_PROGRESS" not in status and "PENDING" not in status
-        if status is None or in_progress:
-            return
-        time.sleep(delay)
-        attempts = attempts + 1
-    raise Exception("Timeout waiting for change set to reach final state.")
-
-
 @given(
     'stack "{stack_name}" has change set "{change_set_name}" using {filename}'
 )
@@ -222,3 +207,18 @@ def get_change_set_status(context, stack_name, change_set_name):
         else:
             raise e
     return response["Status"]
+
+
+def wait_for_final_state(context, stack_name, change_set_name):
+    full_name = get_cloudformation_stack_name(context, stack_name)
+    delay = 1
+    max_retries = 10
+    attempts = 0
+    while attempts < max_retries:
+        status = get_change_set_status(context, full_name, change_set_name)
+        in_progress = "IN_PROGRESS" not in status and "PENDING" not in status
+        if status is None or in_progress:
+            return
+        time.sleep(delay)
+        attempts += 1
+    raise Exception("Timeout waiting for change set to reach final state.")
