@@ -53,10 +53,8 @@ class Environment(object):
         self.logger = logging.getLogger(__name__)
 
         self.sceptre_dir = sceptre_dir
-        self.path = environment_path
+        self.path = self._validate_path(environment_path)
         self._options = {} if options is None else options
-
-        self._check_env_path_valid(self.path)
 
         self._is_leaf = None
 
@@ -74,20 +72,25 @@ class Environment(object):
         )
 
     @staticmethod
-    def _check_env_path_valid(path):
+    def _validate_path(path):
         """
+        Normalises backslashes to forward slashes for non-unix systems.
         Raises an InvalidEnvironmentPathError if the path has a leading or
         trailing slash.
 
         :param path: A directory path
         :type path: str
         :raises: sceptre.exceptions.InvalidEnvironmentPathError
+        :returns: A normalised path with forward slashes.
+        :rtype: string
         """
+        path = path.replace("\\", "/")
         if path.endswith("/") or path.startswith("/"):
             raise InvalidEnvironmentPathError(
                 "'{0}' is an invalid path string. Environment paths should "
                 "not have leading or trailing slashes.".format(path)
             )
+        return path
 
     @property
     def is_leaf(self):
@@ -369,19 +372,18 @@ class Environment(object):
         config_files = glob(os.path.join(
             self.sceptre_dir, "config", self.path, "*.yaml"
         ))
-        base_config_file_names = [
-            os.path.basename(config_file).split(".")[0]
+        basenames = [
+            os.path.splitext(os.path.basename(config_file))[0]
             for config_file in config_files
         ]
-        stack_basenames = [
-            basename for basename in base_config_file_names
-            if basename != "config"
+
+        if "config" in basenames:
+            basenames.remove("config")
+
+        stack_names = [
+            "/".join([self.path, basename]) for basename in basenames
         ]
-        available_stacks = [
-            "/".join([self.path, basename])
-            for basename in stack_basenames
-        ]
-        return available_stacks
+        return stack_names
 
     def _load_stacks(self):
         """
