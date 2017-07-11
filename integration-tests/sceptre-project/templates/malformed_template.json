@@ -1,0 +1,14 @@
+{
+  "Malformed": {
+    "InvalidWaitConditionHandle": {
+      "Properties": {
+        "Invalid": "Invalid"
+      },
+      "Type": "AWS::CloudFormation::WaitConditionHandle"
+    },
+    "WaitConditionHandle": {
+      "NotProperties": {},
+      "Type": "Invalid::Resource::Type"
+    }
+  }
+}
