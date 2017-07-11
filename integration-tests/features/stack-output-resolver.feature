@@ -13,7 +13,7 @@ Feature: Stack output resolver
     Given stack "6/1/A" does not exist
     and stack "6/1/B" does not exist
     When the user launches stack "6/1/B"
-    Then the user is told ""
+    Then an "StackDoesNotExistError" is raised
 
   @wip
   Scenario: launch a environment where stacks reference other stack outputs

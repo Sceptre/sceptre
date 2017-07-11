@@ -5,6 +5,7 @@ import time
 from botocore.exceptions import ClientError
 from sceptre.exceptions import TemplateSceptreHandlerError
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
+from sceptre.exceptions import StackDoesNotExistError
 
 
 @then('the user is told {message}')
@@ -29,6 +30,12 @@ def step_impl(context, message):
         assert isinstance(context.error, UnsupportedTemplateFileTypeError)
     elif message == "change set failed to create":
         assert False
+
+
+@then('a "{exception_type}" is raised')
+def step_impl(context, exception_type):
+    if exception_type == "StackDoesNotExistError":
+        assert isinstance(context.error, UnsupportedTemplateFileTypeError)
 
 
 def read_template_file(context, template_name):

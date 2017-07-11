@@ -56,7 +56,7 @@ def step_impl(context, stack_name, template_name):
         create_stack(context, full_name, body)
 
     status = get_stack_status(context, full_name)
-    assert (status == desired_status)
+    assert (status == "CREATE_COMPLETE")
 
 
 @when('the user creates stack "{stack_name}"')
