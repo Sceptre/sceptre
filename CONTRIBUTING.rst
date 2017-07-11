@@ -1,16 +1,16 @@
-.. highlight:: shell
-
 =======================
 Contributing to Sceptre
 =======================
 
-* `Code of Conduct`_
-* `How to Contribute`_
-   * `Report Bugs`_
-   * `Enhancement Proposal`_
-   * `Contributing Code`_
-* `Get Started`_
-* `Credits`_
+- `Code of Conduct`_
+- `How to Contribute`_
+
+  - `Report Bugs`_
+  - `Enhancement Proposal`_
+  - `Contributing Code`_
+
+- `Get Started`_
+- `Credits`_
 
 
 Code of Conduct
@@ -49,6 +49,8 @@ Contributing Code
 
 Contributions should be made in response to a particular GitHub Issue. We find it easier to review code if we've already discussed what it should do, and assessed if it fits with the wider codebase.
 
+Beginner friendly issues are marked with the ``beginner friendly`` tag. We'll endeavour to write clear instructions on what we want to do, why we want to do it, and roughly how to do it. Feel free to ask us any questions that may arise.
+
 A good pull request:
 
 * Is clear.
@@ -69,30 +71,40 @@ Get Started
 
     $ git clone git@github.org:your_name_here/sceptre.git
 
-3. Install your local copy into a `virtualenv <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_. Assuming you have virtualenv installed, this is how you set up your fork for local development::
+3. Install your local copy into a `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_. Assuming you have virtualenv installed, this is how you set up your fork for local development:
+
+.. code-block:: shell
 
     $ cd sceptre/
+    $ # Enable your virtual environment
     $ virtualenv env
     $ source env/bin/activate
+    $ # Install Sceptre's development requirements
     $ pip install -r requirements_dev.txt
+    $ # Install Sceptre's test requirements
     $ pip install -r requirements_tests.txt
+    $ # Install sceptre locally, so you can test your changes
     $ pip install -e .
 
-4. Create a branch for local development::
+4. Create a branch for local development:
 
-    $ git checkout -b sptr-<GitHub issue number>
+.. code-block:: shell
 
-5. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox::
+    $ git checkout -b <GitHub issue number>-<short description>
+
+5. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox:
+
+.. code-block:: shell
 
     $ make lint
-    $ make test
     $ make test-all
-    $ make test-integration
     $ make coverage  # coverage should be 100%
 
 6. Make sure the changes comply with the pull request guidelines in the section on `Contributing Code`_.
 
-7. Commit your changes::
+7. Commit your changes:
+
+.. code-block:: shell
 
     $ git add .
     $ git commit
