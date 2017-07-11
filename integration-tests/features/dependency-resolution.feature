@@ -16,16 +16,6 @@ Feature: Dependency resolution
     and that stack "3/A" was created before "3/B"
     and that stack "3/B" was created before "3/C"
 
-  # Need to fix bug to pass the scenario
-  # @wip
-  # Scenario: launch an environment with dependencies outside the same environment
-  #   Given environment "4" does not exist
-  #   and stack "3/A" does not exist
-  #   When the user launches environment "4"
-  #   Then stack "4/A" exists in "CREATE_COMPLETE" state
-  #   and stack "4/B" exists in "CREATE_COMPLETE" state
-  #   and stack "4/C" does not exist
-
   Scenario: delete an environment with dependencies that is partially complete
     Given stack "3/A" exists in "CREATE_COMPLETE" state
     and stack "3/B" exists in "CREATE_COMPLETE" state
