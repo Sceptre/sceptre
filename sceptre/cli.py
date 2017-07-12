@@ -14,6 +14,7 @@ from logging import Formatter
 import sys
 from uuid import uuid1
 from functools import wraps
+import warnings
 
 import click
 import colorama
@@ -121,6 +122,8 @@ def cli(
     """
     setup_logging(debug, no_colour)
     colorama.init()
+    # Enable deprecation warnings
+    warnings.simplefilter("always", DeprecationWarning)
     ctx.obj = {
         "options": {},
         "output_format": output,

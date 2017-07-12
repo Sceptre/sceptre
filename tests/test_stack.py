@@ -455,7 +455,7 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         self.stack._config = {"protect": False}
         mock_get_status.side_effect = StackDoesNotExistError()
         status = self.stack.delete()
-        assert status == StackStatus.PENDING
+        assert status == StackStatus.COMPLETE
 
     def test_describe_stack_sends_correct_request(self):
         self.stack.describe()
