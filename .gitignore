@@ -105,15 +105,15 @@ Temporary Items
 # Jekyll settings
 
 .bundle/
-website/vendor/*
+docs/vendor/*
 _site/
 .sass-cache/
 .jekyll-metadata
 
 # Sphinx docs
-/website/docs/api
-/website/_api/_build/
-/website/_api/modules.rst
-/website/_api/sceptre.rst
-/website/_api/sceptre.hooks.rst
-/website/_api/sceptre.resolvers.rst
+/docs/docs/api
+/docs/_api/_build/
+/docs/_api/modules.rst
+/docs/_api/sceptre.rst
+/docs/_api/sceptre.hooks.rst
+/docs/_api/sceptre.resolvers.rst
