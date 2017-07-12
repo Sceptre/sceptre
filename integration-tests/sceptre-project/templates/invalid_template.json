@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "InvalidWaitConditionHandle": {
+      "Type": "AWS::CloudFormation::WaitConditionHandle",
+      "Properties": {
+        "Invalid": "Invalid"
+      }
+    }
+  }
+}

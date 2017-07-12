@@ -1,4 +1,0 @@
-template_path: templates/security_group.py
-parameters:
-    VpcId: !stack_output test-env/a/vpc::VpcId
-    WhitelistIpParam: 0.0.0.0/0
