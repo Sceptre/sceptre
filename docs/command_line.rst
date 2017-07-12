@@ -40,6 +40,7 @@ The available commands are::
   $ sceptre describe-env-resources
   $ sceptre describe-stack-outputs
   $ sceptre describe-stack-resources
+  $ sceptre describe-stack-events
   $ sceptre execute-change-set
   $ sceptre generate-template
   $ sceptre get-stack-policy

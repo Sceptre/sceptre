@@ -527,6 +527,21 @@ def describe_stack_outputs(ctx, environment, stack, export):
         write(response, ctx.obj["output_format"])
 
 
+@cli.command(name="describe-stack-events")
+@stack_options
+@click.pass_context
+@catch_exceptions
+def describe_stack_events(ctx, environment, stack):
+    """
+    Describes the stack.
+
+    Describes ENVIRONMENT/STACK's stack events.
+    """
+    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
+    description = env.stacks[stack].describe_events()
+    write(description, ctx.obj["output_format"])
+
+
 @cli.command(name="describe-env")
 @environment_options
 @click.pass_context
