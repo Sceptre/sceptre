@@ -29,18 +29,14 @@ def step_impl(context, exception_type):
         assert isinstance(context.error, TemplateSceptreHandlerError)
     elif exception_type == "UnsupportedTemplateFileTypeError":
         assert isinstance(context.error, UnsupportedTemplateFileTypeError)
+    elif exception_type == "StackDoesNotExistError":
+        assert isinstance(context.error, StackDoesNotExistError)
     elif exception_type == "ClientError":
         assert isinstance(context.error, ClientError)
     elif exception_type == "AttributeError":
         assert isinstance(context.error, AttributeError)
     else:
         assert False
-
-
-@then('a "{exception_type}" is raised')
-def step_impl(context, exception_type):
-    if exception_type == "StackDoesNotExistError":
-        assert isinstance(context.error, UnsupportedTemplateFileTypeError)
 
 
 def read_template_file(context, template_name):

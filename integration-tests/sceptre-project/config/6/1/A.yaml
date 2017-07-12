@@ -1,3 +1,1 @@
-template_path: templates/output_template.json
-parameters:
-  Input: "TestValue"
+template_path: templates/dependent_1_template.json

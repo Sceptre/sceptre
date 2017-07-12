@@ -13,7 +13,7 @@ Feature: Stack output resolver
     Given stack "6/1/A" does not exist
     and stack "6/1/B" does not exist
     When the user launches stack "6/1/B"
-    Then an "StackDoesNotExistError" is raised
+    Then a "StackDoesNotExistError" is raised
 
   @wip
   Scenario: launch a environment where stacks reference other stack outputs
@@ -27,12 +27,13 @@ Feature: Stack output resolver
   Scenario: delete a stack referencing an output of existing stack
     Given stack "6/1/A" exists in "CREATE_COMPLETE" state
     and stack "6/1/B" exists in "CREATE_COMPLETE" state
+    and stack "6/1/C" does not exist
     When the user deletes stack "6/1/B"
     Then stack "6/1/A" exists in "CREATE_COMPLETE" state
     and stack "6/1/B" does not exist
 
   @wip
-  Scenario: delete a environment where stacks reference other stack outputs
+  Scenario: delete a stack referencing an output of existing stack
     Given all the stacks in environment "6/1" are in "CREATE_COMPLETE"
     When the user deletes environment "6/1"
     Then all the stacks in environment "6/1" do not exist
