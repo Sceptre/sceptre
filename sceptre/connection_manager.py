@@ -19,12 +19,12 @@ from .helpers import mask_key
 from .exceptions import RetryLimitExceededError
 
 
-def _retry(func):
+def _retry_boto_call(func):
     """
     Retries a Boto3 call up to 30 times if request rate limits are hit.
 
     The time waited between retries increases linearly. If rate limits are
-    hit 30 times, _retry raises a
+    hit 30 times, _retry_boto_call raises a
     sceptre.exceptions.RetryLimitExceededException.
 
     :param func: a function that uses boto calls
@@ -177,7 +177,7 @@ class ConnectionManager(object):
                 self.clients[service] = self.boto_session.client(service)
             return self.clients[service]
 
-    @_retry
+    @_retry_boto_call
     def call(self, service, command, kwargs=None):
         """
         Makes a threadsafe Boto3 client call.
