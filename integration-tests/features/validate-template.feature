@@ -1,11 +1,12 @@
 Feature: Validate template
 
   Scenario: validate a vaild template
-    Given the template for stack "1/A" is valid_template.json
+    Given the template for stack "1/A" is "valid_template.json"
     When the user validates the template for stack "1/A"
-    Then the user is told the template is valid
+    Then the user is told "the template is valid"
 
   Scenario: validate a invaild template
-    Given the template for stack "1/A" is malformed_template.json
+    Given the template for stack "1/A" is "malformed_template.json"
     When the user validates the template for stack "1/A"
-    Then the user is told the template is malformed
+    Then a "ClientError" is raised
+    and the user is told "the template is malformed"
