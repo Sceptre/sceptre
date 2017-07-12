@@ -126,3 +126,8 @@ dist: clean
 
 install: clean
 	python setup.py install
+
+install-dev: clean
+	pip install -r requirements_dev.txt
+	pip install -r requirements_tests.txt
+	echo "To install the documentation dependencies, run:\ncd docs\nmake install"
