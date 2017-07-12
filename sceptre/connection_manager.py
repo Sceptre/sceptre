@@ -7,11 +7,12 @@ This module implements a ConnectionManager class, which simplifies and  manages
 Boto3 calls.
 """
 
-
 import logging
 import threading
+import re
 
 import boto3
+from botocore import exceptions
 
 from .helpers import mask_key
 from .helpers import exponential_backoff
@@ -31,11 +32,12 @@ class ConnectionManager(object):
     _session_lock = threading.Lock()
     _client_lock = threading.Lock()
 
-    def __init__(self, region, iam_role=None):
+    def __init__(self, region, iam_role=None, require_mfa=False):
         self.logger = logging.getLogger(__name__)
 
         self.region = region
         self.iam_role = iam_role
+        self._require_mfa = require_mfa
         self._boto_session = None
 
         self.clients = {}
@@ -43,8 +45,43 @@ class ConnectionManager(object):
     def __repr__(self):
         return (
             "sceptre.connection_manager.ConnectionManager(region='{0}', "
-            "iam_role='{1}')".format(self.region, self.iam_role)
+            "iam_role='{1}', require_mfa='{2}')".format(
+                self.region, self.iam_role, str(self._require_mfa))
         )
+
+    def __resolve_mfa_device(self):
+        """
+        Generate the MFA device arn for the current AWS profile.
+
+        The virtual MFA device ARN is
+        ``arn:aws:iam::<account id>:mfa/<username>``. These are both
+        available in the ARN of the user account. The ``get_user``
+        method will either return this information for the current
+        user, or if the API is protected by MFA as well, an error
+        that contains the current user's ARN.
+
+        :returns: The MFA arn for the current user
+        :rtype: basestring
+        :raises: botocore.exceptions.ClientError
+        """
+        self.logger.debug("Trying to resolve user information.")
+        iam_client = boto3.client("iam")
+        try:
+            resp = iam_client.get_user()
+            arn = resp["User"]["Arn"]
+        except exceptions.ClientError as e:
+            arn = re.search(
+                'User: (arn:aws:iam::\d+:user/.+) is',
+                e.message
+            )
+            if not arn:
+                self.logger.error("Could not figure out MFA arn.")
+                raise e
+            arn = arn.group(1)
+
+        match = re.search('arn:aws:iam::(\d+):user/(.+)', arn)
+
+        return 'arn:aws:iam::{}:mfa/{}'.format(match.group(1), match.group(2))
 
     @property
     def boto_session(self):
@@ -67,14 +104,31 @@ class ConnectionManager(object):
             if self._boto_session is None:
                 self.logger.debug("No Boto3 session found, creating one...")
                 if self.iam_role:
-                    self.logger.debug("Assuming role '%s'...", self.iam_role)
                     sts_client = boto3.client("sts")
-                    sts_response = sts_client.assume_role(
-                        RoleArn=self.iam_role,
-                        RoleSessionName="{0}-session".format(
-                            self.iam_role.split("/")[-1]
+
+                    if self._require_mfa:
+                        self.logger.debug(
+                            "Assuming role '%s' using MFA...", self.iam_role)
+                        mfa_serial = self.__resolve_mfa_device()
+                        mfa_code = str(input('Enter MFA for {}: '.format(mfa_serial)))
+                        sts_response = sts_client.assume_role(
+                            RoleArn=self.iam_role,
+                            RoleSessionName="{0}-session".format(
+                                self.iam_role.split("/")[-1]
+                            ),
+                            SerialNumber=mfa_serial,
+                            TokenCode=mfa_code,
                         )
-                    )
+                    else:
+                        self.logger.debug(
+                            "Assuming role '%s'...", self.iam_role)
+                        sts_response = sts_client.assume_role(
+                            RoleArn=self.iam_role,
+                            RoleSessionName="{0}-session".format(
+                                self.iam_role.split("/")[-1]
+                            )
+                        )
+
                     credentials = sts_response["Credentials"]
                     self._boto_session = boto3.session.Session(
                         aws_access_key_id=credentials["AccessKeyId"],
