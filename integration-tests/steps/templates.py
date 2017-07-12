@@ -52,8 +52,7 @@ def step_impl(context, filename):
     )
     with open(filepath) as template:
         body = template.read()
-
-    assert body == context.output
+    assert yaml.safe_load(body) == yaml.safe_load(context.output)
 
 
 @then('the output is the same as the string returned by {filename}')

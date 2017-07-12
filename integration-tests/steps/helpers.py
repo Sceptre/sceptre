@@ -29,6 +29,13 @@ def step_impl(context, message):
         assert isinstance(context.error, UnsupportedTemplateFileTypeError)
     elif message == "change set failed to create":
         assert False
+    elif message == "key is undefined":
+        assert "'non_existant_key' is undefined" in context.error
+    elif message == "missing attribute":
+        assert "'dict object' has no attribute 'missing_param'" in \
+            context.error
+    else:
+        raise Exception("Behave: invalid error message")
 
 
 def read_template_file(context, template_name):
