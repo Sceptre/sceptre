@@ -11,7 +11,7 @@ dependencies:
     - pip install -r requirements_tests.txt
     - make install
     # Jekyll dependencies
-    - cd website && make install
+    - cd docs && make install
 test:
   override:
     - make lint
@@ -20,18 +20,18 @@ test:
         parallel: true
         files:
           - integration-tests/features/*.feature
-    - make docs
 deployment:
     production:
         tag: /v[0-9]+(\.[0-9]+)*/
         commands:
-            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/latest/docs/ --delete
-            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/$CIRCLE_TAG/docs/ --delete
-            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/$SHORT_SHA1/dev/docs/ --delete
+          - make docs-latest
+          - aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/latest/ --delete
+          - make docs-tag
+          - aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/$GIT_TAG/ --delete
     develop:
         branch: master
         commands:
-            - make website-dev
-            - aws s3 sync ~/sceptre/website/_site s3://sceptre.cloudreach.com/dev/ --delete
-            - make website-commit
-            - aws s3 sync ~/sceptre/website/_site s3://sceptre.cloudreach.com/$SHORT_SHA1/ --delete
+          - make docs-dev
+          - aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/dev/ --delete
+          - make docs-commit
+          - aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/$SHORT_SHA1/ --delete

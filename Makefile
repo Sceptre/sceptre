@@ -1,4 +1,4 @@
-.PHONY: clean-pyc clean-build docs clean website
+.PHONY: clean-pyc clean-build docs clean docs
 define BROWSER_PYSCRIPT
 import os, webbrowser, sys
 try:
@@ -82,42 +82,42 @@ docs:
 servedocs: docs
 	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
-website-api:
-	rm -f website/_api/sceptre.rst
-	rm -f website/_api/modules.rst
-	sphinx-apidoc -o website/_api sceptre
-	$(MAKE) -C website/_api clean
-	$(MAKE) -C website/_api html
-	mkdir -p website/docs/api
-	rm -rf website/docs/api/_static
-	mkdir -p website/docs/api/_static/
-	cp -r website/_api/_build/html/_static website/docs/api/
-	rm -f website/docs/api/sceptre.html
-	cp -r website/_api/_build/html/ website/docs/api/
+docs-api:
+	rm -f docs/_api/sceptre.rst
+	rm -f docs/_api/modules.rst
+	sphinx-apidoc -o docs/_api sceptre
+	$(MAKE) -C docs/_api clean
+	$(MAKE) -C docs/_api html
+	mkdir -p docs/docs/api
+	rm -rf docs/docs/api/_static
+	mkdir -p docs/docs/api/_static/
+	cp -r docs/_api/_build/html/_static docs/docs/api/
+	rm -f docs/docs/api/sceptre.html
+	cp -r docs/_api/_build/html/ docs/docs/api/
 
-website-latest: website-api
-	$(MAKE) -C website build-latest
+docs-latest: docs-api
+	$(MAKE) -C docs build-latest
 
-website-tag: website-api
-	$(MAKE) -C website build-tag
+docs-tag: docs-api
+	$(MAKE) -C docs build-tag
 
-website-dev: website-api
-	$(MAKE) -C website build-dev
+docs-dev: docs-api
+	$(MAKE) -C docs build-dev
 
-website-commit: website-api
-	$(MAKE) -C website build-commit
+docs-commit: docs-api
+	$(MAKE) -C docs build-commit
 
-serve-website-latest: website-latest
-	$(MAKE) -C website serve-latest
+serve-docs-latest: docs-latest
+	$(MAKE) -C docs serve-latest
 
-serve-website-tag: website-tag
-	$(MAKE) -C website serve-tag
+serve-docs-tag: docs-tag
+	$(MAKE) -C docs serve-tag
 
-serve-website-dev: website-dev
-	$(MAKE) -C website serve-dev
+serve-docs-dev: docs-dev
+	$(MAKE) -C docs serve-dev
 
-serve-website-commit: website-commit
-	$(MAKE) -C website serve-commit
+serve-docs-commit: docs-commit
+	$(MAKE) -C docs serve-commit
 
 dist: clean
 	python setup.py sdist
