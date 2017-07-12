@@ -1,4 +1,4 @@
-.PHONY: clean-pyc clean-build docs clean
+.PHONY: clean-pyc clean-build docs clean docs
 define BROWSER_PYSCRIPT
 import os, webbrowser, sys
 try:
@@ -82,6 +82,43 @@ docs:
 servedocs: docs
 	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
 
+docs-api:
+	rm -f docs/_api/sceptre.rst
+	rm -f docs/_api/modules.rst
+	sphinx-apidoc -o docs/_api sceptre
+	$(MAKE) -C docs/_api clean
+	$(MAKE) -C docs/_api html
+	mkdir -p docs/docs/api
+	rm -rf docs/docs/api/_static
+	mkdir -p docs/docs/api/_static/
+	cp -r docs/_api/_build/html/_static docs/docs/api/
+	rm -f docs/docs/api/sceptre.html
+	cp -r docs/_api/_build/html/ docs/docs/api/
+
+docs-latest: docs-api
+	$(MAKE) -C docs build-latest
+
+docs-tag: docs-api
+	$(MAKE) -C docs build-tag
+
+docs-dev: docs-api
+	$(MAKE) -C docs build-dev
+
+docs-commit: docs-api
+	$(MAKE) -C docs build-commit
+
+serve-docs-latest: docs-latest
+	$(MAKE) -C docs serve-latest
+
+serve-docs-tag: docs-tag
+	$(MAKE) -C docs serve-tag
+
+serve-docs-dev: docs-dev
+	$(MAKE) -C docs serve-dev
+
+serve-docs-commit: docs-commit
+	$(MAKE) -C docs serve-commit
+
 dist: clean
 	python setup.py sdist
 	python setup.py bdist_wheel
@@ -89,3 +126,8 @@ dist: clean
 
 install: clean
 	python setup.py install
+
+install-dev: clean
+	pip install -r requirements_dev.txt
+	pip install -r requirements_tests.txt
+	echo "To install the documentation dependencies, run:\ncd docs\nmake install"
