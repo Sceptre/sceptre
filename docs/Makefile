@@ -11,9 +11,6 @@ clean:
 	rm -rf _site/
 	rm -rf .sass-cache/
 
-website:
-	bundle exec jekyll build
-
 build-latest:
 	bundle exec jekyll build --baseurl /latest
 
