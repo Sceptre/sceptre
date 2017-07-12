@@ -20,6 +20,8 @@ def step_impl(context, message):
     elif message == "the template is malformed":
         msg = context.error.response['Error']['Message']
         assert msg.endswith("[Malformed]")
+    else:
+        raise Exception("Step has incorrect message")
 
 
 @then('a "{exception_type}" is raised')
@@ -33,7 +35,7 @@ def step_impl(context, exception_type):
     elif exception_type == "AttributeError":
         assert isinstance(context.error, AttributeError)
     else:
-        assert False
+        raise Exception("Step has incorrect message")
 
 
 def read_template_file(context, template_name):
