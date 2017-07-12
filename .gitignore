@@ -113,3 +113,7 @@ _site/
 # Sphinx docs
 /website/docs/api
 /website/_api/_build/
+/website/_api/modules.rst
+/website/_api/sceptre.rst
+/website/_api/sceptre.hooks.rst
+/website/_api/sceptre.resolvers.rst
