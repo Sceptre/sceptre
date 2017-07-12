@@ -1,8 +1,8 @@
-# Website
+# Docs
 
-This directory contains the code for Sceptre's [website](https://sceptre.cloudreach.com).
+This directory contains the code for Sceptre's [docs](https://sceptre.cloudreach.com).
 
-The website is written using the [Jekyll](https://jekyllrb.com) framework.
+The docs is written using the [Jekyll](https://jekyllrb.com) framework.
 
 ## Ruby
 
@@ -16,16 +16,18 @@ Jekyll and its dependencies can be installed with:
 make install
 ```
 
-## Build and serve website locally
+## Build and serve docs locally
 
-The website can be built with:
-
-```shell
-make website
-```
-
-To serve the website and watch for changes, run:
+The docs can be built with:
 
 ```shell
-make serve
+make docs-latest
 ```
+
+To serve the docs and watch for changes, run:
+
+```shell
+make serve-latest
+```
+
+View them at `http://localhost:4000/latest/`
