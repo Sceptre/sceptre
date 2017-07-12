@@ -93,9 +93,7 @@ website-api:
 	mkdir -p website/docs/api/_static/
 	cp -r website/_api/_build/html/_static website/docs/api/
 	rm -f website/docs/api/sceptre.html
-	cp website/_api/_build/html/sceptre.html website/docs/api/sceptre.html
-	cp website/_api/_build/html/sceptre.resolvers.html website/docs/api/sceptre.resolvers.html
-	cp website/_api/_build/html/sceptre.hooks.html website/docs/api/sceptre.hooks.html
+	cp -r website/_api/_build/html/ website/docs/api/
 
 website-latest: website-api
 	$(MAKE) -C website build-latest
