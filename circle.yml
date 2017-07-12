@@ -14,12 +14,8 @@ dependencies:
     - cd docs && make install
 test:
   override:
-    - make lint
-    - make test-all
-    - behave --junit --junit-directory $CIRCLE_TEST_REPORTS/behave/junit.xml:
+    - case $CIRCLE_NODE_INDEX in 0) make lint; make test-all; make docs ;; 1) behave integration-tests/ --junit --junit-directory $CIRCLE_TEST_REPORTS/behave/junit.xml ;; esac:
         parallel: true
-        files:
-          - integration-tests/features/*.feature
 deployment:
     production:
         tag: /v[0-9]+(\.[0-9]+)*/

@@ -2,7 +2,7 @@
 
 import os
 import yaml
-from warnings import warn, simplefilter
+import warnings
 
 from colorama import Fore, Style
 
@@ -27,15 +27,13 @@ class ProjectVariables(Resolver):
         :returns: Value at argument location.
         :rtype: str
         """
-        simplefilter("always", DeprecationWarning)
-        warn(
-            "{0}The project_variables resolver has been deprecated, and will"
+        warnings.warn(
+            "{0}The project_variables resolver has been deprecated, and will "
             "be removed in a later version of Sceptre. Depending on your "
             "use case, you may find user variables appropiate. "
-            "Example: sceptre --var ""iam_role=<your iam role>"" <COMMAND>{1}"
+            "Example: sceptre --var \"iam_role=<your iam role>\" <COMMAND>{1}"
             .format(Fore.YELLOW, Style.RESET_ALL),
-            DeprecationWarning,
-            stacklevel=2
+            DeprecationWarning
         )
         file_path = os.path.join(
             self.environment_config.sceptre_dir,
