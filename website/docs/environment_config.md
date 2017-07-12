@@ -156,7 +156,7 @@ $ sceptre launch-stack eu-west-1/dev vpc
 
 Any templated value can be supplied with a default value with the syntax:
 
-```
+```jinja2
 {% raw %}{{ var.value | default("default_value") }}{% endraw %}
 ```
 
