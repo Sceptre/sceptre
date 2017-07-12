@@ -10,19 +10,17 @@ dependencies:
     - make install
 test:
   override:
-    - make lint
-    - make test-all
-    - behave --junit --junit-directory $CIRCLE_TEST_REPORTS/behave/junit.xml:
+    - case $CIRCLE_NODE_INDEX in 0) make lint; make test-all; make docs ;; 1) behave integration-tests/ --junit --junit-directory $CIRCLE_TEST_REPORTS/behave/junit.xml ;; esac:
         parallel: true
-        files:
-          - integration-tests/features/*.feature
-    - make docs
 deployment:
     production:
         tag: /v[0-9]+(\.[0-9]+)*/
         commands:
-            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/docs/ --delete
+            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/latest/docs/ --delete
+            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/$CIRCLE_TAG/docs/ --delete
+            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/$CIRCLE_SHA1/dev/docs/ --delete
     develop:
         branch: master
         commands:
-            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/dev/docs/ --delete
+            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/latest/dev/docs/ --delete
+            - aws s3 sync ~/sceptre/docs/_build/html s3://sceptre.cloudreach.com/$CIRCLE_SHA1/dev/docs/ --delete

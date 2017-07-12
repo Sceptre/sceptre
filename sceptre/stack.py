@@ -24,13 +24,14 @@ from .stack_status import StackChangeSetStatus
 from .template import Template
 
 from .hooks import add_stack_hooks
-from .helpers import execution_protection, get_name_tuple
+from .helpers import get_name_tuple
 from .helpers import get_external_stack_name
 
 from .exceptions import CannotUpdateFailedStackError
 from .exceptions import UnknownStackStatusError
 from .exceptions import UnknownStackChangeSetStatusError
 from .exceptions import StackDoesNotExistError
+from .exceptions import ProtectedStackError
 
 
 class Stack(object):
@@ -179,7 +180,6 @@ class Stack(object):
         return self._external_name
 
     @add_stack_hooks
-    @execution_protection
     def create(self):
         """
         Creates the stack.
@@ -187,6 +187,7 @@ class Stack(object):
         :returns: The stack's status.
         :rtype: sceptre.stack_status.StackStatus
         """
+        self._protect_execution()
         self.logger.info("%s - Creating stack", self.name)
         create_stack_kwargs = {
             "StackName": self.external_name,
@@ -212,7 +213,6 @@ class Stack(object):
 
         return status
 
-    @execution_protection
     @add_stack_hooks
     def update(self):
         """
@@ -221,6 +221,7 @@ class Stack(object):
         :returns: The stack's status.
         :rtype: sceptre.stack_status.StackStatus
         """
+        self._protect_execution()
         self.logger.info("%s - Updating stack", self.name)
         update_stack_kwargs = {
             "StackName": self.external_name,
@@ -246,7 +247,6 @@ class Stack(object):
 
         return status
 
-    @execution_protection
     def launch(self):
         """
         Launches the stack.
@@ -259,6 +259,7 @@ class Stack(object):
         :returns: The stack's status.
         :rtype: sceptre.stack_status.StackStatus
         """
+        self._protect_execution()
         self.logger.info("%s - Launching stack", self.name)
         try:
             existing_status = self.get_status()
@@ -306,7 +307,6 @@ class Stack(object):
             )
         return status
 
-    @execution_protection
     @add_stack_hooks
     def delete(self):
         """
@@ -315,12 +315,13 @@ class Stack(object):
         :returns: The stack's status.
         :rtype: sceptre.stack_status.StackStatus
         """
+        self._protect_execution()
         self.logger.info("%s - Deleting stack", self.name)
         try:
             status = self.get_status()
         except StackDoesNotExistError:
             self.logger.info("%s does not exist.", self.name)
-            status = StackStatus.PENDING
+            status = StackStatus.COMPLETE
             return status
 
         delete_stack_kwargs = {"StackName": self.external_name}
@@ -586,7 +587,6 @@ class Stack(object):
             }
         )
 
-    @execution_protection
     def execute_change_set(self, change_set_name):
         """
         Executes the change set ``change_set_name``.
@@ -594,6 +594,7 @@ class Stack(object):
         :param change_set_name: The name of the change set.
         :type change_set_name: str
         """
+        self._protect_execution()
         self.logger.debug(
             "%s - Executing change set '%s'", self.name, change_set_name
         )
@@ -702,6 +703,19 @@ class Stack(object):
             }
         else:
             return {}
+
+    def _protect_execution(self):
+        """
+        Raises a ProtectedStackError if protect == True.
+        This error is meant to stop the
+
+        :raises: sceptre.exceptions.ProtectedStackError
+        """
+        if self.config.get("protect", False):
+            raise ProtectedStackError(
+                "Cannot perform action on '{0}': stack protection is "
+                "currently enabled".format(self.name)
+            )
 
     def _wait_for_completion(self):
         """
