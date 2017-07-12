@@ -4,6 +4,10 @@ This directory contains the code for Sceptre's [website](https://sceptre.cloudre
 
 The website is written using the [Jekyll](https://jekyllrb.com) framework.
 
+## Ruby
+
+Jekyll depends on Ruby. Documentation on installing Ruby can be found [here](https://www.ruby-lang.org/en/documentation/installation/).
+
 ## Install Jekyll
 
 Jekyll and its dependencies can be installed with:
