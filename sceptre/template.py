@@ -62,7 +62,7 @@ class Template(object):
         if self._body is None:
             file_extension = os.path.splitext(self.path)[1]
 
-            if file_extension in {".json", ".yaml", "j2"}:
+            if file_extension in {".json", ".yaml", ".j2"}:
                 self._body = self._render_jinja_template(
                     os.path.dirname(self.path),
                     os.path.basename(self.path),
@@ -285,7 +285,7 @@ class Template(object):
         :rtype: string
         """
         logger = logging.getLogger(__name__)
-        logger.debug("%s Rendering CloudFormation template", template_dir)
+        logger.debug("%s Rendering CloudFormation template", filename)
         env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(template_dir),
             undefined=jinja2.StrictUndefined
