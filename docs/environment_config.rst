@@ -13,6 +13,8 @@ An environment config file is a yaml object of key-value pairs configuring Scept
 
 - `iam_role`_ *(optional)*
 
+- `iam_profile`_ *(optional)*
+
 - `project_code`_ *(required)*
 
 - `region`_ *(required)*
@@ -29,7 +31,12 @@ Sceptre only checks for and uses the above keys in environment config files, but
 iam_role
 ````````
 
-The ARN of a role for Sceptre to assume before interacting with the environment. If not supplied, Sceptre uses the user's AWS CLI credentials.
+The ARN of a role for Sceptre to assume before interacting with the environment. If not supplied, Sceptre uses the user's AWS CLI credentials. iam_role and iam_profile are mutualy exclusive.
+
+iam_profile
+````````
+
+The name of the local role as defined in ~/.aws/config and ~/.aws/credentials. If not supplied, Sceptre uses the user's AWS CLI credentials. iam_role and iam_profile are mutualy exclusive.
 
 project_code
 ````````````

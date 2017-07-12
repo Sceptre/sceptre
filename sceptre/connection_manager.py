@@ -31,14 +31,19 @@ class ConnectionManager(object):
     _session_lock = threading.Lock()
     _client_lock = threading.Lock()
 
-    def __init__(self, region, iam_role=None):
+    def __init__(self, region, iam_role=None, iam_profile=None):
         self.logger = logging.getLogger(__name__)
-
+        self.exception = None
         self.region = region
+        self.iam_profile = iam_profile
         self.iam_role = iam_role
         self._boto_session = None
 
         self.clients = {}
+
+        if(self.iam_role is not None and self.iam_profile is not None):
+            self.exception = "iam_role and iam_profile are mutually exclusive"
+            self.logger.exception(self.exception)
 
     def __repr__(self):
         return (
@@ -66,7 +71,16 @@ class ConnectionManager(object):
 
             if self._boto_session is None:
                 self.logger.debug("No Boto3 session found, creating one...")
-                if self.iam_role:
+                if self.iam_profile:
+                    self.logger.debug(
+                        "Using iam_profile '%s'...",
+                        self.iam_profile
+                    )
+                    self._boto_session = boto3.session.Session(
+                        region_name=self.region,
+                        profile_name=self.iam_profile
+                    )
+                elif self.iam_role:
                     self.logger.debug("Assuming role '%s'...", self.iam_role)
                     sts_client = boto3.client("sts")
                     sts_response = sts_client.assume_role(

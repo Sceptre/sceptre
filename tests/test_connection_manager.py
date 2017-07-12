@@ -13,6 +13,7 @@ class TestConnectionManager(object):
     def setup_method(self, test_method):
         self.iam_role = None
         self.region = "eu-west-1"
+        self.iam_profile = None
 
         self.connection_manager = ConnectionManager(
             region=self.region, iam_role=self.iam_role
@@ -20,12 +21,15 @@ class TestConnectionManager(object):
 
     def test_connection_manager_initialised_with_all_parameters(self):
         connection_manager = ConnectionManager(
-            region=self.region, iam_role=self.iam_role
+            region=self.region,
+            iam_role="non-default",
+            iam_profile="non-default"
         )
-        assert connection_manager.iam_role == self.iam_role
         assert connection_manager.region == self.region
         assert connection_manager._boto_session is None
         assert connection_manager.clients == {}
+        assert connection_manager.exception ==\
+            "iam_role and iam_profile are mutually exclusive"
 
     def test_connection_manager_initialised_with_no_optional_parameters(self):
         connection_manager = ConnectionManager(region=sentinel.region)
@@ -92,6 +96,21 @@ class TestConnectionManager(object):
             aws_access_key_id="id",
             aws_secret_access_key="key",
             aws_session_token="token",
+            region_name=self.region
+        )
+
+    @patch("sceptre.connection_manager.boto3.session.Session")
+    @patch("sceptre.connection_manager.boto3.client")
+    def test_boto_session_with_iam_profile_and_no_cache(
+            self, mock_client, mock_Session
+    ):
+        mock_Session.return_value = sentinel.session
+        self.connection_manager.iam_profile = sentinel.iam_profile
+        boto_session = self.connection_manager.boto_session
+
+        assert boto_session == sentinel.session
+        mock_Session.assert_called_once_with(
+            profile_name=self.connection_manager.iam_profile,
             region_name=self.region
         )
 
