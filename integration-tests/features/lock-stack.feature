@@ -9,4 +9,5 @@ Feature: Lock stack
   Scenario: lock a stack that does not exist
     Given stack "1/A" does not exist
     When the user locks stack "1/A"
-    Then the user is told stack does not exist
+    Then a "ClientError" is raised
+    and the user is told "stack does not exist"

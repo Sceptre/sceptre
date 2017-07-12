@@ -19,7 +19,7 @@ Feature: Launch environment
     Given stack "2/A" exists in "CREATE_COMPLETE" state
     and stack "2/B" does not exist
     and stack "2/C" does not exist
-    and the template for stack "2/A" is updated_template.json
+    and the template for stack "2/A" is "updated_template.json"
     When the user launches environment "2"
     Then stack "2/A" exists in "UPDATE_COMPLETE" state
     and stack "2/B" exists in "CREATE_COMPLETE" state
@@ -27,9 +27,9 @@ Feature: Launch environment
 
   Scenario: launch an environment with updates that already exists
     Given all the stacks in environment "2" are in "CREATE_COMPLETE"
-    and the template for stack "2/A" is updated_template.json
-    and the template for stack "2/B" is updated_template.json
-    and the template for stack "2/C" is updated_template.json
+    and the template for stack "2/A" is "updated_template.json"
+    and the template for stack "2/B" is "updated_template.json"
+    and the template for stack "2/C" is "updated_template.json"
     When the user launches environment "2"
     Then all the stacks in environment "2" are in "UPDATE_COMPLETE"
 
