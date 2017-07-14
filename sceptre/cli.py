@@ -535,7 +535,7 @@ def describe_stack_events(ctx, environment, stack):
     Describes ENVIRONMENT/STACK's stack events.
     """
     env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    description = env.stacks[stack].describe_events()
+    description = env.stacks[stack]._log_all_events()
     write(description, ctx.obj["output_format"])
 
 

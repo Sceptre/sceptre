@@ -392,6 +392,19 @@ class Stack(object):
             kwargs={"StackName": self.external_name}
         )
 
+    def describe_all_events(self):
+        """
+        Returns a formatted dictionary containing the stack events.
+
+        :returns: The CloudFormation events for a stack.
+        :rtype: dict
+        """
+        return self.connection_manager.call(
+            service="cloudformation",
+            command="describe_stack_events",
+            kwargs={"StackName": self.external_name}
+        )
+
     def describe_resources(self):
         """
         Returns the logical and physical resource IDs of the stack's resources.
@@ -766,6 +779,20 @@ class Stack(object):
                 "{0} is unknown".format(status)
             )
 
+    def _format_event(self, event):
+        """
+        Formats a stack event
+        """
+
+        self.logger.info(" ".join([
+            event["Timestamp"].replace(microsecond=0).isoformat(),
+            self.name,
+            event["LogicalResourceId"],
+            event["ResourceType"],
+            event["ResourceStatus"],
+            event.get("ResourceStatusReason", "")
+        ]))
+
     def _log_new_events(self):
         """
         Log the latest stack events while the stack is being built.
@@ -777,15 +804,18 @@ class Stack(object):
             if event["Timestamp"] > self.most_recent_event_datetime
         ]
         for event in new_events:
-            self.logger.info(" ".join([
-                event["Timestamp"].replace(microsecond=0).isoformat(),
-                self.name,
-                event["LogicalResourceId"],
-                event["ResourceType"],
-                event["ResourceStatus"],
-                event.get("ResourceStatusReason", "")
-            ]))
+            self._format_event(event)
             self.most_recent_event_datetime = event["Timestamp"]
+
+    def _log_all_events(self):
+        """
+        Log the all stack events while the stack is being built.
+        """
+        events = self.describe_events()["StackEvents"]
+        events.reverse()
+
+        for event in events:
+            self._format_event(event)
 
     def wait_for_cs_completion(self, change_set_name):
         """
