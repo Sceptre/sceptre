@@ -1,9 +1,9 @@
 Feature: Generate template
 
   Scenario Outline: Generating static templates
-    Given the template for stack "1/A" is <filename>
+    Given the template for stack "1/A" is "<filename>"
     When the user generates the template for stack "1/A"
-    Then the output is the same as the contents of <filename> template
+    Then the output is the same as the contents of "<filename>" template
 
   Examples: Json, Yaml
     | filename                 |
@@ -15,24 +15,24 @@ Feature: Generate template
     | invalid_template.yaml    |
 
   Scenario: Generate template using a valid python template file
-    Given the template for stack "1/A" is valid_template.py
+    Given the template for stack "1/A" is "valid_template.py"
     When the user generates the template for stack "1/A"
-    Then the output is the same as the string returned by valid_template.py
+    Then the output is the same as the string returned by "valid_template.py"
 
   Scenario Outline: Generating erroneous python templates
-    Given the template for stack "1/A" is <filename>
+    Given the template for stack "1/A" is "<filename>"
     When the user generates the template for stack "1/A"
-    Then the user is told the <error_message>
+    Then a "<exception>" is raised
 
   Examples: Template Errors
-    | filename                                | error_message                          |
-    | missing_sceptre_handler.py              | template does not have sceptre_handler |
-    | attribute_error.py                      | attribute error                        |
+    | filename                   | exception                   |
+    | missing_sceptre_handler.py | TemplateSceptreHandlerError |
+    | attribute_error.py         | AttributeError              |
 
   Scenario: Generate template using a template file with an unsupported extension
-    Given the template for stack "1/A" is template.unsupported
+    Given the template for stack "1/A" is "template.unsupported"
     When the user generates the template for stack "1/A"
-    Then the user is told the template format is unsupported
+    Then a "UnsupportedTemplateFileTypeError" is raised
 
   Scenario Outline: Rendering jinja templates
     Given the template for stack "7/A" is <filename>

@@ -9,7 +9,7 @@ from helpers import retry_boto_call
 
 
 @given(
-    'stack "{stack_name}" has change set "{change_set_name}" using {filename}'
+    'stack "{stack_name}" has change set "{change_set_name}" using "{filename}"'
 )
 def step_impl(context, stack_name, change_set_name, filename):
     full_name = get_cloudformation_stack_name(context, stack_name)

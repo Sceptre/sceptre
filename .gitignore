@@ -101,3 +101,19 @@ Temporary Items
 
 ## File-based project format:
 *.iws
+
+# Jekyll settings
+
+.bundle/
+docs/vendor/*
+_site/
+.sass-cache/
+.jekyll-metadata
+
+# Sphinx docs
+/docs/docs/api
+/docs/_api/_build/
+/docs/_api/modules.rst
+/docs/_api/sceptre.rst
+/docs/_api/sceptre.hooks.rst
+/docs/_api/sceptre.resolvers.rst

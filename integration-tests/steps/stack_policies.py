@@ -24,7 +24,7 @@ def step_impl(context, stack_name):
     try:
         env.stacks[basename].unlock()
     except ClientError as e:
-        context.error = e.response['Error']['Message']
+        context.error = e
 
 
 @when('the user locks stack "{stack_name}"')
@@ -34,7 +34,7 @@ def step_impl(context, stack_name):
     try:
         env.stacks[basename].lock()
     except ClientError as e:
-        context.error = e.response['Error']['Message']
+        context.error = e
 
 
 @then('the policy for stack "{stack_name}" is {state}')
