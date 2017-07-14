@@ -2,16 +2,16 @@ Feature: Stack output resolver
 
   @wip
   Scenario: launch a stack referencing an output of existing stack
-    Given stack "6/1/A" exists using "output_template.json"
+    Given stack "6/1/A" exists using "dependencies/independent_template.json"
     and stack "6/1/B" does not exist
     and stack "6/1/C" does not exist
     When the user launches stack "6/1/B"
-    Then stack "6/1/A" exists in "CREATE_COMPLETE" state
+    Then stack "6/1/B" exists in "CREATE_COMPLETE" state
 
   @wip
   Scenario: launch a stack referencing an output of a non-existant stack
-    Given stack "6/1/A" does not exist
-    and stack "6/1/B" does not exist
+    Given stack "6/1/B" does not exist
+    and stack "6/1/A" does not exist
     When the user launches stack "6/1/B"
     Then a "StackDoesNotExistError" is raised
 
@@ -34,6 +34,8 @@ Feature: Stack output resolver
 
   @wip
   Scenario: delete a stack referencing an output of existing stack
-    Given all the stacks in environment "6/1" are in "CREATE_COMPLETE"
+    Given stack "6/1/A" exists in "CREATE_COMPLETE" state
+    and stack "6/1/B" exists in "CREATE_COMPLETE" state
+    and stack "6/1/C" exists in "CREATE_COMPLETE" state
     When the user deletes environment "6/1"
     Then all the stacks in environment "6/1" do not exist

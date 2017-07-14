@@ -107,8 +107,10 @@ def step_impl(context, stack_name):
 def step_impl(context, stack_name):
     environment_name, basename = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
-
-    env.stacks[basename].launch()
+    try:
+        env.stacks[basename].launch()
+    except Exception as e:
+        context.error = e
 
 
 @when('the user describes the resources of stack "{stack_name}"')
