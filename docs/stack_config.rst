@@ -348,6 +348,26 @@ Example:
       - !bash "echo hello"
 
 
+``cmd``
+********
+
+Runs a command.
+
+Syntax:
+
+.. code-block:: yaml
+
+    <hook_point>:
+      - !cmd <command>
+
+Example:
+
+.. code-block:: yaml
+
+    before_create:
+      - !cmd "echo hello"
+
+
 ``asg_scheduled_actions``
 *************************
 

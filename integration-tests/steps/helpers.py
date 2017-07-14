@@ -7,28 +7,35 @@ from sceptre.exceptions import TemplateSceptreHandlerError
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 
 
-@then('the user is told {message}')
+@then('the user is told "{message}"')
 def step_impl(context, message):
     if message == "stack does not exist":
-        assert context.error.endswith("does not exist")
-    elif message == "the change set does not exist":
-        error_message = context.error.response['Error']['Message']
-        assert error_message.endswith("does not exist")
+        msg = context.error.response['Error']['Message']
+        assert msg.endswith("does not exist")
+    elif message == "change set does not exist":
+        msg = context.error.response['Error']['Message']
+        assert msg.endswith("does not exist")
     elif message == "the template is valid":
         assert context.response["ResponseMetadata"]["HTTPStatusCode"] == 200
-        assert context.error is None
     elif message == "the template is malformed":
-        assert context.error.endswith("[Malformed]")
-    elif message == "template does not have sceptre_handler":
-        message = "The template does not have the required "
-        "'sceptre_handler(sceptre_user_data)' function."
-        assert context.error.message == message
-    elif message == "attribute error":
+        msg = context.error.response['Error']['Message']
+        assert msg.endswith("[Malformed]")
+    else:
+        raise Exception("Step has incorrect message")
+
+
+@then('a "{exception_type}" is raised')
+def step_impl(context, exception_type):
+    if exception_type == "TemplateSceptreHandlerError":
         assert isinstance(context.error, TemplateSceptreHandlerError)
-    elif message == "template format is unsupported":
+    elif exception_type == "UnsupportedTemplateFileTypeError":
         assert isinstance(context.error, UnsupportedTemplateFileTypeError)
-    elif message == "change set failed to create":
-        assert False
+    elif exception_type == "ClientError":
+        assert isinstance(context.error, ClientError)
+    elif exception_type == "AttributeError":
+        assert isinstance(context.error, AttributeError)
+    else:
+        raise Exception("Step has incorrect message")
 
 
 def read_template_file(context, template_name):

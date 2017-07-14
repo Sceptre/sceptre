@@ -2,7 +2,7 @@ Feature: Delete change set
 
   Scenario: delete a change set that exists
     Given stack "1/A" exists in "CREATE_COMPLETE" state
-    and stack "1/A" has change set "A" using updated_template.json
+    and stack "1/A" has change set "A" using "updated_template.json"
     When the user deletes change set "A" for stack "1/A"
     Then stack "1/A" does not have change set "A"
 
