@@ -392,18 +392,6 @@ class Stack(object):
             kwargs={"StackName": self.external_name}
         )
 
-    def describe_all_events(self):
-        """
-        Returns a formatted dictionary containing the stack events.
-
-        :returns: The CloudFormation events for a stack.
-        :rtype: dict
-        """
-        return self.connection_manager.call(
-            service="cloudformation",
-            command="describe_stack_events",
-            kwargs={"StackName": self.external_name}
-        )
 
     def describe_resources(self):
         """

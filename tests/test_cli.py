@@ -448,8 +448,8 @@ class TestCli(object):
         mock_getcwd.return_value = sentinel.cwd
         self.runner.invoke(cli, ["describe-stack-events", "dev", "vpc"])
         mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].describe_events\
-            .assert_called_with()
+        mock_get_env.return_value.stacks["vpc"]._log_all_events\
+            .assert_called_once_with()
 
     @patch("sceptre.cli.get_env")
     def test_describe_stack_outputs_handles_envvar_flag(
