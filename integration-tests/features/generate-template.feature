@@ -5,7 +5,7 @@ Feature: Generate template
     When the user generates the template for stack "1/A"
     Then the output is the same as the contents of "<filename>" template
 
-  Examples: Json and Yaml
+  Examples: Json, Yaml
     | filename                 |
     | valid_template.json      |
     | malformed_template.json  |
@@ -33,3 +33,24 @@ Feature: Generate template
     Given the template for stack "1/A" is "template.unsupported"
     When the user generates the template for stack "1/A"
     Then a "UnsupportedTemplateFileTypeError" is raised
+
+  Scenario Outline: Rendering jinja templates
+    Given the template for stack "7/A" is "<filename>"
+    When the user generates the template for stack "7/A"
+    Then the output is the same as the contents of "<rendered_filename>" template
+
+  Examples: Json, Yaml, J2
+    | filename                    | rendered_filename     |
+    | jinja/valid_template.json   | valid_template.json   |
+    | jinja/valid_template.yaml   | valid_template.yaml   |
+    | jinja/valid_template.j2     | valid_template.yaml   |
+  
+  Scenario Outline: Render jinja template which uses an invalid key
+    Given the template for stack "7/A" is "<filename>"
+    When the user generates the template for stack "7/A"
+    Then a "<exception>" is raised
+
+  Examples: Render Errors
+    | filename                                  | exception          |
+    | jinja/invalid_template_missing_key.yaml   | UndefinedError     |
+    | jinja/invalid_template_missing_attr.yaml  | UndefinedError     |

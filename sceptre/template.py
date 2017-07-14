@@ -15,7 +15,7 @@ import sys
 import threading
 
 import botocore
-
+import jinja2
 from .exceptions import UnsupportedTemplateFileTypeError
 from .exceptions import TemplateSceptreHandlerError
 
@@ -62,17 +62,19 @@ class Template(object):
         if self._body is None:
             file_extension = os.path.splitext(self.path)[1]
 
-            if file_extension in {".json", ".yaml"}:
-                self.logger.debug("%s - Opening file %s", self.name, self.path)
-                with open(self.path) as template_file:
-                    self._body = template_file.read()
+            if file_extension in {".json", ".yaml", ".j2"}:
+                self._body = self._render_jinja_template(
+                    os.path.dirname(self.path),
+                    os.path.basename(self.path),
+                    {"sceptre_user_data": self.sceptre_user_data}
+                )
             elif file_extension == ".py":
                 self._body = self._call_sceptre_handler()
 
             else:
                 raise UnsupportedTemplateFileTypeError(
                     "Template has file extension %s. Only .py, .yaml, "
-                    "and .json are supported.",
+                    ".json and .j2 are supported.",
                     os.path.splitext(self.path)[1]
                 )
         return self._body
@@ -264,3 +266,30 @@ class Template(object):
                     }
                 }
             )
+
+    @staticmethod
+    def _render_jinja_template(template_dir, filename, jinja_vars):
+        """
+        Renders a jinja template.
+
+        Sceptre supports passing sceptre_user_data to JSON and YAML
+        CloudFormation templates using Jinja2 templating.
+
+        :param template_dir: The directory containing the template.
+        :type template_dir: str
+        :param filename: The name of the template file.
+        :type filename: str
+        :param jinja_vars: Dict of variables to render into the template.
+        :type jinja_vars: dict
+        :returns: The body of the CloudFormation template.
+        :rtype: string
+        """
+        logger = logging.getLogger(__name__)
+        logger.debug("%s Rendering CloudFormation template", filename)
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(template_dir),
+            undefined=jinja2.StrictUndefined
+        )
+        template = env.get_template(filename)
+        body = template.render(**jinja_vars)
+        return body

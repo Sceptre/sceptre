@@ -1,0 +1,3 @@
+sceptre_user_data:
+  type: AWS::CloudFormation::WaitConditionHandle
+template_path: templates/jinja/valid_template.j2
