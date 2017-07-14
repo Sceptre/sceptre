@@ -4,55 +4,12 @@ from functools import wraps
 import glob
 import imp
 import inspect
-import logging
 import os
 import re
 import sys
-import time
 
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
-
-from botocore.exceptions import ClientError
-
-from .exceptions import RetryLimitExceededError
-
-
-def exponential_backoff(func):
-    """
-    Retries a Boto3 call up to 5 times if request rate limits are hit.
-
-    The time waited between retries increases exponentially. If rate limits are
-    hit 5 times, exponential_backoff raises a
-    :py:class:sceptre.exceptions.RetryLimitExceededException().
-
-    :param func: a function that uses boto calls
-    :type func: func
-    :returns: The decorated function.
-    :rtype: func
-    :raises: sceptre.exceptions.RetryLimitExceededException
-    """
-    logger = logging.getLogger(__name__)
-
-    @wraps(func)
-    def decorated(*args, **kwargs):
-        max_retries = 5
-        attempts = 0
-        while attempts < max_retries:
-            try:
-                return func(*args, **kwargs)
-            except ClientError as e:
-                if e.response["Error"]["Code"] == "Throttling":
-                    logger.error("Request limit exceeded, pausing...")
-                    time.sleep(2 ** attempts)
-                    attempts += 1
-                else:
-                    raise e
-        raise RetryLimitExceededError(
-            "Exceeded request limit {0} times. Aborting.".format(max_retries)
-        )
-
-    return decorated
 
 
 def camel_to_snake_case(string):

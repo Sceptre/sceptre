@@ -3,12 +3,8 @@
 import os
 
 import pytest
-from mock import Mock, patch, sentinel
+from mock import sentinel
 
-from botocore.exceptions import ClientError
-
-from sceptre.exceptions import RetryLimitExceededError
-from sceptre.helpers import exponential_backoff
 from sceptre.helpers import get_subclasses
 from sceptre.helpers import camel_to_snake_case
 from sceptre.helpers import recurse_into_sub_environments
@@ -20,81 +16,6 @@ from sceptre.resolvers import Resolver
 
 
 class TestHelpers(object):
-
-    def test_exponential_backoff_returns_response_correctly(self):
-        def func(*args, **kwargs):
-            return sentinel.response
-
-        response = exponential_backoff(func)()
-
-        assert response == sentinel.response
-
-    @patch("sceptre.helpers.time")
-    def test_exponential_backoff_pauses_when_request_limit_hit(
-            self, mock_time
-    ):
-        mock_func = Mock()
-        mock_func.side_effect = [
-            ClientError(
-                {
-                    "Error": {
-                        "Code": "Throttling",
-                        "Message": "Request limit hit"
-                    }
-                },
-                sentinel.operation
-            ),
-            sentinel.response
-        ]
-        # The attribute function.__name__ is required by the decorator @wraps.
-        mock_func.__name__ = "mock_func"
-
-        exponential_backoff(mock_func)()
-        mock_time.sleep.assert_called_once_with(1)
-
-    def test_exponential_backoff_raises_exception(self):
-        mock_func = Mock()
-        mock_func.side_effect = ClientError(
-            {
-                "Error": {
-                    "Code": 500,
-                    "Message": "Boom!"
-                }
-            },
-            sentinel.operation
-        )
-        # The attribute function.__name__ is required by the decorator @wraps.
-        mock_func.__name__ = "mock_func"
-
-        with pytest.raises(ClientError) as e:
-            exponential_backoff(mock_func)()
-        assert e.value.response["Error"]["Code"] == 500
-        assert e.value.response["Error"]["Message"] == "Boom!"
-
-    @patch("sceptre.helpers.time")
-    def test_exponential_backoff_raises_retry_limit_exceeded_exception(
-            self, mock_time
-    ):
-        throttling_error = ClientError(
-            {
-                "Error": {
-                    "Code": "Throttling",
-                    "Message": "Request limit hit"
-                }
-            },
-            sentinel.operation
-        )
-        mock_func = Mock()
-
-        # RetryLimitExceededException should be raised after five throttling
-        # errors.
-        mock_func.side_effect = [throttling_error for _ in range(5)]
-
-        # The attribute function.__name__ is required by the decorator @wraps.
-        mock_func.__name__ = "mock_func"
-
-        with pytest.raises(RetryLimitExceededError):
-            exponential_backoff(mock_func)()
 
     def test_get_subclasses(self):
         directory = os.path.join(os.getcwd(), "sceptre", "resolvers")
