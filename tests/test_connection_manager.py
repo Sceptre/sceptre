@@ -3,9 +3,27 @@ import pytest
 from mock import Mock, patch, sentinel, MagicMock
 from moto import mock_s3
 
+import sceptre.connection_manager
 from sceptre.connection_manager import ConnectionManager
 from boto3.session import Session
 import botocore
+
+
+def test_connection_manager_returns_ConnectionManager(fixtures_dir):
+    cm = sceptre.connection_manager.connection_manager(
+        fixtures_dir, "account/environment/region"
+    )
+    assert type(cm) == ConnectionManager
+
+
+def test_connection_manager_memoizes(fixtures_dir):
+    cm_a = sceptre.connection_manager.connection_manager(
+        fixtures_dir, "account/environment/region"
+    )
+    cm_b = sceptre.connection_manager.connection_manager(
+        fixtures_dir, "account/environment/region"
+    )
+    assert id(cm_a) == id(cm_b)
 
 
 class TestConnectionManager(object):

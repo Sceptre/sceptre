@@ -16,12 +16,56 @@ from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
 from . import __version__
+import connection_manager
 from .exceptions import ConfigItemNotFoundError
 from .exceptions import EnvironmentPathNotFoundError
 from .exceptions import VersionIncompatibleError
 from .hooks import Hook
 from .resolvers import Resolver
+from .helpers import _memoize
 from .helpers import get_subclasses
+
+
+@_memoize
+def environment(sceptre_dir, environment_path, user_variables=None):
+    """
+    Returns the Config for the environment ``environment_path``.
+
+    :param sceptre_dir: The absolute path to the Sceptre directory.
+    :type sceptre_dir: str
+    :param environment_path: Path to the environment
+    :type environment_path: str
+    :returns: The Config for the environment
+    :rtype: sceptre.config.Config
+    """
+    user_variables = user_variables if user_variables is not None else {}
+    env_config = Config(sceptre_dir, environment_path, "config")
+    env_config.read(user_variables)
+    return env_config
+
+
+@_memoize
+def stack(sceptre_dir, stack_name, user_variables=None):
+    """
+    Returns the Config for the stack ``stack_name``.
+
+    :param sceptre_dir: The absolute path to the Sceptre directory.
+    :type sceptre_dir: str
+    :param stack_name: Name of the stack
+    :type stack_name: str
+    :returns: The Config for the stack
+    :rtype: sceptre.config.Config
+    """
+    user_variables = user_variables if user_variables is not None else {}
+    environment_path = os.path.dirname(stack_name)
+    basename = os.path.basename(stack_name)
+    stack_config = Config.with_yaml_constructors(
+        sceptre_dir, environment_path, basename,
+        environment(sceptre_dir, environment_path),
+        connection_manager.connection_manager(sceptre_dir, environment_path)
+    )
+    stack_config.read(user_variables)
+    return stack_config
 
 
 class Config(dict):
@@ -33,7 +77,7 @@ class Config(dict):
     ``environment_path`` from ``sceptre_dir``.
 
     :param sceptre_dir: The absolute path to the Sceptre directory.
-    :type project dir: str
+    :type sceptre_dir: str
     :param environment_path: The name of the environment.
     :type environment_path: str
     :param base_file_name: The basename of the file to read in \
