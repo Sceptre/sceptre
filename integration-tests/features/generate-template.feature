@@ -37,7 +37,7 @@ Feature: Generate template
   Scenario Outline: Rendering jinja templates
     Given the template for stack "7/A" is "<filename>"
     When the user generates the template for stack "7/A"
-    Then the output is the same as the contents of <rendered_filename> template
+    Then the output is the same as the contents of "<rendered_filename>" template
 
   Examples: Json, Yaml, J2
     | filename                    | rendered_filename     |
