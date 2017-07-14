@@ -44,13 +44,14 @@ Feature: Generate template
     | jinja/valid_template.json   | valid_template.json   |
     | jinja/valid_template.yaml   | valid_template.yaml   |
     | jinja/valid_template.j2     | valid_template.yaml   |
-
+  
+  @wip
   Scenario Outline: Render jinja template which uses an invalid key
-    Given the template for stack "7/A" is <filename>
+    Given the template for stack "7/A" is "<filename>"
     When the user generates the template for stack "7/A"
-    Then the user is told <error_message>
+    Then a "<exception>" is raised
 
   Examples: Render Errors
-    | filename                                  | error_message      |
-    | jinja/invalid_template_missing_key.yaml   | key is undefined   |
-    | jinja/invalid_template_missing_attr.yaml  | missing attribute  |
+    | filename                                  | exception          |
+    | jinja/invalid_template_missing_key.yaml   | UndefinedError     |
+    | jinja/invalid_template_missing_attr.yaml  | UndefinedError     |
