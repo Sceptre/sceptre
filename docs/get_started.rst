@@ -130,7 +130,7 @@ Delete Stack
 
 Delete the stack::
 
-  $ sceptre delete-stack dev vpc
+  $ sceptre delete-stack dev vpc [--yes]
 
 
 Next Steps

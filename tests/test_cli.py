@@ -135,6 +135,13 @@ class TestCli(object):
 
     @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli.get_env")
+    def test_delete_stack_without_confirmation(self, mock_get_env, mock_getcwd):
+        mock_getcwd.return_value = sentinel.cwd
+        result = self.runner.invoke(cli, ["delete-stack", "dev", "vpc"])
+        assert result.exit_code == 1
+
+    @patch("sceptre.cli.os.getcwd")
+    @patch("sceptre.cli.get_env")
     def test_update_stack(self, mock_get_env, mock_getcwd):
         mock_getcwd.return_value = sentinel.cwd
         self.runner.invoke(cli, ["update-stack", "dev", "vpc"])
