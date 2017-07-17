@@ -1,6 +1,7 @@
 version: 2
 jobs:
   build:
+    parallelism: 4
     docker:
       - image: circleci/python:2.7.13
         environment:
@@ -9,11 +10,11 @@ jobs:
           GIT_TAG: $(shell git describe --abbrev=0 --tags | sed 's/\./-/g')
     steps:
       - checkout
+      - restore_cache:
+          key: v1-requirements-{{ checksum "requirements.txt" }}
       - run:
           name: 'Creating Virtualenv'
           command: virtualenv venv
-      - restore_cache:
-          key: v1-requirements-{{ checksum "requirements.txt" }}
       - run:
           name: 'Installing Requirements'
           command: |
@@ -53,14 +54,16 @@ jobs:
             - .tox/py352
             - .tox/py361
       - store_test_results:
-          path: build/junitxml/pytest/
+          path: build/pytest
       - store_artifacts:
-          path: build/junitxml/pytest/
+          path: build/pytest
       - run:
           name: 'Integration Testing'
           command: |
             . ./venv/bin/activate
-            behave integration-tests/ --junit --junit-directory build/behave/junit-integration.xml
+            behave --junit \
+                   --junit-directory build/behave \
+                   $(circleci tests glob "integration-tests/features/*.feature" | circleci tests split --split-by=timings)
       - store_test_results:
           path: build/behave
       - store_artifacts:
