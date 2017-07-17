@@ -13,9 +13,7 @@ jobs:
           name: 'Creating Virtualenv'
           command: virtualenv venv
       - restore_cache:
-          keys:
-            - v1-requirements-{{ checksum "requirements.txt" }}
-            - v1-tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
+          key: v1-requirements-{{ checksum "requirements.txt" }}
       - run:
           name: 'Installing Requirements'
           command: |
@@ -40,6 +38,8 @@ jobs:
           command: |
             . ./venv/bin/activate
             make lint
+      - restore_cache:
+          key: v1-tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
       - run:
           name: 'Unit Testing'
           command: |
