@@ -34,10 +34,14 @@ jobs:
       #       make docs
       - run:
           name: linting
-          command: 'make lint'
+          command: |
+            . venv/bin/activate
+            make lint
       - run:
           name: unit-testing
-          command: 'make test-all'
+          command: |
+            . venv/bin/activate
+            make test-all
       # - run:
       #     name: integration-tests
       #     command: 'behave integration-tests/ --junit --junit-directory $CIRCLE_TEST_REPORTS/behave/junit.xml'
