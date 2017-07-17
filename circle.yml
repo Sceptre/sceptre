@@ -9,7 +9,7 @@ jobs:
           GIT_TAG: $(shell git describe --abbrev=0 --tags | sed 's/\./-/g')
     steps:
       - run:
-          name: create-venv
+          name: 'Creating Virtualenv'
           command: virtualenv ~/venv
       - checkout
       - restore_cache:
@@ -17,7 +17,7 @@ jobs:
           paths:
             - ~/venv
       - run:
-          name: install-requirements
+          name: 'Installing Requirements'
           command: |
             . ~/venv/bin/activate
             pip install -r requirements_tests.txt
@@ -26,7 +26,7 @@ jobs:
           paths:
             - ~/venv
       - run:
-          name: install-sceptre
+          name: 'Installing Sceptre'
           command: |
             . ~/venv/bin/activate
             make install
@@ -36,21 +36,21 @@ jobs:
       #       . venv/bin/activatem
       #       make docs
       - run:
-          name: linting
+          name: Linting
           command: |
             . ~/venv/bin/activate
             make lint
-      # - run:
-      #     name: unit-testing
-      #     command: |
-      #       . ~/venv/bin/activate
-      #       make test-all
       - run:
-          name: integration-tests
+          name: 'Unit Testing'
           command: |
             . ~/venv/bin/activate
-            behave integration-tests/ --junit --junit-directory ~/behave/junit.xml
-      - store_test_results:
-          path: ~/behave
-      - store_artifacts:
-          path: ~/behave
+            make test-all
+      # - run:
+      #     name: integration-tests
+      #     command: |
+      #       . ~/venv/bin/activate
+      #       behave integration-tests/ --junit --junit-directory ~/behave/junit.xml
+      # - store_test_results:
+      #     path: ~/behave
+      # - store_artifacts:
+      #     path: ~/behave
