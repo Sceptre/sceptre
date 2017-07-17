@@ -12,16 +12,19 @@ jobs:
           name: create-venv
           command: virtualenv ~/venv
       - checkout
+      - restore_cache:
+          key: requirements-{{ checksum "requirements.txt" }}
+          paths:
+            - ~/venv
       - run:
           name: install-requirements
           command: |
             . ~/venv/bin/activate
-            pip install -r requirements.txt
-      - run:
-          name: install-test-requirements
-          command: |
-            . ~/venv/bin/activate
             pip install -r requirements_tests.txt
+      - save_cache:
+          key: requirements-{{ checksum "requirements.txt" }}
+          paths:
+            - ~/venv
       - run:
           name: install-sceptre
           command: |
