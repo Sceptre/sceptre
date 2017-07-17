@@ -1,13 +1,8 @@
 version: 2
 jobs:
   build:
-    parallelism: 4
     docker:
       - image: circleci/python:2.7.13
-        environment:
-          AWS_DEFAULT_REGION: eu-west-1
-          SHORT_SHA1: $(echo $CIRCLE_SHA1 | cut -c -7)
-          GIT_TAG: $(shell git describe --abbrev=0 --tags | sed 's/\./-/g')
     steps:
       - checkout
       - restore_cache:
@@ -29,11 +24,16 @@ jobs:
           command: |
             . ./venv/bin/activate
             make install
-      # - run:
-      #     name: install-docs
-      #     command: |
-      #       . venv/bin/activatem
-      #       make docs
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - project
+  lint-and-unit-tests:
+    docker:
+      - image: circleci/python:2.7.13
+    steps:
+      - attach_workspace:
+          at: /home/circleci
       - run:
           name: Linting
           command: |
@@ -57,6 +57,22 @@ jobs:
           path: build/pytest
       - store_artifacts:
           path: build/pytest
+  integration-tests:
+    parallelism: 4
+    docker:
+      - image: circleci/python:2.7.13
+        environment:
+          AWS_DEFAULT_REGION: eu-west-1
+          SHORT_SHA1: $(echo $CIRCLE_SHA1 | cut -c -7)
+          GIT_TAG: $(shell git describe --abbrev=0 --tags | sed 's/\./-/g')
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      # - run:
+      #     name: 'Generating Documentation'
+      #     command: |
+      #       . ./venv/bin/activate
+      #       cd docs && make install
       - run:
           name: 'Integration Testing'
           command: |
@@ -68,16 +84,27 @@ jobs:
           path: build/behave
       - store_artifacts:
           path: build/behave
-      - deploy:
-          command: |
-            if [ "${CIRCLE_BRANCH}" == "master" ]; then
-              make docs-dev
-              aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/dev/ --delete
-              make docs-commit
-              aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/$SHORT_SHA1/ --delete
-            elif [ "${CIRCLE_TAG}" =~ ^v[0-9]+(\.[0-9]+)*$ ]; then
-              make docs-latest
-              aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/latest/ --delete
-              make docs-tag
-              aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/$GIT_TAG/ --delete
-            fi
+    # - deploy:
+    #     command: |
+    #       if [ "${CIRCLE_BRANCH}" == "master" ]; then
+    #         make docs-dev
+    #         aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/dev/ --delete
+    #         make docs-commit
+    #         aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/$SHORT_SHA1/ --delete
+    #       elif [ "${CIRCLE_TAG}" =~ ^v[0-9]+(\.[0-9]+)*$ ]; then
+    #         make docs-latest
+    #         aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/latest/ --delete
+    #         make docs-tag
+    #         aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/$GIT_TAG/ --delete
+    #       fi
+workflows:
+  version: 2
+  build-test-and-deploy:
+    jobs:
+      - build
+      - lint-and-unit-tests:
+          requires:
+            - build
+      - integration-tests:
+          requires:
+            - build
