@@ -22,7 +22,7 @@ jobs:
             . ~/venv/bin/activate
             pip install -r requirements_tests.txt
       - save_cache:
-          key: requirements-{{ checksum "requirements.txt" }}
+          key: requirements-{{ checksum "requirements_tests.txt" }}
           paths:
             - ~/venv
       - run:
@@ -40,11 +40,19 @@ jobs:
           command: |
             . ~/venv/bin/activate
             make lint
+      - restore_cache:
+          key: tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
+          paths:
+            - ~/project/.tox
       - run:
           name: 'Unit Testing'
           command: |
             . ~/venv/bin/activate
             make test-all
+      - save_cache:
+          key: tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
+          paths:
+            - ~/.tox
       # - run:
       #     name: integration-tests
       #     command: |
