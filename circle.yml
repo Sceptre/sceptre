@@ -21,15 +21,6 @@ jobs:
       - run:
           name: install-docs
           command: 'make docs'
-  test:
-    docker:
-      - image: circleci/python:2.7.13
-        environment:
-          AWS_DEFAULT_REGION: eu-west-1
-          SHORT_SHA1: $(echo $CIRCLE_SHA1 | cut -c -7)
-          GIT_TAG: $(shell git describe --abbrev=0 --tags | sed 's/\./-/g')
-    steps:
-      - checkout
       - run:
           name: linting
           command: 'make lint'
@@ -44,4 +35,3 @@ workflows:
   build_and_test:
     jobs:
       - build
-      - test
