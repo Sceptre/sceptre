@@ -13,9 +13,9 @@ jobs:
           name: 'Creating Virtualenv'
           command: virtualenv venv
       - restore_cache:
-          key: v1-requirements-{{ checksum "requirements.txt" }}
-          paths:
-            - venv
+          keys:
+            - v1-requirements-{{ checksum "requirements.txt" }}
+            - v1-tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
       - run:
           name: 'Installing Requirements'
           command: |
@@ -40,13 +40,6 @@ jobs:
           command: |
             . ./venv/bin/activate
             make lint
-      - restore_cache:
-          key: v1-tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
-          paths:
-            - .tox/py269
-            - .tox/py27
-            - .tox/py352
-            - .tox/py361
       - run:
           name: 'Unit Testing'
           command: |
@@ -63,12 +56,12 @@ jobs:
           path: build/junitxml/pytest/
       - store_artifacts:
           path: build/junitxml/pytest/
-      # - run:
-      #     name: integration-tests
-      #     command: |
-      #       . ~/venv/bin/activate
-      #       behave integration-tests/ --junit --junit-directory ~/behave/junit.xml
-      # - store_test_results:
-      #     path: ~/behave
-      # - store_artifacts:
-      #     path: ~/behave
+      - run:
+          name: integration-tests
+          command: |
+            . ~/venv/bin/activate
+            behave integration-tests/ --junit --junit-directory build/behave/junit-integration.xml
+      - store_test_results:
+          path: build/behave
+      - store_artifacts:
+          path: build/behave
