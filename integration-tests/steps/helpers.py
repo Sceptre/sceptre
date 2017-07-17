@@ -2,6 +2,8 @@ from behave import *
 import os
 import time
 
+import jinja2.exceptions
+
 from botocore.exceptions import ClientError
 from sceptre.exceptions import TemplateSceptreHandlerError
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
@@ -37,6 +39,8 @@ def step_impl(context, exception_type):
         assert isinstance(context.error, ClientError)
     elif exception_type == "AttributeError":
         assert isinstance(context.error, AttributeError)
+    elif exception_type == "UndefinedError":
+        assert isinstance(context.error, jinja2.exceptions.UndefinedError)
     else:
         raise Exception("Step has incorrect message")
 

@@ -1,0 +1,4 @@
+Resources:
+    WaitConditionHandle:
+      Type: "{{ non_existant_key.type }}"
+      Properties:

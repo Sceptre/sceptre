@@ -2,10 +2,23 @@
 History
 =======
 
+1.2.0 (2017.7.14)
+-----------------
+
+* Increasing maximum number of boto call retires from 5 to 30.
+* Adding support Jinja rendering for stack templates.
+* Adding stricter requirements for existing stack state when launch environments.
+* Adding ``cmd`` hook for better cross platform support.
+* Adding documentation around architecture of Sceptre projects.
+* Adding versioned documentation.
+* Improving documentation formatting.
+* Fixing path error bug when using environment level commands on Windows.
+* Fixing bug to correctly throw an AtrributeError in a Python stack template.
+
 1.1.2 (2017.5.26)
 -----------------
 
-* Bugfix for ``protect`` in stack config.
+* Fixing bug for ``protect`` in stack config.
 
 1.1.1 (2017.2.29)
 -----------------
