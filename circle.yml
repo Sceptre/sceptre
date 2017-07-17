@@ -8,24 +8,24 @@ jobs:
           SHORT_SHA1: $(echo $CIRCLE_SHA1 | cut -c -7)
           GIT_TAG: $(shell git describe --abbrev=0 --tags | sed 's/\./-/g')
     steps:
-      - checkout
       - run:
           name: create-venv
-          command: virtualenv venv
+          command: virtualenv ~/venv
+      - checkout
       - run:
           name: install-requirements
           command: |
-            . venv/bin/activate
+            . ~/venv/bin/activate
             pip install -r requirements.txt
       - run:
           name: install-test-requirements
           command: |
-            . venv/bin/activate
+            . ~/venv/bin/activate
             pip install -r requirements_tests.txt
       - run:
           name: install-sceptre
           command: |
-            . venv/bin/activate
+            . ~/venv/bin/activate
             make install
       # - run:
       #     name: install-docs
@@ -35,12 +35,12 @@ jobs:
       - run:
           name: linting
           command: |
-            . venv/bin/activate
+            . ~/venv/bin/activate
             make lint
       - run:
           name: unit-testing
           command: |
-            . venv/bin/activate
+            . ~/venv/bin/activate
             make test-all
       # - run:
       #     name: integration-tests
