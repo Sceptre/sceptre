@@ -1,0 +1,48 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:2.7.13
+        environment:
+          AWS_DEFAULT_REGION: eu-west-1
+          SHORT_SHA1: $(echo $CIRCLE_SHA1 | cut -c -7)
+          GIT_TAG: $(shell git describe --abbrev=0 --tags | sed 's/\./-/g')
+    steps:
+      - checkout
+      - run:
+          name: create-venv
+          command: virtualenv venv
+      - run:
+          name: install-requirements
+          command: |
+            . venv/bin/activate
+            pip install -r requirements.txt
+      - run:
+          name: install-test-requirements
+          command: |
+            . venv/bin/activate
+            pip install -r requirements_tests.txt
+      - run:
+          name: install-sceptre
+          command: |
+            . venv/bin/activate
+            make install
+      # - run:
+      #     name: install-docs
+      #     command: |
+      #       . venv/bin/activatem
+      #       make docs
+      - run:
+          name: linting
+          command: 'make lint'
+      - run:
+          name: unit-testing
+          command: 'make test-all'
+      # - run:
+      #     name: integration-tests
+      #     command: 'behave integration-tests/ --junit --junit-directory $CIRCLE_TEST_REPORTS/behave/junit.xml'
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - build
