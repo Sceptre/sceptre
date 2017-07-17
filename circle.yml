@@ -43,10 +43,10 @@ jobs:
       - restore_cache:
           key: tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
           paths:
-            - ~/project/.tox/py269
-            - ~/project/.tox/py27
-            - ~/project/.tox/py352
-            - ~/project/.tox/py361
+            - .tox/py269
+            - .tox/py27
+            - .tox/py352
+            - .tox/py361
       - run:
           name: 'Unit Testing'
           command: |
@@ -55,10 +55,14 @@ jobs:
       - save_cache:
           key: tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
           paths:
-            - ~/project/.tox/py269
-            - ~/project/.tox/py27
-            - ~/project/.tox/py352
-            - ~/project/.tox/py361
+            - .tox/py269
+            - .tox/py27
+            - .tox/py352
+            - .tox/py361
+      - store_test_results:
+          path: build/junitxml/pytest/
+      - store_artifacts:
+          path: build/junitxml/pytest/
       # - run:
       #     name: integration-tests
       #     command: |
