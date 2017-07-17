@@ -37,14 +37,16 @@ jobs:
           command: |
             . ~/venv/bin/activate
             make lint
+      # - run:
+      #     name: unit-testing
+      #     command: |
+      #       . ~/venv/bin/activate
+      #       make test-all
       - run:
-          name: unit-testing
+          name: integration-tests
           command: |
             . ~/venv/bin/activate
-            make test-all
-      # - run:
-      #     name: integration-tests
-      #     command: 'behave integration-tests/ --junit --junit-directory $CIRCLE_TEST_REPORTS/behave/junit.xml'
+            behave integration-tests/ --junit --junit-directory $CIRCLE_TEST_REPORTS/behave/junit.xml
 workflows:
   version: 2
   build_and_test:
