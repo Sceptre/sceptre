@@ -8,27 +8,27 @@ jobs:
           SHORT_SHA1: $(echo $CIRCLE_SHA1 | cut -c -7)
           GIT_TAG: $(shell git describe --abbrev=0 --tags | sed 's/\./-/g')
     steps:
+      - checkout
       - run:
           name: 'Creating Virtualenv'
-          command: virtualenv ~/venv
-      - checkout
+          command: virtualenv venv
       - restore_cache:
           key: requirements-{{ checksum "requirements.txt" }}
           paths:
-            - ~/venv
+            - venv
       - run:
           name: 'Installing Requirements'
           command: |
-            . ~/venv/bin/activate
+            . ./venv/bin/activate
             pip install -r requirements_tests.txt
       - save_cache:
           key: requirements-{{ checksum "requirements_tests.txt" }}
           paths:
-            - ~/venv
+            - venv
       - run:
           name: 'Installing Sceptre'
           command: |
-            . ~/venv/bin/activate
+            . ./venv/bin/activate
             make install
       # - run:
       #     name: install-docs
@@ -38,21 +38,27 @@ jobs:
       - run:
           name: Linting
           command: |
-            . ~/venv/bin/activate
+            . ./venv/bin/activate
             make lint
       - restore_cache:
           key: tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
           paths:
-            - ~/project/.tox
+            - ~/project/.tox/py269
+            - ~/project/.tox/py27
+            - ~/project/.tox/py352
+            - ~/project/.tox/py361
       - run:
           name: 'Unit Testing'
           command: |
-            . ~/venv/bin/activate
+            . ./venv/bin/activate
             make test-all
       - save_cache:
           key: tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
           paths:
-            - ~/.tox
+            - ~/project/.tox/py269
+            - ~/project/.tox/py27
+            - ~/project/.tox/py352
+            - ~/project/.tox/py361
       # - run:
       #     name: integration-tests
       #     command: |
