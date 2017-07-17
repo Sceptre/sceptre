@@ -57,9 +57,9 @@ jobs:
       - store_artifacts:
           path: build/junitxml/pytest/
       - run:
-          name: integration-tests
+          name: 'Integration Testing'
           command: |
-            . ~/venv/bin/activate
+            . ./venv/bin/activate
             behave integration-tests/ --junit --junit-directory build/behave/junit-integration.xml
       - store_test_results:
           path: build/behave
