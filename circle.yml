@@ -11,11 +11,13 @@ jobs:
       - checkout
       - run:
           name: 'Creating Virtualenv'
-          command: virtualenv venv
+          command: |
+            virtualenv venv
+            pwd
       - restore_cache:
           key: requirements-{{ checksum "requirements.txt" }}
           paths:
-            - venv
+            - ~/project/venv
       - run:
           name: 'Installing Requirements'
           command: |
@@ -24,7 +26,7 @@ jobs:
       - save_cache:
           key: requirements-{{ checksum "requirements_tests.txt" }}
           paths:
-            - venv
+            - ~/project/venv
       - run:
           name: 'Installing Sceptre'
           command: |
