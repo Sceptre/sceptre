@@ -11,22 +11,20 @@ jobs:
       - checkout
       - run:
           name: 'Creating Virtualenv'
-          command: |
-            virtualenv venv
-            pwd
+          command: virtualenv venv
       - restore_cache:
-          key: requirements-{{ checksum "requirements.txt" }}
+          key: v1-requirements-{{ checksum "requirements.txt" }}
           paths:
-            - ~/project/venv
+            - venv
       - run:
           name: 'Installing Requirements'
           command: |
             . ./venv/bin/activate
             pip install -r requirements_tests.txt
       - save_cache:
-          key: requirements-{{ checksum "requirements_tests.txt" }}
+          key: v1-requirements-{{ checksum "requirements.txt" }}
           paths:
-            - ~/project/venv
+            - venv
       - run:
           name: 'Installing Sceptre'
           command: |
@@ -43,7 +41,7 @@ jobs:
             . ./venv/bin/activate
             make lint
       - restore_cache:
-          key: tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
+          key: v1-tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
           paths:
             - .tox/py269
             - .tox/py27
@@ -55,7 +53,7 @@ jobs:
             . ./venv/bin/activate
             make test-all
       - save_cache:
-          key: tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
+          key: v1-tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
           paths:
             - .tox/py269
             - .tox/py27
