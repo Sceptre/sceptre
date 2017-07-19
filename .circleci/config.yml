@@ -24,6 +24,11 @@ jobs:
           command: |
             . ./venv/bin/activate
             make install
+      - run:
+          name: 'Generating Documentation'
+          command: |
+            . ./venv/bin/activate
+            cd docs && make install
       - persist_to_workspace:
           root: /home/circleci
           paths:
@@ -66,11 +71,6 @@ jobs:
     steps:
       - attach_workspace:
           at: /home/circleci
-      # - run:
-      #     name: 'Generating Documentation'
-      #     command: |
-      #       . ./venv/bin/activate
-      #       cd docs && make install
       - run:
           name: 'Integration Testing'
           command: |
