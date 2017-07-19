@@ -77,7 +77,7 @@ jobs:
             . ./venv/bin/activate
             behave --junit \
                    --junit-directory build/behave \
-                   $(circleci tests glob "integration-tests/features/*.feature" | circleci tests split --split-by=timings)
+                   $(circleci tests glob "integration-tests/features/*.feature" | circleci tests split --split-by=filesize)
       - store_test_results:
           path: build/behave
       - store_artifacts:
@@ -99,7 +99,7 @@ jobs:
               aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/latest/ --delete
               make docs-tag
               aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/$GIT_TAG/ --delete
-            elif [ "${CIRCLE_BRANCH}" == "master" ]; then
+            elif [ "${CIRCLE_BRANCH}" == "circleci-ci-2.0" ]; then
               make docs-dev
               aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/dev/ --delete
               make docs-commit
@@ -122,4 +122,4 @@ workflows:
             - integration-tests
           filters:
             branches:
-              only: master
+              only: circle-ci-2.0
