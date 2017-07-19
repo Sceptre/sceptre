@@ -2,21 +2,22 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/python:2.7.13
+      - image: theseanything/sceptre-circleci:0.1
     steps:
       - checkout
-      - restore_cache:
-          key: v1-requirements-{{ checksum "requirements.txt" }}
       - run:
           name: 'Creating Virtualenv'
           command: virtualenv venv
+      - restore_cache:
+          key: v2-requirements-{{ checksum "requirements.txt" }}
       - run:
           name: 'Installing Requirements'
           command: |
             . ./venv/bin/activate
             pip install -r requirements_tests.txt
+            pip install awscli
       - save_cache:
-          key: v1-requirements-{{ checksum "requirements.txt" }}
+          key: v2-requirements-{{ checksum "requirements.txt" }}
           paths:
             - venv
       - run:
@@ -24,6 +25,17 @@ jobs:
           command: |
             . ./venv/bin/activate
             make install
+      - restore_cache:
+          key: v1-documentation-tools-{{ checksum "docs/Gemfile.lock" }}
+      - run:
+          name: 'Installing Documentation Tools'
+          command: |
+            . ./venv/bin/activate
+            cd docs && make install
+      - save_cache:
+          key: v1-documentation-tools-{{ checksum "docs/Gemfile.lock" }}
+          paths:
+            - docs/vendor
       - persist_to_workspace:
           root: /home/circleci
           paths:
@@ -82,34 +94,26 @@ jobs:
       - image: theseanything/sceptre-circleci:0.1
         environment:
           AWS_DEFAULT_REGION: eu-west-1
-          SHORT_SHA1: $(echo $CIRCLE_SHA1 | cut -c -7)
-          GIT_TAG: $(shell git describe --abbrev=0 --tags | sed 's/\./-/g')
     steps:
       - attach_workspace:
           at: /home/circleci
-      - restore_cache:
-          key: v1-documentation-tools-{{ checksum "docs/Gemfile.lock" }}
-      - run:
-          name: 'Installing Documentation Tools'
-          command: |
-            . ./venv/bin/activate
-            cd docs && make install
-      - save_cache:
-          key: v1-documentation-tools-{{ checksum "docs/Gemfile.lock" }}
-          paths:
-            - docs/vendor
       - deploy:
           command: |
-            if [ "${CIRCLE_TAG}" =~ ^v[0-9]+\.[0-9]+\.?[0-9]*$ ]; then
+            SHORT_SHA1=$(echo $CIRCLE_SHA1 | cut -c -7)
+            GIT_TAG=$(git describe --abbrev=0 --tags | sed 's/\./-/g')
+            echo $SHORT_SHA1
+            echo $GIT_TAG
+            . ./venv/bin/activate
+            if [[ "${CIRCLE_TAG}" =~ ^v[0-9]+\.[0-9]+\.?[0-9]*$ ]]; then
               make docs-latest
-              aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/latest/ --delete
+              aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/circle-ci-2-tag/ --delete
               make docs-tag
-              aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/$GIT_TAG/ --delete
-            elif [ "${CIRCLE_BRANCH}" == "circleci-ci-2.0" ]; then
+              aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/circle-ci-2-tag/$GIT_TAG/ --delete
+            elif [[ "${CIRCLE_BRANCH}" == "circle-ci-2.0" ]]; then
               make docs-dev
-              aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/dev/ --delete
+              aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/circle-ci-2-branch/ --delete
               make docs-commit
-              aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/$SHORT_SHA1/ --delete
+              aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/circle-ci-2-branch/$SHORT_SHA1/ --delete
             fi
 workflows:
   version: 2
