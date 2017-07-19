@@ -25,6 +25,67 @@ jobs:
           command: |
             . ./venv/bin/activate
             make install
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - project
+  lint-and-unit-tests:
+    docker:
+      - image: circleci/python:2.7.13
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - run:
+          name: Linting
+          command: |
+            . ./venv/bin/activate
+            make lint
+      - restore_cache:
+          key: v1-tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
+      - run:
+          name: 'Unit Testing'
+          command: |
+            . ./venv/bin/activate
+            make test-all
+      - save_cache:
+          key: v1-tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
+          paths:
+            - .tox/py269
+            - .tox/py27
+            - .tox/py352
+            - .tox/py361
+      - store_test_results:
+          path: build/pytest
+      - store_artifacts:
+          path: build/pytest
+  integration-tests:
+    parallelism: 4
+    docker:
+      - image: circleci/python:2.7.13
+        environment:
+          AWS_DEFAULT_REGION: eu-west-1
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - run:
+          name: 'Integration Testing'
+          command: |
+            . ./venv/bin/activate
+            behave --junit \
+                   --junit-directory build/behave \
+                   $(circleci tests glob "integration-tests/features/*.feature" | circleci tests split --split-by=timings)
+      - store_test_results:
+          path: build/behave
+      - store_artifacts:
+          path: build/behave
+  deploy-docs:
+    docker:
+      - image: theseanything/sceptre-circleci:0.1
+        environment:
+          AWS_DEFAULT_REGION: eu-west-1
+    steps:
+      - attach_workspace:
+          at: /home/circleci
       - restore_cache:
           key: v1-documentation-tools-{{ checksum "docs/Gemfile.lock" }}
       - run:
@@ -36,101 +97,37 @@ jobs:
           key: v1-documentation-tools-{{ checksum "docs/Gemfile.lock" }}
           paths:
             - docs/vendor
-      - persist_to_workspace:
-          root: /home/circleci
-          paths:
-            - project
-  # lint-and-unit-tests:
-  #   docker:
-  #     - image: circleci/python:2.7.13
-  #   steps:
-  #     - attach_workspace:
-  #         at: /home/circleci
-  #     - run:
-  #         name: Linting
-  #         command: |
-  #           . ./venv/bin/activate
-  #           make lint
-  #     - restore_cache:
-  #         key: v1-tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
-  #     - run:
-  #         name: 'Unit Testing'
-  #         command: |
-  #           . ./venv/bin/activate
-  #           make test-all
-  #     - save_cache:
-  #         key: v1-tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
-  #         paths:
-  #           - .tox/py269
-  #           - .tox/py27
-  #           - .tox/py352
-  #           - .tox/py361
-  #     - store_test_results:
-  #         path: build/pytest
-  #     - store_artifacts:
-  #         path: build/pytest
-  # integration-tests:
-  #   parallelism: 4
-  #   docker:
-  #     - image: circleci/python:2.7.13
-  #       environment:
-  #         AWS_DEFAULT_REGION: eu-west-1
-  #   steps:
-  #     - attach_workspace:
-  #         at: /home/circleci
-  #     - run:
-  #         name: 'Integration Testing'
-  #         command: |
-  #           . ./venv/bin/activate
-  #           behave --junit \
-  #                  --junit-directory build/behave \
-  #                  $(circleci tests glob "integration-tests/features/*.feature" | circleci tests split --split-by=timings)
-  #     - store_test_results:
-  #         path: build/behave
-  #     - store_artifacts:
-  #         path: build/behave
-  deploy-docs:
-    docker:
-      - image: theseanything/sceptre-circleci:0.1
-        environment:
-          AWS_DEFAULT_REGION: eu-west-1
-    steps:
-      - attach_workspace:
-          at: /home/circleci
       - deploy:
           command: |
             SHORT_SHA1=$(echo $CIRCLE_SHA1 | cut -c -7)
             GIT_TAG=$(git describe --abbrev=0 --tags | sed 's/\./-/g')
-            echo $SHORT_SHA1
-            echo $GIT_TAG
             . ./venv/bin/activate
             if [[ "${CIRCLE_TAG}" =~ ^v[0-9]+\.[0-9]+\.?[0-9]*$ ]]; then
               make docs-latest
-              aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/circle-ci-2-tag/ --delete
+              aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/latest/ --delete
               make docs-tag
-              aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/circle-ci-2-tag/$GIT_TAG/ --delete
+              aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/$GIT_TAG/ --delete
             elif [[ "${CIRCLE_BRANCH}" == "circle-ci-2.0" ]]; then
               make docs-dev
-              aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/circle-ci-2-branch/ --delete
+              aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/dev/ --delete
               make docs-commit
-              aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/circle-ci-2-branch/$SHORT_SHA1/ --delete
+              aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/$SHORT_SHA1/ --delete
             fi
 workflows:
   version: 2
   build-test-and-deploy:
     jobs:
       - build
-      # - lint-and-unit-tests:
-      #     requires:
-      #       - build
-      # - integration-tests:
-      #     requires:
-      #       - build
-      - deploy-docs:
+      - lint-and-unit-tests:
           requires:
             - build
-          #   - lint-and-unit-tests
-          #   - integration-tests
+      - integration-tests:
+          requires:
+            - build
+      - deploy-docs:
+          requires:
+            - lint-and-unit-tests
+            - integration-tests
           filters:
             branches:
-              only: circle-ci-2.0
+              only: master
