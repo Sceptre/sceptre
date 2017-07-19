@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: theseanything/sceptre-circleci:0.1
+      - image: cloudreach/sceptre-circleci:0.1
     steps:
       - checkout
       - run:
@@ -80,7 +80,7 @@ jobs:
           path: build/behave
   deploy-docs:
     docker:
-      - image: theseanything/sceptre-circleci:0.1
+      - image: cloudreach/sceptre-circleci:0.1
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
