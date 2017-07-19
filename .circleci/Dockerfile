@@ -14,9 +14,8 @@ RUN set -ex \
     && echo 'eval "$(rbenv init -)"' >> $HOME/.bashrc
 
 ENV PATH "/home/circleci/.rbenv/shims:/home/circleci/.rbenv/bin:$PATH"
-RUN echo $PATH \
-    && rbenv install $RUBY_VERSION \
-    && rbenv global $RUBY_VERSION
-
 RUN set -ex \
+    \
+    && rbenv install $RUBY_VERSION \
+    && rbenv global $RUBY_VERSION \
     && gem install bundler --version "$BUNDLER_VERSION"
