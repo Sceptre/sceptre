@@ -7,6 +7,7 @@ This module implements Sceptre's CLI, and should not be directly imported.
 """
 
 import contextlib
+import errno
 from json import JSONEncoder
 import os
 import logging
@@ -23,6 +24,7 @@ from boto3.exceptions import Boto3Error
 from botocore.exceptions import BotoCoreError, ClientError
 from jinja2.exceptions import TemplateError
 
+from .config import ENVIRONMENT_PROPERTIES, STACK_PROPERTIES
 from .environment import Environment
 from .exceptions import SceptreException
 from .stack_status import StackStatus, StackChangeSetStatus
@@ -571,6 +573,90 @@ def get_stack_policy(ctx, environment, stack):
     response = env.stacks[stack].get_policy()
 
     write(response.get('StackPolicyBody', {}))
+
+
+@cli.command(name="new")
+@click.pass_context
+@click.argument('path')
+def new(ctx, path):
+    """
+    Initialises new a Sceptre project folder and config file.
+
+    Prints ENVIRONMENT/STACK policy.
+    """
+    cwd = os.getcwd()
+    for item in os.listdir(cwd):
+        if os.path.isdir(item) and item == "config":
+            config_dir = os.path.join(os.getcwd(), "config")
+            create_new_environment(config_dir, path)
+    # create_new_project(cwd, path)
+
+
+def create_new_environment(config_dir, path):
+    folder_path = os.path.join(config_dir, path)
+    environment_exists = False
+    try:
+        os.makedirs(folder_path)
+    except OSError as e:
+        if e.errno == errno.EEXIST:
+            environment_exists = True
+        else:
+            raise
+
+    init_config_msg = 'Do you want initialise config.yaml?'
+    if environment_exists:
+        if click.confirm('Environment path exists. ' + init_config_msg):
+            create_config_file(config_dir, folder_path)
+    elif click.confirm(init_config_msg):
+        create_config_file(config_dir, folder_path)
+
+
+# def create_new_project(cwd, project_name):
+#     sceptre_folders = {"config", "templates"}
+#     for folder in sceptre_folders:
+#         folder_path = os.path.join(cwd, project_name, folder)
+#         os.makedirs(folder_path)
+#
+#     config = {
+#         "project_code": project_name
+#     }
+#     create_config_file(os.path.join(cwd, project_name, "config"), config)
+
+
+def get_nested_config(config_dir, path):
+    config = {}
+    for root, dirs, files in os.walk(config_dir):
+        if path.startswith(root) and "config.yaml" in files:
+            config_path = os.path.join(root, "config.yaml")
+            print(config_path)
+            with open(config_path) as config_file:
+                config.update(yaml.safe_load(config_file))
+    return config
+
+
+def create_config_file(config_dir, path):
+    config = dict.fromkeys(ENVIRONMENT_PROPERTIES.required, "")
+    nested_config = get_nested_config(config_dir, path)
+    print(nested_config)
+
+    # Add nested config as defaults
+    config.update(nested_config)
+
+    # Ask for new values
+    for key, value in config.items():
+        config[key] = click.prompt(
+            'Please enter a {0}'.format(key), default=config[key]
+        )
+
+    # Remove nested values that are the same
+    config = {k: v for k, v in config.items() if nested_config.get(k) != v}
+
+    # Write config.yaml
+    filepath = os.path.join(path, "config.yaml")
+    with open(filepath, 'w') as config_file:
+        config_file.write(yaml.safe_dump(
+            config, default_flow_style=False)
+        )
 
 
 def get_env(sceptre_dir, environment_path, options):
