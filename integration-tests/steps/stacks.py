@@ -45,6 +45,20 @@ def step_impl(context, stack_name, desired_status):
     assert (status == desired_status)
 
 
+@given('stack "{stack_name}" exists using "{template_name}"')
+def step_impl(context, stack_name, template_name):
+    full_name = get_cloudformation_stack_name(context, stack_name)
+
+    status = get_stack_status(context, full_name)
+    if status != "CREATE_COMPLETE":
+        delete_stack(context, full_name)
+        body = read_template_file(context, template_name)
+        create_stack(context, full_name, body)
+
+    status = get_stack_status(context, full_name)
+    assert (status == "CREATE_COMPLETE")
+
+
 @when('the user creates stack "{stack_name}"')
 def step_impl(context, stack_name):
     environment_name, basename = os.path.split(stack_name)
@@ -93,8 +107,10 @@ def step_impl(context, stack_name):
 def step_impl(context, stack_name):
     environment_name, basename = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
-
-    env.stacks[basename].launch()
+    try:
+        env.stacks[basename].launch()
+    except Exception as e:
+        context.error = e
 
 
 @when('the user describes the resources of stack "{stack_name}"')
