@@ -1,1 +1,3 @@
-template_path: templates/valid_template.json
+template_path: templates/dependencies/dependent_template.json
+parameters:
+  DependentStackName: !stack_output A::StackName
