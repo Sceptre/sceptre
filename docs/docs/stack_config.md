@@ -35,7 +35,7 @@ A list of arbitrary shell or python commands or scripts to run. Find out more in
 Sensitive data such as passwords or secret keys should not be stored in plaintext in stack config files. Instead, they should be passed in from the CLI with <a href="{{ site.baseurl }}/docs/environment_config.html#var">User Variables</a>, or set via an environment variable with the <a href="{{ site.baseurl }}/docs/resolvers.html#environment_variable">environment variable resolver</a>.
 </div>
 
-A dictionary of key-value pairs to be supplied to a CloudFormation or Troposphere template as parameters. The keys must match up with the name of the parameter, and the value must be of the type as defined in the template. Note that Boto3 throws an exception if parameters are supplied to a template that are not required by that template. Resolvers can be used to add functionality to this key. Find out more in the [Resolvers]({{ site.baseurl }}/docs/resolvers.html) section.
+A dictionary of key-value pairs to be supplied to a template as parameters. The keys must match up with the name of the parameter, and the value must be of the type as defined in the template. Note that Boto3 throws an exception if parameters are supplied to a template that are not required by that template. Resolvers can be used to add functionality to this key. Find out more in the [Resolvers]({{ site.baseurl }}/docs/resolvers.html) section.
 
 A parameter can be specified either as a single value/resolver or a list of values/resolvers. Lists of values/resolvers will be formatted into an AWS compatible comma separated string e.g. `value1,value2,value3`. Lists can contain a mixture of values and resolvers.
 
@@ -85,7 +85,7 @@ If a user tries to run one of these commands on a protected stack, Sceptre will 
 
 ### sceptre\_user\_data
 
-A dictionary of arbitrary key-value pairs to be passed to the `sceptre_handler(sceptre_user_data)` function in Troposphere templates.
+Represents data to be passed to the `sceptre_handler(sceptre_user_data)` function in Python templates or accessible under `sceptre_user_data` variable key within Jinja2 templates.
 
 ### stack_name
 
@@ -114,7 +114,7 @@ The ARN of a [CloudFormation Service Role](http://docs.aws.amazon.com/AWSCloudFo
 
 ### template_path
 
-The path to the CloudFormation or Troposphere template to build the stack from. The path can either be absolute or relative to the Sceptre Directory. Whether Sceptre treats the template as CloudFormation or Troposphere depends on the template's file extension. Templates with `.json` or `.yaml` extensions will be treated as CloudFormation templates whereas files with `.py` extension will be treated as Troposphere. Note that the template filename may be different from the stack config filename.
+The path to the CloudFormation, Jinja2 or Python template to build the stack from. The path can either be absolute or relative to the Sceptre Directory. Sceptre treats the template as CloudFormation, Jinja2 or Python depending on the template's file extension. Note that the template filename may be different from the stack config filename.
 
 
 ## Cascading Config
@@ -137,9 +137,9 @@ It is possible to replace values in stack config files with environment variable
 
 ## Sceptre User Data
 
-Troposphere templates can contain data which should be parameterised, but can't be parameterised using CloudFormation parameters. An example of this is if a Troposphere template which creates an IAM Role reads in the policy from a JSON file. The file path must be hardcoded in the Troposphere template.
+Python or Jinja templates can contain data which should be parameterised, but can't be parameterised using CloudFormation parameters. An example of this is if a Python template which creates an IAM Role reads in the policy from a JSON file. The file path must be hardcoded in the Python template.
 
-Sceptre user data allows users to store arbitrary key-value pairs in their `<stack-name>.yaml` file. This data is then passed as a Python `dict` to the `sceptre_handler(sceptre_user_data)` function in Troposphere templates.
+Sceptre user data allows users to store arbitrary key-value pairs in their `<stack-name>.yaml` file. This data is then passed as a Python `dict` to the `sceptre_handler(sceptre_user_data)` function in Python templates.
 
 Syntax:
 
@@ -191,4 +191,3 @@ stack_tags:
     tag_2: value_2
 {% endraw %}
 ```
-

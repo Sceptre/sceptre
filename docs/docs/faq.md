@@ -27,14 +27,13 @@ $ sceptre --var "region=<your region name>" COMMAND
 Parameters are the standard way of passing environment-specific configuration to a CloudFormation template. They offer:
 
 - Native support from CloudFormation
-- Availability to templates written in both Troposphere and pure CloudFormation
 - A high degree of customisability, as described in the [AWS documentation](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html)
 
 However, parameters suffer from the following limitation:
 
 - They cannot alter the template based on the parameter value
 
-Sceptre user data was added to fix this limitation. It is configuration that is passed directly to a Troposphere template, and so can be used to change the template based on the configuration item's value.
+Sceptre user data was added to fix this limitation. It is configuration that is passed directly to a template, and so can be used to change the template based on the configuration item's value.
 
 For example, if the Sceptre user data item `number_of_azs` is passed to a subnet tier template, the value could be used to create different numbers of subnets. This cannot be done with native parameters.
 

@@ -176,7 +176,7 @@ class TestTemplate(object):
         with pytest.raises(IOError):
             self.template.body
 
-    def test_body_with_troposphere(self):
+    def test_body_with_python_template(self):
         self.template.sceptre_user_data = None
         self.template.name = "vpc"
         self.template.path = os.path.join(
@@ -188,7 +188,7 @@ class TestTemplate(object):
             expected_output = json.loads(f.read())
         assert actual_output == expected_output
 
-    def test_body_with_troposphere_with_sgt(self):
+    def test_body_with_python_template_with_sgt(self):
         self.template.sceptre_user_data = None
         self.template.name = "vpc_sgt"
         self.template.path = os.path.join(
@@ -249,7 +249,7 @@ class TestTemplate(object):
 
 @pytest.mark.parametrize("filename,sceptre_user_data,expected", [
     (
-        "vpc.yaml",
+        "vpc.j2",
         {"vpc_id": "10.0.0.0/16"},
         """Resources:
   VPC:
@@ -262,7 +262,20 @@ Outputs:
       Ref: VPC"""
     ),
     (
-        "sg.yaml",
+        "vpc.yaml.j2",
+        {"vpc_id": "10.0.0.0/16"},
+        """Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+Outputs:
+  VpcId:
+    Value:
+      Ref: VPC"""
+    ),
+    (
+        "sg.j2",
         [
             {"name": "sg_a", "inbound_ip": "10.0.0.0"},
             {"name": "sg_b", "inbound_ip": "10.0.0.1"}
@@ -282,7 +295,7 @@ Outputs:
 def test_render_jinja_template(filename, sceptre_user_data, expected):
     jinja_template_dir = os.path.join(
         os.getcwd(),
-        "tests/fixtures/jinja_templates"
+        "tests/fixtures/templates"
     )
     result = sceptre.template.Template._render_jinja_template(
         template_dir=jinja_template_dir,
