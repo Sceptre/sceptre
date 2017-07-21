@@ -718,6 +718,7 @@ def create_config_file(config_dir, path, defaults=None):
 
     # Add nested config as defaults
     config.update(nested_config)
+
     if defaults:
         config.update(defaults)
 
