@@ -1,6 +1,7 @@
 import logging
 import yaml
 import datetime
+import os
 
 from click.testing import CliRunner
 from mock import Mock, patch, sentinel
@@ -515,6 +516,17 @@ class TestCli(object):
             options=sentinel.options
         )
         assert response == sentinel.environment
+
+    @patch("sceptre.cli.click.prompt")
+    def test_create_config_file_without_defaults(self, fs):
+        with self.runner.isolated_filesystem():
+            config_dir = os.path.abspath('./project/config')
+            environment_path = os.path.join(config_dir, "env")
+            os.makedirs(environment_path)
+            sceptre.cli.create_config_file(config_dir, "env")
+
+
+            assert response == sentinel.environment
 
     def test_setup_logging_with_debug(self):
         logger = sceptre.cli.setup_logging(True, False)
