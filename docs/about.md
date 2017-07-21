@@ -16,7 +16,7 @@ Sceptre was developed to produce a single tool which can be used to deploy any a
 
 ## Overview
 
-Sceptre is used by defining CloudFormation or Troposphere templates, and corresponding YAML config files. The config files include which account and region to use, and the parameters to be supplied to the templates.
+Sceptre is used by defining CloudFormation, Jinja2 or Python templates, and corresponding YAML config files. The config files include which account and region to use, and the parameters to be supplied to the templates.
 
 For a tutorial on using Sceptre, see [Get Started]({{ site.baseurl }}/docs/get_started.html), or find out more information about Sceptre below.
 

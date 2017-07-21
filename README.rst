@@ -11,7 +11,7 @@ Sceptre is a tool to drive AWS `CloudFormation <https://aws.amazon.com/cloudform
 Features:
 
 - Code reusability by separating a stack's template and its configuration
-- Support for templates written in JSON, YAML or Python DSLs such as Troposphere
+- Support for templates written in JSON, YAML, Jinja2 or Python DSLs such as Troposphere
 - Dependency resolution by passing of stack outputs to parameters of dependent stacks
 - Environment support by bundling related stacks into logical groups (e.g. dev and prod)
 - Environment-level commands, such as creating multiple stacks with a single command

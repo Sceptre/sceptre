@@ -4,7 +4,7 @@ layout: docs
 
 # Templates
 
-Sceptre uses CloudFormation or Troposphere templates to launch AWS Stacks. Conventionally, templates are stored in a directory named templates, in the same directory as the config directory:
+Sceptre uses CloudFormation templates to launch AWS Stacks. Conventionally, templates are stored in a directory named templates, in the same directory as the config directory:
 
 ```
 .
@@ -16,17 +16,22 @@ Sceptre uses CloudFormation or Troposphere templates to launch AWS Stacks. Conve
     └── vpc.py
 ```
 
-Note that as a path to the template is supplied in a stack's Stack Config file, templates may be stored at any arbitrary location on disk.
+Note that as a path to the template is supplied in a Stack Config file, templates may be stored at any arbitrary location on disk.
 
 
 ## CloudFormation
 
-Templates with `.json` or `.yaml` extensions are treated as CloudFormation templates. They are read in and launched without modification.
+Templates with `.json` or `.yaml` extensions are treated as CloudFormation templates. They are read in and used without modification.
 
 
-## Troposphere
+## Jinja
 
-Templates with a `.py` extension are treated as Troposphere templates. They should implement a function named `sceptre_handler(sceptre_user_data)` which returns the CloudFormation template as a `string`. Sceptre User Data is passed to this function as an argument. If Sceptre User Data is not defined in the Stack Config file, Sceptre passes an empty `dict`.
+Templates with `.j2` extensions are treated as Jinja2 templates. These are rendered and should create a raw JSON or YAML CloudFormation template. Sceptre User Data is accessible within templates as `sceptre_user_data`. For example `{{ sceptre_user_data.some_variable }}`.
+
+
+## Python
+
+Templates with a `.py` extension are treated as Python templates. They should implement a function named `sceptre_handler(sceptre_user_data)` which returns the CloudFormation template as a `string`. Sceptre User Data is passed to this function as an argument. If Sceptre User Data is not defined in the Stack Config file, Sceptre passes an empty `dict`.
 
 
 ### Example
