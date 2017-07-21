@@ -51,6 +51,6 @@ Feature: Generate template
     Then a "<exception>" is raised
 
   Examples: Render Errors
-    | filename                                  | exception          |
+    | filename                                | exception          |
     | jinja/invalid_template_missing_key.j2   | UndefinedError     |
     | jinja/invalid_template_missing_attr.j2  | UndefinedError     |
