@@ -2,6 +2,13 @@
 History
 =======
 
+1.2.1 (2017.7.21)
+-----------------
+
+* Changing Jinja rendering for templates only with '.j2' extension.
+* Fixing broken links in documentation website.
+* Updating references to Python templates instead of Troposphere templates.
+
 1.2.0 (2017.7.14)
 -----------------
 
