@@ -518,15 +518,37 @@ class TestCli(object):
         assert response == sentinel.environment
 
     @patch("sceptre.cli.click.prompt")
-    def test_create_config_file_without_defaults(self, fs):
+    def test_create_config_file_without_defaults(self, mock_prompt):
+        mock_prompt.return_value = "test"
         with self.runner.isolated_filesystem():
             config_dir = os.path.abspath('./project/config')
             environment_path = os.path.join(config_dir, "env")
             os.makedirs(environment_path)
-            sceptre.cli.create_config_file(config_dir, "env")
+            sceptre.cli.create_config_file(config_dir, environment_path)
 
+            config_filepath = os.path.join(environment_path, "config.yaml")
+            assert os.path.isfile(config_filepath)
+            with open(config_filepath) as config_file:
+                contents = yaml.safe_load(config_file)
+            assert contents == {"project_code": "test", "region": "test"}
 
-            assert response == sentinel.environment
+    @patch("sceptre.cli.click.prompt.prompt_func", )
+    def test_create_config_file_without_defaults(self, mock_prompt):
+        mock_prompt.return_value = None
+        with self.runner.isolated_filesystem():
+            config_dir = os.path.abspath('./project/config')
+            environment_path = os.path.join(config_dir, "env")
+            os.makedirs(environment_path)
+            defaults = {"project_code": "test", "region": "test"}
+            sceptre.cli.create_config_file(
+                config_dir, environment_path, defaults
+            )
+
+            config_filepath = os.path.join(environment_path, "config.yaml")
+            assert os.path.isfile(config_filepath)
+            with open(config_filepath) as config_file:
+                contents = yaml.safe_load(config_file)
+            assert contents == {"project_code": "test", "region": "test"}
 
     def test_setup_logging_with_debug(self):
         logger = sceptre.cli.setup_logging(True, False)
