@@ -88,12 +88,9 @@ docs-api:
 	sphinx-apidoc -o docs/_api sceptre
 	$(MAKE) -C docs/_api clean
 	$(MAKE) -C docs/_api html
-	mkdir -p docs/docs/api
-	rm -rf docs/docs/api/_static
-	mkdir -p docs/docs/api/_static/
-	cp -r docs/_api/_build/html/_static docs/docs/api/
-	rm -f docs/docs/api/sceptre.html
-	cp -r docs/_api/_build/html/ docs/docs/api/
+	rm -rf docs/docs/api/
+	cp -r docs/_api/_build/html docs/docs/
+	mv docs/docs/html docs/docs/api
 
 docs-latest: docs-api
 	$(MAKE) -C docs build-latest
@@ -130,4 +127,4 @@ install: clean
 install-dev: clean
 	pip install -r requirements_dev.txt
 	pip install -r requirements_tests.txt
-	echo "To install the documentation dependencies, run:\ncd docs\nmake install"
+	@echo "To install the documentation dependencies, run:\ncd docs\nmake install"
