@@ -575,72 +575,150 @@ def get_stack_policy(ctx, environment, stack):
     write(response.get('StackPolicyBody', {}))
 
 
-@cli.command(name="new")
-@click.pass_context
-@click.argument('path')
-def new(ctx, path):
+@cli.group(name="init")
+def init():
     """
-    Initialises new a Sceptre project folder and config file.
+    Commands for initialising Sceptre projects.
+    """
+    pass
 
-    Prints ENVIRONMENT/STACK policy.
+
+@init.command("env")
+@click.argument('env')
+@catch_exceptions
+@click.pass_context
+def init_environment(ctx, env):
     """
-    cwd = os.getcwd()
+    Initialises an environment in a project.
+
+    Creates ENVIRONMENT folder in the project.
+    """
+    cwd = ctx.obj["sceptre_dir"]
     for item in os.listdir(cwd):
+        # If already a config folder create a sub environment
         if os.path.isdir(item) and item == "config":
             config_dir = os.path.join(os.getcwd(), "config")
-            create_new_environment(config_dir, path)
-    # create_new_project(cwd, path)
+            create_new_environment(config_dir, env)
+
+
+@init.command("project")
+@catch_exceptions
+@click.argument('project_name')
+@click.pass_context
+def init_project(ctx, project_name):
+    """
+    Initialises a new project.
+
+    Creates PROJECT_NAME project folder.
+    """
+    cwd = os.getcwd()
+    sceptre_folders = {"config", "templates"}
+    project_folder = os.path.join(cwd, project_name)
+
+    try:
+        os.mkdir(project_folder)
+    except OSError as e:
+        # Check if environment folder already exists
+        if e.errno == errno.EEXIST:
+            raise SceptreException(
+                'Folder \"{0}\" already exists.'.format(project_name)
+            )
+        else:
+            raise
+
+    for folder in sceptre_folders:
+        folder_path = os.path.join(project_folder, folder)
+        os.makedirs(folder_path)
+
+    defaults = {
+        "project_code": project_name,
+        "region": os.environ.get("AWS_DEFAULT_REGION", "")
+    }
+
+    config_path = os.path.join(cwd, project_name, "config")
+    create_config_file(config_path, config_path, defaults)
 
 
 def create_new_environment(config_dir, path):
+    """
+    Creates the subfolder for the environment specified by `path` starting
+    from the `config_dir`. Even if folder path already exists, ask the user if
+    they want to initialise `config.yaml`.
+
+    :param config_dir: The directory path to the top-level config folder.
+    :type config_dir: str
+    :param path: The directory path to the environment folder.
+    :type path: str
+    """
+    # Create full path to environment
     folder_path = os.path.join(config_dir, path)
     environment_exists = False
+
+    # Make folders for the anvironment
     try:
         os.makedirs(folder_path)
     except OSError as e:
+        # Check if environment folder already exists
         if e.errno == errno.EEXIST:
             environment_exists = True
         else:
             raise
 
     init_config_msg = 'Do you want initialise config.yaml?'
+
     if environment_exists:
         if click.confirm('Environment path exists. ' + init_config_msg):
             create_config_file(config_dir, folder_path)
-    elif click.confirm(init_config_msg):
-        create_config_file(config_dir, folder_path)
-
-
-# def create_new_project(cwd, project_name):
-#     sceptre_folders = {"config", "templates"}
-#     for folder in sceptre_folders:
-#         folder_path = os.path.join(cwd, project_name, folder)
-#         os.makedirs(folder_path)
-#
-#     config = {
-#         "project_code": project_name
-#     }
-#     create_config_file(os.path.join(cwd, project_name, "config"), config)
+    else:
+        if click.confirm(init_config_msg):
+            create_config_file(config_dir, folder_path)
 
 
 def get_nested_config(config_dir, path):
+    """
+    Collects nested config from between `config_dir` and `path`. Config at
+    lower level as greater precedence.
+
+    :param config_dir: The directory path to the top-level config folder.
+    :type config_dir: str
+    :param path: The directory path to the environment folder.
+    :type path: str
+    :returns: The nested config.
+    :rtype: dict
+    """
     config = {}
     for root, dirs, files in os.walk(config_dir):
+        # Check that folder is within the final environment path
         if path.startswith(root) and "config.yaml" in files:
             config_path = os.path.join(root, "config.yaml")
-            print(config_path)
             with open(config_path) as config_file:
                 config.update(yaml.safe_load(config_file))
     return config
 
 
-def create_config_file(config_dir, path):
+def create_config_file(config_dir, path, defaults=None):
+    """
+    Creates a `config.yaml` file in the given path. The user is asked for
+    values for requried properties. Defaults are suggested with values in
+    `defaults` and then vaules found in parent `config.yaml` files. If
+    properties and their values are the same as in parent `config.yaml`, then
+    they are not included. No file is produced if require values are satisfied
+    by parent `config.yaml` files.
+
+    :param config_dir: The directory path to the top-level config folder.
+    :type config_dir: str
+    :param path: The directory path to the environment folder.
+    :type path: str
+    :param defaults: Defaults to present to the user for config.
+    :type defaults: dict
+    """
     config = dict.fromkeys(ENVIRONMENT_PROPERTIES.required, "")
     nested_config = get_nested_config(config_dir, path)
-    print(nested_config)
 
     # Add nested config as defaults
     config.update(nested_config)
+    if defaults:
+        config.update(defaults)
 
     # Ask for new values
     for key, value in config.items():
@@ -651,12 +729,15 @@ def create_config_file(config_dir, path):
     # Remove nested values that are the same
     config = {k: v for k, v in config.items() if nested_config.get(k) != v}
 
-    # Write config.yaml
+    # Write config.yaml if config not empty
     filepath = os.path.join(path, "config.yaml")
-    with open(filepath, 'w') as config_file:
-        config_file.write(yaml.safe_dump(
-            config, default_flow_style=False)
-        )
+    if config:
+        with open(filepath, 'w') as config_file:
+            yaml.safe_dump(
+                config, stream=config_file, default_flow_style=False
+            )
+    else:
+        click.echo("No config.yaml file needed: covered by parent config.")
 
 
 def get_env(sceptre_dir, environment_path, options):
