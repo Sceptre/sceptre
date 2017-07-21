@@ -182,7 +182,7 @@ class ConnectionManager(object):
         """
         Makes a threadsafe Boto3 client call.
 
-        Equivalent to boto3.client(<service>).<command>(**kwargs).
+        Equivalent to ``boto3.client(<service>).<command>(**kwargs)``.
 
         :param service: The Boto3 service to return a client for.
         :type service: str

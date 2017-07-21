@@ -6,7 +6,7 @@ layout: docs
 
 ## Install
 
-This tutorial assumes that you have installed Sceptre. Instructions on how to do this are found in the section on [installation]({{ site.url }}/docs/install.html).
+This tutorial assumes that you have installed Sceptre. Instructions on how to do this are found in the section on [installation]({{ site.url }}{{ site.baseurl }}/docs/install.html).
 
 ## Directory Structure
 
