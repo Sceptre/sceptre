@@ -69,11 +69,11 @@ Using Sceptre, config files can be cascaded. Given the following sceptre directo
 ```
 .
 └── config
-├── account-1
-│   ├── config.yaml
-│   └── dev
-│       └── config.yaml
-└── config.yaml
+    ├── account-1
+    │   ├── config.yaml
+    │   └── dev
+    │       └── config.yaml
+    └── config.yaml
 ```
 
 General configurations should be defined at a high level, and more specific configurations should be defined at a lower directory level. YAML files which define configuration settings with names which overlap will take precedence if they are deeper in the directory structure. For example, if you wanted the dev environment to build to a different region, this setting could be specified in the config/dev/config.yaml file, and would only be applied to builds in the dev environment.
