@@ -26,7 +26,7 @@ Templates with `.json` or `.yaml` extensions are treated as CloudFormation templ
 
 ## Jinja
 
-Templates with `.j2` extensions are treated as Jinja2 templates. Sceptre User Data is accessible within templates as `sceptre_user_data`. For example `{{ sceptre_user_data.some_variable }}`.
+Templates with `.j2` extensions are treated as Jinja2 templates. These are rendered and should create a raw JSON or YAML CloudFormation template. Sceptre User Data is accessible within templates as `sceptre_user_data`. For example `{{ sceptre_user_data.some_variable }}`.
 
 
 ## Python
