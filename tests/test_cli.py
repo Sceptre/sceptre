@@ -6,6 +6,7 @@ from io import StringIO
 
 from click.testing import CliRunner
 from mock import Mock, patch, sentinel
+import pytest
 
 import sceptre.cli
 from sceptre.cli import cli
@@ -664,79 +665,63 @@ class TestCli(object):
                 "template_bucket_name": "input"
             }
 
-
-@pytest.mark.parametrize("config_structure,result", [
-    ({
-        "A/A": {"project_code": "A/A", "region": "A/A"},
-        "A": {"project_code": "A", "region": "A"},
-        "A/B": {"project_code": "A/B", "region": "A/B"},
-        "B": {"project_code": "B", "region": "B"},
-    }, {
-        "project_code": "A/A",
-        "region": "A/A"
-    }
-    )
-])
-def test_render_jinja_template(config_structure, result):
-    with self.runner.isolated_filesystem():
-        config_dir = os.path.abspath('./project/config')
-        environments = {"A/A/A", "A/A/B", "A/B", "B"}
-        a_config_paths = {"A/A/A", "A/A", "A"}
-        b_config_paths = {"A/A/B", "A/B", "B"}
-
-        for path in config_structure.keys():
-            os.makedirs(os.path.join(config_dir, path))
-
-        for path in a_config_paths | b_config_paths:
-            config = {
-                "project_code": path,
-                "region": path
-            }
-            filepath = os.path.join(config_dir, path, "config.yaml")
-            with open(filepath, 'w') as config_file:
-                yaml.safe_dump(
-                    config, stream=config_file, default_flow_style=False
-                )
-
-        environment_path = os.path.join(config_dir, "A/A/A")
-        nested_config = sceptre.cli.get_nested_config(
-            config_dir, environment_path
-        )
-        assert nested_config == {
-            "project_code": "A/A/A",
-            "region": "A/A/A"
+    @pytest.mark.parametrize("config_structure,result", [
+        ({
+            "A/A": {"project_code": "A/A", "region": "A/A"},
+            "A": {"project_code": "A", "region": "A"},
+            "A/B": {"project_code": "A/B", "region": "A/B"},
+            "B": {"project_code": "B", "region": "B"},
+        }, {
+            "project_code": "A/A",
+            "region": "A/A"
         }
-
-
-    def test_get_nested_config(self):
+        ),
+        ({
+            "A": {"project_code": "A", "region": "A"},
+            "A/B": {"project_code": "A/B", "region": "A/B"},
+            "B": {"project_code": "B", "region": "B"},
+        }, {
+            "project_code": "A",
+            "region": "A"
+        }
+        ),
+        ({
+            "A/A": {"project_code": "A/A", "region": "A/A"},
+            "A/B": {"project_code": "A/B", "region": "A/B"},
+            "B": {"project_code": "B", "region": "B"},
+        }, {
+            "project_code": "A/A",
+            "region": "A/A"
+        }
+        ),
+        ({
+            "A/A": {"project_code": "A/A"},
+            "A": {"project_code": "A", "region": "A"},
+            "A/B": {"project_code": "A/B", "region": "A/B"},
+            "B": {"project_code": "B", "region": "B"},
+        }, {
+            "project_code": "A/A",
+            "region": "A"
+        }
+        )
+    ])
+    def test_get_nested_config(self, config_structure, result):
         with self.runner.isolated_filesystem():
             config_dir = os.path.abspath('./project/config')
-            environments = {"A/A/A", "A/A/B", "A/B", "B"}
-            a_config_paths = {"A/A/A", "A/A", "A"}
-            b_config_paths = {"A/A/B", "A/B", "B"}
 
-            for path in environments:
+            for path, config in config_structure.items():
                 os.makedirs(os.path.join(config_dir, path))
-
-            for path in a_config_paths | b_config_paths:
-                config = {
-                    "project_code": path,
-                    "region": path
-                }
                 filepath = os.path.join(config_dir, path, "config.yaml")
                 with open(filepath, 'w') as config_file:
                     yaml.safe_dump(
                         config, stream=config_file, default_flow_style=False
                     )
 
-            environment_path = os.path.join(config_dir, "A/A/A")
+            environment_path = os.path.join(config_dir, "A/A")
             nested_config = sceptre.cli.get_nested_config(
                 config_dir, environment_path
             )
-            assert nested_config == {
-                "project_code": "A/A/A",
-                "region": "A/A/A"
-            }
+            assert nested_config == result
 
     def test_setup_logging_with_debug(self):
         logger = sceptre.cli.setup_logging(True, False)
