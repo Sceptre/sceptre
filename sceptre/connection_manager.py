@@ -11,6 +11,8 @@ import functools
 import logging
 import threading
 import time
+from datetime import datetime
+from dateutil import tz
 
 import boto3
 from botocore.exceptions import ClientError
@@ -81,6 +83,7 @@ class ConnectionManager(object):
         self.iam_role = iam_role
         self.profile = profile
         self._boto_session = None
+        self._boto_session_expiration = None
 
         self.clients = {}
 
@@ -110,6 +113,8 @@ class ConnectionManager(object):
         with self._session_lock:
             self.logger.debug("Getting Boto3 session")
 
+            self._clear_session_cache_if_expired()
+
             if self._boto_session is None:
                 self.logger.debug("No Boto3 session found, creating one...")
                 if self.iam_role:
@@ -132,6 +137,7 @@ class ConnectionManager(object):
                         aws_session_token=credentials["SessionToken"],
                         region_name=self.region
                     )
+                    self._boto_session_expiration = credentials["Expiration"]
                     self.logger.debug(
                         "Using temporary credential set: %s",
                         {
@@ -180,12 +186,25 @@ class ConnectionManager(object):
         :rtype: boto3.client.Client
         """
         with self._client_lock:
+            self._clear_session_cache_if_expired()
+
             if self.clients.get(service) is None:
                 self.logger.debug(
                     "No %s client found, creating one...", service
                 )
                 self.clients[service] = self.boto_session.client(service)
             return self.clients[service]
+
+    def _clear_session_cache_if_expired(self):
+        """
+        Removes boto_session and all clients if the existing session has
+        expired.
+        """
+        if self.iam_role and self._boto_session_expiration:
+            if self._boto_session_expiration >= datetime.now(tz.tzutc()):
+                self.logger.debug("Boto session has expired")
+                self.clients = {}
+                self._boto_session = None
 
     @_retry_boto_call
     def call(self, service, command, kwargs=None):
