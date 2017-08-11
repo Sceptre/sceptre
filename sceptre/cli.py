@@ -639,7 +639,7 @@ def init_project(ctx, project_name):
     create_config_file(config_path, config_path, defaults)
 
 
-def create_new_environment(config_dir, path):
+def create_new_environment(config_dir, new_path):
     """
     Creates the subfolder for the environment specified by `path` starting
     from the `config_dir`. Even if folder path already exists, ask the user if
@@ -651,7 +651,7 @@ def create_new_environment(config_dir, path):
     :type path: str
     """
     # Create full path to environment
-    folder_path = os.path.join(config_dir, path)
+    folder_path = os.path.join(config_dir, new_path)
     environment_exists = False
 
     # Make folders for the anvironment
