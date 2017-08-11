@@ -723,6 +723,18 @@ class TestCli(object):
             )
             assert nested_config == result
 
+    @patch("sceptre.cli.create_config_file")
+    def test_create_new_environment(self, mock_create_config_file):
+        with self.runner.isolated_filesystem():
+            config_dir = os.path.abspath('./project/config')
+            folder_path = os.path.abspath('./project/config/A/A/A')
+            new_path = "A/A/A"
+            with patch("sys.stdin", StringIO(u'y\n')):
+                sceptre.cli.create_new_environment(config_dir, new_path)
+            mock_create_config_file.assert_called_once_with(
+                config_dir, folder_path
+            )
+
     def test_setup_logging_with_debug(self):
         logger = sceptre.cli.setup_logging(True, False)
         assert logger.getEffectiveLevel() == logging.DEBUG
