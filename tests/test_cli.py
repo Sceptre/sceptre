@@ -777,6 +777,40 @@ class TestCli(object):
             assert os.path.isdir(folder_path)
             mock_create_config_file.assert_not_called()
 
+    @patch("sceptre.cli.create_config_file")
+    def test_init_project(self, mock_create_config_file):
+        with self.runner.isolated_filesystem():
+            sceptre_dir = os.path.abspath('./example')
+            config_dir = os.path.join(sceptre_dir, "config")
+            defaults = {
+                "project_code": "example",
+                "region": os.environ.get("AWS_DEFAULT_REGION", "")
+            }
+
+            self.runner.invoke(cli, ["init", "project", "example"])
+
+            assert os.path.isdir(sceptre_dir)
+            mock_create_config_file.assert_called_once_with(
+                config_dir, config_dir, defaults
+            )
+
+    @patch("sceptre.cli.create_new_environment")
+    def test_init_environment(self, mock_create_new_environment):
+        with self.runner.isolated_filesystem():
+            sceptre_dir = os.path.abspath('./example')
+            config_dir = os.path.join(sceptre_dir, "config")
+            os.makedirs(config_dir)
+
+            os.chdir(sceptre_dir)
+            new_env = "example"
+
+            self.runner.invoke(cli, ["init", "env", new_env])
+
+            assert os.path.isdir(sceptre_dir)
+            mock_create_new_environment.assert_called_once_with(
+                config_dir, "example"
+            )
+
     def test_setup_logging_with_debug(self):
         logger = sceptre.cli.setup_logging(True, False)
         assert logger.getEffectiveLevel() == logging.DEBUG
