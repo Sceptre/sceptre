@@ -605,35 +605,6 @@ class TestCli(object):
                 "region": "default"
             }
 
-    @patch("sceptre.cli.get_nested_config")
-    def test_create_config_file_with_defaults_and_input_not_in_nested_config(
-        self, mock_get_nested_config
-    ):
-        mock_get_nested_config.return_value = {
-            "project_code": "nested_config",
-            "region": "nested_config",
-            "template_bucket_name": "nested_config"
-        }
-        with self.runner.isolated_filesystem():
-            config_dir = os.path.abspath('./project/config')
-            environment_path = os.path.join(config_dir, "env")
-            os.makedirs(environment_path)
-            defaults = {"project_code": "default", "region": "default"}
-
-            with patch("sys.stdin", StringIO(u'\ninput\n\n')):
-                sceptre.cli.create_config_file(
-                    config_dir, environment_path, defaults
-                )
-
-            config_filepath = os.path.join(environment_path, "config.yaml")
-            assert os.path.isfile(config_filepath)
-            with open(config_filepath) as config_file:
-                contents = yaml.safe_load(config_file)
-            assert contents == {
-                "project_code": "default",
-                "region": "default",
-                "template_bucket_name": "input"
-            }
 
     @patch("sceptre.cli.get_nested_config")
     def test_create_config_file_overwriting_defaults_and_nested_config(
