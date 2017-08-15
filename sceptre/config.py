@@ -24,9 +24,9 @@ from .hooks import Hook
 from .resolvers import Resolver
 from .helpers import get_subclasses
 
-Properties = collections.namedtuple("Properties", "required optional")
+ConfigAttributes = collections.namedtuple("Attributes", "required optional")
 
-ENVIRONMENT_PROPERTIES = Properties(
+ENVIRONMENT_CONFIG_ATTRIBUTES = ConfigAttributes(
     {
         "project_code",
         "region"
@@ -39,7 +39,7 @@ ENVIRONMENT_PROPERTIES = Properties(
     }
 )
 
-STACK_PROPERTIES = Properties(
+STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
     {
         "template_path"
     },

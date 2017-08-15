@@ -724,7 +724,9 @@ class TestCli(object):
             assert nested_config == result
 
     @patch("sceptre.cli.create_config_file")
-    def test_create_new_environment_without_existing(self, mock_create_config_file):
+    def test_create_new_environment_without_existing(
+        self, mock_create_config_file
+    ):
         with self.runner.isolated_filesystem():
             config_dir = os.path.abspath('./project/config')
             folder_path = os.path.abspath('./project/config/A/A/A')
@@ -738,7 +740,9 @@ class TestCli(object):
             )
 
     @patch("sceptre.cli.create_config_file")
-    def test_create_new_environment_without_existing_no_confirm(self, mock_create_config_file):
+    def test_create_new_environment_without_existing_no_confirm(
+        self, mock_create_config_file
+    ):
         with self.runner.isolated_filesystem():
             config_dir = os.path.abspath('./project/config')
             folder_path = os.path.abspath('./project/config/A/A/A')
@@ -750,7 +754,9 @@ class TestCli(object):
             mock_create_config_file.assert_not_called()
 
     @patch("sceptre.cli.create_config_file")
-    def test_create_new_environment_with_existing(self, mock_create_config_file):
+    def test_create_new_environment_with_existing(
+        self, mock_create_config_file
+    ):
         with self.runner.isolated_filesystem():
             config_dir = os.path.abspath('./project/config')
             folder_path = os.path.abspath('./project/config/A/A/A')
@@ -765,7 +771,9 @@ class TestCli(object):
             )
 
     @patch("sceptre.cli.create_config_file")
-    def test_create_new_environment_with_existing_no_confirm(self, mock_create_config_file):
+    def test_create_new_environment_with_existing_no_confirm(
+        self, mock_create_config_file
+    ):
         with self.runner.isolated_filesystem():
             config_dir = os.path.abspath('./project/config')
             folder_path = os.path.abspath('./project/config/A/A/A')

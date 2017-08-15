@@ -24,7 +24,7 @@ from boto3.exceptions import Boto3Error
 from botocore.exceptions import BotoCoreError, ClientError
 from jinja2.exceptions import TemplateError
 
-from .config import ENVIRONMENT_PROPERTIES, STACK_PROPERTIES
+from .config import ENVIRONMENT_CONFIG_ATTRIBUTES
 from .environment import Environment
 from .exceptions import SceptreException
 from .stack_status import StackStatus, StackChangeSetStatus
@@ -712,7 +712,7 @@ def create_config_file(config_dir, path, defaults=None):
     :param defaults: Defaults to present to the user for config.
     :type defaults: dict
     """
-    config = dict.fromkeys(ENVIRONMENT_PROPERTIES.required, "")
+    config = dict.fromkeys(ENVIRONMENT_CONFIG_ATTRIBUTES.required, "")
     nested_config = get_nested_config(config_dir, path)
 
     # Add nested config as defaults
