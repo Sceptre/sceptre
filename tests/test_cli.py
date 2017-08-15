@@ -724,16 +724,58 @@ class TestCli(object):
             assert nested_config == result
 
     @patch("sceptre.cli.create_config_file")
-    def test_create_new_environment(self, mock_create_config_file):
+    def test_create_new_environment_without_existing(self, mock_create_config_file):
         with self.runner.isolated_filesystem():
             config_dir = os.path.abspath('./project/config')
             folder_path = os.path.abspath('./project/config/A/A/A')
             new_path = "A/A/A"
             with patch("sys.stdin", StringIO(u'y\n')):
                 sceptre.cli.create_new_environment(config_dir, new_path)
+
+            assert os.path.isdir(folder_path)
             mock_create_config_file.assert_called_once_with(
                 config_dir, folder_path
             )
+
+    @patch("sceptre.cli.create_config_file")
+    def test_create_new_environment_without_existing_no_confirm(self, mock_create_config_file):
+        with self.runner.isolated_filesystem():
+            config_dir = os.path.abspath('./project/config')
+            folder_path = os.path.abspath('./project/config/A/A/A')
+            new_path = "A/A/A"
+            with patch("sys.stdin", StringIO(u'n\n')):
+                sceptre.cli.create_new_environment(config_dir, new_path)
+
+            assert os.path.isdir(folder_path)
+            mock_create_config_file.assert_not_called()
+
+    @patch("sceptre.cli.create_config_file")
+    def test_create_new_environment_with_existing(self, mock_create_config_file):
+        with self.runner.isolated_filesystem():
+            config_dir = os.path.abspath('./project/config')
+            folder_path = os.path.abspath('./project/config/A/A/A')
+            os.makedirs(folder_path)
+            new_path = "A/A/A"
+            with patch("sys.stdin", StringIO(u'y\n')):
+                sceptre.cli.create_new_environment(config_dir, new_path)
+
+            assert os.path.isdir(folder_path)
+            mock_create_config_file.assert_called_once_with(
+                config_dir, folder_path
+            )
+
+    @patch("sceptre.cli.create_config_file")
+    def test_create_new_environment_with_existing_no_confirm(self, mock_create_config_file):
+        with self.runner.isolated_filesystem():
+            config_dir = os.path.abspath('./project/config')
+            folder_path = os.path.abspath('./project/config/A/A/A')
+            os.makedirs(folder_path)
+            new_path = "A/A/A"
+            with patch("sys.stdin", StringIO(u'n\n')):
+                sceptre.cli.create_new_environment(config_dir, new_path)
+
+            assert os.path.isdir(folder_path)
+            mock_create_config_file.assert_not_called()
 
     def test_setup_logging_with_debug(self):
         logger = sceptre.cli.setup_logging(True, False)
