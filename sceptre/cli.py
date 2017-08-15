@@ -668,11 +668,10 @@ def create_new_environment(config_dir, new_path):
     init_config_msg = 'Do you want initialise config.yaml?'
 
     if environment_exists:
-        if click.confirm('Environment path exists. ' + init_config_msg):
-            create_config_file(config_dir, folder_path)
-    else:
-        if click.confirm(init_config_msg):
-            create_config_file(config_dir, folder_path)
+        init_config_msg = 'Environment path exists. ' + init_config_msg
+
+    if click.confirm(init_config_msg):
+        create_config_file(config_dir, folder_path)
 
 
 def get_nested_config(config_dir, path):
