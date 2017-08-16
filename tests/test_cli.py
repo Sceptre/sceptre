@@ -2,6 +2,7 @@ import logging
 import yaml
 import datetime
 import os
+import errno
 from io import StringIO
 
 from click.testing import CliRunner
@@ -710,7 +711,11 @@ class TestCli(object):
             config_dir = os.path.abspath('./project/config')
 
             for path, config in config_structure.items():
-                os.makedirs(os.path.join(config_dir, path))
+                try:
+                    os.makedirs(os.path.join(config_dir, path))
+                except OSError as e:
+                    if e.errno != errno.EEXIST:
+                        raise
                 filepath = os.path.join(config_dir, path, "config.yaml")
                 with open(filepath, 'w') as config_file:
                     yaml.safe_dump(
