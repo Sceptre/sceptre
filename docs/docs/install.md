@@ -4,7 +4,7 @@ layout: docs
 
 # Installation
 
-This assumes that you have Python installed. A thorough guide on installing Python can be found [here](http://docs.python-guide.org/en/latest/starting/installation/). We highly recommend using Scetpre from within a `virtualenv`. Notes on installing and setting up `virtualenv` can be found [here](http://docs.python-guide.org/en/latest/dev/virtualenvs/).
+This assumes that you have Python installed. A thorough guide on installing Python can be found [here](http://docs.python-guide.org/en/latest/starting/installation/). We highly recommend using Sceptre from within a `virtualenv`. Notes on installing and setting up `virtualenv` can be found [here](http://docs.python-guide.org/en/latest/dev/virtualenvs/).
 
 Install Sceptre:
 
