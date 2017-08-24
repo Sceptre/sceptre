@@ -544,6 +544,18 @@ class TestCli(object):
         sceptre.cli.write({"key": "value"}, "json")
         mock_echo.assert_called_once_with('{"key": "value"}')
 
+    @patch("sceptre.cli.click.echo")
+    def test_write_status_with_colour(self, mock_echo):
+        sceptre.cli.write("stack: CREATE_COMPLETE", no_colour=False)
+        mock_echo.assert_called_once_with(
+            "stack: \x1b[32mCREATE_COMPLETE\x1b[0m"
+        )
+
+    @patch("sceptre.cli.click.echo")
+    def test_write_status_without_colour(self, mock_echo):
+        sceptre.cli.write("stack: CREATE_COMPLETE", no_colour=True)
+        mock_echo.assert_called_once_with("stack: CREATE_COMPLETE")
+
     @patch("sceptre.cli.StackStatusColourer.colour")
     @patch("sceptre.cli.Formatter.format")
     def test_ColouredFormatter_format_with_string(

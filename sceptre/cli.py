@@ -127,6 +127,7 @@ def cli(
     ctx.obj = {
         "options": {},
         "output_format": output,
+        "no_colour": no_colour,
         "sceptre_dir": directory if directory else os.getcwd()
     }
     user_variables = {}
@@ -539,7 +540,7 @@ def describe_env(ctx, environment):
     """
     env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
     responses = env.describe()
-    write(responses, ctx.obj["output_format"])
+    write(responses, ctx.obj["output_format"], ctx.obj["no_colour"])
 
 
 @cli.command(name="set-stack-policy")
@@ -640,7 +641,7 @@ def setup_logging(debug, no_colour):
     return logger
 
 
-def write(var, output_format="str"):
+def write(var, output_format="str", no_colour=True):
     """
     Writes ``var`` to stdout. If output_format is set to "json" or "yaml",
     write ``var`` as a JSON or YAML string.
@@ -650,6 +651,8 @@ def write(var, output_format="str"):
     :param output_format: The format to print the output as. Allowed values: \
     "str", "json", "yaml"
     :type output_format: str
+    :param no_colour: Whether to color stack statuses
+    :type no_colour: bool
     """
     if output_format == "json":
         encoder = CustomJsonEncoder()
@@ -658,6 +661,11 @@ def write(var, output_format="str"):
         stream = yaml.safe_dump(var, default_flow_style=False)
     if output_format == "str":
         stream = var
+
+    if not no_colour:
+        stack_status_colourer = StackStatusColourer()
+        stream = stack_status_colourer.colour(stream)
+
     click.echo(stream)
 
 
