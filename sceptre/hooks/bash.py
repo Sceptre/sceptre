@@ -1,4 +1,6 @@
 import subprocess
+import warnings
+
 from sceptre.hooks import Hook
 from sceptre.exceptions import InvalidHookArgumentTypeError
 
@@ -19,6 +21,13 @@ class Bash(Hook):
 
         :raise: sceptre.exceptions.InvalidTaskArgumentTypeException
         """
+        warnings.warn(
+            "{0}The bash hook has been deprecated, and will "
+            "be removed in a later version of Sceptre. Use the cmd hook instead. "
+            "Example: !cmd <command>{1}"
+            .format(Fore.YELLOW, Style.RESET_ALL),
+            DeprecationWarning
+        )
         if not isinstance(self.argument, basestring):
             raise InvalidHookArgumentTypeError(
                 'The argument "{0}" is the wrong type - Bash hooks require '
