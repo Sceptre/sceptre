@@ -1,6 +1,8 @@
 import subprocess
 import warnings
 
+from colorama import Fore, Style
+
 from sceptre.hooks import Hook
 from sceptre.exceptions import InvalidHookArgumentTypeError
 
@@ -23,8 +25,8 @@ class Bash(Hook):
         """
         warnings.warn(
             "{0}The bash hook has been deprecated, and will "
-            "be removed in a later version of Sceptre. Use the cmd hook instead. "
-            "Example: !cmd <command>{1}"
+            "be removed in a later version of Sceptre. "
+            "Use the cmd hook instead. Example: !cmd <command>{1}"
             .format(Fore.YELLOW, Style.RESET_ALL),
             DeprecationWarning
         )
