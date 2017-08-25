@@ -9,6 +9,7 @@ from sceptre.exceptions import InvalidHookArgumentTypeError
 
 class Bash(Hook):
     """
+    This hook has been deprecated in favor of cmd hook.
     This command with execute the argument string with bash.
 
     """
