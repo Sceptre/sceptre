@@ -36,6 +36,9 @@ hooks:
 
 ### bash
 
+<div class="alert alert-warning">
+The bash hook has been deprecated, and will be removed in a later version of Sceptre. We recommend using the cmd hook instead.
+</div>
 Executes string as a bash command.
 
 Syntax:
