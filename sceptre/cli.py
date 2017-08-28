@@ -26,7 +26,7 @@ from jinja2.exceptions import TemplateError
 
 from .config import ENVIRONMENT_CONFIG_ATTRIBUTES
 from .environment import Environment
-from .exceptions import SceptreException
+from .exceptions import SceptreException, ProjectExistsError
 from .stack_status import StackStatus, StackChangeSetStatus
 from .stack_status_colourer import StackStatusColourer
 from . import __version__
@@ -598,7 +598,7 @@ def init_environment(ctx, env):
         # If already a config folder create a sub environment
         if os.path.isdir(item) and item == "config":
             config_dir = os.path.join(os.getcwd(), "config")
-            create_new_environment(config_dir, env)
+            _create_new_environment(config_dir, env)
 
 
 @init.command("project")
@@ -614,13 +614,12 @@ def init_project(ctx, project_name):
     cwd = os.getcwd()
     sceptre_folders = {"config", "templates"}
     project_folder = os.path.join(cwd, project_name)
-
     try:
         os.mkdir(project_folder)
     except OSError as e:
         # Check if environment folder already exists
         if e.errno == errno.EEXIST:
-            raise SceptreException(
+            raise ProjectExistsError(
                 'Folder \"{0}\" already exists.'.format(project_name)
             )
         else:
@@ -636,10 +635,10 @@ def init_project(ctx, project_name):
     }
 
     config_path = os.path.join(cwd, project_name, "config")
-    create_config_file(config_path, config_path, defaults)
+    _create_config_file(config_path, config_path, defaults)
 
 
-def create_new_environment(config_dir, new_path):
+def _create_new_environment(config_dir, new_path):
     """
     Creates the subfolder for the environment specified by `path` starting
     from the `config_dir`. Even if folder path already exists, ask the user if
@@ -670,10 +669,10 @@ def create_new_environment(config_dir, new_path):
         init_config_msg = 'Environment path exists. ' + init_config_msg
 
     if click.confirm(init_config_msg):
-        create_config_file(config_dir, folder_path)
+        _create_config_file(config_dir, folder_path)
 
 
-def get_nested_config(config_dir, path):
+def _get_nested_config(config_dir, path):
     """
     Collects nested config from between `config_dir` and `path`. Config at
     lower level as greater precedence.
@@ -695,7 +694,7 @@ def get_nested_config(config_dir, path):
     return config
 
 
-def create_config_file(config_dir, path, defaults=None):
+def _create_config_file(config_dir, path, defaults=None):
     """
     Creates a `config.yaml` file in the given path. The user is asked for
     values for requried properties. Defaults are suggested with values in
@@ -712,7 +711,7 @@ def create_config_file(config_dir, path, defaults=None):
     :type defaults: dict
     """
     config = dict.fromkeys(ENVIRONMENT_CONFIG_ATTRIBUTES.required, "")
-    nested_config = get_nested_config(config_dir, path)
+    nested_config = _get_nested_config(config_dir, path)
 
     # Add nested config as defaults
     config.update(nested_config)
@@ -737,7 +736,7 @@ def create_config_file(config_dir, path, defaults=None):
                 config, stream=config_file, default_flow_style=False
             )
     else:
-        click.echo("No config.yaml file needed: covered by parent config.")
+        click.echo("No config.yaml file needed - covered by parent config.")
 
 
 def get_env(sceptre_dir, environment_path, options):
