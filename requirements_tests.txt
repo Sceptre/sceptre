@@ -1,3 +1,4 @@
+-r requirements.txt
 pytest==2.8.5
 pytest-runner==2.6.2
 troposphere>=1.4.0,<1.11.0
