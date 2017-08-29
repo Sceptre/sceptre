@@ -6,7 +6,7 @@ layout: docs
 
 ## Install
 
-This tutorial assumes that you have installed Sceptre. Instructions on how to do this are found in the section on [installation]({{ site.url }}/docs/install.html).
+This tutorial assumes that you have installed Sceptre. Instructions on how to do this are found in the section on [installation]({{ site.url }}{{ site.baseurl }}/docs/install.html).
 
 ## Directory Structure
 
@@ -89,9 +89,9 @@ parameters:
 ```
 
 
-`template_path` specifies the relative path to the CloudFormation or Troposphere template to use to launch the stack.
+`template_path` specifies the relative path to the CloudFormation, Python or Jinja2 template to use to launch the stack.
 
-`parameters` lists the parameters which should be supplied by Sceptre to the CloudFormation or Troposphere template.
+`parameters` lists the parameters which should be supplied by Sceptre to the template.
 
 
 ## Commands
@@ -140,4 +140,3 @@ $ sceptre delete-stack dev vpc
 ## Next Steps
 
 Further details can be found in the full [documentation]({{ site.url }}{{ site.baseurl }}/docs).
-

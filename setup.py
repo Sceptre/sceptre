@@ -30,7 +30,7 @@ setup_requirements = [
 
 setup(
     name="sceptre",
-    version="1.2.0",
+    version="1.2.1",
     description="Cloud Provisioning Tool",
     long_description=readme + "\n\n" + history,
     author="Cloudreach",

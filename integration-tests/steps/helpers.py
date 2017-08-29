@@ -7,6 +7,7 @@ import jinja2.exceptions
 from botocore.exceptions import ClientError
 from sceptre.exceptions import TemplateSceptreHandlerError
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
+from sceptre.exceptions import StackDoesNotExistError
 
 
 @then('the user is told "{message}"')
@@ -32,6 +33,8 @@ def step_impl(context, exception_type):
         assert isinstance(context.error, TemplateSceptreHandlerError)
     elif exception_type == "UnsupportedTemplateFileTypeError":
         assert isinstance(context.error, UnsupportedTemplateFileTypeError)
+    elif exception_type == "StackDoesNotExistError":
+        assert isinstance(context.error, StackDoesNotExistError)
     elif exception_type == "ClientError":
         assert isinstance(context.error, ClientError)
     elif exception_type == "AttributeError":

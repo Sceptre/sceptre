@@ -11,26 +11,26 @@ clean:
 	rm -rf _site/
 	rm -rf .sass-cache/
 
-build-latest:
+build-latest: clean
 	bundle exec jekyll build --baseurl /latest
 
-build-tag:
+build-tag: clean
 	bundle exec jekyll build --baseurl /$(GIT_TAG)
 
-build-dev:
+build-dev: clean
 	bundle exec jekyll build --baseurl /dev
 
-build-commit:
+build-commit: clean
 	bundle exec jekyll build --baseurl /$(SHA1)
 
-serve-latest:
+serve-latest: clean
 	bundle exec jekyll serve --baseurl /latest
 
-serve-tag:
+serve-tag: clean
 	bundle exec jekyll serve --baseurl /$(GIT_TAG)
 
-serve-dev:
+serve-dev: clean
 	bundle exec jekyll serve --baseurl /dev
 
-serve-commit:
+serve-commit: clean
 	bundle exec jekyll serve --baseurl /$(SHA1)

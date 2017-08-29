@@ -12,7 +12,7 @@ An environment config file is a yaml object of key-value pairs configuring Scept
 
 - [iam_role](#iam_role) *(optional)*
 - [project_code](#project_code) *(required)*
-- [region](region) *(required)*
+- [region](#region) *(required)*
 - [template_bucket_name](#template_bucket_name) *(optional)*
 - [template_key_prefix](#template_key_prefix) *(optional)*
 - [require_version](#require_version) *(optional)*

@@ -62,7 +62,10 @@ class Template(object):
         if self._body is None:
             file_extension = os.path.splitext(self.path)[1]
 
-            if file_extension in {".json", ".yaml", ".j2"}:
+            if file_extension in {".json", ".yaml"}:
+                with open(self.path) as template_file:
+                    self._body = template_file.read()
+            elif file_extension == ".j2":
                 self._body = self._render_jinja_template(
                     os.path.dirname(self.path),
                     os.path.basename(self.path),
