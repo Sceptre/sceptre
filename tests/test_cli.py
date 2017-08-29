@@ -3,7 +3,6 @@ import yaml
 import datetime
 import os
 import errno
-from io import StringIO
 
 from click.testing import CliRunner
 from mock import Mock, patch, sentinel
@@ -520,243 +519,6 @@ class TestCli(object):
         )
         assert response == sentinel.environment
 
-    # @patch("sceptre.cli.click.prompt")
-    # def test_create_config_file_without_defaults(self, mock_prompt):
-    #     mock_prompt.return_value = "test"
-    #     with self.runner.isolated_filesystem():
-    #         config_dir = os.path.abspath('./project/config')
-    #         environment_path = os.path.join(config_dir, "env")
-    #         os.makedirs(environment_path)
-    #         sceptre.cli.create_config_file(config_dir, environment_path)
-    #
-    #         config_filepath = os.path.join(environment_path, "config.yaml")
-    #         assert os.path.isfile(config_filepath)
-    #         with open(config_filepath) as config_file:
-    #             contents = yaml.safe_load(config_file)
-    #         assert contents == {"project_code": "test", "region": "test"}
-    #
-    # def test_create_config_file_with_defaults(self):
-    #     with self.runner.isolated_filesystem():
-    #         config_dir = os.path.abspath('./project/config')
-    #         environment_path = os.path.join(config_dir, "env")
-    #         os.makedirs(environment_path)
-    #         defaults = {"project_code": "test", "region": "test"}
-    #         with patch("sys.stdin", StringIO(u'\n\n')):
-    #             sceptre.cli.create_config_file(
-    #                 config_dir, environment_path, defaults
-    #             )
-    #
-    #         config_filepath = os.path.join(environment_path, "config.yaml")
-    #         assert os.path.isfile(config_filepath)
-    #         with open(config_filepath) as config_file:
-    #             contents = yaml.safe_load(config_file)
-    #         assert contents == {"project_code": "test", "region": "test"}
-    #
-    # @patch("sceptre.cli.get_nested_config")
-    # def test_create_config_file_with_defaults_and_nested_config(
-    #     self, mock_get_nested_config
-    # ):
-    #     mock_get_nested_config.return_value = {
-    #         "project_code": "nested_config",
-    #         "region": "nested_config",
-    #     }
-    #     with self.runner.isolated_filesystem():
-    #         config_dir = os.path.abspath('./project/config')
-    #         environment_path = os.path.join(config_dir, "env")
-    #         os.makedirs(environment_path)
-    #         defaults = {"project_code": "default", "region": "default"}
-    #
-    #         with patch("sys.stdin", StringIO(u'\n\n')):
-    #             sceptre.cli.create_config_file(
-    #                 config_dir, environment_path, defaults
-    #             )
-    #
-    #         config_filepath = os.path.join(environment_path, "config.yaml")
-    #         assert os.path.isfile(config_filepath)
-    #         with open(config_filepath) as config_file:
-    #             contents = yaml.safe_load(config_file)
-    #         assert contents == {"project_code": "default", "region": "default"}
-    #
-    # @patch("sceptre.cli.get_nested_config")
-    # def test_create_config_file_with_defaults_and_extra_nested_config(
-    #     self, mock_get_nested_config
-    # ):
-    #     mock_get_nested_config.return_value = {
-    #         "project_code": "nested_config",
-    #         "region": "nested_config",
-    #         "template_bucket_name": "nested_config"
-    #     }
-    #     with self.runner.isolated_filesystem():
-    #         config_dir = os.path.abspath('./project/config')
-    #         environment_path = os.path.join(config_dir, "env")
-    #         os.makedirs(environment_path)
-    #         defaults = {"project_code": "default", "region": "default"}
-    #
-    #         with patch("sys.stdin", StringIO(u'\n\n\n')):
-    #             sceptre.cli.create_config_file(
-    #                 config_dir, environment_path, defaults
-    #             )
-    #
-    #         config_filepath = os.path.join(environment_path, "config.yaml")
-    #         assert os.path.isfile(config_filepath)
-    #         with open(config_filepath) as config_file:
-    #             contents = yaml.safe_load(config_file)
-    #         assert contents == {
-    #             "project_code": "default",
-    #             "region": "default"
-    #         }
-    #
-    #
-    # @patch("sceptre.cli.get_nested_config")
-    # def test_create_config_file_overwriting_defaults_and_nested_config(
-    #     self, mock_get_nested_config
-    # ):
-    #     mock_get_nested_config.return_value = {
-    #         "project_code": "nested_config",
-    #         "region": "nested_config",
-    #         "template_bucket_name": "nested_config"
-    #     }
-    #     with self.runner.isolated_filesystem():
-    #         config_dir = os.path.abspath('./project/config')
-    #         environment_path = os.path.join(config_dir, "env")
-    #         os.makedirs(environment_path)
-    #         defaults = {"project_code": "default", "region": "default"}
-    #
-    #         with patch("sys.stdin", StringIO(u'input\ninput\ninput\n')):
-    #             sceptre.cli.create_config_file(
-    #                 config_dir, environment_path, defaults
-    #             )
-    #
-    #         config_filepath = os.path.join(environment_path, "config.yaml")
-    #         assert os.path.isfile(config_filepath)
-    #         with open(config_filepath) as config_file:
-    #             contents = yaml.safe_load(config_file)
-    #         assert contents == {
-    #             "project_code": "input",
-    #             "region": "input",
-    #             "template_bucket_name": "input"
-    #         }
-    #
-    # @pytest.mark.parametrize("config_structure,result", [
-    #     ({
-    #         "A/A": {"project_code": "A/A", "region": "A/A"},
-    #         "A": {"project_code": "A", "region": "A"},
-    #         "A/B": {"project_code": "A/B", "region": "A/B"},
-    #         "B": {"project_code": "B", "region": "B"},
-    #     }, {
-    #         "project_code": "A/A",
-    #         "region": "A/A"
-    #     }
-    #     ),
-    #     ({
-    #         "A": {"project_code": "A", "region": "A"},
-    #         "A/B": {"project_code": "A/B", "region": "A/B"},
-    #         "B": {"project_code": "B", "region": "B"},
-    #     }, {
-    #         "project_code": "A",
-    #         "region": "A"
-    #     }
-    #     ),
-    #     ({
-    #         "A/A": {"project_code": "A/A", "region": "A/A"},
-    #         "A/B": {"project_code": "A/B", "region": "A/B"},
-    #         "B": {"project_code": "B", "region": "B"},
-    #     }, {
-    #         "project_code": "A/A",
-    #         "region": "A/A"
-    #     }
-    #     ),
-    #     ({
-    #         "A/A": {"project_code": "A/A"},
-    #         "A": {"project_code": "A", "region": "A"},
-    #         "A/B": {"project_code": "A/B", "region": "A/B"},
-    #         "B": {"project_code": "B", "region": "B"},
-    #     }, {
-    #         "project_code": "A/A",
-    #         "region": "A"
-    #     }
-    #     )
-    # ])
-    # def test_get_nested_config(self, config_structure, result):
-    #     with self.runner.isolated_filesystem():
-    #         config_dir = os.path.abspath('./project/config')
-    #
-    #         for path, config in config_structure.items():
-    #             os.makedirs(os.path.join(config_dir, path))
-    #             filepath = os.path.join(config_dir, path, "config.yaml")
-    #             with open(filepath, 'w') as config_file:
-    #                 yaml.safe_dump(
-    #                     config, stream=config_file, default_flow_style=False
-    #                 )
-    #
-    #         environment_path = os.path.join(config_dir, "A/A")
-    #         nested_config = sceptre.cli.get_nested_config(
-    #             config_dir, environment_path
-    #         )
-    #         assert nested_config == result
-    #
-    # @patch("sceptre.cli.create_config_file")
-    # def test_create_new_environment_without_existing(
-    #     self, mock_create_config_file
-    # ):
-    #     with self.runner.isolated_filesystem():
-    #         config_dir = os.path.abspath('./project/config')
-    #         folder_path = os.path.abspath('./project/config/A/A/A')
-    #         new_path = "A/A/A"
-    #         with patch("sys.stdin", StringIO(u'y\n')):
-    #             sceptre.cli.create_new_environment(config_dir, new_path)
-    #
-    #         assert os.path.isdir(folder_path)
-    #         mock_create_config_file.assert_called_once_with(
-    #             config_dir, folder_path
-    #         )
-    #
-    # @patch("sceptre.cli.create_config_file")
-    # def test_create_new_environment_without_existing_no_confirm(
-    #     self, mock_create_config_file
-    # ):
-    #     with self.runner.isolated_filesystem():
-    #         config_dir = os.path.abspath('./project/config')
-    #         folder_path = os.path.abspath('./project/config/A/A/A')
-    #         new_path = "A/A/A"
-    #         with patch("sys.stdin", StringIO(u'n\n')):
-    #             sceptre.cli.create_new_environment(config_dir, new_path)
-    #
-    #         assert os.path.isdir(folder_path)
-    #         mock_create_config_file.assert_not_called()
-    #
-    # @patch("sceptre.cli.create_config_file")
-    # def test_create_new_environment_with_existing(
-    #     self, mock_create_config_file
-    # ):
-    #     with self.runner.isolated_filesystem():
-    #         config_dir = os.path.abspath('./project/config')
-    #         folder_path = os.path.abspath('./project/config/A/A/A')
-    #         os.makedirs(folder_path)
-    #         new_path = "A/A/A"
-    #         with patch("sys.stdin", StringIO(u'y\n')):
-    #             sceptre.cli.create_new_environment(config_dir, new_path)
-    #
-    #         assert os.path.isdir(folder_path)
-    #         mock_create_config_file.assert_called_once_with(
-    #             config_dir, folder_path
-    #         )
-    #
-    # @patch("sceptre.cli.create_config_file")
-    # def test_create_new_environment_with_existing_no_confirm(
-    #     self, mock_create_config_file
-    # ):
-    #     with self.runner.isolated_filesystem():
-    #         config_dir = os.path.abspath('./project/config')
-    #         folder_path = os.path.abspath('./project/config/A/A/A')
-    #         os.makedirs(folder_path)
-    #         new_path = "A/A/A"
-    #         with patch("sys.stdin", StringIO(u'n\n')):
-    #             sceptre.cli.create_new_environment(config_dir, new_path)
-    #
-    #         assert os.path.isdir(folder_path)
-    #         mock_create_config_file.assert_not_called()
-
     def test_init_project_non_existant(self):
         with self.runner.isolated_filesystem():
             sceptre_dir = os.path.abspath('./example')
@@ -790,7 +552,8 @@ class TestCli(object):
             os.mkdir(config_dir)
             os.mkdir(template_dir)
 
-            with open(os.path.join(config_dir, "config.yaml"), 'w') as config_file:
+            config_filepath = os.path.join(config_dir, "config.yaml")
+            with open(config_filepath, 'w') as config_file:
                 yaml.dump(existing_config, config_file)
 
             result = self.runner.invoke(cli, ["init", "project", "example"])
@@ -867,11 +630,6 @@ class TestCli(object):
                 cli, ["init", "env", environment],
                 input=stdin
             )
-            print(cmd_result.output)
-            for (path, dirs, files) in os.walk(sceptre_dir):
-                print(path)
-                print(dirs)
-                print(files)
 
             if result:
                 with open(os.path.join(env_dir, "config.yaml")) as config_file:
