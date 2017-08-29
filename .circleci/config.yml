@@ -1,0 +1,129 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: cloudreach/sceptre-circleci:0.1
+    steps:
+      - checkout
+      - run:
+          name: 'Creating Virtualenv'
+          command: virtualenv venv
+      - restore_cache:
+          key: v2-requirements-{{ checksum "requirements.txt" }}
+      - run:
+          name: 'Installing Requirements'
+          command: |
+            . ./venv/bin/activate
+            pip install -r requirements_tests.txt
+            pip install awscli
+      - save_cache:
+          key: v2-requirements-{{ checksum "requirements.txt" }}
+          paths:
+            - venv
+      - run:
+          name: 'Installing Sceptre'
+          command: |
+            . ./venv/bin/activate
+            make install
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - project
+  lint-and-unit-tests:
+    docker:
+      - image: circleci/python:2.7.13
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - run:
+          name: Linting
+          command: |
+            . ./venv/bin/activate
+            make lint
+      - restore_cache:
+          key: v1-tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
+      - run:
+          name: 'Unit Testing'
+          command: |
+            . ./venv/bin/activate
+            make test-all
+      - save_cache:
+          key: v1-tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
+          paths:
+            - .tox/py269
+            - .tox/py27
+            - .tox/py352
+            - .tox/py361
+      - store_test_results:
+          path: build/pytest
+      - store_artifacts:
+          path: build/pytest
+  integration-tests:
+    parallelism: 4
+    docker:
+      - image: circleci/python:2.7.13
+        environment:
+          AWS_DEFAULT_REGION: eu-west-1
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - run:
+          name: 'Integration Testing'
+          command: |
+            . ./venv/bin/activate
+            behave --junit \
+                   --junit-directory build/behave \
+                   $(circleci tests glob "integration-tests/features/*.feature" | circleci tests split --split-by=timings)
+      - store_test_results:
+          path: build/behave
+      - store_artifacts:
+          path: build/behave
+  deploy-docs:
+    docker:
+      - image: cloudreach/sceptre-circleci:0.1
+        environment:
+          AWS_DEFAULT_REGION: eu-west-1
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - restore_cache:
+          key: v1-documentation-tools-{{ checksum "docs/Gemfile.lock" }}
+      - run:
+          name: 'Installing Documentation Tools'
+          command: |
+            . ./venv/bin/activate
+            cd docs && make install
+      - save_cache:
+          key: v1-documentation-tools-{{ checksum "docs/Gemfile.lock" }}
+          paths:
+            - docs/vendor
+      - deploy:
+          command: |
+            SHORT_SHA1=$(echo $CIRCLE_SHA1 | cut -c -7)
+            GIT_TAG=$(git describe --abbrev=0 --tags | sed 's/\./-/g')
+            . ./venv/bin/activate
+            if [[ "${CIRCLE_TAG}" =~ ^v[0-9]+\.[0-9]+\.?[0-9]*$ ]]; then
+              make docs-latest
+              aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/latest/ --delete
+            elif [[ "${CIRCLE_BRANCH}" == "master" ]]; then
+              make docs-dev
+              aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/dev/ --delete
+            fi
+workflows:
+  version: 2
+  build-test-and-deploy:
+    jobs:
+      - build
+      - lint-and-unit-tests:
+          requires:
+            - build
+      - integration-tests:
+          requires:
+            - build
+      - deploy-docs:
+          requires:
+            - lint-and-unit-tests
+            - integration-tests
+          filters:
+            branches:
+              only: master
