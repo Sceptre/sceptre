@@ -686,7 +686,7 @@ def _get_nested_config(config_dir, path):
     :rtype: dict
     """
     config = {}
-    for root, dirs, files in os.walk(config_dir):
+    for root, _, files in os.walk(config_dir):
         # Check that folder is within the final environment path
         if path.startswith(root) and "config.yaml" in files:
             config_path = os.path.join(root, "config.yaml")
@@ -723,7 +723,7 @@ def _create_config_file(config_dir, path, defaults=None):
     # Ask for new values
     for key, value in config.items():
         config[key] = click.prompt(
-            'Please enter a {0}'.format(key), default=config[key]
+            'Please enter a {0}'.format(key), default=value
         )
 
     # Remove nested values that are the same
