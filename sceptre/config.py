@@ -114,7 +114,8 @@ class Config(dict):
 
         Traverses the environment path, from top to bottom, reading in all
         relevant config files. If config items appear in files lower down the
-        environment tree, they overwrite items from further up. Jinja2 is used
+        environment tree, they overwrite items from further up. If a config item holds a nested
+        dictionnary, update it recursively instead of the config item itself. Jinja2 is used
         to template in variables from user_variables, environment variables,
         and the segments of the environment path.
 
@@ -152,7 +153,14 @@ class Config(dict):
                     if yaml_data is not None:
                         config = yaml_data
                 cascaded_config = get_config(os.path.dirname(path))
-                cascaded_config.update(config)
+
+                for key, value in config.items():
+                    if (key in cascaded_config and isinstance(cascaded_config[key], dict)
+                            and isinstance(value, dict)):
+                        cascaded_config[key].update(value)
+                    else:
+                        cascaded_config[key] = value
+
                 return cascaded_config
 
         config = get_config(path)
