@@ -461,14 +461,17 @@ def list_change_sets(ctx, environment, stack):
 @cli.command(name="update-stack-cs")
 @stack_options
 @click.option("--verbose", is_flag=True)
+@click.option("--confirm", is_flag=True)
 @click.pass_context
 @catch_exceptions
-def update_with_change_set(ctx, environment, stack, verbose):
+def update_with_change_set(ctx, environment, stack, verbose, confirm):
     """
     Updates the stack using a change set.
 
     Creates a change set for ENVIRONMENT/STACK, prints out a description of the
     changes, and prompts the user to decide whether to execute or delete it.
+    The prompt may be supressed by providing a --confirm option, in which case
+    the change-set will be executed
     """
     env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
     change_set_name = "-".join(["change-set", uuid1().hex])
@@ -480,8 +483,11 @@ def update_with_change_set(ctx, environment, stack, verbose):
         write(description, ctx.obj["output_format"])
         if status != StackChangeSetStatus.READY:
             exit(1)
-        if click.confirm("Proceed with stack update?"):
+        if confirm:
             env.stacks[stack].execute_change_set(change_set_name)
+        else:
+            if click.confirm("Proceed with stack update?"):
+                env.stacks[stack].execute_change_set(change_set_name)
 
 
 @contextlib.contextmanager
