@@ -346,9 +346,14 @@ def continue_update_rollback(ctx, environment, stack):
 
 @cli.command(name="create-change-set")
 @change_set_options
+@click.option(
+    "--change-set-type", type=click.Choice(["UPDATE", "CREATE"]),
+    default="UPDATE", help="The type of change set operation. To create a "
+    "change set for a new stack, specify CREATE. To create a change set for "
+    "an existing stack, specify UPDATE.")
 @click.pass_context
 @catch_exceptions
-def create_change_set(ctx, environment, stack, change_set_name):
+def create_change_set(ctx, environment, stack, change_set_name, change_set_type):
     """
     Creates a change set.
 
@@ -356,7 +361,7 @@ def create_change_set(ctx, environment, stack, change_set_name):
     CHANGE_SET_NAME.
     """
     env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    env.stacks[stack].create_change_set(change_set_name)
+    env.stacks[stack].create_change_set(change_set_name, change_set_type)
 
 
 @cli.command(name="delete-change-set")

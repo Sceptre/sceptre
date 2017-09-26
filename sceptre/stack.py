@@ -508,18 +508,22 @@ class Stack(object):
         )
         return response
 
-    def create_change_set(self, change_set_name):
+    def create_change_set(self, change_set_name, change_set_type):
         """
         Creates a change set with the name ``change_set_name``.
 
         :param change_set_name: The name of the change set.
         :type change_set_name: str
+        :param change_set_type: The type of change set operation, UPDATE \
+            or CREATE.
+        :type change_set_type: str
         """
         create_change_set_kwargs = {
             "StackName": self.external_name,
             "Parameters": self._format_parameters(self.parameters),
             "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
             "ChangeSetName": change_set_name,
+            "ChangeSetType": change_set_type,
             "Tags": [
                 {"Key": str(k), "Value": str(v)}
                 for k, v in self.config.get("stack_tags", {}).items()

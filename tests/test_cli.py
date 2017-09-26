@@ -215,14 +215,27 @@ class TestCli(object):
 
     @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli.get_env")
-    def test_create_change_set(self, mock_get_env, mock_getcwd):
+    def test_create_change_set_for_update(self, mock_get_env, mock_getcwd):
         mock_getcwd.return_value = sentinel.cwd
         self.runner.invoke(
-            cli, ["create-change-set", "dev", "vpc", "cs1"]
+            cli, ["create-change-set", "dev", "vpc", "cs1",
+                "--change-set-type", "UPDATE"]
         )
         mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
         mock_get_env.return_value.stacks["vpc"].create_change_set\
-            .assert_called_with("cs1")
+            .assert_called_with("cs1", "UPDATE")
+
+    @patch("sceptre.cli.os.getcwd")
+    @patch("sceptre.cli.get_env")
+    def test_create_change_set_for_create(self, mock_get_env, mock_getcwd):
+        mock_getcwd.return_value = sentinel.cwd
+        self.runner.invoke(
+            cli, ["create-change-set", "dev", "vpc", "cs1",
+                "--change-set-type", "CREATE"]
+        )
+        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
+        mock_get_env.return_value.stacks["vpc"].create_change_set\
+            .assert_called_with("cs1", "CREATE")
 
     @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli.get_env")
