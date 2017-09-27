@@ -174,6 +174,21 @@ def generate_template(ctx, environment, stack):
     write(template_output)
 
 
+@cli.command(name="generate-parameter-file")
+@stack_options
+@click.pass_context
+@catch_exceptions
+def generate_parameters_file(ctx, environment, stack):
+    """
+    Displays the parameters used when creating a Cloudformation stack.
+
+    Prints ENVIRONMENT/STACK's input parameters.
+    """
+    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
+    parameters = stack._format_parameters(env.stacks[stack].parameters)
+    write(parameters)
+
+
 @cli.command(name="lock-stack")
 @stack_options
 @click.pass_context
