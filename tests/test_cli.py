@@ -1,9 +1,12 @@
 import logging
 import yaml
 import datetime
+import os
+import errno
 
 from click.testing import CliRunner
 from mock import Mock, patch, sentinel
+import pytest
 
 import sceptre.cli
 from sceptre.cli import cli
@@ -515,6 +518,127 @@ class TestCli(object):
             options=sentinel.options
         )
         assert response == sentinel.environment
+
+    def test_init_project_non_existant(self):
+        with self.runner.isolated_filesystem():
+            sceptre_dir = os.path.abspath('./example')
+            config_dir = os.path.join(sceptre_dir, "config")
+            template_dir = os.path.join(sceptre_dir, "templates")
+            region = "test-region"
+            os.environ["AWS_DEFAULT_REGION"] = region
+            defaults = {
+                "project_code": "example",
+                "region": region
+            }
+
+            result = self.runner.invoke(cli, ["init", "project", "example"])
+            assert not result.exception
+            assert os.path.isdir(config_dir)
+            assert os.path.isdir(template_dir)
+
+            with open(os.path.join(config_dir, "config.yaml")) as config_file:
+                config = yaml.load(config_file)
+
+            assert config == defaults
+
+    def test_init_project_already_exist(self):
+        with self.runner.isolated_filesystem():
+            sceptre_dir = os.path.abspath('./example')
+            config_dir = os.path.join(sceptre_dir, "config")
+            template_dir = os.path.join(sceptre_dir, "templates")
+            existing_config = {"Test": "Test"}
+
+            os.mkdir(sceptre_dir)
+            os.mkdir(config_dir)
+            os.mkdir(template_dir)
+
+            config_filepath = os.path.join(config_dir, "config.yaml")
+            with open(config_filepath, 'w') as config_file:
+                yaml.dump(existing_config, config_file)
+
+            result = self.runner.invoke(cli, ["init", "project", "example"])
+            assert result.exit_code == 1
+            assert result.output == 'Folder \"example\" already exists.\n'
+            assert os.path.isdir(config_dir)
+            assert os.path.isdir(template_dir)
+
+            with open(os.path.join(config_dir, "config.yaml")) as config_file:
+                config = yaml.load(config_file)
+            assert existing_config == config
+
+    @pytest.mark.parametrize("environment,config_structure,stdin,result", [
+        (
+         "A",
+         {"": {}},
+         'y\nA\nA\n', {"project_code": "A", "region": "A"}
+        ),
+        (
+         "A",
+         {"": {"project_code": "top", "region": "top"}},
+         'y\n\n\n', {}
+        ),
+        (
+         "A",
+         {"": {"project_code": "top", "region": "top"}},
+         'y\nA\nA\n', {"project_code": "A", "region": "A"}
+        ),
+        (
+         "A/A",
+         {
+            "": {"project_code": "top", "region": "top"},
+            "A": {"project_code": "A", "region": "A"},
+         },
+         'y\nA/A\nA/A\n', {"project_code": "A/A", "region": "A/A"}
+        ),
+        (
+         "A/A",
+         {
+            "": {"project_code": "top", "region": "top"},
+            "A": {"project_code": "A", "region": "A"},
+         },
+         'y\nA\nA\n', {}
+        )
+    ])
+    def test_init_environment(
+        self, environment, config_structure, stdin, result
+    ):
+        with self.runner.isolated_filesystem():
+            sceptre_dir = os.path.abspath('./example')
+            config_dir = os.path.join(sceptre_dir, "config")
+            os.makedirs(config_dir)
+
+            env_dir = os.path.join(sceptre_dir, "config", environment)
+            for env_path, config in config_structure.items():
+                path = os.path.join(config_dir, env_path)
+                try:
+                    os.makedirs(path)
+                except OSError as e:
+                    if e.errno == errno.EEXIST and os.path.isdir(path):
+                        pass
+                    else:
+                        raise
+
+                filepath = os.path.join(path, "config.yaml")
+                with open(filepath, 'w') as config_file:
+                    yaml.safe_dump(
+                        config, stream=config_file, default_flow_style=False
+                    )
+
+            os.chdir(sceptre_dir)
+
+            cmd_result = self.runner.invoke(
+                cli, ["init", "env", environment],
+                input=stdin
+            )
+
+            if result:
+                with open(os.path.join(env_dir, "config.yaml")) as config_file:
+                    config = yaml.load(config_file)
+                assert config == result
+            else:
+                assert cmd_result.output.endswith(
+                    "No config.yaml file needed - covered by parent config.\n"
+                )
 
     def test_setup_logging_with_debug(self):
         logger = sceptre.cli.setup_logging(True, False)
