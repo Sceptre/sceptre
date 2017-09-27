@@ -26,7 +26,7 @@ from jinja2.exceptions import TemplateError
 
 from .config import ENVIRONMENT_CONFIG_ATTRIBUTES
 from .environment import Environment
-from .exceptions import SceptreException, ProjectExistsError
+from .exceptions import SceptreException, ProjectAlreadyExistsError
 from .stack_status import StackStatus, StackChangeSetStatus
 from .stack_status_colourer import StackStatusColourer
 from . import __version__
@@ -620,7 +620,7 @@ def init_project(ctx, project_name):
     except OSError as e:
         # Check if environment folder already exists
         if e.errno == errno.EEXIST:
-            raise ProjectExistsError(
+            raise ProjectAlreadyExistsError(
                 'Folder \"{0}\" already exists.'.format(project_name)
             )
         else:
@@ -652,22 +652,17 @@ def _create_new_environment(config_dir, new_path):
     """
     # Create full path to environment
     folder_path = os.path.join(config_dir, new_path)
-    environment_exists = False
+    init_config_msg = 'Do you want initialise config.yaml?'
 
-    # Make folders for the anvironment
+    # Make folders for the environment
     try:
         os.makedirs(folder_path)
     except OSError as e:
         # Check if environment folder already exists
         if e.errno == errno.EEXIST:
-            environment_exists = True
+            init_config_msg = 'Environment path exists. ' + init_config_msg
         else:
             raise
-
-    init_config_msg = 'Do you want initialise config.yaml?'
-
-    if environment_exists:
-        init_config_msg = 'Environment path exists. ' + init_config_msg
 
     if click.confirm(init_config_msg):
         _create_config_file(config_dir, folder_path)
@@ -695,7 +690,7 @@ def _get_nested_config(config_dir, path):
     return config
 
 
-def _create_config_file(config_dir, path, defaults=None):
+def _create_config_file(config_dir, path, defaults={}):
     """
     Creates a `config.yaml` file in the given path. The user is asked for
     values for requried properties. Defaults are suggested with values in
@@ -712,13 +707,13 @@ def _create_config_file(config_dir, path, defaults=None):
     :type defaults: dict
     """
     config = dict.fromkeys(ENVIRONMENT_CONFIG_ATTRIBUTES.required, "")
-    nested_config = _get_nested_config(config_dir, path)
+    parent_config = _get_nested_config(config_dir, path)
 
-    # Add nested config as defaults
-    config.update(nested_config)
+    # Add standard defaults
+    config.update(defaults)
 
-    if defaults:
-        config.update(defaults)
+    # Add parent config values as defaults
+    config.update(parent_config)
 
     # Ask for new values
     for key, value in config.items():
@@ -726,8 +721,8 @@ def _create_config_file(config_dir, path, defaults=None):
             'Please enter a {0}'.format(key), default=value
         )
 
-    # Remove nested values that are the same
-    config = {k: v for k, v in config.items() if nested_config.get(k) != v}
+    # Remove values if parent config are the same
+    config = {k: v for k, v in config.items() if parent_config.get(k) != v}
 
     # Write config.yaml if config not empty
     filepath = os.path.join(path, "config.yaml")

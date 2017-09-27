@@ -7,10 +7,11 @@ class SceptreException(Exception):
     """
 
 
-class ProjectExistsError(SceptreException):
+class ProjectAlreadyExistsError(SceptreException):
     """
     Error raised when Sceptre project already exists.
     """
+    pass
 
 
 class EnvironmentPathNotFoundError(SceptreException):
