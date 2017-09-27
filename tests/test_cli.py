@@ -596,7 +596,7 @@ class TestCli(object):
             "": {"project_code": "top", "region": "top"},
             "A": {"project_code": "A", "region": "A"},
          },
-         'y\nA\nA/A\n', {"project_code": "A/A"}
+         'y\nA\nA\n', {}
         )
     ])
     def test_init_environment(
