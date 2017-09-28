@@ -6,13 +6,12 @@ The more detailed you are, the better.**
 Before submitting the PR make sure the following are checked:
 
 * [ ] Wrote [good commit messages][1].
-* [ ] Commit message starts with `[Fix #issue-number]` (if the related issue exists).
-* [ ] Used the same coding conventions as the rest of the project.
-* [ ] Feature branch is up-to-date with `master` (if not - rebase it).
 * [ ] [Squashed related commits together][2].
-* [ ] Added tests.
-* [ ] Added an entry to the [History](../blob/master/HISTORY.RST) if the new code introduces user-observable changes.
-* [ ] All tests (`make test`) are passing.
+* [ ] Commit message starts with `[Resolve #issue-number]` (if a related issue exists).
+* [ ] Added unit tests.
+* [ ] Added integration tests (if applicable).
+* [ ] All unit tests (`make test`) are passing.
+* [ ] Used the same coding conventions as the rest of the project.
 * [ ] The new code doesn't generate flake8 (`make lint`) offenses.
 * [ ] The PR relates to *only* one subject with a clear title
   and description in grammatically correct, complete sentences.
