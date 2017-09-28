@@ -37,10 +37,10 @@ class TestHelpers(object):
         assert len(classes) == 5
 
     def test_camel_to_snake_case(self):
-        snake_case_string = camel_to_snake_case("Bash")
-        assert snake_case_string == "bash"
-        snake_case_string = camel_to_snake_case("ASGScheduledActions")
-        assert snake_case_string == "asg_scheduled_actions"
+        snake_case_string = camel_to_snake_case("Cmd")
+        assert snake_case_string == "cmd"
+        snake_case_string = camel_to_snake_case("ASGScalingProcesses")
+        assert snake_case_string == "asg_scaling_processes"
 
     def test_recurse_into_sub_environments_with_leaf_object(self):
         class MockEnv(object):
