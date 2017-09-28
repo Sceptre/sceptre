@@ -7,10 +7,11 @@ This module implements a Config class, which stores a stack or environment's
 configuration.
 """
 
+import collections
 import logging
 import os
+import pkg_resources
 import yaml
-import collections
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from packaging.specifiers import SpecifierSet
@@ -20,9 +21,6 @@ from . import __version__
 from .exceptions import ConfigItemNotFoundError
 from .exceptions import EnvironmentPathNotFoundError
 from .exceptions import VersionIncompatibleError
-from .hooks import Hook
-from .resolvers import Resolver
-from .helpers import get_subclasses
 
 ConfigAttributes = collections.namedtuple("Attributes", "required optional")
 
@@ -113,10 +111,12 @@ class Config(dict):
         :type connection_manager: sceptre.connection_manager.ConnectionManager
         """
         obj = cls(sceptre_dir, environment_path, base_file_name)
-        obj.add_resolver_constructors(
-            environment_config, connection_manager)
-        obj.add_hook_constructors(
-            environment_config, connection_manager)
+        obj._add_yaml_constructors(
+            "sceptre.resolvers", connection_manager, environment_config
+        )
+        obj._add_yaml_constructors(
+            "sceptre.hooks", connection_manager, environment_config
+        )
         return obj
 
     def __getitem__(self, item):
@@ -227,52 +227,15 @@ class Config(dict):
                     )
                 )
 
-    def add_resolver_constructors(
-            self, environment_config, connection_manager
+    def _add_yaml_constructors(
+        self, entry_point_name, connection_manager, environment_config
     ):
         """
-        Adds PyYAML constructors for all resolver classes found in the
-        resolvers folder within Sceptre library and the current Sceptre project
-        folder.
+        Adds PyYAML constructors for all classes found registered at the
+        entry_point_name.
 
-        :param environment_config: A environment config.
-        :type environment_config: sceptre.config.Config
-        :param connection_manager: A connection manager.
-        :type connection_manager: sceptre.connection_manager.ConnectionManager
-        """
-        self.logger.debug("Adding resolver yaml constructors")
-
-        def resolver_constructor_factory(node_class):
-            """
-            Returns a lambda function that will contruct objects from a
-            given node class.
-
-            :param node_class: A resolver class to construct of objects from.
-            :type node_class: class
-            :returns: A lambda that constructs resolver objects.
-            :rtype: func
-            """
-            return lambda loader, node: node_class(
-                loader.construct_scalar(node),
-                connection_manager,
-                environment_config,
-                self
-            )  # pragma: no cover
-
-        resolvers_folder = os.path.join(os.path.dirname(__file__), "resolvers")
-        self.add_yaml_constructors(
-            resolvers_folder, Resolver, resolver_constructor_factory
-        )
-        external_resolver_folder = os.path.join(self.sceptre_dir, "resolvers")
-        self.add_yaml_constructors(
-            external_resolver_folder, Resolver, resolver_constructor_factory
-        )
-
-    def add_hook_constructors(self, environment_config, connection_manager):
-        """
-        Adds PyYAML constructors for all hook classes found in the hooks folder
-        within Sceptre library and the current Sceptre project folder.
-
+        :param entry_point_name: The name of the entry point.
+        :type entry_point_name: str
         :param environment_config: A environment config.
         :type environment_config: Config
         :param connection_manager: A connection manager.
@@ -280,7 +243,7 @@ class Config(dict):
         """
         self.logger.debug("Adding hook yaml constructors")
 
-        def hook_constructor_factory(node_class):
+        def factory(node_class):
             """
             This returns a lambda function that will contruct objects from a
             given node class.
@@ -297,34 +260,9 @@ class Config(dict):
                 self
             )  # pragma: no cover
 
-        library_hook_folder = os.path.join(os.path.dirname(__file__), "hooks")
-        self.add_yaml_constructors(
-            library_hook_folder, Hook, hook_constructor_factory
-        )
-
-        project_hook_folder = os.path.join(self.sceptre_dir, "hooks")
-        self.add_yaml_constructors(
-            project_hook_folder, Hook, hook_constructor_factory
-        )
-
-    def add_yaml_constructors(self, base_directory, base_type, factory):
-        """
-        Adds PyYAML constructors for all classes which inherit from a
-        specific base type within a given directory.
-
-        :param base_directory: A path of a directory to search for classes.
-        :type base_directory: str
-        :param base_type: The base class in which the class must inherit from.
-        :type base_type: class
-        :param factory: A function to use to construct objects.
-        :type factory: function
-        """
-        classes = get_subclasses(
-            directory=base_directory, class_type=base_type
-        )
-
-        for node_name, node_class in classes.items():
-            node_tag = u'!' + node_name
+        for entry_point in pkg_resources.iter_entry_points(entry_point_name):
+            node_tag = u'!' + entry_point.name
+            node_class = entry_point.load()
             yaml.SafeLoader.add_constructor(
                 node_tag, factory(node_class)
             )
