@@ -32,7 +32,7 @@ class TestHelpers(object):
             "StackOutputExternal"
         assert classes["stack_output"].__name__ ==  \
             "StackOutput"
-        assert len(classes) == 5
+        assert len(classes) == 4
 
     def test_camel_to_snake_case(self):
         snake_case_string = camel_to_snake_case("Bash")
