@@ -32,8 +32,6 @@ class TestHelpers(object):
             "StackOutputExternal"
         assert classes["stack_output"].__name__ ==  \
             "StackOutput"
-        assert classes["project_variables"].__name__ == \
-            "ProjectVariables"
         assert len(classes) == 5
 
     def test_camel_to_snake_case(self):
