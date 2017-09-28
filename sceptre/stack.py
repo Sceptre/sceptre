@@ -198,8 +198,8 @@ class Stack(object):
                 for k, v in self.config.get("stack_tags", {}).items()
             ]
         }
-        if self.config.get("on_failure"):
-            self.config['OnFailure'] = self.config.get("on_failure") 
+        if "on_failure" in self.config:
+            create_stack_kwargs.update({"OnFailure": self.config.get("on_failure")})
         create_stack_kwargs.update(self._get_template_details())
         create_stack_kwargs.update(self._get_role_arn())
         response = self.connection_manager.call(
