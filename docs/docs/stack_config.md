@@ -189,13 +189,13 @@ dependencies:
     - vpc
 hooks:
     before_create:
-        - !bash "echo creating..."
+        - !cmd "echo creating..."
     after_create:
-        - !bash "echo created"
-        - !bash "echo done"
+        - !cmd "echo created"
+        - !cmd "echo done"
     after_update:
-        - !bash "mkdir example"
-        - !bash "touch example.txt"
+        - !cmd "mkdir example"
+        - !cmd "touch example.txt"
 parameters:
     param_1: !stack_output stack_name::output_name
     param_2: !stack_output_external full_stack_name::output_name
