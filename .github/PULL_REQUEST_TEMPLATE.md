@@ -1,0 +1,21 @@
+**Replace this text with a summary of the changes in your PR.
+The more detailed you are, the better.**
+
+-----------------
+
+Before submitting the PR make sure the following are checked:
+
+* [ ] Wrote [good commit messages][1].
+* [ ] Commit message starts with `[Fix #issue-number]` (if the related issue exists).
+* [ ] Used the same coding conventions as the rest of the project.
+* [ ] Feature branch is up-to-date with `master` (if not - rebase it).
+* [ ] [Squashed related commits together][2].
+* [ ] Added tests.
+* [ ] Added an entry to the [History](../blob/master/HISTORY.RST) if the new code introduces user-observable changes.
+* [ ] All tests (`make test`) are passing.
+* [ ] The new code doesn't generate flake8 (`make lint`) offenses.
+* [ ] The PR relates to *only* one subject with a clear title
+  and description in grammatically correct, complete sentences.
+
+[1]: http://chris.beams.io/posts/git-commit/
+[2]: https://github.com/todotxt/todo.txt-android/wiki/Squash-All-Commits-Related-to-a-Single-Issue-into-a-Single-Commit
