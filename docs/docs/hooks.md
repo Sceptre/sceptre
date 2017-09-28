@@ -53,48 +53,6 @@ before_create:
     - !cmd "echo hello"
 ```
 
-
-### bash
-
-<div class="alert alert-warning">
-The bash hook has been deprecated, and will be removed in a later version of Sceptre. We recommend using the cmd hook instead.
-</div>
-Executes string as a bash command.
-
-Syntax:
-
-```yaml
-<hook_point>:
-    - !bash <bash_command>
-```
-
-Example:
-
-```yaml
-before_create:
-    - !bash "echo hello"
-```
-
-
-### asg\_scheduled\_actions
-
-Pauses or resumes autoscaling scheduled actions.
-
-Syntax:
-
-```yaml
-<hook_point>:
-    - !asg_scheduled_actions "resume | suspend"
-```
-
-Example:
-
-```yaml
-before_update:
-    - !asg_scheduled_actions "suspend"
-```
-
-
 ### asg\_scaling_processes
 
 Suspends or resumes autoscaling scaling processes.
@@ -126,16 +84,16 @@ parameters:
     ExampleParameter: example_value
 hooks:
     before_create:
-        - !bash "echo creating..."
+        - !cmd "echo creating..."
     after_create:
-        - !bash "echo created"
-        - !bash "echo done"
+        - !cmd "echo created"
+        - !cmd "echo done"
     before_update:
-        - !asg_scheduled_actions suspend
+        - !asg_scaling_processes suspend::ScheduledActions
     after_update:
-        - !bash "mkdir example"
-        - !bash "touch example.txt"
-        - !asg_scheduled_actions resume
+        - !cmd "mkdir example"
+        - !cmd "touch example.txt"
+        - !asg_scaling_processes resume::ScheduledActions
 ```
 
 ## Custom Hooks
