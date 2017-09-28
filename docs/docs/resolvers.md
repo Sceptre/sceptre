@@ -101,38 +101,6 @@ parameters:
 ```
 
 
-### project_variables
-
-<div class="alert alert-warning">
-The project_variables resolver has been deprecated, and will be removed in a later version of Sceptre. Depending on your use case, you may find <a href="{{ site.baseurl }}/docs/environment_config.html#var">User Variables</a> appropriate.
-</div>
-
-Keys through the YAML object stored at `/path/to/file.yaml` with the segments of the stack name.
-
-Syntax:
-
-```yaml
-parameters | sceptre_user_data:
-    <name>: !project_variables /path/to/file.yaml
-```
-
-For example, given the stack `dev/vpc`, and the following file (`/my_config_file.yaml`):
-
-```yaml
-dev:
-    vpc:
-        Name: my_vpc
-```
-
-The resolver will return the dictionary `{"Name": "my_vpc"}`.
-
-Example (`config/dev/vpc.yaml`):
-
-```yaml
-parameters:
-    Tag: !project_variables /my_config_file.yaml
-```
-
 ## Custom Resolvers
 
 Users can define their own resolvers which are used by Sceptre to resolve the value of a parameter before it is passed to the CloudFormation template.
