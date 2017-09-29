@@ -122,7 +122,7 @@ class Environment(object):
         self.logger.debug("Launching environment '%s'", self.path)
         threading_events = self._get_threading_events()
         stack_statuses = self._get_initial_statuses()
-        launch_dependencies = self._get_launch_dependencies(self.path)
+        launch_dependencies = self.get_launch_dependencies(self.path)
 
         self._check_for_circular_dependencies(launch_dependencies)
         self._build(
@@ -139,7 +139,7 @@ class Environment(object):
         self.logger.debug("Deleting environment '%s'", self.path)
         threading_events = self._get_threading_events()
         stack_statuses = self._get_initial_statuses()
-        delete_dependencies = self._get_delete_dependencies()
+        delete_dependencies = self.get_delete_dependencies()
 
         self._check_for_circular_dependencies(delete_dependencies)
         self._build(
@@ -289,7 +289,7 @@ class Environment(object):
         }
 
     @recurse_into_sub_environments
-    def _get_launch_dependencies(self, top_level_environment_path):
+    def get_launch_dependencies(self, top_level_environment_path):
         """
         Returns a dict of each stack's launch dependencies.
 
@@ -313,7 +313,7 @@ class Environment(object):
         }
         return launch_dependencies
 
-    def _get_delete_dependencies(self):
+    def get_delete_dependencies(self):
         """
         Returns a dict of each stack's delete dependencies.
 
@@ -321,7 +321,7 @@ class Environment(object):
             while deleting, keyed by that stack's name.
         :rtype: dict
         """
-        launch_dependencies = self._get_launch_dependencies(self.path)
+        launch_dependencies = self.get_launch_dependencies(self.path)
         delete_dependencies = {
             stack_name: [] for stack_name in launch_dependencies
         }

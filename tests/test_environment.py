@@ -133,7 +133,7 @@ class TestEnvironment(object):
 
     @patch("sceptre.environment.Environment._build")
     @patch("sceptre.environment.Environment._check_for_circular_dependencies")
-    @patch("sceptre.environment.Environment._get_launch_dependencies")
+    @patch("sceptre.environment.Environment.get_launch_dependencies")
     @patch("sceptre.environment.Environment._get_initial_statuses")
     @patch("sceptre.environment.Environment._get_threading_events")
     def test_launch_calls_build_with_correct_args(
@@ -163,7 +163,7 @@ class TestEnvironment(object):
 
     @patch("sceptre.environment.Environment._build")
     @patch("sceptre.environment.Environment._check_for_circular_dependencies")
-    @patch("sceptre.environment.Environment._get_delete_dependencies")
+    @patch("sceptre.environment.Environment.get_delete_dependencies")
     @patch("sceptre.environment.Environment._get_initial_statuses")
     @patch("sceptre.environment.Environment._get_threading_events")
     def test_delete_calls_build_with_correct_args(
@@ -379,7 +379,7 @@ class TestEnvironment(object):
 
         self.environment.stacks = {"mock_stack": mock_stack}
 
-        response = self.environment._get_launch_dependencies("dev")
+        response = self.environment.get_launch_dependencies("dev")
 
         # Note that "prod/sg" is filtered out, because it's not under the
         # top level environment path "dev".
@@ -387,7 +387,7 @@ class TestEnvironment(object):
             "dev/mock_stack": ["dev/vpc", "dev/subnets"]
         }
 
-    @patch("sceptre.environment.Environment._get_launch_dependencies")
+    @patch("sceptre.environment.Environment.get_launch_dependencies")
     def test_get_delete_dependencies(self, mock_get_launch_dependencies):
         mock_get_launch_dependencies.return_value = {
             "dev/mock_stack_1": [],
@@ -395,7 +395,7 @@ class TestEnvironment(object):
             "dev/mock_stack_3": ["dev/mock_stack_1", "dev/mock_stack_2"],
         }
 
-        dependencies = self.environment._get_delete_dependencies()
+        dependencies = self.environment.get_delete_dependencies()
         assert dependencies == {
             "dev/mock_stack_1": ["dev/mock_stack_3"],
             "dev/mock_stack_2": ["dev/mock_stack_3"],

@@ -486,6 +486,48 @@ class TestCli(object):
         result = self.runner.invoke(cli, ["describe-env", "dev"])
         assert result.output == "stack: status\n\n"
 
+    @patch("sceptre.cli.get_env")
+    def test_describe_env_dependencies(self, mock_get_env):
+        mock_Environment = Mock()
+        mock_Environment.get_launch_dependencies.return_value = {
+            "dev/vpc": []
+        }
+        mock_get_env.return_value = mock_Environment
+
+        result = self.runner.invoke(cli, ["describe-env-dependencies", "dev"])
+        assert result.output == "dev/vpc: []\n\n"
+
+    @patch("sceptre.cli.get_env")
+    def test_describe_env_dependencies_with_invert(self, mock_get_env):
+        mock_Environment = Mock()
+        mock_Environment.get_delete_dependencies.return_value = {
+            "dev/vpc": []
+        }
+        mock_get_env.return_value = mock_Environment
+
+        result = self.runner.invoke(
+            cli, ["describe-env-dependencies", "dev", "--invert"]
+        )
+        assert result.output == "dev/vpc: []\n\n"
+
+    @patch("sceptre.cli.get_env")
+    def test_describe_env_dependencies_with_dot(self, mock_get_env):
+        mock_Environment = Mock()
+        mock_Environment.get_launch_dependencies.return_value = {
+            "dev/vpc": [],
+            "dev/networking": ["dev/vpc"]
+        }
+        mock_get_env.return_value = mock_Environment
+
+        result = self.runner.invoke(
+            cli, ["describe-env-dependencies", "dev", "--dot"]
+        )
+        assert "digraph stack_dependencies {" in result.output
+        assert "\"dev/vpc\";" in result.output
+        assert "\"dev/networking\";" in result.output
+        assert "\"dev/vpc\" -> \"dev/networking\";" in result.output
+        assert "}" in result.output
+
     @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli.get_env")
     def test_set_stack_policy_with_file_flag(
