@@ -124,7 +124,9 @@ class TestConfig(object):
         )
         self.config.name = "security_groups"
         os.environ["TEST_ENV_VAR"] = "environment_variable_value"
-        self.config.read({"user_variable": "user_variable_value"})
+        user_variables = {"user_variable": "user_variable_value"}
+        environment_config = {"region": "region"}
+        self.config.read(user_variables, environment_config)
 
         assert self.config == {
             "parameters": {
@@ -132,7 +134,8 @@ class TestConfig(object):
                 "param2": "environment_variable_value",
                 "param3": "account",
                 "param4": "environment",
-                "param5": "region"
+                "param5": "region",
+                "param6": "region"
             },
             'dependencies': []
         }

@@ -113,7 +113,8 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             environment_config=self.stack.environment_config,
             connection_manager=self.stack.connection_manager
         )
-        mock_config.read.assert_called_once_with(sentinel.user_variables)
+        mock_config.read.assert_called_once_with(sentinel.user_variables,
+                                                 self.stack.environment_config)
         assert response == mock_config
 
     def test_config_returns_config_if_it_exists(self):
