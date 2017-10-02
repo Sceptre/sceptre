@@ -103,19 +103,23 @@ Users can define their own custom hooks, allowing users to extend hooks and inte
 
 A hook is a Python class which inherits from abstract base class `Hook` found in the `sceptre.hooks module`.
 
-Hooks are require to implement a `run()` function that takes no parameters and to call the base class initializer on initialisation.
+Hooks are require to implement a `run()` function that takes no parameters and to call the base class initializer.
 
-Hooks may have access to `argument`,  `stack_config`, `environment_config` and `connection_manager` as an attribute of `self`. For example `self.stack_config`.
+Hooks may have access to `argument`,  `stack_config`, `environment_config` and `connection_manager` as object attributes. For example `self.stack_config`.
 
-Hook classes are defined in python files located at:
+Sceptre uses the `sceptre.hooks` entry point to locate hook classes. Your custom hook can be written anywhere and is installed as Python package.
 
-```
-<sceptre_project_dir>/hooks/<your hook>.py
-```
-
-Sceptre retrieves any class which inherits from base class Hook found within this directory. The name of the hook is the class name in snake case format. e.g. `class CustomHook` is `custom_hook`.  An arbitrary file name may be used as it is not checked by Sceptre.
+### Example
 
 The following python module template can be copied and used:
+
+```bash
+custom_hook
+├── custom_hook.py
+└── setup.py
+```
+
+#### custom_hook.py
 
 ```python
 from sceptre.hooks import Hook
@@ -132,16 +136,32 @@ class CustomHook(Hook):
         intended by this hook.
 
         self.argument is available from the base class and contains the
-        argument defined in the sceptre config file (see below)
+        argument defined in the Sceptre config file (see below)
 
         The following attributes may be available from the base class:
         self.stack_config  (A dict of data from <stack_name>.yaml)
         self.environment_config  (A dict of data from config.yaml)
         self.connection_manager (A connection_manager)
         """
-        print self.argument
+        print(self.argument)
 ```
 
+#### setup.py
+
+```python
+from setuptools import setup
+
+setup(
+    name='custom_hook',
+    entry_points={
+        'sceptre.hooks': [
+            'custom_hook = custom_hook:CustomHook',
+        ],
+    }
+)
+```
+
+Then install using `python setup.py install` or `pip install .` commands.
 
 This hook can be used in a stack config file with the following syntax:
 
