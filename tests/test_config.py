@@ -2,14 +2,13 @@
 
 from contextlib import contextmanager
 from tempfile import mkdtemp
-import shutil
 import os
-from mock import patch, sentinel, call, Mock, ANY
+from mock import patch, sentinel
 import pytest
+import shutil
+import yaml
 
 from sceptre.config import Config
-from sceptre.hooks import Hook
-from sceptre.resolvers import Resolver
 from sceptre.exceptions import ConfigItemNotFoundError
 from sceptre.exceptions import EnvironmentPathNotFoundError
 from sceptre.exceptions import VersionIncompatibleError
@@ -36,12 +35,9 @@ class TestConfig(object):
         assert self.config.environment_path == "environment_path"
         assert self.config.name == "config"
 
-    @patch("sceptre.config.Config.add_hook_constructors")
-    @patch("sceptre.config.Config.add_resolver_constructors")
     @patch("sceptre.config.Config._check_env_path_exists")
     def test_initialise_with_yaml_constructors(
-        self, mock_check_env_path_exists,
-        mock_add_resolver_constructors, mock_add_hook_constructors
+        self, mock_check_env_path_exists
     ):
         config = Config.with_yaml_constructors(
             sceptre_dir="sceptre_dir",
@@ -53,12 +49,12 @@ class TestConfig(object):
         assert config.sceptre_dir == "sceptre_dir"
         assert config.environment_path == "environment_path"
         assert config.name == "config"
-        mock_add_resolver_constructors.assert_called_once_with(
-            sentinel.environment_config, sentinel.connection_manager
-        )
-        mock_add_hook_constructors.assert_called_once_with(
-            sentinel.environment_config, sentinel.connection_manager
-        )
+        assert "!stack_output" in yaml.SafeLoader.yaml_constructors
+        assert "!stack_output_external" in yaml.SafeLoader.yaml_constructors
+        assert "!environment_variable" in yaml.SafeLoader.yaml_constructors
+        assert "!file_contents" in yaml.SafeLoader.yaml_constructors
+        assert "!cmd" in yaml.SafeLoader.yaml_constructors
+        assert "!asg_scheduled_actions" in yaml.SafeLoader.yaml_constructors
 
     def test_get_attribute_with_valid_attribute(self):
         self.config["key"] = "value"
@@ -154,56 +150,3 @@ class TestConfig(object):
         self.config['require_version'] = '<0'
         with pytest.raises(VersionIncompatibleError):
             self.config._check_version()
-
-    @patch("sceptre.config.get_subclasses")
-    @patch("sceptre.config.yaml.SafeLoader.add_constructor")
-    def test_add_yaml_constructors(
-        self, mock_add_constructors, mock_get_subclasses
-    ):
-        mock_get_subclasses.return_value = {
-            "class_1": sentinel.class_1,
-            "class_2": sentinel.class_2,
-            "class_3": sentinel.class_3,
-        }
-        directory = "directory/path"
-        base_type = str
-        function = Mock(return_value="class")
-        self.config.add_yaml_constructors(directory, base_type, function)
-        calls = [call(u'!class_1', "class"),
-                 call(u'!class_2', "class"),
-                 call(u'!class_3', "class")]
-        mock_add_constructors.assert_has_calls(calls, any_order=True)
-
-    @patch("sceptre.config.os.path.dirname")
-    @patch("sceptre.config.Config.add_yaml_constructors")
-    def test_add_resolver_constructors(
-        self, mock_add_yaml_constructors, mock_dirname
-    ):
-        mock_dirname.return_value = "folder/with/file"
-        environment_config = sentinel.environment_config
-        connection_manager = sentinel.connection_manager
-        self.config.add_resolver_constructors(
-            environment_config, connection_manager
-        )
-        calls = [
-            call("folder/with/file/resolvers", Resolver, ANY),
-            call("sceptre_dir/resolvers", Resolver, ANY)
-        ]
-        mock_add_yaml_constructors.assert_has_calls(calls, any_order=False)
-
-    @patch("sceptre.config.os.path.dirname")
-    @patch("sceptre.config.Config.add_yaml_constructors")
-    def test_add_hook_constructors(
-        self, mock_add_yaml_constructors, mock_dirname
-    ):
-        mock_dirname.return_value = "folder/with/file"
-        environment_config = sentinel.environment_config
-        connection_manager = sentinel.connection_manager
-        self.config.add_hook_constructors(
-            environment_config, connection_manager
-        )
-        calls = [
-            call("folder/with/file/hooks", Hook, ANY),
-            call("sceptre_dir/hooks", Hook, ANY)
-        ]
-        mock_add_yaml_constructors.assert_has_calls(calls, any_order=False)
