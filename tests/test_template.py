@@ -26,12 +26,13 @@ class TestTemplate(object):
         self.environment_path = "environment_path"
         self.stack_name = "stack_name"
 
-        self.connection_manager = Mock(spec=ConnectionManager)
-        self.connection_manager.create_bucket_lock = threading.Lock()
+        connection_manager = Mock(spec=ConnectionManager)
+        connection_manager.create_bucket_lock = threading.Lock()
 
         self.template = Template(
             path="/folder/template.py",
-            sceptre_user_data={}
+            sceptre_user_data={},
+            connection_manager=connection_manager
         )
 
     def test_initialise_template(self):
@@ -44,7 +45,7 @@ class TestTemplate(object):
         representation = self.template.__repr__()
         assert representation == "sceptre.template.Template(" \
             "name='template', path='/folder/template.py'"\
-            ", sceptre_user_data={})"
+            ", sceptre_user_data={}, s3_props=None)"
 
     def test_body_with_cache(self):
         self.template._body = sentinel.body
@@ -53,46 +54,47 @@ class TestTemplate(object):
 
     @freeze_time("2012-01-01")
     @patch("sceptre.template.Template._bucket_exists")
-    def test_upload_to_s3_with_valid_arguments(self, mock_bucket_exists):
+    def test_upload_to_s3_with_valid_s3_props(self, mock_bucket_exists):
         self.template._body = '{"template": "mock"}'
         mock_bucket_exists.return_value = True
+        self.template.s3_props = {
+            "bucket_name": "bucket-name",
+            "bucket_key": "bucket-key"
+        }
 
-        url = self.template.upload_to_s3(
-            region="eu-west-1",
-            bucket_name="bucket-name",
-            key_prefix="/prefix/",
-            environment_path="environment/path",
-            stack_name="stack-name",
-            connection_manager=self.connection_manager
-        )
+        url = self.template.upload_to_s3()
 
-        expected_template_key = (
-            "prefix/eu-west-1/environment/path/"
-            "stack-name-2012-01-01-00-00-00-000000Z.json"
-        )
-
-        self.connection_manager.call.assert_called_once_with(
+        self.template.connection_manager.call.assert_called_once_with(
             service="s3",
             command="put_object",
             kwargs={
                 "Bucket": "bucket-name",
-                "Key": expected_template_key,
+                "Key": "bucket-key",
                 "Body": '{"template": "mock"}',
                 "ServerSideEncryption": "AES256"
             }
         )
 
-        assert url == "https://bucket-name.s3.amazonaws.com/{0}".format(
-            expected_template_key
-        )
+        assert url == "https://bucket-name.s3.amazonaws.com/bucket-key"
 
     def test_bucket_exists_with_bucket_that_exists(self):
         # connection_manager.call doesn't raise an exception, mimicing the
         # behaviour when head_bucket successfully executes.
-        self.template._bucket_exists("bucket_name", self.connection_manager)
+        self.template.s3_props = {
+            "bucket_name": "bucket-name",
+            "bucket_key": "bucket-key"
+        }
+
+        assert self.template._bucket_exists() is True
 
     def test_create_bucket_with_unreadable_bucket(self):
-        self.connection_manager.call.side_effect = ClientError(
+        self.template.connection_manager.region = "eu-west-1"
+        self.template.s3_props = {
+            "bucket_name": "bucket-name",
+            "bucket_key": "bucket-key"
+        }
+
+        self.template.connection_manager.call.side_effect = ClientError(
                 {
                     "Error": {
                         "Code": 500,
@@ -102,16 +104,19 @@ class TestTemplate(object):
                 sentinel.operation
             )
         with pytest.raises(ClientError) as e:
-            self.template._create_bucket(
-                "region", "bucket_name", self.connection_manager
-            )
+            self.template._create_bucket()
             assert e.value.response["Error"]["Code"] == 500
             assert e.value.response["Error"]["Message"] == "Bucket Unreadable"
 
     def test_bucket_exists_with_non_existent_bucket(self):
         # connection_manager.call is called twice, and should throw the
         # Not Found ClientError only for the first call.
-        self.connection_manager.call.side_effect = [
+        self.template.s3_props = {
+            "bucket_name": "bucket-name",
+            "bucket_key": "bucket-key"
+        }
+
+        self.template.connection_manager.call.side_effect = [
             ClientError(
                 {
                     "Error": {
@@ -124,27 +129,60 @@ class TestTemplate(object):
             None
         ]
 
-        existance = self.template._bucket_exists(
-            self.bucket_name,
-            self.connection_manager
-        )
+        existance = self.template._bucket_exists()
 
         assert existance is False
 
     def test_create_bucket_in_us_east_1(self):
         # connection_manager.call is called twice, and should throw the
         # Not Found ClientError only for the first call.
+        self.template.connection_manager.region = "us-east-1"
+        self.template.s3_props = {
+            "bucket_name": "bucket-name",
+            "bucket_key": "bucket-key"
+        }
 
-        self.template._create_bucket(
-            "us-east-1",
-            self.bucket_name,
-            self.connection_manager
-        )
+        self.template._create_bucket()
 
-        self.connection_manager.call.assert_any_call(
+        self.template.connection_manager.call.assert_any_call(
             service="s3",
             command="create_bucket",
-            kwargs={"Bucket": self.bucket_name}
+            kwargs={"Bucket": "bucket-name"}
+        )
+
+    @patch("sceptre.template.Template.upload_to_s3")
+    def test_get_boto_call_parameter_with_s3_props(self, mock_upload_to_s3):
+        # self.stack._template = Mock(spec=Template)
+        mock_upload_to_s3.return_value = sentinel.template_url
+        self.template.s3_props = {
+            "bucket_name": sentinel.bucket_name,
+            "bucket_key": sentinel.bucket_key
+        }
+
+        boto_parameter = self.template.get_boto_call_parameter()
+
+        assert boto_parameter == {"TemplateURL": sentinel.template_url}
+
+    def test_get_template_details_without_upload(self):
+        self.template.s3_props = None
+        self.template._body = sentinel.body
+        boto_parameter = self.template.get_boto_call_parameter()
+
+        assert boto_parameter == {"TemplateBody": sentinel.body}
+
+    @patch("sceptre.template.Template.get_boto_call_parameter")
+    def test_validate_sends_correct_request(
+        self, mock_get_boto_call_parameter
+    ):
+        mock_get_boto_call_parameter.return_value = {
+            "Template": sentinel.template
+        }
+
+        self.template.validate()
+        self.template.connection_manager.call.assert_called_with(
+            service="cloudformation",
+            command="validate_template",
+            kwargs={"Template": sentinel.template}
         )
 
     def test_body_with_json_template(self):

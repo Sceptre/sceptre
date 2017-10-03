@@ -35,7 +35,7 @@ class TestCli(object):
         mock_getcwd.return_value = sentinel.cwd
         self.runner.invoke(cli, ["validate-template", "dev", "vpc"])
         mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].validate_template\
+        mock_get_env.return_value.stacks["vpc"].template.validate\
             .assert_called_with()
 
     @patch("sceptre.cli.os.getcwd")
