@@ -10,6 +10,7 @@ configuration.
 import logging
 import os
 import yaml
+import collections
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined
 from packaging.specifiers import SpecifierSet
@@ -22,6 +23,37 @@ from .exceptions import VersionIncompatibleError
 from .hooks import Hook
 from .resolvers import Resolver
 from .helpers import get_subclasses
+
+ConfigAttributes = collections.namedtuple("Attributes", "required optional")
+
+ENVIRONMENT_CONFIG_ATTRIBUTES = ConfigAttributes(
+    {
+        "project_code",
+        "region"
+    },
+    {
+        "iam_role",
+        "template_bucket_name",
+        "template_key_prefix",
+        "require_version"
+    }
+)
+
+STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
+    {
+        "template_path"
+    },
+    {
+        "dependencies",
+        "hooks",
+        "parameters",
+        "protect",
+        "sceptre_user_data",
+        "stack_name",
+        "stack_tags",
+        "role_arn"
+    }
+)
 
 
 class Config(dict):
