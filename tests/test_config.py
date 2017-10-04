@@ -135,7 +135,8 @@ class TestConfig(object):
                 "param3": "account",
                 "param4": "environment",
                 "param5": "region",
-                "param6": "region"
+                "param6": "region",
+                "param7": "security_groups"
             },
             'dependencies': []
         }
