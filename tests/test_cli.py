@@ -5,12 +5,15 @@ import os
 import errno
 
 from click.testing import CliRunner
-from mock import Mock, patch, sentinel
+from mock import MagicMock, patch, sentinel
 import pytest
 
 import sceptre.cli
 from sceptre.cli import cli
+from sceptre.config_reader import ConfigReader
+from sceptre.environment import Environment
 from sceptre.exceptions import SceptreException
+from sceptre.stack import Stack
 from sceptre.stack_status import StackStatus
 from sceptre.stack_status import StackChangeSetStatus
 
@@ -18,7 +21,27 @@ from sceptre.stack_status import StackChangeSetStatus
 class TestCli(object):
 
     def setup_method(self, test_method):
+        self.patcher_ConfigReader = patch("sceptre.cli.ConfigReader")
+        self.patcher_getcwd = patch("sceptre.cli.os.getcwd")
+
+        self.mock_ConfigReader = self.patcher_ConfigReader.start()
+        self.mock_getcwd = self.patcher_getcwd.start()
+
+        self.mock_config_reader = MagicMock(spec=ConfigReader)
+        self.mock_stack = MagicMock(spec=Stack)
+        self.mock_environment = MagicMock(spec=Environment)
+        self.mock_config_reader.construct_stack.return_value = self.mock_stack
+        self.mock_config_reader.construct_environment.return_value = \
+            self.mock_environment
+
+        self.mock_ConfigReader.return_value = self.mock_config_reader
+        self.mock_getcwd.return_value = sentinel.cwd
+
         self.runner = CliRunner()
+
+    def teardown_method(self, test_method):
+        self.patcher_ConfigReader.stop()
+        self.patcher_getcwd.stop()
 
     @patch("sys.exit")
     def test_catch_excecptions(self, mock_exit):
@@ -29,48 +52,38 @@ class TestCli(object):
             raises_exception()
             mock_exit.assert_called_once_with(1)
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_validate_template(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
+    def test_validate_template(self):
         self.runner.invoke(cli, ["validate-template", "dev", "vpc"])
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].template.validate\
-            .assert_called_with()
+        self.mock_config_reader.construct_stack.assert_called_with(
+            "dev/vpc.yaml"
+        )
+        self.mock_stack.template.validate.assert_called_with()
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_generate_template(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
+    def test_generate_template(self):
+        self.mock_stack.template.body = "body"
         result = self.runner.invoke(cli, ["generate-template", "dev", "vpc"])
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-
-        assert result.output == "{0}\n".format(
-            mock_get_env.return_value.stacks["vpc"].template.body
+        self.mock_config_reader.construct_stack.assert_called_with(
+            "dev/vpc.yaml"
         )
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_lock_stack(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
+        assert result.output == "body\n"
+
+    def test_lock_stack(self):
         self.runner.invoke(cli, ["lock-stack", "dev", "vpc"])
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].lock\
-            .assert_called_with()
+        self.mock_config_reader.construct_stack.assert_called_with(
+                "dev/vpc.yaml"
+        )
+        self.mock_stack.lock.assert_called_with()
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_unlock_stack(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
+    def test_unlock_stack(self):
         self.runner.invoke(cli, ["unlock-stack", "dev", "vpc"])
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].unlock\
-            .assert_called_with()
+        self.mock_config_reader.construct_stack.assert_called_with(
+                "dev/vpc.yaml"
+        )
+        self.mock_stack.unlock.assert_called_with()
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_describe_env_resources(self, mock_get_env, mock_getcwd):
-        mock_get_env.return_value.describe_resources.return_value = {
+    def test_describe_env_resources(self):
+        self.mock_environment.describe_resources.return_value = {
             "stack-name-1": {
                 "StackResources": [
                     {
@@ -88,20 +101,14 @@ class TestCli(object):
                 ]
             }
         }
-        mock_getcwd.return_value = sentinel.cwd
         result = self.runner.invoke(cli, ["describe-env-resources", "dev"])
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.describe_resources\
-            .assert_called_with()
+        self.mock_config_reader.construct_environment.assert_called_with("dev")
+        self.mock_environment.describe_resources.assert_called_with()
         # Assert that there is output
         assert result.output
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_describe_stack_resources(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
-        mock_get_env.return_value.stacks["vpc"].describe_resources\
-            .return_value = {
+    def test_describe_stack_resources(self):
+        self.mock_stack.describe_resources.return_value = {
                 "StackResources": [
                     {
                         "LogicalResourceId": "logical-resource-id",
@@ -112,135 +119,106 @@ class TestCli(object):
         result = self.runner.invoke(
             cli, ["describe-stack-resources", "dev", "vpc"]
         )
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].describe_resources\
-            .assert_called_with()
+        self.mock_config_reader.construct_stack.assert_called_with(
+                "dev/vpc.yaml"
+        )
+        self.mock_stack.describe_resources.assert_called_with()
         # Assert that there is output.
         assert result.output
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_create_stack(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
+    def test_create_stack(self):
         self.runner.invoke(cli, ["create-stack", "dev", "vpc"])
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].create\
-            .assert_called_with()
+        self.mock_config_reader.construct_stack.assert_called_with(
+                "dev/vpc.yaml")
+        self.mock_stack.create.assert_called_with()
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_delete_stack(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
+    def test_delete_stack(self):
         self.runner.invoke(cli, ["delete-stack", "dev", "vpc"])
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].delete\
-            .assert_called_with()
+        self.mock_config_reader.construct_stack.assert_called_with(
+            "dev/vpc.yaml"
+        )
+        self.mock_stack.delete.assert_called_with()
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_update_stack(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
+    def test_update_stack(self):
         self.runner.invoke(cli, ["update-stack", "dev", "vpc"])
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].update\
-            .assert_called_with()
+        self.mock_config_reader.construct_stack.assert_called_with(
+            "dev/vpc.yaml"
+        )
+        self.mock_stack.update.assert_called_with()
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_launch_stack(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
+    def test_launch_stack(self):
         self.runner.invoke(cli, ["launch-stack", "dev", "vpc"])
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].launch\
-            .assert_called_with()
+        self.mock_config_reader.construct_stack.assert_called_with(
+            "dev/vpc.yaml"
+        )
+        self.mock_stack.launch.assert_called_with()
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_launch_env(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
+    def test_launch_env(self):
         self.runner.invoke(cli, ["launch-env", "dev"])
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.launch.assert_called_with()
+        self.mock_config_reader.construct_environment.assert_called_with("dev")
+        self.mock_environment.launch.assert_called_with()
 
-    @patch("sceptre.cli.get_env")
-    def test_launch_env_returns_zero_correctly(self, mock_get_env):
-        mock_get_env.return_value.launch.return_value = dict(
+    def test_launch_env_returns_zero_correctly(self):
+        self.mock_environment.launch.return_value = dict(
             (sentinel.stack_name, StackStatus.COMPLETE) for _ in range(5)
         )
         result = self.runner.invoke(cli, ["launch-env", "environment"])
         assert result.exit_code == 0
 
-    @patch("sceptre.cli.get_env")
-    def test_launch_env_returns_non_zero_correctly(self, mock_get_env):
-        mock_get_env.return_value.launch.return_value = dict(
+    def test_launch_env_returns_non_zero_correctly(self):
+        self.mock_environment.launch.return_value = dict(
             (sentinel.stack_name, StackStatus.FAILED) for _ in range(5)
         )
         result = self.runner.invoke(cli, ["launch-env", "environment"])
         assert result.exit_code == 1
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_delete_env(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
-        mock_get_env.return_value.delete.return_value = \
-            sentinel.response
+    def test_delete_env(self):
+        self.mock_environment.delete.return_value = sentinel.response
         self.runner.invoke(cli, ["delete-env", "dev"])
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.delete.assert_called_with()
+        self.mock_config_reader.construct_environment.assert_called_with("dev")
+        self.mock_environment.delete.assert_called_with()
 
-    @patch("sceptre.cli.get_env")
-    def test_delete_env_returns_zero_correctly(self, mock_get_env):
-        mock_get_env.return_value.delete.return_value = dict(
+    def test_delete_env_returns_zero_correctly(self):
+        self.mock_environment.delete.return_value = dict(
             (sentinel.stack_name, StackStatus.COMPLETE) for _ in range(5)
         )
         result = self.runner.invoke(cli, ["delete-env", "environment"])
         assert result.exit_code == 0
 
-    @patch("sceptre.cli.get_env")
-    def test_delete_env_returns_non_zero_correctly(self, mock_get_env):
-        mock_get_env.return_value.delete.return_value = dict(
+    def test_delete_env_returns_non_zero_correctly(self):
+        self.mock_environment.delete.return_value = dict(
             (sentinel.stack_name, StackStatus.FAILED) for _ in range(5)
         )
         result = self.runner.invoke(cli, ["delete-env", "environment"])
         assert result.exit_code == 1
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_continue_update_rollback(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
+    def test_continue_update_rollback(self):
         self.runner.invoke(cli, ["continue-update-rollback", "dev", "vpc"])
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].\
-            continue_update_rollback.assert_called_with()
+        self.mock_config_reader.construct_stack.assert_called_with(
+            "dev/vpc.yaml"
+        )
+        self.mock_stack.continue_update_rollback.assert_called_with()
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_create_change_set(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
+    def test_create_change_set(self):
         self.runner.invoke(
             cli, ["create-change-set", "dev", "vpc", "cs1"]
         )
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].create_change_set\
-            .assert_called_with("cs1")
+        self.mock_config_reader.construct_stack.assert_called_with(
+            "dev/vpc.yaml"
+        )
+        self.mock_stack.create_change_set.assert_called_with("cs1")
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_delete_change_set(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
+    def test_delete_change_set(self):
         self.runner.invoke(
             cli, ["delete-change-set", "dev", "vpc", "cs1"]
         )
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].delete_change_set\
-            .assert_called_with("cs1")
+        self.mock_config_reader.construct_stack.assert_called_with(
+            "dev/vpc.yaml"
+        )
+        self.mock_stack.delete_change_set.assert_called_with("cs1")
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_describe_change_set(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
-        mock_get_env.return_value.stacks["vpc"].describe_change_set\
-            .return_value = {
+    def test_describe_change_set(self):
+        self.mock_stack.describe_change_set.return_value = {
                 "ChangeSetName": "change-set-1",
                 "Changes": [
                     {
@@ -263,9 +241,10 @@ class TestCli(object):
         result = self.runner.invoke(
             cli, ["describe-change-set", "dev", "vpc", "cs1"]
         )
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].describe_change_set\
-            .assert_called_with("cs1")
+        self.mock_config_reader.construct_stack.assert_called_with(
+            "dev/vpc.yaml"
+        )
+        self.mock_stack.describe_change_set.assert_called_with("cs1")
         assert yaml.safe_load(result.output) == {
             "ChangeSetName": "change-set-1",
             "Changes": [
@@ -286,14 +265,8 @@ class TestCli(object):
             "Status": "CREATE_COMPLETE"
         }
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_describe_change_set_with_verbose_flag(
-        self, mock_get_env, mock_getcwd
-    ):
-        mock_getcwd.return_value = sentinel.cwd
-        mock_get_env.return_value.stacks["vpc"].describe_change_set\
-            .return_value = {
+    def test_describe_change_set_with_verbose_flag(self):
+        self.mock_stack.describe_change_set.return_value = {
                 "Changes": [
                     {
                         "ResourceChange": {
@@ -310,9 +283,10 @@ class TestCli(object):
         result = self.runner.invoke(
             cli, ["describe-change-set", "--verbose", "dev", "vpc", "cs1"]
         )
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].describe_change_set\
-            .assert_called_with("cs1")
+        self.mock_config_reader.construct_stack.assert_called_with(
+            "dev/vpc.yaml"
+        )
+        self.mock_stack.describe_change_set.assert_called_with("cs1")
         assert yaml.safe_load(result.output) == {
             "Changes": [
                 {
@@ -328,61 +302,45 @@ class TestCli(object):
                 ]
         }
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_execute_change_set(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
+    def test_execute_change_set(self):
         self.runner.invoke(cli, ["execute-change-set", "dev", "vpc", "cs1"])
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].execute_change_set\
-            .assert_called_with("cs1")
+        self.mock_config_reader.construct_stack.assert_called_with(
+            "dev/vpc.yaml"
+        )
+        self.mock_stack.execute_change_set.assert_called_with("cs1")
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_list_change_sets(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
+    def test_list_change_sets(self):
         self.runner.invoke(cli, ["list-change-sets", "dev", "vpc"])
+        self.mock_config_reader.construct_stack.assert_called_with(
+            "dev/vpc.yaml"
+        )
+        self.mock_stack.list_change_sets.assert_called_with()
 
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].list_change_sets\
-            .assert_called_with()
-
-    @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli.uuid1")
-    @patch("sceptre.cli.get_env")
-    def test_update_with_change_set_with_input_yes(
-        self, mock_get_env, mock_uuid1, mock_getcwd
-    ):
-        mock_getcwd.return_value = sentinel.cwd
-        mock_get_env.return_value.stacks["vpc"].wait_for_cs_completion\
-            .return_value = StackChangeSetStatus.READY
-        mock_get_env.return_value.stacks["vpc"].describe_change_set\
-            .return_value = "description"
+    def test_update_with_change_set_with_input_yes(self, mock_uuid1):
+        self.mock_stack.wait_for_cs_completion.return_value = \
+            StackChangeSetStatus.READY
+        self.mock_stack.describe_change_set.return_value = "description"
         mock_uuid1().hex = "1"
         self.runner.invoke(
             cli, ["update-stack-cs", "dev", "vpc", "--verbose"], input="y"
         )
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].create_change_set\
+        self.mock_config_reader.construct_stack.assert_called_with(
+            "dev/vpc.yaml"
+        )
+        self.mock_stack.create_change_set.assert_called_with("change-set-1")
+        self.mock_stack.wait_for_cs_completion\
             .assert_called_with("change-set-1")
-        mock_get_env.return_value.stacks["vpc"].wait_for_cs_completion\
-            .assert_called_with("change-set-1")
-        mock_get_env.return_value.stacks["vpc"].execute_change_set\
-            .assert_called_with("change-set-1")
+        self.mock_stack.execute_change_set.assert_called_with("change-set-1")
 
-    @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli._simplify_change_set_description")
     @patch("sceptre.cli.uuid1")
-    @patch("sceptre.cli.get_env")
     def test_update_with_change_set_without_verbose_flag(
-            self, mock_get_environment, mock_uuid1,
-            mock_simplify_change_set_description, mock_getcwd
+            self, mock_uuid1, mock_simplify_change_set_description
     ):
-        mock_getcwd.return_value = sentinel.cwd
-        mock_get_environment.return_value.stacks["vpc"].wait_for_cs_completion\
-            .return_value = StackChangeSetStatus.READY
-        mock_get_environment.return_value.stacks["vpc"].describe_change_set\
-            .return_value = "description"
+        self.mock_stack.wait_for_cs_completion.return_value = \
+            StackChangeSetStatus.READY
+        self.mock_stack.describe_change_set.return_value = "description"
         mock_simplify_change_set_description.return_value = \
             "simplified_description"
         mock_uuid1().hex = "1"
@@ -391,65 +349,49 @@ class TestCli(object):
         )
         assert "simplified_description" in response.output
 
-    @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli.uuid1")
-    @patch("sceptre.cli.get_env")
-    def test_update_with_change_set_with_input_no(
-        self, mock_get_env, mock_uuid1, mock_getcwd
-    ):
-        mock_getcwd.return_value = sentinel.cwd
-        mock_get_env.return_value.stacks["vpc"].wait_for_cs_completion\
-            .return_value = StackChangeSetStatus.READY
-        mock_get_env.return_value.stacks["vpc"].describe_change_set\
-            .return_value = "description"
+    def test_update_with_change_set_with_input_no(self, mock_uuid1):
+        self.mock_stack.wait_for_cs_completion.return_value = \
+            StackChangeSetStatus.READY
+        self.mock_stack.describe_change_set.return_value = "description"
         mock_uuid1().hex = "1"
         self.runner.invoke(
             cli, ["update-stack-cs", "dev", "vpc", "--verbose"], input="n"
         )
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].create_change_set\
+        self.mock_config_reader.construct_stack.assert_called_with(
+            "dev/vpc.yaml"
+        )
+        self.mock_stack.create_change_set.assert_called_with("change-set-1")
+        self.mock_stack.wait_for_cs_completion\
             .assert_called_with("change-set-1")
-        mock_get_env.return_value.stacks["vpc"].wait_for_cs_completion\
-            .assert_called_with("change-set-1")
-        mock_get_env.return_value.stacks["vpc"].delete_change_set\
-            .assert_called_with("change-set-1")
+        self.mock_stack.delete_change_set.assert_called_with("change-set-1")
 
-    @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli.uuid1")
-    @patch("sceptre.cli.get_env")
-    def test_update_with_change_set_with_status_defunct(
-        self, mock_get_env, mock_uuid1, mock_getcwd
-    ):
-        mock_getcwd.return_value = sentinel.cwd
-        mock_get_env.return_value.stacks["vpc"].wait_for_cs_completion\
-            .return_value = StackChangeSetStatus.DEFUNCT
-        mock_get_env.return_value.stacks["vpc"].describe_change_set\
-            .return_value = "description"
+    def test_update_with_change_set_with_status_defunct(self, mock_uuid1):
+        self.mock_stack.wait_for_cs_completion.return_value = \
+            StackChangeSetStatus.DEFUNCT
+        self.mock_stack.describe_change_set.return_value = "description"
         mock_uuid1().hex = "1"
         result = self.runner.invoke(
             cli, ["update-stack-cs", "dev", "vpc", "--verbose"]
         )
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].create_change_set\
-            .assert_called_with("change-set-1")
-        mock_get_env.return_value.stacks["vpc"].wait_for_cs_completion\
+        self.mock_config_reader.construct_stack.assert_called_with(
+            "dev/vpc.yaml"
+        )
+        self.mock_stack.create_change_set.assert_called_with("change-set-1")
+        self.mock_stack.wait_for_cs_completion\
             .assert_called_with("change-set-1")
         assert result.exit_code == 1
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_describe_stack_outputs(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
+    def test_describe_stack_outputs(self):
         self.runner.invoke(cli, ["describe-stack-outputs", "dev", "vpc"])
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].describe_outputs\
-            .assert_called_with()
+        self.mock_config_reader.construct_stack.assert_called_with(
+            "dev/vpc.yaml"
+        )
+        self.mock_stack.describe_outputs.assert_called_with()
 
-    @patch("sceptre.cli.get_env")
-    def test_describe_stack_outputs_handles_envvar_flag(
-            self, mock_get_env
-    ):
-        mock_get_env.return_value.stacks["vpc"].describe_outputs\
+    def test_describe_stack_outputs_handles_envvar_flag(self):
+        self.mock_stack.describe_outputs\
             .return_value = [
                 {
                     "OutputKey": "key",
@@ -461,65 +403,38 @@ class TestCli(object):
         )
         assert result.output == "export SCEPTRE_key=value\n"
 
-    @patch("sceptre.cli.get_env")
-    def test_describe_env(self, mock_get_env):
-        mock_Environment = Mock()
-        mock_Environment.describe.return_value = {"stack": "status"}
-        mock_get_env.return_value = mock_Environment
-
+    def test_describe_env(self):
+        self.mock_environment.describe.return_value = {
+            "stack": "status"
+        }
         result = self.runner.invoke(cli, ["describe-env", "dev"])
         assert result.output == "stack: status\n\n"
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_set_stack_policy_with_file_flag(
-        self, mock_get_env, mock_getcwd
-    ):
-        mock_getcwd.return_value = sentinel.cwd
+    def test_set_stack_policy_with_file_flag(self):
+        policy_file = "tests/fixtures/stack_policies/lock.json"
         self.runner.invoke(cli, [
             "set-stack-policy", "dev", "vpc",
-            "--policy-file=tests/fixtures/stack_policies/lock.json"
+            "--policy-file=" + policy_file
         ])
-        mock_Environment = Mock()
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value = mock_Environment
+        self.mock_config_reader.construct_stack.assert_called_with(
+            "dev/vpc.yaml"
+        )
+        self.mock_stack.set_policy.assert_called_with(policy_file)
 
-    @patch("sceptre.cli.get_env")
-    def test_get_stack_policy_with_existing_policy(self, mock_get_env):
-        mock_get_env.return_value.stacks["vpc"].get_policy\
-            .return_value = {
-                "StackPolicyBody": "policy"
-            }
+    def test_get_stack_policy_with_existing_policy(self):
+        self.mock_stack.get_policy.return_value = {"StackPolicyBody": "policy"}
 
         result = self.runner.invoke(cli, ["get-stack-policy", "dev", "vpc"])
         assert result.output == "policy\n"
 
-    @patch("sceptre.cli.get_env")
-    def test_get_stack_policy_without_existing_policy(
-            self, mock_get_env
-    ):
-        mock_get_env.return_value.stacks["vpc"].get_policy\
-            .return_value = {}
+    def test_get_stack_policy_without_existing_policy(self):
+        self.mock_stack.get_policy.return_value = {}
 
         result = self.runner.invoke(cli, ["get-stack-policy", "dev", "vpc"])
         assert result.output == "{}\n"
 
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.Environment")
-    def test_get_env(self, mock_Environment, mock_getcwd):
-        mock_Environment.return_value = sentinel.environment
-        mock_getcwd.return_value = sentinel.cwd
-        response = sceptre.cli.get_env(
-            sentinel.cwd, sentinel.environment_path, sentinel.options
-        )
-        mock_Environment.assert_called_once_with(
-            sceptre_dir=sentinel.cwd,
-            environment_path=sentinel.environment_path,
-            options=sentinel.options
-        )
-        assert response == sentinel.environment
-
     def test_init_project_non_existant(self):
+        self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():
             sceptre_dir = os.path.abspath('./example')
             config_dir = os.path.join(sceptre_dir, "config")
@@ -540,8 +455,10 @@ class TestCli(object):
                 config = yaml.load(config_file)
 
             assert config == defaults
+        self.patcher_getcwd.start()
 
     def test_init_project_already_exist(self):
+        self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():
             sceptre_dir = os.path.abspath('./example')
             config_dir = os.path.join(sceptre_dir, "config")
@@ -565,6 +482,7 @@ class TestCli(object):
             with open(os.path.join(config_dir, "config.yaml")) as config_file:
                 config = yaml.load(config_file)
             assert existing_config == config
+        self.patcher_getcwd.start()
 
     @pytest.mark.parametrize("environment,config_structure,stdin,result", [
         (
@@ -602,6 +520,7 @@ class TestCli(object):
     def test_init_environment(
         self, environment, config_structure, stdin, result
     ):
+        self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():
             sceptre_dir = os.path.abspath('./example')
             config_dir = os.path.join(sceptre_dir, "config")
@@ -639,6 +558,7 @@ class TestCli(object):
                 assert cmd_result.output.endswith(
                     "No config.yaml file needed - covered by parent config.\n"
                 )
+            self.patcher_getcwd.start()
 
     def test_setup_logging_with_debug(self):
         logger = sceptre.cli.setup_logging(True, False)

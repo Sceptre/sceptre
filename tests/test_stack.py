@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from mock import patch, sentinel, Mock, MagicMock
+from mock import patch, sentinel, MagicMock
 
 import datetime
 from dateutil.tz import tzutc
 
 from botocore.exceptions import ClientError
 
-from sceptre.config import Config
 from sceptre.stack import Stack
 from sceptre.template import Template
 from sceptre.stack_status import StackStatus
@@ -22,150 +21,78 @@ from sceptre.exceptions import ProtectedStackError
 
 class TestStack(object):
 
-    @patch("sceptre.stack.Stack.config")
-    def setup_method(self, test_method, mock_config):
-        self.mock_environment_config = MagicMock(spec=Config)
-        self.mock_environment_config.environment_path = sentinel.path
-        # environment config is an object which inherits from dict. Its
-        # attributes are accessable via dot and square bracket notation.
-        # In order to mimic the behaviour of the square bracket notation,
-        # a side effect is used to return the expected value from the call to
-        # __getitem__ that the square bracket notation makes.
-        self.mock_environment_config.__getitem__.side_effect = [
-            sentinel.project_code,
-            sentinel.region
-        ]
-        self.mock_connection_manager = Mock()
-
-        self.stack = Stack(
-            name="stack_name",
-            environment_config=self.mock_environment_config,
-            connection_manager=self.mock_connection_manager
+    def setup_method(self, test_method):
+        self.patcher_connection_manager = patch(
+            "sceptre.stack.ConnectionManager"
         )
+        self.mock_ConnectionManager = self.patcher_connection_manager.start()
+        self.stack = Stack(
+            name=sentinel.stack_name, project_code=sentinel.project_code,
+            template_path=sentinel.template_path, region=sentinel.region,
+            iam_role=sentinel.iam_role, parameters=sentinel.parameters,
+            sceptre_user_data=sentinel.sceptre_user_data, hooks={},
+            s3_details=None, dependencies=sentinel.dependencies,
+            role_arn=sentinel.role_arn, protected=False,
+            tags={"tag1": "val1"}, external_name=sentinel.external_name
+        )
+        self.stack._template = MagicMock(spec=Template)
 
-        # Set default value for stack properties
-        self.stack._external_name = sentinel.external_name
+    def teardown_method(self, test_method):
+        self.patcher_connection_manager.stop()
 
     def test_initiate_stack(self):
-        assert self.stack.name == "stack_name"
-        assert self.stack.environment_config == self.mock_environment_config
-        assert self.stack.project == sentinel.project_code
-        assert self.stack._environment_path == sentinel.path
-        assert self.stack._config is None
-        assert self.stack._template is None
-        assert self.stack.region == sentinel.region
-        assert self.stack.connection_manager == self.mock_connection_manager
-        assert self.stack._hooks is None
-        assert self.stack._dependencies is None
-
-    @patch("sceptre.stack.Stack.config")
-    def test_initialiser_calls_correct_methods(self, mock_config):
-        mock_config.get.return_value = sentinel.hooks
-        self.stack._config = {
-            "parameters": sentinel.parameters,
-            "hooks": sentinel.hooks
-        }
-        self.mock_environment_config = MagicMock(spec=Config)
-        self.mock_environment_config.environment_path = sentinel.path
-        # environment config is an object which inherits from dict. Its
-        # attributes are accessable via dot and square bracket notation.
-        # In order to mimic the behaviour of the square bracket notation,
-        # a side effect is used to return the expected value from the call to
-        # __getitem__ that the square bracket notation makes.
-        self.mock_environment_config.__getitem__.side_effect = [
-            sentinel.project_code,
-            sentinel.template_bucket_name,
-            sentinel.region
-        ]
-
-        Stack(
-            name=sentinel.name,
-            environment_config=self.mock_environment_config,
-            connection_manager=sentinel.connection_manager
+        stack = Stack(
+            name=sentinel.stack_name, project_code=sentinel.project_code,
+            template_path=sentinel.template_path, region=sentinel.region,
+            external_name=sentinel.external_name
         )
+        self.mock_ConnectionManager.assert_called_with(
+            sentinel.region, None
+        )
+        assert stack.name == sentinel.stack_name
+        assert stack.project_code == sentinel.project_code
+        assert stack.external_name == sentinel.external_name
+        assert stack.hooks == {}
+        assert stack.parameters == {}
+        assert stack.sceptre_user_data == {}
+        assert stack.template_path == sentinel.template_path
+        assert stack.s3_details is None
+        assert stack._template is None
+        assert stack.protected is False
+        assert stack.role_arn is None
+        assert stack.dependencies == []
+        assert stack.tags == {}
 
     def test_repr(self):
-        self.stack.name = "stack_name"
-        self.stack.environment_config = {"key": "val"}
-        self.stack.connection_manager = "connection_manager"
+        self.stack.connection_manager.region = sentinel.region
+        self.stack.connection_manager.iam_role = None
+
         assert self.stack.__repr__() == \
-            "sceptre.stack.Stack(stack_name='stack_name', \
-environment_config={'key': 'val'}, connection_manager=connection_manager)"
-
-    @patch("sceptre.stack.Config")
-    def test_config_loads_config(self, mock_Config):
-        self.stack._config = None
-        self.stack.name = "stack"
-        # self.stack.environment_config = MagicMock(spec=Config)
-        self.stack.environment_config.sceptre_dir = sentinel.sceptre_dir
-        self.stack.environment_config.environment_path = \
-            sentinel.environment_path
-        self.stack.environment_config.get.return_value = \
-            sentinel.user_variables
-        mock_config = Mock()
-        mock_Config.with_yaml_constructors.return_value = mock_config
-
-        response = self.stack.config
-        mock_Config.with_yaml_constructors.assert_called_once_with(
-            sceptre_dir=sentinel.sceptre_dir,
-            environment_path=sentinel.environment_path,
-            base_file_name="stack",
-            environment_config=self.stack.environment_config,
-            connection_manager=self.stack.connection_manager
-        )
-        mock_config.read.assert_called_once_with(sentinel.user_variables)
-        assert response == mock_config
-
-    def test_config_returns_config_if_it_exists(self):
-        self.stack._config = sentinel.config
-        response = self.stack.config
-        assert response == sentinel.config
-
-    def test_dependencies_loads_dependencies(self):
-        self.stack.name = "dev/security-group"
-        self.stack._config = {
-            "dependencies": ["dev/vpc", "dev/vpc", "dev/subnets"]
-        }
-        dependencies = self.stack.dependencies
-        assert dependencies == set(["dev/vpc", "dev/subnets"])
-
-    def test_dependencies_returns_dependencies_if_it_exists(self):
-        self.stack._dependencies = sentinel.dependencies
-        response = self.stack.dependencies
-        assert response == sentinel.dependencies
-
-    def test_hooks_with_no_cache(self):
-        self.stack._hooks = None
-        self.stack._config = {}
-        self.stack._config["hooks"] = sentinel.hooks
-
-        assert self.stack.hooks == sentinel.hooks
-
-    def test_hooks_with_cache(self):
-        self.stack._hooks = sentinel.hooks
-        assert self.stack.hooks == sentinel.hooks
+            "sceptre.stack.Stack(" \
+            "name='sentinel.stack_name', " \
+            "project_code='sentinel.project_code', " \
+            "template_path='sentinel.template_path', " \
+            "region='sentinel.region', " \
+            "iam_role='None', parameters='sentinel.parameters', " \
+            "sceptre_user_data='sentinel.sceptre_user_data', " \
+            "hooks='{}', s3_details='None', " \
+            "dependencies='sentinel.dependencies', "\
+            "role_arn='sentinel.role_arn', " \
+            "protected='False', tags='{'tag1': 'val1'}', " \
+            "external_name='sentinel.external_name'" \
+            ")"
 
     @patch("sceptre.stack.Template")
     def test_template_loads_template(self, mock_Template):
         self.stack._template = None
-        self.stack.environment_config.sceptre_dir = "sceptre_dir"
-        self.stack.environment_config.get.return_value = None
-        self.stack._environment_path = "path"
-        self.stack.project = "project"
-
-        self.stack._config = {
-            "template_path": "template_path",
-            "sceptre_user_data": sentinel.sceptre_user_data
-        }
         mock_Template.return_value = sentinel.template
-
         response = self.stack.template
 
         mock_Template.assert_called_once_with(
-            path="sceptre_dir/template_path",
+            path=sentinel.template_path,
             sceptre_user_data=sentinel.sceptre_user_data,
             connection_manager=self.stack.connection_manager,
-            s3_props=None
+            s3_details=None
         )
         assert response == sentinel.template
 
@@ -174,24 +101,14 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         response = self.stack.template
         assert response == sentinel.template
 
-    @patch("sceptre.stack.get_external_stack_name")
-    def test_external_name_with_custom_stack_name(
-            self, mock_get_external_stack_name
-    ):
-        self.stack._external_name = None
+    def test_external_name_with_custom_stack_name(self):
+        stack = Stack(
+            name="stack_name", project_code="project_code",
+            template_path="template_path", region="region",
+            external_name="external_name"
+        )
 
-        self.stack._config = {"stack_name": "custom_stack_name"}
-        external_name = self.stack.external_name
-        assert external_name == "custom_stack_name"
-
-    def test_external_name_without_custom_name(self):
-        self.stack._external_name = None
-        self.stack.project = "project"
-        self.stack.name = "stack-name"
-        self.stack._config = {}
-
-        external_name = self.stack.external_name
-        assert external_name == "project-stack-name"
+        assert stack.external_name == "external_name"
 
     @patch("sceptre.stack.Stack._format_parameters")
     @patch("sceptre.stack.Stack._wait_for_completion")
@@ -199,19 +116,10 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         self, mock_wait_for_completion, mock_format_params
     ):
         mock_format_params.return_value = sentinel.parameters
-        self.stack._template = Mock(spec=Template)
         self.stack._template.get_boto_call_parameter.return_value = {
             "Template": sentinel.template
         }
-        self.stack.environment_config = {
-            "template_bucket_name": sentinel.template_bucket_name,
-            "template_key_prefix": sentinel.template_key_prefix
-        }
-        self.stack._config = {"stack_tags": {
-            "tag1": "val1"
-        }}
-        self.stack._hooks = {}
-        self.stack.config["role_arn"] = sentinel.role_arn
+
         self.stack.create()
 
         self.stack.connection_manager.call.assert_called_with(
@@ -236,19 +144,9 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         self, mock_wait_for_completion, mock_format_params
     ):
         mock_format_params.return_value = sentinel.parameters
-        self.stack._template = Mock(spec=Template)
         self.stack._template.get_boto_call_parameter.return_value = {
             "Template": sentinel.template
         }
-        self.stack.environment_config = {
-            "template_bucket_name": sentinel.template_bucket_name,
-            "template_key_prefix": sentinel.template_key_prefix
-        }
-        self.stack._config = {"stack_tags": {
-            "tag1": "val1"
-        }}
-        self.stack._hooks = {}
-        self.stack.config["role_arn"] = sentinel.role_arn
 
         self.stack.update()
         self.stack.connection_manager.call.assert_called_with(
@@ -267,27 +165,23 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         )
         mock_wait_for_completion.assert_called_once_with()
 
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.create")
     @patch("sceptre.stack.Stack.get_status")
     def test_launch_with_stack_that_does_not_exist(
-            self, mock_get_status, mock_create, mock_hooks
+            self, mock_get_status, mock_create
     ):
-        self.stack._config = {"protect": False}
         mock_get_status.side_effect = StackDoesNotExistError()
         mock_create.return_value = sentinel.launch_response
         response = self.stack.launch()
         mock_create.assert_called_once_with()
         assert response == sentinel.launch_response
 
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.create")
     @patch("sceptre.stack.Stack.delete")
     @patch("sceptre.stack.Stack.get_status")
     def test_launch_with_stack_that_failed_to_create(
-            self, mock_get_status, mock_delete, mock_create, mock_hooks
+            self, mock_get_status, mock_delete, mock_create
     ):
-        self.stack._config = {"protect": False}
         mock_get_status.return_value = "CREATE_FAILED"
         mock_create.return_value = sentinel.launch_response
         response = self.stack.launch()
@@ -295,26 +189,22 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         mock_create.assert_called_once_with()
         assert response == sentinel.launch_response
 
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.update")
     @patch("sceptre.stack.Stack.get_status")
     def test_launch_with_complete_stack_with_updates_to_perform(
-            self, mock_get_status, mock_update, mock_hooks
+            self, mock_get_status, mock_update
     ):
-        self.stack._config = {"protect": False}
         mock_get_status.return_value = "CREATE_COMPLETE"
         mock_update.return_value = sentinel.launch_response
         response = self.stack.launch()
         mock_update.assert_called_once_with()
         assert response == sentinel.launch_response
 
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.update")
     @patch("sceptre.stack.Stack.get_status")
     def test_launch_with_complete_stack_with_no_updates_to_perform(
-            self, mock_get_status, mock_update, mock_hooks
+            self, mock_get_status, mock_update
     ):
-        self.stack._config = {"protect": False}
         mock_get_status.return_value = "CREATE_COMPLETE"
         mock_update.side_effect = ClientError(
             {
@@ -329,13 +219,11 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         mock_update.assert_called_once_with()
         assert response == StackStatus.COMPLETE
 
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.update")
     @patch("sceptre.stack.Stack.get_status")
     def test_launch_with_complete_stack_with_unknown_client_error(
-            self, mock_get_status, mock_update, mock_hooks
+            self, mock_get_status, mock_update
     ):
-        self.stack._config = {"protect": False}
         mock_get_status.return_value = "CREATE_COMPLETE"
         mock_update.side_effect = ClientError(
             {
@@ -349,42 +237,32 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         with pytest.raises(ClientError):
             self.stack.launch()
 
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.get_status")
-    def test_launch_with_in_progress_stack(self, mock_get_status, mock_hooks):
-        self.stack._config = {"protect": False}
+    def test_launch_with_in_progress_stack(self, mock_get_status):
         mock_get_status.return_value = "CREATE_IN_PROGRESS"
         response = self.stack.launch()
         assert response == StackStatus.IN_PROGRESS
 
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.get_status")
-    def test_launch_with_failed_stack(self, mock_get_status, mock_hooks):
-        self.stack._config = {"protect": False}
+    def test_launch_with_failed_stack(self, mock_get_status):
         mock_get_status.return_value = "UPDATE_FAILED"
         with pytest.raises(CannotUpdateFailedStackError):
             response = self.stack.launch()
             assert response == StackStatus.FAILED
 
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.get_status")
-    def test_launch_with_unknown_stack_status(
-            self, mock_get_status, mock_hooks
-    ):
-        self.stack._config = {"protect": False}
+    def test_launch_with_unknown_stack_status(self, mock_get_status):
         mock_get_status.return_value = "UNKNOWN_STATUS"
         with pytest.raises(UnknownStackStatusError):
             self.stack.launch()
 
     @patch("sceptre.stack.Stack._wait_for_completion")
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.get_status")
     def test_delete_with_created_stack(
-            self, mock_get_status, mock_hooks, mock_wait_for_completion
+            self, mock_get_status, mock_wait_for_completion
     ):
-        self.stack._config = {"protect": False}
         mock_get_status.return_value = "CREATE_COMPLETE"
-        self.stack.config["role_arn"] = sentinel.role_arn
+
         self.stack.delete()
         self.stack.connection_manager.call.assert_called_with(
             service="cloudformation",
@@ -396,27 +274,21 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         )
 
     @patch("sceptre.stack.Stack._wait_for_completion")
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.get_status")
     def test_delete_when_wait_for_completion_raises_stack_does_not_exist_error(
-            self, mock_get_status, mock_hooks, mock_wait_for_completion
+            self, mock_get_status, mock_wait_for_completion
     ):
-        self.stack._config = {"protect": False}
         mock_get_status.return_value = "CREATE_COMPLETE"
-        self.stack.config["role_arn"] = sentinel.role_arn
         mock_wait_for_completion.side_effect = StackDoesNotExistError()
         status = self.stack.delete()
         assert status == StackStatus.COMPLETE
 
     @patch("sceptre.stack.Stack._wait_for_completion")
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.get_status")
     def test_delete_when_wait_for_completion_raises_non_existent_client_error(
-            self, mock_get_status, mock_hooks, mock_wait_for_completion
+            self, mock_get_status, mock_wait_for_completion
     ):
-        self.stack._config = {"protect": False}
         mock_get_status.return_value = "CREATE_COMPLETE"
-        self.stack.config["role_arn"] = sentinel.role_arn
         mock_wait_for_completion.side_effect = ClientError(
             {
                 "Error": {
@@ -430,14 +302,11 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         assert status == StackStatus.COMPLETE
 
     @patch("sceptre.stack.Stack._wait_for_completion")
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.get_status")
     def test_delete_when_wait_for_completion_raises_unexpected_client_error(
-            self, mock_get_status, mock_hooks, mock_wait_for_completion
+            self, mock_get_status, mock_wait_for_completion
     ):
-        self.stack._config = {"protect": False}
         mock_get_status.return_value = "CREATE_COMPLETE"
-        self.stack.config["role_arn"] = sentinel.role_arn
         mock_wait_for_completion.side_effect = ClientError(
             {
                 "Error": {
@@ -451,12 +320,10 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             self.stack.delete()
 
     @patch("sceptre.stack.Stack._wait_for_completion")
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.get_status")
     def test_delete_with_non_existent_stack(
-            self, mock_get_status, mock_hooks, mock_wait_for_completion
+            self, mock_get_status, mock_wait_for_completion
     ):
-        self.stack._config = {"protect": False}
         mock_get_status.side_effect = StackDoesNotExistError()
         status = self.stack.delete()
         assert status == StackStatus.COMPLETE
@@ -522,10 +389,6 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         assert response == []
 
     def test_continue_update_rollback_sends_correct_request(self):
-        self.stack._config = {
-            "template_path": sentinel.template_path,
-        }
-        self.stack.config["role_arn"] = sentinel.role_arn
         self.stack.continue_update_rollback()
         self.stack.connection_manager.call.assert_called_with(
             service="cloudformation",
@@ -570,18 +433,9 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
     @patch("sceptre.stack.Stack._format_parameters")
     def test_create_change_set_sends_correct_request(self, mock_format_params):
         mock_format_params.return_value = sentinel.parameters
-        self.stack._template = Mock(spec=Template)
         self.stack._template.get_boto_call_parameter.return_value = {
             "Template": sentinel.template
         }
-        self.stack.environment_config = {
-            "template_bucket_name": sentinel.template_bucket_name,
-            "template_key_prefix": sentinel.template_key_prefix
-        }
-        self.stack._config = {
-            "stack_tags": {"tag1": "val1"}
-        }
-        self.stack.config["role_arn"] = sentinel.role_arn
 
         self.stack.create_change_set(sentinel.change_set_name)
         self.stack.connection_manager.call.assert_called_with(
@@ -626,7 +480,6 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
     def test_execute_change_set_sends_correct_request(
         self, mock_wait_for_completion
     ):
-        self.stack._config = {"protect": False}
         self.stack.execute_change_set(sentinel.change_set_name)
         self.stack.connection_manager.call.assert_called_with(
             service="cloudformation",
@@ -789,32 +642,21 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             self.stack.get_status()
 
     def test_get_role_arn_without_role(self):
-        self.stack._template = Mock(spec=Template)
-        self.stack._config = {
-            "template_path": sentinel.template_path,
-        }
+        self.stack.role_arn = None
         assert self.stack._get_role_arn() == {}
 
     def test_get_role_arn_with_role(self):
-        self.stack._template = Mock(spec=Template)
-        self.stack._config = {
-            "template_path": sentinel.template_path,
-        }
-        self.stack.config["role_arn"] = sentinel.role_arn
         assert self.stack._get_role_arn() == {"RoleARN": sentinel.role_arn}
 
     def test_protect_execution_without_protection(self):
-        self.stack._config = {"protect": False}
         # Function should do nothing if protect == False
         self.stack._protect_execution()
 
     def test_protect_execution_without_explicit_protection(self):
-        self.stack._config = {}
-        # Function should do nothing if protect isn't explicitly set
         self.stack._protect_execution()
 
     def test_protect_execution_with_protection(self):
-        self.stack._config = {"protect": True}
+        self.stack.protected = True
         with pytest.raises(ProtectedStackError):
             self.stack._protect_execution()
 
@@ -857,6 +699,7 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
 
     @patch("sceptre.stack.Stack.describe_events")
     def test_log_new_events_prints_correct_event(self, mock_describe_events):
+        self.stack.name = "stack-name"
         mock_describe_events.return_value = {
             "StackEvents": [
                 {

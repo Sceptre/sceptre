@@ -1,0 +1,9 @@
+template_path: path/to/template
+parameters:
+  param1: !environment_variable example
+  param2:
+    param3: !environment_variable example
+    param4: !environment_variable example
+  param5:
+    - param6: !environment_variable example
+    - param7: !environment_variable example

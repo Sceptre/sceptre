@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from mock import MagicMock, Mock, patch, sentinel
+from mock import MagicMock, patch, sentinel
 
-from sceptre.config import Config
-from sceptre.resolvers.stack_output import \
-    StackOutput, StackOutputExternal, StackOutputBase
 from sceptre.exceptions import DependencyStackMissingOutputError
 from sceptre.exceptions import StackDoesNotExistError
 from botocore.exceptions import ClientError
+
+from sceptre.connection_manager import ConnectionManager
+from sceptre.resolvers.stack_output import \
+    StackOutput, StackOutputExternal, StackOutputBase
+from sceptre.stack import Stack
 
 
 class TestStackOutputResolver(object):
@@ -16,26 +18,42 @@ class TestStackOutputResolver(object):
     @patch(
         "sceptre.resolvers.stack_output.StackOutput._get_output_value"
     )
-    def test_resolve(self, mock_get_output_value):
-        mock_environment_config = MagicMock(spec=Config)
-        mock_stack_config = MagicMock(spec=Config)
-        mock_environment_config.__getitem__.return_value = "project-code"
-        mock_stack_config.__getitem__.return_value = []
-
+    def test_resolver(self, mock_get_output_value):
+        stack = MagicMock(spec=Stack)
+        stack.dependencies = []
+        stack.project_code = "project-code"
+        stack.connection_manager = MagicMock(spec=ConnectionManager)
         stack_output_resolver = StackOutput(
-            environment_config=mock_environment_config,
-            stack_config=mock_stack_config,
-            connection_manager=sentinel.connection_manager,
-            argument="account/dev/vpc::VpcId"
+            "account/dev/vpc::VpcId", stack
         )
-
         mock_get_output_value.return_value = "output_value"
 
-        stack_output_resolver.resolve()
-
+        result = stack_output_resolver.resolve()
+        assert result == "output_value"
         mock_get_output_value.assert_called_once_with(
             "project-code-account-dev-vpc", "VpcId"
         )
+        assert stack.dependencies == ["account/dev/vpc"]
+
+    @patch(
+        "sceptre.resolvers.stack_output.StackOutput._get_output_value"
+    )
+    def test_resolver_with_existing_dependencies(self, mock_get_output_value):
+        stack = MagicMock(spec=Stack)
+        stack.dependencies = ["existing"]
+        stack.project_code = "project-code"
+        stack.connection_manager = MagicMock(spec=ConnectionManager)
+        stack_output_resolver = StackOutput(
+            "account/dev/vpc::VpcId", stack
+        )
+        mock_get_output_value.return_value = "output_value"
+
+        result = stack_output_resolver.resolve()
+        assert result == "output_value"
+        mock_get_output_value.assert_called_once_with(
+            "project-code-account-dev-vpc", "VpcId"
+        )
+        assert stack.dependencies == ["existing", "account/dev/vpc"]
 
     @patch(
         "sceptre.resolvers.stack_output.StackOutput._get_output_value"
@@ -43,55 +61,40 @@ class TestStackOutputResolver(object):
     def test_resolve_with_implicit_stack_reference(
         self, mock_get_output_value
     ):
-        mock_environment_config = MagicMock(spec=Config)
-        mock_stack_config = MagicMock(spec=Config)
-        mock_environment_config.__getitem__.return_value = "project-code"
-        mock_stack_config.environment_path = "account/dev"
-        mock_stack_config.__getitem__.return_value = []
-
-        stack_output_resolver = StackOutput(
-            environment_config=mock_environment_config,
-            stack_config=mock_stack_config,
-            connection_manager=sentinel.connection_manager,
-            argument="vpc::VpcId"
-        )
-
+        stack = MagicMock(spec=Stack)
+        stack.dependencies = []
+        stack.project_code = "project-code"
+        stack.name = "account/dev/stack"
+        stack.connection_manager = MagicMock(spec=ConnectionManager)
+        stack_output_resolver = StackOutput("vpc::VpcId", stack)
         mock_get_output_value.return_value = "output_value"
 
-        stack_output_resolver.resolve()
-
+        result = stack_output_resolver.resolve()
+        assert result == "output_value"
         mock_get_output_value.assert_called_once_with(
             "project-code-account-dev-vpc", "VpcId"
         )
+        assert stack.dependencies == ["account/dev/vpc"]
 
 
 class TestStackOutputExternalResolver(object):
-
-    def setup_method(self, test_method):
-        self.stack_output_resolver = StackOutputExternal(
-            environment_config=sentinel.environment_config,
-            stack_config=sentinel.config,
-            connection_manager=sentinel.connection_manager,
-            argument=None
-        )
 
     @patch(
         "sceptre.resolvers.stack_output.StackOutputExternal._get_output_value"
     )
     def test_resolve(self, mock_get_output_value):
-        mock_environment_config = MagicMock(spec=Config)
-        mock_environment_config.__getitem__.return_value = "project-code"
-        mock_environment_config.environment_path = "account/dev"
-        self.stack_output_resolver.environment_config = mock_environment_config
-        self.stack_output_resolver.argument = "vpc::VpcId"
-
-        mock_get_output_value.return_value = "output_value"
-
-        self.stack_output_resolver.resolve()
-
-        mock_get_output_value.assert_called_once_with(
-            "vpc", "VpcId"
+        stack = MagicMock(spec=Stack)
+        stack.dependencies = []
+        stack.connection_manager = MagicMock(spec=ConnectionManager)
+        stack_output_external_resolver = StackOutputExternal(
+            "another/account-vpc::VpcId", stack
         )
+        mock_get_output_value.return_value = "output_value"
+        stack_output_external_resolver.resolve()
+        mock_get_output_value.assert_called_once_with(
+            "another/account-vpc", "VpcId"
+        )
+        assert stack.dependencies == []
 
 
 class MockStackOutputBase(StackOutputBase):
@@ -111,11 +114,10 @@ class MockStackOutputBase(StackOutputBase):
 class TestStackOutputBaseResolver(object):
 
     def setup_method(self, test_method):
-        self.mock_base_stack_output_resolver = MockStackOutputBase(
-            environment_config=sentinel.environment_config,
-            stack_config=sentinel.config,
-            connection_manager=sentinel.connection_manager,
-            argument=None
+        self.stack = MagicMock(spec=Stack)
+        self.stack.connection_manager = MagicMock(spec=ConnectionManager)
+        self.base_stack_output_resolver = MockStackOutputBase(
+            None, self.stack
         )
 
     @patch(
@@ -124,7 +126,7 @@ class TestStackOutputBaseResolver(object):
     def test_get_output_value_with_valid_key(self, mock_get_stack_outputs):
         mock_get_stack_outputs.return_value = {"key": "value"}
 
-        response = self.mock_base_stack_output_resolver._get_output_value(
+        response = self.base_stack_output_resolver._get_output_value(
             sentinel.stack_name, "key"
         )
 
@@ -137,13 +139,12 @@ class TestStackOutputBaseResolver(object):
         mock_get_stack_outputs.return_value = {"key": "value"}
 
         with pytest.raises(DependencyStackMissingOutputError):
-            self.mock_base_stack_output_resolver._get_output_value(
+            self.base_stack_output_resolver._get_output_value(
                 sentinel.stack_name, "invalid_key"
             )
 
     def test_get_stack_outputs_with_valid_stack(self):
-        mock_connection_manager = Mock()
-        mock_connection_manager.call.return_value = {
+        self.stack.connection_manager.call.return_value = {
             "Stacks": [{
                 "Outputs": [
                     {
@@ -159,10 +160,8 @@ class TestStackOutputBaseResolver(object):
                 ]
             }]
         }
-        self.mock_base_stack_output_resolver.connection_manager = \
-            mock_connection_manager
 
-        response = self.mock_base_stack_output_resolver._get_stack_outputs(
+        response = self.base_stack_output_resolver._get_stack_outputs(
             sentinel.stack_name
         )
         assert response == {
@@ -171,8 +170,7 @@ class TestStackOutputBaseResolver(object):
         }
 
     def test_get_stack_outputs_with_unlaunched_stack(self):
-        mock_connection_manager = Mock()
-        mock_connection_manager.call.side_effect = ClientError(
+        self.stack.connection_manager.call.side_effect = ClientError(
             {
                 "Error": {
                     "Code": "404",
@@ -181,17 +179,14 @@ class TestStackOutputBaseResolver(object):
             },
             sentinel.operation
         )
-        self.mock_base_stack_output_resolver.connection_manager = \
-            mock_connection_manager
 
         with pytest.raises(StackDoesNotExistError):
-            self.mock_base_stack_output_resolver._get_stack_outputs(
+            self.base_stack_output_resolver._get_stack_outputs(
                 sentinel.stack_name
             )
 
     def test_get_stack_outputs_with_unkown_boto_error(self):
-        mock_connection_manager = Mock()
-        mock_connection_manager.call.side_effect = ClientError(
+        self.stack.connection_manager.call.side_effect = ClientError(
             {
                 "Error": {
                     "Code": "500",
@@ -200,10 +195,8 @@ class TestStackOutputBaseResolver(object):
             },
             sentinel.operation
         )
-        self.mock_base_stack_output_resolver.connection_manager = \
-            mock_connection_manager
 
         with pytest.raises(ClientError):
-            self.mock_base_stack_output_resolver._get_stack_outputs(
+            self.base_stack_output_resolver._get_stack_outputs(
                 sentinel.stack_name
             )

@@ -45,7 +45,7 @@ class TestTemplate(object):
         representation = self.template.__repr__()
         assert representation == "sceptre.template.Template(" \
             "name='template', path='/folder/template.py'"\
-            ", sceptre_user_data={}, s3_props=None)"
+            ", sceptre_user_data={}, s3_details=None)"
 
     def test_body_with_cache(self):
         self.template._body = sentinel.body
@@ -54,10 +54,10 @@ class TestTemplate(object):
 
     @freeze_time("2012-01-01")
     @patch("sceptre.template.Template._bucket_exists")
-    def test_upload_to_s3_with_valid_s3_props(self, mock_bucket_exists):
+    def test_upload_to_s3_with_valid_s3_details(self, mock_bucket_exists):
         self.template._body = '{"template": "mock"}'
         mock_bucket_exists.return_value = True
-        self.template.s3_props = {
+        self.template.s3_details = {
             "bucket_name": "bucket-name",
             "bucket_key": "bucket-key"
         }
@@ -80,7 +80,7 @@ class TestTemplate(object):
     def test_bucket_exists_with_bucket_that_exists(self):
         # connection_manager.call doesn't raise an exception, mimicing the
         # behaviour when head_bucket successfully executes.
-        self.template.s3_props = {
+        self.template.s3_details = {
             "bucket_name": "bucket-name",
             "bucket_key": "bucket-key"
         }
@@ -89,7 +89,7 @@ class TestTemplate(object):
 
     def test_create_bucket_with_unreadable_bucket(self):
         self.template.connection_manager.region = "eu-west-1"
-        self.template.s3_props = {
+        self.template.s3_details = {
             "bucket_name": "bucket-name",
             "bucket_key": "bucket-key"
         }
@@ -111,7 +111,7 @@ class TestTemplate(object):
     def test_bucket_exists_with_non_existent_bucket(self):
         # connection_manager.call is called twice, and should throw the
         # Not Found ClientError only for the first call.
-        self.template.s3_props = {
+        self.template.s3_details = {
             "bucket_name": "bucket-name",
             "bucket_key": "bucket-key"
         }
@@ -137,7 +137,7 @@ class TestTemplate(object):
         # connection_manager.call is called twice, and should throw the
         # Not Found ClientError only for the first call.
         self.template.connection_manager.region = "us-east-1"
-        self.template.s3_props = {
+        self.template.s3_details = {
             "bucket_name": "bucket-name",
             "bucket_key": "bucket-key"
         }
@@ -151,10 +151,10 @@ class TestTemplate(object):
         )
 
     @patch("sceptre.template.Template.upload_to_s3")
-    def test_get_boto_call_parameter_with_s3_props(self, mock_upload_to_s3):
+    def test_get_boto_call_parameter_with_s3_details(self, mock_upload_to_s3):
         # self.stack._template = Mock(spec=Template)
         mock_upload_to_s3.return_value = sentinel.template_url
-        self.template.s3_props = {
+        self.template.s3_details = {
             "bucket_name": sentinel.bucket_name,
             "bucket_key": sentinel.bucket_key
         }
@@ -164,7 +164,7 @@ class TestTemplate(object):
         assert boto_parameter == {"TemplateURL": sentinel.template_url}
 
     def test_get_template_details_without_upload(self):
-        self.template.s3_props = None
+        self.template.s3_details = None
         self.template._body = sentinel.body
         boto_parameter = self.template.get_boto_call_parameter()
 

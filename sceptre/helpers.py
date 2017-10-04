@@ -37,27 +37,29 @@ def recurse_into_sub_environments(func):
     """
     @wraps(func)
     def decorated(self, *args, **kwargs):
-        if self.is_leaf:
-            return func(self, *args, **kwargs)
-        else:
-            function_name = func.__name__
-            responses = {}
-            num_environments = len(self.environments)
+        function_name = func.__name__
+        responses = {}
+        num_environments = len(self.environments)
 
-            # As commands carried out by sub-environments may be blocking,
-            # execute them on separate threads.
+        # As commands carried out by sub-environments may be blocking,
+        # execute them on separate threads.
+        if num_environments:
             with ThreadPoolExecutor(max_workers=num_environments) as executor:
                 futures = [
                     executor.submit(
                         getattr(environment, function_name), *args, **kwargs
                     )
-                    for environment in self.environments.values()
+                    for environment in self.environments
                 ]
                 for future in as_completed(futures):
                     response = future.result()
                     if response:
                         responses.update(response)
-            return responses
+
+        response = func(self, *args, **kwargs)
+        if response:
+            responses.update(response)
+        return responses
 
     return decorated
 

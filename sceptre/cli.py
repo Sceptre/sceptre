@@ -24,8 +24,7 @@ from boto3.exceptions import Boto3Error
 from botocore.exceptions import BotoCoreError, ClientError
 from jinja2.exceptions import TemplateError
 
-from .config import ENVIRONMENT_CONFIG_ATTRIBUTES
-from .environment import Environment
+from .config_reader import ENVIRONMENT_CONFIG_ATTRIBUTES, ConfigReader
 from .exceptions import SceptreException, ProjectAlreadyExistsError
 from .stack_status import StackStatus, StackChangeSetStatus
 from .stack_status_colourer import StackStatusColourer
@@ -127,7 +126,7 @@ def cli(
     # Enable deprecation warnings
     warnings.simplefilter("always", DeprecationWarning)
     ctx.obj = {
-        "options": {},
+        "templating_vars": {},
         "output_format": output,
         "no_colour": no_colour,
         "sceptre_dir": directory if directory else os.getcwd()
@@ -141,7 +140,7 @@ def cli(
             variable_key, variable_value = variable.split("=")
             user_variables.update({variable_key: variable_value})
     if user_variables:
-        ctx.obj["options"]["user_variables"] = user_variables
+        ctx.obj["templating_vars"] = user_variables
 
 
 @cli.command(name="validate-template")
@@ -154,8 +153,8 @@ def validate_template(ctx, environment, stack):
 
     Validates ENVIRONMENT/STACK's template.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    result = env.stacks[stack].template.validate()
+    stack = _get_stack(environment, stack)
+    result = stack.template.validate()
     write(result, ctx.obj["output_format"])
 
 
@@ -169,8 +168,8 @@ def generate_template(ctx, environment, stack):
 
     Prints ENVIRONMENT/STACK's template.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    template_output = env.stacks[stack].template.body
+    stack = _get_stack(environment, stack)
+    template_output = stack.template.body
     write(template_output)
 
 
@@ -184,8 +183,8 @@ def lock_stack(ctx, environment, stack):
 
     Applies a stack policy to ENVIRONMENT/STACK which prevents updates.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    env.stacks[stack].lock()
+    stack = _get_stack(environment, stack)
+    stack.lock()
 
 
 @cli.command(name="unlock-stack")
@@ -198,8 +197,8 @@ def unlock_stack(ctx, environment, stack):
 
     Applies a stack policy to ENVIRONMENT/STACK which allows updates.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    env.stacks[stack].unlock()
+    stack = _get_stack(environment, stack)
+    stack.unlock()
 
 
 # DESCRIBE RESOURCES should merge into "describe-resources"
@@ -213,7 +212,7 @@ def describe_env_resources(ctx, environment):
 
     Prints ENVIRONMENT's resources.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
+    env = _get_env(environment)
     responses = env.describe_resources()
 
     write(responses, ctx.obj["output_format"])
@@ -229,8 +228,8 @@ def describe_stack_resources(ctx, environment, stack):
 
     Prints ENVIRONMENT/STACK's resources.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    response = env.stacks[stack].describe_resources()
+    stack = _get_stack(environment, stack)
+    response = stack.describe_resources()
 
     write(response, ctx.obj["output_format"])
 
@@ -245,8 +244,8 @@ def create_stack(ctx, environment, stack):
 
     Creates ENVIRONMENT/STACK.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    response = env.stacks[stack].create()
+    stack = _get_stack(environment, stack)
+    response = stack.create()
     if response != StackStatus.COMPLETE:
         exit(1)
 
@@ -258,9 +257,10 @@ def create_stack(ctx, environment, stack):
 def delete_stack(ctx, environment, stack):
     """Deletes the stack.
 
-    Deletes ENVIRONMENT/STACK."""
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    response = env.stacks[stack].delete()
+    Deletes ENVIRONMENT/STACK.
+    """
+    stack = _get_stack(environment, stack)
+    response = stack.delete()
     if response != StackStatus.COMPLETE:
         exit(1)
 
@@ -275,8 +275,8 @@ def update_stack(ctx, environment, stack):
 
     Updates ENVIRONMENT/STACK.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    response = env.stacks[stack].update()
+    stack = _get_stack(environment, stack)
+    response = stack.update()
     if response != StackStatus.COMPLETE:
         exit(1)
 
@@ -291,8 +291,8 @@ def launch_stack(ctx, environment, stack):
 
     Creates or updates ENVIRONMENT/STACK.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    response = env.stacks[stack].launch()
+    stack = _get_stack(environment, stack)
+    response = stack.launch()
     if response != StackStatus.COMPLETE:
         exit(1)
 
@@ -307,7 +307,7 @@ def launch_env(ctx, environment):
 
     Creates or updates all the stacks in ENVIRONMENT.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
+    env = _get_env(environment)
     response = env.launch()
     if not all(status == StackStatus.COMPLETE for status in response.values()):
         exit(1)
@@ -323,7 +323,7 @@ def delete_env(ctx, environment):
 
     Deletes all the stacks in ENVIRONMENT.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
+    env = _get_env(environment)
     response = env.delete()
     if not all(status == StackStatus.COMPLETE for status in response.values()):
         exit(1)
@@ -340,8 +340,8 @@ def continue_update_rollback(ctx, environment, stack):
     If ENVIRONMENT/STACK is in the state UPDATE_ROLLBACK_FAILED, roll it
     back to the UPDATE_ROLLBACK_COMPLETE state.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    env.stacks[stack].continue_update_rollback()
+    stack = _get_stack(environment, stack)
+    stack.continue_update_rollback()
 
 
 @cli.command(name="create-change-set")
@@ -355,8 +355,8 @@ def create_change_set(ctx, environment, stack, change_set_name):
     Create a change set for ENVIRONMENT/STACK with the name
     CHANGE_SET_NAME.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    env.stacks[stack].create_change_set(change_set_name)
+    stack = _get_stack(environment, stack)
+    stack.create_change_set(change_set_name)
 
 
 @cli.command(name="delete-change-set")
@@ -369,8 +369,8 @@ def delete_change_set(ctx, environment, stack, change_set_name):
 
     Deletes ENVIRONMENT/STACK's change set with name CHANGE_SET_NAME.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    env.stacks[stack].delete_change_set(change_set_name)
+    stack = _get_stack(environment, stack)
+    stack.delete_change_set(change_set_name)
 
 
 @cli.command(name="describe-change-set")
@@ -384,8 +384,8 @@ def describe_change_set(ctx, environment, stack, change_set_name, verbose):
 
     Describes ENVIRONMENT/STACK's change set with name CHANGE_SET_NAME.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    description = env.stacks[stack].describe_change_set(change_set_name)
+    stack = _get_stack(environment, stack)
+    description = stack.describe_change_set(change_set_name)
     if not verbose:
         description = _simplify_change_set_description(description)
     write(description, ctx.obj["output_format"])
@@ -436,8 +436,8 @@ def execute_change_set(ctx, environment, stack, change_set_name):
 
     Executes ENVIRONMENT/STACK's change set with name CHANGE_SET_NAME.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    env.stacks[stack].execute_change_set(change_set_name)
+    stack = _get_stack(environment, stack)
+    stack.execute_change_set(change_set_name)
 
 
 @cli.command(name="list-change-sets")
@@ -450,8 +450,8 @@ def list_change_sets(ctx, environment, stack):
 
     Lists ENVIRONMENT/STACK's change sets.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    response = env.stacks[stack].list_change_sets()
+    stack = _get_stack(environment, stack)
+    response = stack.list_change_sets()
     formatted_response = {
         k: v
         for k, v in response.items()
@@ -472,18 +472,18 @@ def update_with_change_set(ctx, environment, stack, verbose):
     Creates a change set for ENVIRONMENT/STACK, prints out a description of the
     changes, and prompts the user to decide whether to execute or delete it.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
+    stack = _get_stack(environment, stack)
     change_set_name = "-".join(["change-set", uuid1().hex])
-    with change_set(env.stacks[stack], change_set_name):
-        status = env.stacks[stack].wait_for_cs_completion(change_set_name)
-        description = env.stacks[stack].describe_change_set(change_set_name)
+    with change_set(stack, change_set_name):
+        status = stack.wait_for_cs_completion(change_set_name)
+        description = stack.describe_change_set(change_set_name)
         if not verbose:
             description = _simplify_change_set_description(description)
         write(description, ctx.obj["output_format"])
         if status != StackChangeSetStatus.READY:
             exit(1)
         if click.confirm("Proceed with stack update?"):
-            env.stacks[stack].execute_change_set(change_set_name)
+            stack.execute_change_set(change_set_name)
 
 
 @contextlib.contextmanager
@@ -514,8 +514,8 @@ def describe_stack_outputs(ctx, environment, stack, export):
 
     Describes ENVIRONMENT/STACK's stack outputs.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    response = env.stacks[stack].describe_outputs()
+    stack = _get_stack(environment, stack)
+    response = stack.describe_outputs()
 
     if export == "envvar":
         write("\n".join(
@@ -540,7 +540,7 @@ def describe_env(ctx, environment):
 
     Describes ENVIRONMENT stack statuses.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
+    env = _get_env(environment)
     responses = env.describe()
     write(responses, ctx.obj["output_format"], ctx.obj["no_colour"])
 
@@ -556,8 +556,8 @@ def set_stack_policy(ctx, environment, stack, policy_file):
 
     Sets a specific ENVIRONMENT/STACK policy.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    env.stacks[stack].set_policy(policy_file)
+    stack = _get_stack(environment, stack)
+    stack.set_policy(policy_file)
 
 
 @cli.command(name="get-stack-policy")
@@ -570,8 +570,8 @@ def get_stack_policy(ctx, environment, stack):
 
     Prints ENVIRONMENT/STACK policy.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    response = env.stacks[stack].get_policy()
+    stack = _get_stack(environment, stack)
+    response = stack.get_policy()
 
     write(response.get('StackPolicyBody', {}))
 
@@ -735,24 +735,43 @@ def _create_config_file(config_dir, path, defaults={}):
         click.echo("No config.yaml file needed - covered by parent config.")
 
 
-def get_env(sceptre_dir, environment_path, options):
+@click.pass_context
+def _get_env(ctx, environment):
     """
     Initialises and returns a sceptre.environment.Environment().
 
     :param sceptre_dir: The absolute path to the Sceptre directory.
     :type project dir: str
-    :param environment_path: The name of the environment.
-    :type environment_path: str
-    :param options: A dict of key-value pairs to update self.config with.
-    :type debug: dict
+    :param environment: The name of the environment.
+    :type environment: str
     :returns: An Environment.
     :rtype: sceptre.environment.Environment
     """
-    return Environment(
-        sceptre_dir=sceptre_dir,
-        environment_path=environment_path,
-        options=options
+    config_reader = ConfigReader(
+        ctx.obj["sceptre_dir"], ctx.obj["templating_vars"]
     )
+    return config_reader.construct_environment(environment)
+
+
+@click.pass_context
+def _get_stack(ctx, environment, stack):
+    """
+    Initialises and returns a sceptre.stack.Stack().
+
+    :param sceptre_dir: The absolute path to the Sceptre directory.
+    :type project dir: str
+    :param environment: The name of the environment.
+    :type environment: str
+    :param stack: The name of the stack.
+    :type stack: str
+    :returns: An Stack.
+    :rtype: sceptre.stack.Stack
+    """
+    path = os.path.join(environment, stack) + ".yaml"
+    config_reader = ConfigReader(
+        ctx.obj["sceptre_dir"], ctx.obj["templating_vars"]
+    )
+    return config_reader.construct_stack(path)
 
 
 def setup_logging(debug, no_colour):
