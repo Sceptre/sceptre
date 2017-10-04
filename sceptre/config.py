@@ -178,7 +178,8 @@ class Config(dict):
                         environment_variable=os.environ,
                         var=user_variables,
                         environment_path=self.environment_path.split("/"),
-                        environment_config=environment_config
+                        environment_config=environment_config,
+                        stack_config=self
                     )
 
                     yaml_data = yaml.safe_load(rendered_template)
