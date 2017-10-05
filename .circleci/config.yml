@@ -9,7 +9,7 @@ jobs:
           name: 'Creating Virtualenv'
           command: virtualenv venv
       - restore_cache:
-          key: v2-requirements-{{ checksum "requirements.txt" }}
+          key: v2-requirements-{{ arch }}-{{ checksum "requirements.txt" }}
       - run:
           name: 'Installing Requirements'
           command: |
@@ -17,7 +17,7 @@ jobs:
             pip install -r requirements_tests.txt
             pip install awscli
       - save_cache:
-          key: v2-requirements-{{ checksum "requirements.txt" }}
+          key: v2-requirements-{{ arch }}-{{ checksum "requirements.txt" }}
           paths:
             - venv
       - run:
@@ -41,14 +41,14 @@ jobs:
             . ./venv/bin/activate
             make lint
       - restore_cache:
-          key: v1-tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
+          key: v1-tox-requirements-{{ arch }}-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
       - run:
           name: 'Unit Testing'
           command: |
             . ./venv/bin/activate
             make test-all
       - save_cache:
-          key: v1-tox-requirements-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
+          key: v1-tox-requirements-{{ arch }}-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
           paths:
             - .tox/py269
             - .tox/py27
@@ -87,14 +87,14 @@ jobs:
       - attach_workspace:
           at: /home/circleci
       - restore_cache:
-          key: v1-documentation-tools-{{ checksum "docs/Gemfile.lock" }}
+          key: v1-documentation-tools-{{ arch }}-{{ checksum "docs/Gemfile.lock" }}
       - run:
           name: 'Installing Documentation Tools'
           command: |
             . ./venv/bin/activate
             cd docs && make install
       - save_cache:
-          key: v1-documentation-tools-{{ checksum "docs/Gemfile.lock" }}
+          key: v1-documentation-tools-{{ arch }}-{{ checksum "docs/Gemfile.lock" }}
           paths:
             - docs/vendor
       - deploy:

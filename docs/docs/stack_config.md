@@ -130,6 +130,16 @@ Stack config can be cascaded in the same way Environment config can be, as descr
 
 Stack config supports templating in the same way Environment config can be, as described in the section in Environment Config on [Templating]({{ site.baseurl }}/docs/environment_config.html#templating).
 
+Stack config makes environment config available to template.
+
+### Environment config
+
+```yaml
+parameters:
+  Region: {{ environment_config.region }}
+```
+
+
 Environment Variables
 ---------------------
 

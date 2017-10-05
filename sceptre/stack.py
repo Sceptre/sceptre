@@ -97,7 +97,8 @@ class Stack(object):
                     connection_manager=self.connection_manager
                 )
                 self._config.read(
-                    self.environment_config.get("user_variables")
+                    self.environment_config.get("user_variables"),
+                    self.environment_config
                 )
 
         return self._config

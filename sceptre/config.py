@@ -140,7 +140,7 @@ class Config(dict):
                 )
             )
 
-    def read(self, user_variables=None):
+    def read(self, user_variables=None, environment_config=None):
         """
         Reads in configuration from files.
 
@@ -177,7 +177,8 @@ class Config(dict):
                     rendered_template = template.render(
                         environment_variable=os.environ,
                         var=user_variables,
-                        environment_path=self.environment_path.split("/")
+                        environment_path=self.environment_path.split("/"),
+                        environment_config=environment_config
                     )
 
                     yaml_data = yaml.safe_load(rendered_template)
