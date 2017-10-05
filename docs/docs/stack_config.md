@@ -12,6 +12,7 @@ A stack config file is a yaml object of key-value pairs configuring a particular
 
 - [dependencies](#dependencies) *(optional)*
 - [hooks](#hooks) *(optional)*
+- [on_failure](#on_failure) *(optional)*
 - [parameters](#parameters) *(optional)*
 - [protect](#protect) *(optional)*
 - [sceptre_user_data](#sceptre_user_data) *(optional)*
@@ -28,6 +29,10 @@ A list of other stacks in the environment that this stack depends on. Note that 
 ### hooks
 
 A list of arbitrary shell or python commands or scripts to run. Find out more in the [Hooks]({{ site.baseurl }}/docs/hooks.html) section.
+
+### on_failure
+
+This parameter describes the action taken by CloudFormation when a stack fails to create. For more information and valid values see the [AWS Documentation](http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStack.html).
 
 ### parameters
 
