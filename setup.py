@@ -50,12 +50,12 @@ setup(
         "console_scripts": [
             'sceptre = sceptre.cli:cli'
         ],
-        "sceptre.hooks":[
+        "sceptre.hooks": [
             "asg_scheduled_actions ="
             "sceptre.hooks.asg_scaling_processes:ASGScalingProcesses",
             "cmd = sceptre.hooks.cmd:Cmd"
         ],
-        "sceptre.resolvers":[
+        "sceptre.resolvers": [
             "environment_variable ="
             "sceptre.resolvers.environment_variable:EnvironmentVariable",
             "file_contents = sceptre.resolvers.file_contents:FileContents",
