@@ -160,6 +160,16 @@ Any templated value can be supplied with a default value with the syntax:
 {% raw %}{{ var.value | default("default_value") }}{% endraw %}
 ```
 
+### String Manipulation
+
+Variables are rendered by Jinja2 and so can have their case change, can be sliced, split or combined with other strings
+
+```jinja2
+{% raw %}
+bucket_name: {{ environment_path.0.lower() }}-{{ environment_path.1.lower() }}-assets
+object_path: {{ environment_path.0.0 }}/{{ environment_path.1[-1] }}/{{ var.value.split("_")[-1] }}/dont/do/this/
+{% endraw %}
+```
 
 ## Examples
 
