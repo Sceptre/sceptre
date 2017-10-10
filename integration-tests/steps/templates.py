@@ -30,7 +30,7 @@ def step_impl(context, stack_name):
     environment_name, basename = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
     try:
-        context.response = env.stacks[basename].validate_template()
+        context.response = env.stacks[basename].template.validate()
     except ClientError as e:
         context.error = e
 

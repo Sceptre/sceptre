@@ -36,7 +36,7 @@ class TestCli(object):
             self, mock_get_env, mock_getcwd
             ):
         mock_getcwd.return_value = sentinel.cwd
-        mock_get_env.return_value.stacks["vpc"].validate_template\
+        mock_get_env.return_value.stacks["vpc"].template.validate\
             .return_value = {
                     "Parameters": "Example",
                     "ResponseMetadata": {
@@ -45,7 +45,7 @@ class TestCli(object):
                 }
         result = self.runner.invoke(cli, ["validate-template", "dev", "vpc"])
         mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].validate_template\
+        mock_get_env.return_value.stacks["vpc"].template.validate\
             .assert_called_with()
 
         assert result.output == "Template is valid. Template details:\n\n" \
@@ -68,7 +68,7 @@ class TestCli(object):
             "ValidateTemplate"
         )
         mock_get_env.return_value.stacks["vpc"].\
-            validate_template.side_effect = client_error
+            template.validate.side_effect = client_error
 
         expected_result = str(client_error) + "\n"
         result = self.runner.invoke(cli, ["validate-template", "dev", "vpc"])
