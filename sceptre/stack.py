@@ -8,7 +8,7 @@ with a particular stack.
 
 """
 
-import datetime
+from datetime import datetime, timedelta
 import logging
 import os
 import time
@@ -159,9 +159,31 @@ class Stack(object):
 
             self._template = Template(
                 path=abs_template_path,
-                sceptre_user_data=self.sceptre_user_data
+                sceptre_user_data=self.sceptre_user_data,
+                connection_manager=self.connection_manager,
+                s3_props=self._get_s3_props()
             )
         return self._template
+
+    def _get_s3_props(self):
+        """
+        Returns the s3 properties needed to upload the template to s3.
+
+        :returns: A dictonary containing bucket name and bucket key.
+        :rtype: dict
+        """
+        bucket_name = self.environment_config.get("template_bucket_name")
+        if bucket_name:
+            time_stamp = datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%fZ")
+            filename = "{0}-{1}.json".format(self.name, time_stamp)
+            bucket_key = "/".join([
+                self.project, self._environment_path, filename
+            ])
+
+            if "template_key_prefix" in self.environment_config:
+                prefix = self.environment_config["template_key_prefix"]
+                bucket_key = "/".join([prefix.strip("/"), bucket_key])
+            return {"bucket_name": bucket_name, "bucket_key": bucket_key}
 
     @property
     def external_name(self):
@@ -198,7 +220,7 @@ class Stack(object):
                 for k, v in self.config.get("stack_tags", {}).items()
             ]
         }
-        create_stack_kwargs.update(self._get_template_details())
+        create_stack_kwargs.update(self.template.get_boto_call_parameter())
         create_stack_kwargs.update(self._get_role_arn())
         response = self.connection_manager.call(
             service="cloudformation",
@@ -232,7 +254,7 @@ class Stack(object):
                 for k, v in self.config.get("stack_tags", {}).items()
             ]
         }
-        update_stack_kwargs.update(self._get_template_details())
+        update_stack_kwargs.update(self.template.get_boto_call_parameter())
         update_stack_kwargs.update(self._get_role_arn())
         response = self.connection_manager.call(
             service="cloudformation",
@@ -486,27 +508,6 @@ class Stack(object):
 
         return response
 
-    def validate_template(self):
-        """
-        Validates the stack's CloudFormation template.
-
-        Raises an error if the template is invalid.
-
-        :returns: Information about the template.
-        :rtype: dict
-        :raises: botocore.exceptions.ClientError
-        """
-        self.logger.debug("%s - Validating template", self.name)
-        response = self.connection_manager.call(
-            service="cloudformation",
-            command="validate_template",
-            kwargs=self._get_template_details()
-        )
-        self.logger.debug(
-            "%s - Validate template response: %s", self.name, response
-        )
-        return response
-
     def create_change_set(self, change_set_name):
         """
         Creates a change set with the name ``change_set_name``.
@@ -524,7 +525,9 @@ class Stack(object):
                 for k, v in self.config.get("stack_tags", {}).items()
             ]
         }
-        create_change_set_kwargs.update(self._get_template_details())
+        create_change_set_kwargs.update(
+            self.template.get_boto_call_parameter()
+        )
         create_change_set_kwargs.update(self._get_role_arn())
         self.logger.debug(
             "%s - Creating change set '%s'", self.name, change_set_name
@@ -665,29 +668,6 @@ class Stack(object):
 
         return formatted_parameters
 
-    def _get_template_details(self):
-        """
-        Returns the CloudFormation template location.
-
-        Uploads the template to S3 and returns the object's URL, or returns
-        the template itself.
-
-        :returns: The location of the template.
-        :rtype: dict
-        """
-        if "template_bucket_name" in self.environment_config:
-            template_url = self.template.upload_to_s3(
-                self.region,
-                self.environment_config["template_bucket_name"],
-                self.environment_config.get("template_key_prefix", ""),
-                self._environment_path,
-                self.external_name,
-                self.connection_manager
-            )
-            return {"TemplateURL": template_url}
-        else:
-            return {"TemplateBody": self.template.body}
-
     def _get_role_arn(self):
         """
         Returns the role arn assumed by CloudFormation when building a stack.
@@ -728,7 +708,7 @@ class Stack(object):
         status = StackStatus.IN_PROGRESS
 
         self.most_recent_event_datetime = (
-            datetime.datetime.now(tzutc()) - datetime.timedelta(seconds=3)
+            datetime.now(tzutc()) - timedelta(seconds=3)
         )
         while status == StackStatus.IN_PROGRESS:
             status = self._get_simplified_status(self.get_status())

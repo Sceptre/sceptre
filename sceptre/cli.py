@@ -155,7 +155,7 @@ def validate_template(ctx, environment, stack):
     Validates ENVIRONMENT/STACK's template.
     """
     env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    result = env.stacks[stack].validate_template()
+    result = env.stacks[stack].template.validate()
     write(result, ctx.obj["output_format"])
 
 
