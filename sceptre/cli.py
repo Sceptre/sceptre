@@ -155,7 +155,7 @@ def validate_template(ctx, environment, stack):
     Validates ENVIRONMENT/STACK's template.
     """
     env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    response = env.stacks[stack].validate_template()
+    response = env.stacks[stack].template.validate()
     if response['ResponseMetadata']['HTTPStatusCode'] == 200:
         success_message = "Template is valid. Template details:\n"
         response = _remove_response_metadata(response)
