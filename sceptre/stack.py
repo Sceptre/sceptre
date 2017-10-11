@@ -13,6 +13,7 @@ import logging
 import os
 import time
 import threading
+import difflib
 
 from dateutil.tz import tzutc
 import botocore
@@ -97,7 +98,8 @@ class Stack(object):
                     connection_manager=self.connection_manager
                 )
                 self._config.read(
-                    self.environment_config.get("user_variables")
+                    self.environment_config.get("user_variables"),
+                    self.environment_config
                 )
 
         return self._config
@@ -198,6 +200,10 @@ class Stack(object):
                 for k, v in self.config.get("stack_tags", {}).items()
             ]
         }
+        if "on_failure" in self.config:
+            create_stack_kwargs.update({
+                "OnFailure": self.config.get("on_failure")
+            })
         create_stack_kwargs.update(self._get_template_details())
         create_stack_kwargs.update(self._get_role_arn())
         response = self.connection_manager.call(
@@ -378,6 +384,35 @@ class Stack(object):
             command="describe_stacks",
             kwargs={"StackName": self.external_name}
         )
+
+    def diff(self):
+        """
+        Returns the diff between the template body of the currently deployed
+        stack and the local one.
+
+        :returns: differences
+        :rtype: string
+        """
+        raw_remote_template = self.connection_manager.call(
+            service="cloudformation",
+            command="get_template",
+            kwargs={"StackName": self.external_name}
+        )["TemplateBody"]
+
+        raw_local_template = self.template.body
+
+        remote_template = raw_remote_template.split("\n")
+        local_template = raw_local_template.split("\n")
+
+        differences = difflib.unified_diff(
+            remote_template, local_template, fromfile="remote_template",
+            tofile="local_template", lineterm=""
+            )
+
+        output = ""
+        for line in differences:
+            output += line+"\n"
+        return output
 
     def describe_events(self):
         """
