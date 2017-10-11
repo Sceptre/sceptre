@@ -78,6 +78,9 @@ before_create:
 
 ### asg\_scheduled\_actions
 
+<div class="alert alert-warning">
+The asg_scheduled_actions hook has been deprecated and will be removed in a later version of Sceptre. We recommend using the asg_scaling_processes hook instead.
+</div>
 Pauses or resumes autoscaling scheduled actions.
 
 Syntax:
