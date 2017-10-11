@@ -38,9 +38,11 @@ $ sceptre describe-env
 $ sceptre describe-env-resources
 $ sceptre describe-stack-outputs
 $ sceptre describe-stack-resources
+$ sceptre diff
 $ sceptre execute-change-set
 $ sceptre generate-template
 $ sceptre get-stack-policy
+$ sceptre init
 $ sceptre launch-env
 $ sceptre launch-stack
 $ sceptre list-change-sets

@@ -137,11 +137,14 @@ Stack config supports templating in the same way Environment config can be, as d
 
 Stack config makes environment config available to template.
 
+
 ### Environment config
+
+Environment config properties are available via the environment_config variable when using templating.
 
 ```yaml
 parameters:
-  Region: {{ environment_config.region }}
+  Region: {% raw %}{{ environment_config.region }}{% endraw %}
 ```
 
 
