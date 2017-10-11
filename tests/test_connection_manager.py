@@ -14,24 +14,24 @@ class TestConnectionManager(object):
 
     def setup_method(self, test_method):
         self.iam_role = None
-        self.iam_profile = None
+        self.profile = None
         self.region = "eu-west-1"
 
         self.connection_manager = ConnectionManager(
             region=self.region,
             iam_role=self.iam_role,
-            iam_profile=self.iam_profile
+            profile=self.profile
         )
 
     def test_connection_manager_initialised_with_all_parameters(self):
         connection_manager = ConnectionManager(
             region=self.region,
             iam_role="role",
-            iam_profile="profile"
+            profile="profile"
 
         )
         assert connection_manager.iam_role == "role"
-        assert connection_manager.iam_profile == "profile"
+        assert connection_manager.profile == "profile"
         assert connection_manager.region == self.region
         assert connection_manager._boto_session is None
         assert connection_manager.clients == {}
@@ -40,25 +40,25 @@ class TestConnectionManager(object):
         connection_manager = ConnectionManager(region=sentinel.region)
 
         assert connection_manager.iam_role is None
-        assert connection_manager.iam_profile is None
+        assert connection_manager.profile is None
         assert connection_manager.region == sentinel.region
         assert connection_manager._boto_session is None
         assert connection_manager.clients == {}
 
     def test_repr(self):
         self.connection_manager.iam_role = "role"
-        self.connection_manager.iam_profile = "profile"
+        self.connection_manager.profile = "profile"
         self.connection_manager.region = "region"
         response = self.connection_manager.__repr__()
         assert response == "sceptre.connection_manager.ConnectionManager(" \
-            "region='region', iam_role='role', iam_profile='profile')"
+            "region='region', iam_role='role', profile='profile')"
 
     def test_boto_session_with_cache(self):
         self.connection_manager._boto_session = sentinel.boto_session
         assert self.connection_manager.boto_session == sentinel.boto_session
 
     @patch("sceptre.connection_manager.boto3.session.Session")
-    def test_boto_session_with_no_iam_role_and_no_iam_profile(
+    def test_boto_session_with_no_iam_role_and_no_profile(
             self, mock_Session
     ):
         mock_Session = MagicMock(name='Session', return_value=sentinel.session)
@@ -71,20 +71,20 @@ class TestConnectionManager(object):
 
         self.connection_manager._boto_session = None
         self.connection_manager.iam_role = None
-        self.connection_manager.iam_profile = None
+        self.connection_manager.profile = None
 
         boto_session = self.connection_manager.boto_session
         assert boto_session.isinstance(mock_Session(
             region_name="eu-west-1",
-            iam_profile=None
+            profile=None
         ))
         mock_Session.assert_called_once_with(
             region_name="eu-west-1",
-            iam_profile=None
+            profile=None
         )
 
     @patch("sceptre.connection_manager.boto3.session.Session")
-    def test_boto_session_with_no_iam_role_and_iam_profile(self, mock_Session):
+    def test_boto_session_with_no_iam_role_and_profile(self, mock_Session):
         mock_Session = MagicMock(name='Session', return_value=sentinel.session)
         mock_Session.get_credentials.access_key.return_value = \
             sentinel.access_key
@@ -95,23 +95,23 @@ class TestConnectionManager(object):
 
         self.connection_manager._boto_session = None
         self.connection_manager.iam_role = None
-        self.connection_manager.iam_profile = "profile"
+        self.connection_manager.profile = "profile"
 
         boto_session = self.connection_manager.boto_session
         assert boto_session.isinstance(mock_Session(
             region_name="eu-west-1",
-            iam_profile="profile"
+            profile="profile"
         ))
         mock_Session.assert_called_once_with(
             region_name="eu-west-1",
-            iam_profile="profile"
+            profile="profile"
         )
 
     @patch("sceptre.connection_manager.boto3.session.Session")
-    def test_boto_session_with_iam_role_and_no_iam_profile(self, mock_Session):
+    def test_boto_session_with_iam_role_and_no_profile(self, mock_Session):
         self.connection_manager._boto_session = None
         self.connection_manager.iam_role = "non-default"
-        self.connection_manager.iam_profile = None
+        self.connection_manager.profile = None
 
         mock_credentials = {
             "Credentials": {
@@ -139,10 +139,10 @@ class TestConnectionManager(object):
         )
 
     @patch("sceptre.connection_manager.boto3.session.Session")
-    def test_boto_session_with_iam_role_and_iam_profile(self, mock_Session):
+    def test_boto_session_with_iam_role_and_profile(self, mock_Session):
         self.connection_manager._boto_session = None
         self.connection_manager.iam_role = "non-default"
-        self.connection_manager.iam_profile = "profile"
+        self.connection_manager.profile = "profile"
 
         mock_credentials = {
             "Credentials": {

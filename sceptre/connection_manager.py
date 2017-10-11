@@ -63,8 +63,8 @@ class ConnectionManager(object):
     The Connection Manager should be used to create boto3 clients for
     the various AWS services that we need to interact with.
 
-    :param iam_profile: The aws credential profile that should be used.
-    :type iam_profile: str
+    :param profile: The aws credential profile that should be used.
+    :type profile: str
     :param iam_role: The iam_role that should be assumed in the account.
     :type iam_role: str
     :param region: The region to use.
@@ -74,12 +74,12 @@ class ConnectionManager(object):
     _session_lock = threading.Lock()
     _client_lock = threading.Lock()
 
-    def __init__(self, region, iam_role=None, iam_profile=None):
+    def __init__(self, region, iam_role=None, profile=None):
         self.logger = logging.getLogger(__name__)
 
         self.region = region
         self.iam_role = iam_role
-        self.iam_profile = iam_profile
+        self.profile = profile
         self._boto_session = None
 
         self.clients = {}
@@ -87,8 +87,8 @@ class ConnectionManager(object):
     def __repr__(self):
         return (
             "sceptre.connection_manager.ConnectionManager(region='{0}', "
-            "iam_role='{1}', iam_profile='{2}')".format(
-                self.region, self.iam_role, self.iam_profile
+            "iam_role='{1}', profile='{2}')".format(
+                self.region, self.iam_role, self.profile
             )
         )
 
@@ -115,7 +115,7 @@ class ConnectionManager(object):
                 if self.iam_role:
                     self.logger.debug("Assuming role '%s'...", self.iam_role)
                     sts_session = boto3.session.Session(
-                        profile_name=self.iam_profile,
+                        profile_name=self.profile,
                         region_name=self.region
                     )
                     sts_client = sts_session.client("sts")
@@ -146,7 +146,7 @@ class ConnectionManager(object):
                 else:
                     self.logger.debug("Using cli credentials...")
                     self._boto_session = boto3.session.Session(
-                        profile_name=self.iam_profile,
+                        profile_name=self.profile,
                         region_name=self.region
                     )
                     self.logger.debug(

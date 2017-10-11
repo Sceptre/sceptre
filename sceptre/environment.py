@@ -401,7 +401,7 @@ class Environment(object):
         connection_manager = ConnectionManager(
             region=config["region"],
             iam_role=config.get("iam_role"),
-            iam_profile=config.get("iam_profile")
+            profile=config.get("profile")
         )
         stacks = {}
         for stack_name in self._get_available_stacks():
