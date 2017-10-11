@@ -5,3 +5,9 @@ parameters:
   param4: {{ environment_path.1 }}
   param5: {{ environment_path.2 }}
   param6: {{ environment_config.region }}
+  param7: {{ stack_config.name }}
+  param8: {{ stack_config.name.upper() }}
+  param9: {{ stack_config.name.0 }}
+  param10: {{ stack_config.name[-2:] }}
+  param11: {{ stack_config.name.split("_")[-1] }}
+  param12: {{ stack_config.name }}-string
