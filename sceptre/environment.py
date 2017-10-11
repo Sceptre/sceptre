@@ -201,16 +201,21 @@ class Environment(object):
         :param command: The stack command to run. Can be (launch | delete).
         :type command: str
         """
-        num_stacks = len(self.stacks)
-        with ThreadPoolExecutor(max_workers=num_stacks) as executor:
-            futures = [
-                executor.submit(
-                    self._manage_stack_build, stack,
-                    command, threading_events, stack_statuses, dependencies
-                )
-                for stack in self.stacks.values()
-            ]
-            wait(futures)
+        if self.stacks:
+            num_stacks = len(self.stacks)
+            with ThreadPoolExecutor(max_workers=num_stacks) as executor:
+                futures = [
+                    executor.submit(
+                        self._manage_stack_build, stack,
+                        command, threading_events, stack_statuses, dependencies
+                    )
+                    for stack in self.stacks.values()
+                ]
+                wait(futures)
+        else:
+            self.logger.info(
+                "No stacks found for environment: '%s'", self.path
+            )
 
     def _manage_stack_build(
             self, stack, command, threading_events,
