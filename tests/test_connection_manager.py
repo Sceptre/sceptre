@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import pytest
-from mock import Mock, patch, sentinel, MagicMock
+from mock import Mock, patch, sentinel
 from moto import mock_s3
 
 from sceptre.connection_manager import ConnectionManager, _retry_boto_call
@@ -28,7 +28,6 @@ class TestConnectionManager(object):
             region=self.region,
             iam_role="role",
             profile="profile"
-
         )
         assert connection_manager.iam_role == "role"
         assert connection_manager.profile == "profile"
@@ -61,50 +60,28 @@ class TestConnectionManager(object):
     def test_boto_session_with_no_iam_role_and_no_profile(
             self, mock_Session
     ):
-        mock_Session = MagicMock(name='Session', return_value=sentinel.session)
-        mock_Session.get_credentials.access_key.return_value = \
-            sentinel.access_key
-        mock_Session.get_credentials.secret_key.return_value = \
-            sentinel.secret_key
-        mock_Session.get_credentials.method.return_value = \
-            sentinel.method
-
         self.connection_manager._boto_session = None
         self.connection_manager.iam_role = None
         self.connection_manager.profile = None
 
         boto_session = self.connection_manager.boto_session
-        assert boto_session.isinstance(mock_Session(
-            region_name="eu-west-1",
-            profile=None
-        ))
+        assert boto_session.isinstance(mock_Session)
         mock_Session.assert_called_once_with(
             region_name="eu-west-1",
-            profile=None
+            profile_name=None
         )
 
     @patch("sceptre.connection_manager.boto3.session.Session")
     def test_boto_session_with_no_iam_role_and_profile(self, mock_Session):
-        mock_Session = MagicMock(name='Session', return_value=sentinel.session)
-        mock_Session.get_credentials.access_key.return_value = \
-            sentinel.access_key
-        mock_Session.get_credentials.secret_key.return_value = \
-            sentinel.secret_key
-        mock_Session.get_credentials.method.return_value = \
-            sentinel.method
-
         self.connection_manager._boto_session = None
         self.connection_manager.iam_role = None
         self.connection_manager.profile = "profile"
 
         boto_session = self.connection_manager.boto_session
-        assert boto_session.isinstance(mock_Session(
-            region_name="eu-west-1",
-            profile="profile"
-        ))
+        assert boto_session.isinstance(mock_Session)
         mock_Session.assert_called_once_with(
             region_name="eu-west-1",
-            profile="profile"
+            profile_name="profile"
         )
 
     @patch("sceptre.connection_manager.boto3.session.Session")
