@@ -115,6 +115,29 @@ class TestConfig(object):
             'dependencies': []
         }
 
+    def test_read_cascades_config_join(self):
+        self.config.sceptre_dir = os.path.join(
+            os.getcwd(), "tests", "fixtures"
+        )
+        self.config.environment_path = os.path.join(
+            "account", "environment", "region"
+        )
+        self.config.name = "instances"
+        self.config.read()
+        assert self.config == {
+            "stack_name": "test_stack",
+            "role_arn": "arn/test-cascading",
+            "parameters": {
+                "param1": "val1"
+            },
+            "sceptre_user_data": {
+                "key1": "overwrite",
+                "key2": "data2",
+                "key3": "data3"
+            },
+            'dependencies': []
+        }
+
     def test_read_with_templated_config_file(self):
         self.config.sceptre_dir = os.path.join(
             os.getcwd(), "tests", "fixtures"

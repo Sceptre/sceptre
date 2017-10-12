@@ -1,0 +1,6 @@
+parameters:
+  param1: val1
+sceptre_user_data:
+  key1: data1
+  key3: data3
+role_arn: arn/foo/bar

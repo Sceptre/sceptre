@@ -1,0 +1,5 @@
+stack_name: test_stack
+sceptre_user_data:
+  key1: overwrite
+  key2: data2
+role_arn: arn/test-cascading
