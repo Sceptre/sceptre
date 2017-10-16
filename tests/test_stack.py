@@ -691,7 +691,9 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         }
         self.stack.config["role_arn"] = sentinel.role_arn
 
-        self.stack.create_change_set(sentinel.change_set_name)
+        CHANGE_SET_TYPE = 'UPDATE'
+
+        self.stack.create_change_set(sentinel.change_set_name, CHANGE_SET_TYPE)
         self.stack.connection_manager.call.assert_called_with(
             service="cloudformation",
             command="create_change_set",
@@ -701,6 +703,7 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
                 "Parameters": sentinel.parameters,
                 "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
                 "ChangeSetName": sentinel.change_set_name,
+                "ChangeSetType": CHANGE_SET_TYPE,
                 "RoleARN": sentinel.role_arn,
                 "Tags": [
                     {"Key": "tag1", "Value": "val1"}
