@@ -2,6 +2,22 @@
 History
 =======
 
+1.3.0 (2017.10.16)
+-----------------
+
+* Re-adding the ability to specify credential profile in the environment config.
+* Adding init project command to help initialize a new Sceptre project.
+* Adding init env command to help initialize a new Environment config.
+* Adding diff command to display differences between the local and deployed stack template.
+* Fixed error message displayed for empty environments.
+* Adding ``environment_config`` to config template rendering.
+* Adding ``on_failure`` parameter to stack config.
+* Adding automatic renewal of expired credentials when assuming IAM Roles.
+* Deprecating use of ``bash`` hook in favour of ``cmd`` hook.
+* Deprecating use of ``asg_scheduled_actions`` hook in favour of ``asg_scaling_processes`` hook.
+* Adding status colouring for output of describe-env command.
+* Fix spelling mistakes in documentation.
+
 1.2.1 (2017.7.21)
 -----------------
 
