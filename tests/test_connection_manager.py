@@ -8,6 +8,7 @@ from sceptre.exceptions import RetryLimitExceededError
 from boto3.session import Session
 import botocore
 from botocore.exceptions import ClientError
+from datetime import datetime
 
 
 class TestConnectionManager(object):
@@ -94,7 +95,8 @@ class TestConnectionManager(object):
             "Credentials": {
                 "AccessKeyId": "id",
                 "SecretAccessKey": "key",
-                "SessionToken": "token"
+                "SessionToken": "token",
+                "Expiration": datetime(2020, 1, 1)
             }
         }
 
@@ -125,7 +127,8 @@ class TestConnectionManager(object):
             "Credentials": {
                 "AccessKeyId": "id",
                 "SecretAccessKey": "key",
-                "SessionToken": "token"
+                "SessionToken": "token",
+                "Expiration": datetime(2020, 1, 1)
             }
         }
 
@@ -172,6 +175,16 @@ class TestConnectionManager(object):
     @patch("sceptre.connection_manager.boto3.session.Session.get_credentials")
     def test_get_client_with_exisiting_client(self, mock_get_credentials):
         service = "cloudformation"
+        client_1 = self.connection_manager._get_client(service)
+        client_2 = self.connection_manager._get_client(service)
+        assert client_1 == client_2
+
+    @patch("sceptre.connection_manager.boto3.session.Session.get_credentials")
+    def test_get_client_with_exisiting_client_and_iam_role_none(
+            self, mock_get_credentials
+    ):
+        service = "cloudformation"
+        self.connection_manager._iam_role = None
         client_1 = self.connection_manager._get_client(service)
         client_2 = self.connection_manager._get_client(service)
         assert client_1 == client_2
