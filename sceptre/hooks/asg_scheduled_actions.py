@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import warnings
+
+from colorama import Fore, Style
 
 from sceptre.hooks import Hook
 from sceptre.exceptions import InvalidHookArgumentValueError
@@ -7,6 +10,8 @@ from sceptre.exceptions import InvalidHookArgumentTypeError
 
 class ASGScheduledActions(Hook):
     """
+    This hook has been deprecated in favor of the asg_scaling_processes hook.
+
     A command to resume or suspend autoscaling group scheduled actions. This is
     useful as schedule actions must be suspended when updating stacks with
     on autoscaling groups.
@@ -20,6 +25,14 @@ class ASGScheduledActions(Hook):
         Either suspends or resumes any scheduled actions on all autoscaling
         groups with in the current stack.
         """
+        warnings.warn(
+            "{0}The asg_scheduled_actions hook has been deprecated and will "
+            "be removed in a later version of Sceptre. Use the "
+            "asg_scaling_processes hook instead. Example: "
+            "!asg_scaling_processes <suspend|resume>::ScheduledActions{1}"
+            .format(Fore.YELLOW, Style.RESET_ALL),
+            DeprecationWarning
+        )
         if not isinstance(self.argument, basestring):
             raise InvalidHookArgumentTypeError(
                 'The argument "{0}" is the wrong type - asg_scheduled_actions '

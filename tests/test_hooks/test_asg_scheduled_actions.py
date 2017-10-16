@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-
+from colorama import Fore, Style
 from mock import Mock,  patch, MagicMock
 import pytest
+
 from sceptre.config import Config
 from sceptre.hooks.asg_scheduled_actions import ASGScheduledActions
 from sceptre.exceptions import InvalidHookArgumentValueError
@@ -10,6 +11,13 @@ from sceptre.exceptions import InvalidHookArgumentTypeError
 
 class TestASGScheduledActions(object):
     def setup_method(self, test_method):
+        self.deprecation_notice = (
+            "{0}The asg_scheduled_actions hook has been "
+            "deprecated and will be removed in a later version of Sceptre. "
+            "Use the asg_scaling_processes hook instead. Example: "
+            "!asg_scaling_processes <suspend|resume>::ScheduledActions{1}"
+        ).format(Fore.YELLOW, Style.RESET_ALL)
+
         self.mock_asg_scheduled_actions = ASGScheduledActions()
 
     def test_get_stack_resources_sends_correct_request(self):
@@ -76,11 +84,14 @@ class TestASGScheduledActions(object):
 
         assert response == []
 
+    @patch('warnings.warn')
     @patch(
         "sceptre.hooks.asg_scheduled_actions"
         ".ASGScheduledActions._find_autoscaling_groups"
     )
-    def test_run_with_resume_argument(self, mock_find_autoscaling_groups):
+    def test_run_with_resume_argument(
+        self, mock_find_autoscaling_groups, mock_warn
+    ):
         self.mock_asg_scheduled_actions.argument = u"resume"
         mock_find_autoscaling_groups.return_value = ["autoscaling_group_1"]
         self.mock_asg_scheduled_actions.connection_manager = Mock()
@@ -96,12 +107,19 @@ class TestASGScheduledActions(object):
                     ]
                 }
             )
+        mock_warn.assert_called_once_with(
+            self.deprecation_notice,
+            DeprecationWarning
+        )
 
+    @patch('warnings.warn')
     @patch(
         "sceptre.hooks.asg_scheduled_actions"
         ".ASGScheduledActions._find_autoscaling_groups"
     )
-    def test_run_with_suspend_argument(self, mock_find_autoscaling_groups):
+    def test_run_with_suspend_argument(
+        self, mock_find_autoscaling_groups, mock_warn
+    ):
         self.mock_asg_scheduled_actions.argument = u"suspend"
         mock_find_autoscaling_groups.return_value = ["autoscaling_group_1"]
         self.mock_asg_scheduled_actions.connection_manager = Mock()
@@ -117,27 +135,43 @@ class TestASGScheduledActions(object):
                     ]
                 }
             )
+        mock_warn.assert_called_once_with(
+            self.deprecation_notice,
+            DeprecationWarning
+        )
 
+    @patch('warnings.warn')
     @patch(
         "sceptre.hooks.asg_scheduled_actions"
         ".ASGScheduledActions._find_autoscaling_groups"
     )
     def test_run_with_invalid_string_argument(
-        self, mock_find_autoscaling_groups
+        self, mock_find_autoscaling_groups, mock_warn
     ):
         self.mock_asg_scheduled_actions.argument = u"invalid_string"
         mock_find_autoscaling_groups.return_value = ["autoscaling_group_1"]
         self.mock_asg_scheduled_actions.connection_manager = Mock()
         with pytest.raises(InvalidHookArgumentValueError):
             self.mock_asg_scheduled_actions.run()
+        mock_warn.assert_called_once_with(
+            self.deprecation_notice,
+            DeprecationWarning
+        )
 
+    @patch('warnings.warn')
     @patch(
         "sceptre.hooks.asg_scheduled_actions"
         ".ASGScheduledActions._find_autoscaling_groups"
     )
-    def test_run_with_non_string_argument(self, mock_find_autoscaling_groups):
+    def test_run_with_non_string_argument(
+        self, mock_find_autoscaling_groups, mock_warn
+    ):
         self.mock_asg_scheduled_actions.argument = 10
         mock_find_autoscaling_groups.return_value = ["autoscaling_group_1"]
         self.mock_asg_scheduled_actions.connection_manager = Mock()
         with pytest.raises(InvalidHookArgumentTypeError):
             self.mock_asg_scheduled_actions.run()
+        mock_warn.assert_called_once_with(
+            self.deprecation_notice,
+            DeprecationWarning
+        )
