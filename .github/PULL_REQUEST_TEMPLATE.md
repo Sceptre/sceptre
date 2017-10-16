@@ -6,7 +6,7 @@ The more detailed you are, the better.**
 Before submitting the PR make sure the following are checked:
 
 * [ ] Wrote [good commit messages][1].
-* [ ] [Squashed related commits together][2].
+* [ ] [Squashed related commits together][2] after the changes have been approved.
 * [ ] Commit message starts with `[Resolve #issue-number]` (if a related issue exists).
 * [ ] Added unit tests.
 * [ ] Added integration tests (if applicable).

@@ -11,6 +11,8 @@ import functools
 import logging
 import threading
 import time
+from datetime import datetime
+from dateutil import tz
 
 import boto3
 from botocore.exceptions import ClientError
@@ -63,6 +65,8 @@ class ConnectionManager(object):
     The Connection Manager should be used to create boto3 clients for
     the various AWS services that we need to interact with.
 
+    :param profile: The aws credential profile that should be used.
+    :type profile: str
     :param iam_role: The iam_role that should be assumed in the account.
     :type iam_role: str
     :param region: The region to use.
@@ -72,19 +76,23 @@ class ConnectionManager(object):
     _session_lock = threading.Lock()
     _client_lock = threading.Lock()
 
-    def __init__(self, region, iam_role=None):
+    def __init__(self, region, iam_role=None, profile=None):
         self.logger = logging.getLogger(__name__)
 
         self.region = region
         self.iam_role = iam_role
+        self.profile = profile
         self._boto_session = None
+        self._boto_session_expiration = None
 
         self.clients = {}
 
     def __repr__(self):
         return (
             "sceptre.connection_manager.ConnectionManager(region='{0}', "
-            "iam_role='{1}')".format(self.region, self.iam_role)
+            "iam_role='{1}', profile='{2}')".format(
+                self.region, self.iam_role, self.profile
+            )
         )
 
     @property
@@ -105,11 +113,17 @@ class ConnectionManager(object):
         with self._session_lock:
             self.logger.debug("Getting Boto3 session")
 
+            self._clear_session_cache_if_expired()
+
             if self._boto_session is None:
                 self.logger.debug("No Boto3 session found, creating one...")
                 if self.iam_role:
                     self.logger.debug("Assuming role '%s'...", self.iam_role)
-                    sts_client = boto3.client("sts")
+                    sts_session = boto3.session.Session(
+                        profile_name=self.profile,
+                        region_name=self.region
+                    )
+                    sts_client = sts_session.client("sts")
                     sts_response = sts_client.assume_role(
                         RoleArn=self.iam_role,
                         RoleSessionName="{0}-session".format(
@@ -123,6 +137,7 @@ class ConnectionManager(object):
                         aws_session_token=credentials["SessionToken"],
                         region_name=self.region
                     )
+                    self._boto_session_expiration = credentials["Expiration"]
                     self.logger.debug(
                         "Using temporary credential set: %s",
                         {
@@ -137,6 +152,7 @@ class ConnectionManager(object):
                 else:
                     self.logger.debug("Using cli credentials...")
                     self._boto_session = boto3.session.Session(
+                        profile_name=self.profile,
                         region_name=self.region
                     )
                     self.logger.debug(
@@ -170,12 +186,25 @@ class ConnectionManager(object):
         :rtype: boto3.client.Client
         """
         with self._client_lock:
+            self._clear_session_cache_if_expired()
+
             if self.clients.get(service) is None:
                 self.logger.debug(
                     "No %s client found, creating one...", service
                 )
                 self.clients[service] = self.boto_session.client(service)
             return self.clients[service]
+
+    def _clear_session_cache_if_expired(self):
+        """
+        Removes boto_session and all clients if the existing session has
+        expired.
+        """
+        if self.iam_role and self._boto_session_expiration:
+            if self._boto_session_expiration >= datetime.now(tz.tzutc()):
+                self.logger.debug("Boto session has expired")
+                self.clients = {}
+                self._boto_session = None
 
     @_retry_boto_call
     def call(self, service, command, kwargs=None):

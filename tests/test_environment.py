@@ -156,6 +156,11 @@ class TestEnvironment(object):
             sentinel.stack_statuses, sentinel.dependencies
         )
 
+    def test_launch_succeeds_with_empty_env(self):
+        self.environment.stacks = {}
+        response = self.environment.launch()
+        assert response == {}
+
     @patch("sceptre.environment.Environment._build")
     @patch("sceptre.environment.Environment._check_for_circular_dependencies")
     @patch("sceptre.environment.Environment._get_delete_dependencies")
@@ -180,6 +185,11 @@ class TestEnvironment(object):
             "delete", sentinel.threading_events,
             sentinel.stack_statuses, sentinel.dependencies
         )
+
+    def test_delete_succeeds_with_empty_env(self):
+        self.environment.stacks = {}
+        response = self.environment.delete()
+        assert response == {}
 
     def test_describe_with_running_stack(self):
         mock_stack = Mock()
@@ -455,7 +465,8 @@ class TestEnvironment(object):
     ):
         mock_config = {
             "region": sentinel.region,
-            "iam_role": sentinel.iam_role
+            "iam_role": sentinel.iam_role,
+            "profile": sentinel.profile
         }
         mock_get_config.return_value = mock_config
         mock_ConnectionManager.return_value = sentinel.connection_manager
@@ -467,7 +478,8 @@ class TestEnvironment(object):
         # Check ConnectionManager() is called with correct arguments
         mock_ConnectionManager.assert_called_once_with(
             region=sentinel.region,
-            iam_role=sentinel.iam_role
+            iam_role=sentinel.iam_role,
+            profile=sentinel.profile
         )
 
         # Check Stack() is called with correct arguments
