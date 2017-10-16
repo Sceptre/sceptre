@@ -19,6 +19,7 @@ A stack config file is a yaml object of key-value pairs configuring a particular
 - [stack_name](#stack_name) *(optional)*
 - [stack_tags](#stack_tags) *(optional)*
 - [role_arn](#role_arn) *(optional)*
+- [notifications](#notifications) *(optional)*
 - [template_path](#template_path) *(required)*
 
 
@@ -116,6 +117,10 @@ A dictionary of [CloudFormation Tags](https://docs.aws.amazon.com/AWSCloudFormat
 ### role_arn
 
 The ARN of a [CloudFormation Service Role](http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-iam-servicerole.html) that is assumed by CloudFormation to create, update or delete resources.
+
+### notifications
+
+List of SNS topic ARNs to publish stack related events to. A maximum of 5 ARNs can be specified per stack. This configuration will be used by the `create-stack`, `update-stack`, and `create-change-set` commands. More information about stack notifications can found under the relevant section in the [AWS CloudFormation API documentation](http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStack.html).
 
 ### template_path
 

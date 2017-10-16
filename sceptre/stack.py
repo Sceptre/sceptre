@@ -194,6 +194,7 @@ class Stack(object):
             "StackName": self.external_name,
             "Parameters": self._format_parameters(self.parameters),
             "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+            "NotificationARNs": self.config.get("notifications", []),
             "Tags": [
                 {"Key": str(k), "Value": str(v)}
                 for k, v in self.config.get("stack_tags", {}).items()
@@ -232,6 +233,7 @@ class Stack(object):
             "StackName": self.external_name,
             "Parameters": self._format_parameters(self.parameters),
             "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+            "NotificationARNs": self.config.get("notifications", []),
             "Tags": [
                 {"Key": str(k), "Value": str(v)}
                 for k, v in self.config.get("stack_tags", {}).items()
@@ -524,6 +526,7 @@ class Stack(object):
             "Parameters": self._format_parameters(self.parameters),
             "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
             "ChangeSetName": change_set_name,
+            "NotificationARNs": self.config.get("notifications", []),
             "Tags": [
                 {"Key": str(k), "Value": str(v)}
                 for k, v in self.config.get("stack_tags", {}).items()
