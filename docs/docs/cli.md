@@ -36,6 +36,7 @@ $ sceptre delete-stack
 $ sceptre describe-change-set
 $ sceptre describe-env
 $ sceptre describe-env-resources
+$ sceptre describe-env-dependencies
 $ sceptre describe-stack-outputs
 $ sceptre describe-stack-resources
 $ sceptre diff
@@ -77,4 +78,11 @@ Note that Sceptre prepends the string `SCEPTRE_` to the name of the environment 
 ```shell
 $ env | grep SCEPTRE
 SCEPTRE_<output_name>=<output_value>
+```
+
+## Visualizing Environment Dependencies
+
+The `describe-env-dependencies` command can produce output in the DOT language. DOT can easily be converted to an image by making use of the dot command provided by GraphViz:
+```shell
+$ sceptre describe-env-dependencies ENVIRONMENT --dot | dot -Tpng > dependencies.png
 ```

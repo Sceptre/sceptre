@@ -562,6 +562,52 @@ def describe_env(ctx, environment):
     write(responses, ctx.obj["output_format"], ctx.obj["no_colour"])
 
 
+@cli.command(name="describe-env-dependencies")
+@environment_options
+@click.option(
+    "--dot", is_flag=True, help="Format output in the graphwiz dot language."
+)
+@click.option("--invert", is_flag=True, help="Invert the dependency graph.")
+@click.pass_context
+@catch_exceptions
+def describe_env_dependencies(ctx, environment, dot, invert):
+    """
+    Describes ENVIRONMENTs stack dependencies
+    """
+    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
+
+    if not invert:
+        dependencies = env.get_launch_dependencies(environment)
+    else:
+        dependencies = env.get_delete_dependencies()
+
+    if dot:
+        dot_repr = _generate_dot_representation(dependencies)
+        write(dot_repr, "str")
+    else:
+        write(dependencies, ctx.obj["output_format"])
+
+
+def _generate_dot_representation(dependencies):
+    """
+    Converts a environment dependencies into DOT language.
+
+    :param dependencies: dictionary of stacks with their list of dependencies
+    :type dependencies: dict
+    :returns: Dot formatted dependency graph
+    :rtype: str
+    """
+    lines = []
+    for stack, stack_dependencies in dependencies.items():
+        lines.append("\"{0}\";".format(stack))
+        for dependency in stack_dependencies:
+            lines.append("\"{0}\" -> \"{1}\";".format(dependency, stack))
+
+    blob = "\n".join(lines)
+    return "digraph stack_dependencies {{{dependencies}}}"\
+        .format(dependencies=blob)
+
+
 @cli.command(name="set-stack-policy")
 @stack_options
 @click.option("--policy-file")
