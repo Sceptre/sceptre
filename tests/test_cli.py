@@ -120,22 +120,6 @@ class TestCli(object):
 
     @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli.get_env")
-    def test_diff_stack(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
-        mock_get_env.return_value.stacks["vpc"].diff\
-            .return_value = ""
-
-        result = self.runner.invoke(
-            cli, ["diff", "dev", "vpc"]
-        )
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].diff\
-            .assert_called_with()
-        # Assert that there is output.
-        assert result.output
-
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
     def test_create_stack(self, mock_get_env, mock_getcwd):
         mock_getcwd.return_value = sentinel.cwd
         self.runner.invoke(cli, ["create-stack", "dev", "vpc"])

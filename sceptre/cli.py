@@ -235,23 +235,6 @@ def describe_stack_resources(ctx, environment, stack):
     write(response, ctx.obj["output_format"])
 
 
-@cli.command(name="diff")
-@stack_options
-@click.pass_context
-@catch_exceptions
-def diff(ctx, environment, stack):
-    """
-    Prints the diff between the currently deployed stack with the local
-    version of that stack.
-
-    Diffs ENVIRONMENT/STACK.
-    """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    diff = env.stacks[stack].diff()
-
-    write(diff)
-
-
 @cli.command(name="create-stack")
 @stack_options
 @click.pass_context
