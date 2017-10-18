@@ -208,6 +208,7 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         }}
         self.stack._hooks = {}
         self.stack.config["role_arn"] = sentinel.role_arn
+        self.stack.config["notifications"] = [sentinel.notification]
         self.stack.create()
 
         self.stack.connection_manager.call.assert_called_with(
@@ -219,6 +220,46 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
                 "Parameters": sentinel.parameters,
                 "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
                 "RoleARN": sentinel.role_arn,
+                "NotificationARNs": [sentinel.notification],
+                "Tags": [
+                    {"Key": "tag1", "Value": "val1"}
+                ]
+            }
+        )
+        mock_wait_for_completion.assert_called_once_with()
+
+    @patch("sceptre.stack.Stack._format_parameters")
+    @patch("sceptre.stack.Stack._wait_for_completion")
+    @patch("sceptre.stack.Stack._get_template_details")
+    def test_create_sends_correct_request_no_notifications(
+            self, mock_get_template_details,
+            mock_wait_for_completion, mock_format_params
+    ):
+        mock_format_params.return_value = sentinel.parameters
+        mock_get_template_details.return_value = {
+            "Template": sentinel.template
+        }
+        self.stack.environment_config = {
+            "template_bucket_name": sentinel.template_bucket_name,
+            "template_key_prefix": sentinel.template_key_prefix
+        }
+        self.stack._config = {"stack_tags": {
+            "tag1": "val1"
+        }}
+        self.stack._hooks = {}
+        self.stack.config["role_arn"] = sentinel.role_arn
+        self.stack.create()
+
+        self.stack.connection_manager.call.assert_called_with(
+            service="cloudformation",
+            command="create_stack",
+            kwargs={
+                "StackName": sentinel.external_name,
+                "Template": sentinel.template,
+                "Parameters": sentinel.parameters,
+                "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                "RoleARN": sentinel.role_arn,
+                "NotificationARNs": [],
                 "Tags": [
                     {"Key": "tag1", "Value": "val1"}
                 ]
@@ -246,6 +287,7 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         }}
         self.stack._hooks = {}
         self.stack.config["role_arn"] = sentinel.role_arn
+        self.stack.config["notifications"] = [sentinel.notification]
         self.stack.config["on_failure"] = 'DO_NOTHING'
         self.stack.create()
 
@@ -258,6 +300,7 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
                 "Parameters": sentinel.parameters,
                 "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
                 "RoleARN": sentinel.role_arn,
+                "NotificationARNs": [sentinel.notification],
                 "Tags": [
                     {"Key": "tag1", "Value": "val1"}
                 ],
@@ -286,6 +329,7 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         }}
         self.stack._hooks = {}
         self.stack.config["role_arn"] = sentinel.role_arn
+        self.stack.config["notifications"] = [sentinel.notification]
 
         self.stack.update()
         self.stack.connection_manager.call.assert_called_with(
@@ -297,6 +341,46 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
                 "Parameters": sentinel.parameters,
                 "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
                 "RoleARN": sentinel.role_arn,
+                "NotificationARNs": [sentinel.notification],
+                "Tags": [
+                    {"Key": "tag1", "Value": "val1"}
+                ]
+            }
+        )
+        mock_wait_for_completion.assert_called_once_with()
+
+    @patch("sceptre.stack.Stack._format_parameters")
+    @patch("sceptre.stack.Stack._wait_for_completion")
+    @patch("sceptre.stack.Stack._get_template_details")
+    def test_update_sends_correct_request_no_notification(
+            self, mock_get_template_details,
+            mock_wait_for_completion, mock_format_params
+    ):
+        mock_format_params.return_value = sentinel.parameters
+        mock_get_template_details.return_value = {
+            "Template": sentinel.template
+        }
+        self.stack.environment_config = {
+            "template_bucket_name": sentinel.template_bucket_name,
+            "template_key_prefix": sentinel.template_key_prefix
+        }
+        self.stack._config = {"stack_tags": {
+            "tag1": "val1"
+        }}
+        self.stack._hooks = {}
+        self.stack.config["role_arn"] = sentinel.role_arn
+
+        self.stack.update()
+        self.stack.connection_manager.call.assert_called_with(
+            service="cloudformation",
+            command="update_stack",
+            kwargs={
+                "StackName": sentinel.external_name,
+                "Template": sentinel.template,
+                "Parameters": sentinel.parameters,
+                "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                "RoleARN": sentinel.role_arn,
+                "NotificationARNs": [],
                 "Tags": [
                     {"Key": "tag1", "Value": "val1"}
                 ]
@@ -638,6 +722,7 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             "stack_tags": {"tag1": "val1"}
         }
         self.stack.config["role_arn"] = sentinel.role_arn
+        self.stack.config["notifications"] = [sentinel.notification]
 
         self.stack.create_change_set(sentinel.change_set_name)
         self.stack.connection_manager.call.assert_called_with(
@@ -650,6 +735,43 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
                 "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
                 "ChangeSetName": sentinel.change_set_name,
                 "RoleARN": sentinel.role_arn,
+                "NotificationARNs": [sentinel.notification],
+                "Tags": [
+                    {"Key": "tag1", "Value": "val1"}
+                ]
+            }
+        )
+
+    @patch("sceptre.stack.Stack._format_parameters")
+    @patch("sceptre.stack.Stack._get_template_details")
+    def test_create_change_set_sends_correct_request_no_notifications(
+            self, mock_get_template_details, mock_format_params
+    ):
+        mock_format_params.return_value = sentinel.parameters
+        mock_get_template_details.return_value = {
+            "Template": sentinel.template
+        }
+        self.stack.environment_config = {
+            "template_bucket_name": sentinel.template_bucket_name,
+            "template_key_prefix": sentinel.template_key_prefix
+        }
+        self.stack._config = {
+            "stack_tags": {"tag1": "val1"}
+        }
+        self.stack.config["role_arn"] = sentinel.role_arn
+
+        self.stack.create_change_set(sentinel.change_set_name)
+        self.stack.connection_manager.call.assert_called_with(
+            service="cloudformation",
+            command="create_change_set",
+            kwargs={
+                "StackName": sentinel.external_name,
+                "Template": sentinel.template,
+                "Parameters": sentinel.parameters,
+                "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                "ChangeSetName": sentinel.change_set_name,
+                "RoleARN": sentinel.role_arn,
+                "NotificationARNs": [],
                 "Tags": [
                     {"Key": "tag1", "Value": "val1"}
                 ]
