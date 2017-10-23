@@ -20,7 +20,7 @@ with open("requirements.txt") as requirements_file:
 test_requirements = [
     "pytest==2.8.5",
     "moto==0.4.19",
-    "mock==1.3.0",
+    "mock==1.3.1",
     "behave==1.2.5"
 ]
 
@@ -30,7 +30,7 @@ setup_requirements = [
 
 setup(
     name="sceptre",
-    version="1.3.0",
+    version="1.3.1",
     description="Cloud Provisioning Tool",
     long_description=readme + "\n\n" + history,
     author="Cloudreach",
