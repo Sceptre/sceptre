@@ -20,7 +20,7 @@ with open("requirements.txt") as requirements_file:
 test_requirements = [
     "pytest==2.8.5",
     "moto==0.4.19",
-    "mock==1.3.1",
+    "mock==1.3.0",
     "behave==1.2.5"
 ]
 
