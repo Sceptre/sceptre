@@ -1,4 +1,4 @@
-**Replace this text with a summary of the changes in your PR.
+**Replace the text above the line with a summary of the changes in your PR.
 The more detailed you are, the better.**
 
 -----------------
