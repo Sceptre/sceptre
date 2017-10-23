@@ -1,9 +1,7 @@
 **Replace the text above the line with a summary of the changes in your PR.
-The more detailed you are, the better. Also make sure the checklist below is filled out.**
+The more detailed you are, the better. Before submitting the PR make sure the following are checked.**
 
 -----------------
-
-Before submitting the PR make sure the following are checked:
 
 * [ ] Wrote [good commit messages][1].
 * [ ] [Squashed related commits together][2] after the changes have been approved.
