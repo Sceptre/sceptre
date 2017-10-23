@@ -1,5 +1,5 @@
 **Replace the text above the line with a summary of the changes in your PR.
-The more detailed you are, the better.**
+The more detailed you are, the better. Also make sure the checklist below is filled out.**
 
 -----------------
 
