@@ -201,7 +201,7 @@ class ConnectionManager(object):
         expired.
         """
         if self.iam_role and self._boto_session_expiration:
-            if self._boto_session_expiration >= datetime.now(tz.tzutc()):
+            if datetime.now(tz.tzutc()) >= self._boto_session_expiration:
                 self.logger.debug("Boto session has expired")
                 self.clients = {}
                 self._boto_session = None
