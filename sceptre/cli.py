@@ -630,6 +630,11 @@ def init_project(ctx, project_name):
         folder_path = os.path.join(project_folder, folder)
         os.makedirs(folder_path)
 
+    # Create .gitignore file in project
+    gitignore_path = os.path.join(project_folder, ".gitignore")
+    with open(gitignore_path, "wt") as gitignore_file:
+        gitignore_file.write("*.pyc")
+
     defaults = {
         "project_code": project_name,
         "region": os.environ.get("AWS_DEFAULT_REGION", "")
