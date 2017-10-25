@@ -50,7 +50,7 @@ The following examples demonstrate how we might architect various Sceptre projec
                 - security-group.yaml
     ```
 
-- DevOps team who manage all the infrastructure for thier service
+- DevOps team who manage all the infrastructure for their service
 
     ```
     - config
