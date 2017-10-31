@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from mock import patch, sentinel, Mock, MagicMock
+from mock import call, patch, sentinel, DEFAULT, Mock, MagicMock
 
 import datetime
 from dateutil.tz import tzutc
@@ -707,8 +707,8 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
 
     @patch("sceptre.stack.Stack._format_parameters")
     @patch("sceptre.stack.Stack._get_template_details")
-    def test_create_change_set_sends_correct_request(
-        self, mock_get_template_details, mock_format_params
+    def _create_change_set_sends_correct_request(
+        self, change_set_types, mock_get_template_details, mock_format_params
     ):
         mock_format_params.return_value = sentinel.parameters
         mock_get_template_details.return_value = {
@@ -725,21 +725,31 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         self.stack.config["notifications"] = [sentinel.notification]
 
         self.stack.create_change_set(sentinel.change_set_name)
-        self.stack.connection_manager.call.assert_called_with(
-            service="cloudformation",
-            command="create_change_set",
-            kwargs={
-                "StackName": sentinel.external_name,
-                "Template": sentinel.template,
-                "Parameters": sentinel.parameters,
-                "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
-                "ChangeSetName": sentinel.change_set_name,
-                "RoleARN": sentinel.role_arn,
-                "NotificationARNs": [sentinel.notification],
-                "Tags": [
-                    {"Key": "tag1", "Value": "val1"}
-                ]
-            }
+        calls = [
+            call(
+                service="cloudformation",
+                command="create_change_set",
+                kwargs={
+                    "StackName": sentinel.external_name,
+                    "Template": sentinel.template,
+                    "Parameters": sentinel.parameters,
+                    "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                    "ChangeSetName": sentinel.change_set_name,
+                    "ChangeSetType": change_set_type,
+                    "RoleARN": sentinel.role_arn,
+                    "NotificationARNs": [sentinel.notification],
+                    "Tags": [
+                        {"Key": "tag1", "Value": "val1"}
+                    ]
+                }
+            )
+            for change_set_type in change_set_types
+        ]
+        self.stack.connection_manager.call.assert_has_calls(
+            calls, any_order=False)
+        assert (
+            self.stack.connection_manager.call.call_count ==
+            len(change_set_types)
         )
 
     @patch("sceptre.stack.Stack._format_parameters")
@@ -770,6 +780,7 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
                 "Parameters": sentinel.parameters,
                 "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
                 "ChangeSetName": sentinel.change_set_name,
+                "ChangeSetType": "UPDATE",
                 "RoleARN": sentinel.role_arn,
                 "NotificationARNs": [],
                 "Tags": [
@@ -777,6 +788,41 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
                 ]
             }
         )
+
+    def test_create_change_set_sends_correct_request_for_existent_stack(self):
+        self._create_change_set_sends_correct_request(["UPDATE"])
+
+    def test_create_change_set_requests_to_create_stack_for_nonexistent_stack(
+            self
+    ):
+        self.mock_connection_manager.call.side_effect = [
+            ClientError(
+                {
+                    "Error": {
+                        "Code": "DoesNotExistException",
+                        "Message": "Stack with id {} does not exist".format(
+                            sentinel.external_name
+                        )
+                    }
+                },
+                sentinel.operation
+            ),
+            DEFAULT
+        ]
+        self._create_change_set_sends_correct_request(["UPDATE", "CREATE"])
+
+    def test_create_change_set_bails_on_unexpected_client_error(self):
+        self.mock_connection_manager.call.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": "FakeUnknownCode",
+                    "Message": "Fake message for unexpected error"
+                }
+            },
+            sentinel.operation
+        )
+        with pytest.raises(ClientError):
+            self._create_change_set_sends_correct_request(["UPDATE"])
 
     def test_delete_change_set_sends_correct_request(self):
         self.stack.delete_change_set(sentinel.change_set_name)
