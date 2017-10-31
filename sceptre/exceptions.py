@@ -139,3 +139,21 @@ class StackDoesNotExistError(SceptreException):
     """
     Error raised when a stack does not exist.
     """
+
+
+class RecursiveFlagMissingError(SceptreException):
+    """
+    Error raised when the recursion flag is missing.
+    """
+
+
+class StackPathRequiredError(SceptreException):
+    """
+    Error raised when a path to a stack is required.
+    """
+
+
+class StackConfigNotFoundError(SceptreException):
+    """
+    Error raised when a stack config is not found.
+    """

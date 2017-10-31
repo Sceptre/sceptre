@@ -241,7 +241,7 @@ class Config(dict):
         :param connection_manager: A connection manager.
         :type connection_manager: ConnectionManager
         """
-        self.logger.debug("Adding hook yaml constructors")
+        self.logger.debug("Adding yaml constructors")
 
         def factory(node_class):
             """
