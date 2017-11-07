@@ -148,9 +148,7 @@ class TestEnvironment(object):
 
         self.environment.launch()
 
-        mock_check_for_circular_dependencies.assert_called_once_with(
-            sentinel.dependencies
-        )
+        mock_check_for_circular_dependencies.assert_called_once_with()
         mock_build.assert_called_once_with(
             "launch", sentinel.threading_events,
             sentinel.stack_statuses, sentinel.dependencies
@@ -178,9 +176,7 @@ class TestEnvironment(object):
 
         self.environment.delete()
 
-        mock_check_for_circular_dependencies.assert_called_once_with(
-            sentinel.dependencies
-        )
+        mock_check_for_circular_dependencies.assert_called_once_with()
         mock_build.assert_called_once_with(
             "delete", sentinel.threading_events,
             sentinel.stack_statuses, sentinel.dependencies
@@ -409,7 +405,7 @@ class TestEnvironment(object):
         }
 
         with pytest.raises(CircularDependenciesError):
-            self.environment._check_for_circular_dependencies(dependencies)
+            self.environment._check_for_circular_dependencies()
 
     def test_check_for_circular_dependencies_without_find_dependencies(self):
         dependencies = {
@@ -418,7 +414,7 @@ class TestEnvironment(object):
         }
 
         # Check this runs without throwing an exception
-        self.environment._check_for_circular_dependencies(dependencies)
+        self.environment._check_for_circular_dependencies()
 
     @patch("sceptre.environment.Config")
     def test_get_config(self, mock_Config):

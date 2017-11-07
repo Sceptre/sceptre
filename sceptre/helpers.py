@@ -11,6 +11,7 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
 
+from .exceptions import CircularDependenciesError
 
 def camel_to_snake_case(string):
     """
@@ -176,3 +177,24 @@ def get_subclasses(class_type, directory=None):
                         classes[camel_to_snake_case(attr.__name__)] = attr
 
     return classes
+
+def _detect_cycles(stack, encountered_stacks):
+    """
+    Use Depth-first search to detect cycles.
+    :returns: A dictionary containing all of the nodes encountered
+    during the depth first search.
+    """
+    for dependency in stack._get_launch_dependencies(stack.path):
+        status = encountered_stacks.get(dependency, None)
+        if status is "ENCOUNTERED":
+            raise CircularDependenciesError(
+                "Found circular dependency involving "
+                "{0}"
+            ).format(dependency.stack_name)
+        elif status is None:
+            encountered_stacks[dependency] = "ENCOUNTERED"
+        else:
+            return encountered_stacks
+        _detect_cycles(dependency, encountered_stacks)
+        encountered_stacks[dependency] = "DONE"
+    return encountered_stacks
