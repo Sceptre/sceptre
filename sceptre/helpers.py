@@ -13,6 +13,7 @@ from concurrent.futures import as_completed
 
 from .exceptions import CircularDependenciesError
 
+
 def camel_to_snake_case(string):
     """
     Converts a string from camel case to snake case.
@@ -177,6 +178,7 @@ def get_subclasses(class_type, directory=None):
                         classes[camel_to_snake_case(attr.__name__)] = attr
 
     return classes
+
 
 def _detect_cycles(stack, encountered_stacks):
     """
