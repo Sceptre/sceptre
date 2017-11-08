@@ -180,13 +180,14 @@ def get_subclasses(class_type, directory=None):
     return classes
 
 
-def _detect_cycles(stack, encountered_stacks):
+def _detect_cycles(stack, encountered_stacks, available_stacks):
     """
     Use Depth-first search to detect cycles.
     :returns: A dictionary containing all of the nodes encountered
     during the depth first search.
     """
-    for dependency in stack.dependencies:
+    for dependency_name in stack.dependencies:
+        dependency = available_stacks[dependency_name]
         status = encountered_stacks.get(dependency, None)
         if status is "ENCOUNTERED":
             raise CircularDependenciesError(
@@ -197,6 +198,6 @@ def _detect_cycles(stack, encountered_stacks):
             encountered_stacks[dependency] = "ENCOUNTERED"
         else:
             return encountered_stacks
-        _detect_cycles(dependency, encountered_stacks)
+        _detect_cycles(dependency, encountered_stacks, available_stacks)
         encountered_stacks[dependency] = "DONE"
     return encountered_stacks

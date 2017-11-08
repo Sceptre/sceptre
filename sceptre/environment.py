@@ -340,8 +340,13 @@ class Environment(object):
         self.logger.debug("Checking for circular dependencies...")
 
         encountered_stacks = {}
-        for stack in self.stacks.values():
-            encountered_stacks = _detect_cycles(stack, encountered_stacks)
+        available_stacks = self.stacks
+        for stack in available_stacks.values():
+            encountered_stacks = _detect_cycles(
+                stack,
+                encountered_stacks,
+                available_stacks
+            )
         self.logger.debug("No circular dependencies found")
 
     def _get_config(self):
