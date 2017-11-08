@@ -339,6 +339,8 @@ class Environment(object):
         """
         self.logger.debug("Checking for circular dependencies...")
 
+        if not self.is_leaf:
+            return
         encountered_stacks = {}
         available_stacks = self.stacks
         for stack in available_stacks.values():

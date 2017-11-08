@@ -187,7 +187,7 @@ def _detect_cycles(stack, encountered_stacks, available_stacks):
     during the depth first search.
     """
     for dependency_name in stack.dependencies:
-        dependency = available_stacks[dependency_name]
+        dependency = available_stacks[dependency_name.split("/")[-1]]
         status = encountered_stacks.get(dependency, None)
         if status is "ENCOUNTERED":
             raise CircularDependenciesError(
