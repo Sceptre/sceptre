@@ -189,8 +189,8 @@ def _detect_cycles(stack, encountered_stacks):
         if status is "ENCOUNTERED":
             raise CircularDependenciesError(
                 "Found circular dependency involving "
-                "{0}"
-            ).format(dependency.stack_name)
+                "{0}".format(dependency.stack_name)
+            )
         elif status is None:
             encountered_stacks[dependency] = "ENCOUNTERED"
         else:

@@ -2,7 +2,7 @@
 
 import os
 import pytest
-from mock import patch, sentinel, Mock, PropertyMock
+from mock import patch, sentinel, MagicMock, Mock, PropertyMock
 
 from botocore.exceptions import ClientError
 
@@ -12,6 +12,7 @@ from sceptre.exceptions import InvalidEnvironmentPathError
 
 from sceptre.environment import Environment
 from sceptre.stack_status import StackStatus
+from sceptre.stack import Stack
 
 
 class TestEnvironment(object):
@@ -398,12 +399,21 @@ class TestEnvironment(object):
             "dev/mock_stack_3": [],
         }
 
-    def test_check_for_circular_dependencies_with_circular_dependencies(self):
-        dependencies = {
-            "stack-1": ["stack-2"],
-            "stack-2": ["stack-1"]
+    @patch("sceptre.environment.Environment._get_launch_dependencies")
+    def test_check_for_circular_dependencies_with_circular_dependencies(
+            self,
+            mock_get_launch_dependencies
+    ):
+        stack1 = MagicMock(Spec=Stack)
+        stack2 = Mock(Spec=Stack)
+        stack1._get_launch_dependencies.return_value = [stack2]
+        stack1.name = "stack1"
+        stack2._get_launch_dependencies.return_value = [stack1]
+        stack2.name = "stack2"
+        stacks = {"stack1": stack1,
+                  "stack2": stack2
         }
-
+        self.environment.stacks = stacks
         with pytest.raises(CircularDependenciesError):
             self.environment._check_for_circular_dependencies()
 
@@ -413,6 +423,16 @@ class TestEnvironment(object):
             "stack-2": []
         }
 
+        stack1 = MagicMock(Spec=Stack)
+        stack2 = Mock(Spec=Stack)
+        stack1._get_launch_dependencies.return_value = [stack2]
+        stack1.name = "stack1"
+        stack2._get_launch_dependencies.return_value = []
+        stack2.name = "stack2"
+        stacks = {"stack1": stack1,
+                  "stack2": stack2
+        }
+        self.environment.stacks = stacks
         # Check this runs without throwing an exception
         self.environment._check_for_circular_dependencies()
 
