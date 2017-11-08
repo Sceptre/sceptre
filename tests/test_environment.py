@@ -402,9 +402,9 @@ class TestEnvironment(object):
     def test_check_for_circular_dependencies_with_circular_dependencies(self):
         stack1 = MagicMock(Spec=Stack)
         stack2 = MagicMock(Spec=Stack)
-        stack1._get_launch_dependencies.return_value = [stack2]
+        stack1.dependencies = [stack2]
         stack1.name = "stack1"
-        stack2._get_launch_dependencies.return_value = [stack1]
+        stack2.dependencies = [stack1]
         stack2.name = "stack2"
         stacks = {
             "stack1": stack1,
@@ -418,11 +418,11 @@ class TestEnvironment(object):
         stack1 = MagicMock(Spec=Stack)
         stack2 = MagicMock(Spec=Stack)
         stack3 = MagicMock(Spec=Stack)
-        stack1._get_launch_dependencies.return_value = [stack2]
+        stack1.dependencies = [stack2]
         stack1.name = "stack1"
-        stack2._get_launch_dependencies.return_value = [stack3]
+        stack2.dependencies = [stack3]
         stack2.name = "stack2"
-        stack3._get_launch_dependencies.return_value = [stack1]
+        stack3.dependencies = [stack1]
         stack3.name = "stack3"
         stacks = {
             "stack1": stack1,
@@ -436,9 +436,9 @@ class TestEnvironment(object):
     def test_check_for_circular_dependencies_without_find_dependencies(self):
         stack1 = MagicMock(Spec=Stack)
         stack2 = MagicMock(Spec=Stack)
-        stack1._get_launch_dependencies.return_value = [stack2]
+        stack1.dependencies = [stack2]
         stack1.name = "stack1"
-        stack2._get_launch_dependencies.return_value = []
+        stack2.dependencies = []
         stack2.name = "stack2"
         stacks = {
             "stack1": stack1,

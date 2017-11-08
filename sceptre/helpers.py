@@ -186,7 +186,7 @@ def _detect_cycles(stack, encountered_stacks):
     :returns: A dictionary containing all of the nodes encountered
     during the depth first search.
     """
-    for dependency in stack._get_launch_dependencies(stack.path):
+    for dependency in stack.dependencies:
         status = encountered_stacks.get(dependency, None)
         if status is "ENCOUNTERED":
             raise CircularDependenciesError(
