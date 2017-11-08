@@ -411,8 +411,9 @@ class TestEnvironment(object):
             "stack2": stack2
         }
         self.environment.stacks = stacks
-        with pytest.raises(CircularDependenciesError):
+        with pytest.raises(CircularDependenciesError) as ex:
             self.environment._check_for_circular_dependencies()
+        assert "['stack2', 'stack1']" in str(ex)
 
     def test_circular_dependencies_with_3_circular_dependencies(self):
         stack1 = MagicMock(Spec=Stack)
@@ -430,8 +431,9 @@ class TestEnvironment(object):
             "stack3": stack3
         }
         self.environment.stacks = stacks
-        with pytest.raises(CircularDependenciesError):
+        with pytest.raises(CircularDependenciesError) as ex:
             self.environment._check_for_circular_dependencies()
+        assert "['stack2', 'stack3', 'stack1']" in str(ex)
 
     def test_check_for_circular_dependencies_without_find_dependencies(self):
         stack1 = MagicMock(Spec=Stack)
