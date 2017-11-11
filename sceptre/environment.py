@@ -339,19 +339,19 @@ class Environment(object):
         """
         self.logger.debug("Checking for circular dependencies...")
 
-        if not self.is_leaf:
-            return
-        encountered_stacks = {}
-        available_stacks = self.stacks
-        for stack in available_stacks.values():
-            encountered_stacks[stack] = "ENCOUNTERED"
-            encountered_stacks = _detect_cycles(
-                stack,
-                encountered_stacks,
-                available_stacks,
-                [stack.name]
-            )
-            encountered_stacks[stack] = "DONE"
+        if self.is_leaf:
+            encountered_stacks = {}
+            available_stacks = self.stacks
+            for stack in available_stacks.values():
+                if encountered_stacks.get(stack) is not "DONE":
+                    encountered_stacks[stack] = "ENCOUNTERED"
+                    encountered_stacks = _detect_cycles(
+                        stack,
+                        encountered_stacks,
+                        available_stacks,
+                        [stack.name]
+                    )
+                    encountered_stacks[stack] = "DONE"
         self.logger.debug("No circular dependencies found")
 
     def _get_config(self):

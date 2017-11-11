@@ -191,22 +191,20 @@ def _detect_cycles(stack, encountered_stacks, available_stacks, path):
         # are prefixed with environment names separated by /, which is
         # undesirable here, so we strip them out.
         dependency = available_stacks[dependency_name.split("/")[-1]]
-        status = encountered_stacks.get(dependency, None)
-        if status is "ENCOUNTERED":
+        status = encountered_stacks.get(dependency)
+        if status == "ENCOUNTERED":
             raise CircularDependenciesError(
                 "Found circular dependency involving "
                 "{0}".format(path)
             )
         elif status is None:
             encountered_stacks[dependency] = "ENCOUNTERED"
-        else:
-            return encountered_stacks
-        path.append(dependency_name)
-        _detect_cycles(
-            dependency,
-            encountered_stacks,
-            available_stacks,
-            path
-        )
-        encountered_stacks[dependency] = "DONE"
+            path.append(dependency_name)
+            _detect_cycles(
+                dependency,
+                encountered_stacks,
+                available_stacks,
+                path
+            )
+            encountered_stacks[dependency] = "DONE"
     return encountered_stacks
