@@ -516,7 +516,7 @@ class TestEnvironment(object):
         self.environment.stacks = stacks
         self.environment._check_for_circular_dependencies()
 
-    def test_modified_DAG_diamond_throws_no_circ_dependencies_error(self):
+    def test_modified_DAG_diamond_throws_circ_dependencies_error(self):
         """
         Ensures
             o
@@ -580,9 +580,10 @@ class TestEnvironment(object):
         self.environment.stacks = stacks
         with pytest.raises(CircularDependenciesError) as ex:
             self.environment._check_for_circular_dependencies()
-        assert all(x in str(ex) for x in ['stack4', 'stack3', 'stack2', 'stack1'])
+        assert all(x in str(ex) for x in ['stack4', 'stack3', 'stack2',
+                                          'stack1'])
 
-    def test_4_cycle_throws_circ_dependencies_error(self):
+    def test_modified_3_cycle_throws_circ_dependencies_error(self):
         """
         Ensures
             o   o
