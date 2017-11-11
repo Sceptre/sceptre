@@ -613,7 +613,8 @@ class TestEnvironment(object):
         self.environment.stacks = stacks
         with pytest.raises(CircularDependenciesError) as ex:
             self.environment._check_for_circular_dependencies()
-        assert all(x in str(ex) for x in ['stack4', 'stack3', 'stack2']) and 'stack1' not in str(ex)
+        assert (all(x in str(ex) for x in ['stack4', 'stack3', 'stack2']) and
+                'stack1' not in str(ex))
 
     @patch("sceptre.environment.Config")
     def test_get_config(self, mock_Config):
