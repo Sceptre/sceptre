@@ -193,13 +193,17 @@ def _detect_cycles(stack, encountered_stacks, available_stacks, path):
         dependency = available_stacks[dependency_name.split("/")[-1]]
         status = encountered_stacks.get(dependency)
         if status == "ENCOUNTERED":
+            # Reformat path to only include the cycle
+            path.insert(0, dependency_name)
+            cycle = path[path.index(dependency_name):]
+            print cycle
             raise CircularDependenciesError(
                 "Found circular dependency involving "
-                "{0}".format(path)
+                "{0}".format(cycle)
             )
         elif status is None:
             encountered_stacks[dependency] = "ENCOUNTERED"
-            path.append(dependency_name)
+            path.insert(0, dependency_name)
             _detect_cycles(
                 dependency,
                 encountered_stacks,
