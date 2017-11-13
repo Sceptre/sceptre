@@ -91,39 +91,6 @@ class Environment(object):
                 "not have leading or trailing slashes.".format(path)
             )
         return path
-    @staticmethod
-    def _detect_cycles(node, encountered_nodes, available_nodes, path):
-        """
-        Use Depth-first search to detect cycles.
-        :returns: A dictionary containing all of the nodes encountered
-        during the depth first search.
-        """
-        for dependency_name in node.dependencies:
-            # The keys in _load_nodes() (where the available_nodes comes from)
-            # are prefixed with environment names separated by /, which is
-            # undesirable here, so we strip them out.
-            dependency = available_nodes[dependency_name.split("/")[-1]]
-            status = encountered_nodes.get(dependency)
-            if status == "ENCOUNTERED":
-                # Reformat path to only include the cycle
-                path.insert(0, dependency_name)
-                cycle = path[path.index(dependency_name):]
-                raise CircularDependenciesError(
-                    "Found circular dependency involving "
-                    "{0}".format(cycle)
-                )
-            elif status is None:
-                encountered_nodes[dependency] = "ENCOUNTERED"
-                path.insert(0, dependency_name)
-                _detect_cycles(
-                    dependency,
-                    encountered_nodes,
-                    available_nodes,
-                    path
-                )
-            encountered_nodes[dependency] = "DONE"
-        return encountered_nodes
-
 
     @property
     def is_leaf(self):
@@ -377,7 +344,7 @@ class Environment(object):
             for stack in self.stacks.values():
                 if encountered_stacks.get(stack, "UNENCOUNTERED") != "DONE":
                     encountered_stacks[stack] = "ENCOUNTERED"
-                    encountered_stacks = Environment._detect_cycles(
+                    encountered_stacks = _detect_cycles(
                         stack,
                         encountered_stacks,
                         self.stacks,
