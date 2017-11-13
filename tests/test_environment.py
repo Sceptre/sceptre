@@ -535,7 +535,7 @@ class TestEnvironment(object):
         stack1.name = "stack1"
         stack2.dependencies = ["stack4"]
         stack2.name = "stack2"
-        stack3.dependencies = ["stack5"]
+        stack3.dependencies = ["stack4", "stack5"]
         stack3.name = "stack3"
         stack4.dependencies = ["stack5"]
         stack4.name = "stack4"

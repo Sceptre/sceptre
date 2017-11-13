@@ -341,14 +341,13 @@ class Environment(object):
 
         if self.is_leaf:
             encountered_stacks = {}
-            available_stacks = self.stacks
-            for stack in available_stacks.values():
-                if encountered_stacks.get(stack) is not "DONE":
+            for stack in self.stacks.values():
+                if encountered_stacks.get(stack, "UNENCOUNTERED") != "DONE":
                     encountered_stacks[stack] = "ENCOUNTERED"
                     encountered_stacks = _detect_cycles(
                         stack,
                         encountered_stacks,
-                        available_stacks,
+                        self.stacks,
                         [stack.name]
                     )
                     encountered_stacks[stack] = "DONE"
