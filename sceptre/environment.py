@@ -22,6 +22,7 @@ from .exceptions import StackDoesNotExistError
 from .config import Config
 from .connection_manager import ConnectionManager
 from .exceptions import InvalidEnvironmentPathError
+from .exceptions import CircularDependenciesError
 from .helpers import recurse_into_sub_environments, get_name_tuple
 from .helpers import _detect_cycles
 from .stack import Stack
@@ -91,6 +92,7 @@ class Environment(object):
                 "not have leading or trailing slashes.".format(path)
             )
         return path
+
     @staticmethod
     def _detect_cycles(node, encountered_nodes, available_nodes, path):
         """
@@ -123,7 +125,6 @@ class Environment(object):
                 )
             encountered_nodes[dependency] = "DONE"
         return encountered_nodes
-
 
     @property
     def is_leaf(self):
