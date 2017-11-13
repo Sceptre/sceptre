@@ -17,13 +17,13 @@ import botocore
 
 from concurrent.futures import ThreadPoolExecutor, wait
 
-from .exceptions import CircularDependenciesError
 from .exceptions import StackDoesNotExistError
 
 from .config import Config
 from .connection_manager import ConnectionManager
 from .exceptions import InvalidEnvironmentPathError
 from .helpers import recurse_into_sub_environments, get_name_tuple
+from .helpers import _detect_cycles
 from .stack import Stack
 from .stack_status import StackStatus
 
@@ -124,7 +124,7 @@ class Environment(object):
         stack_statuses = self._get_initial_statuses()
         launch_dependencies = self._get_launch_dependencies(self.path)
 
-        self._check_for_circular_dependencies(launch_dependencies)
+        self._check_for_circular_dependencies()
         self._build(
             "launch", threading_events, stack_statuses, launch_dependencies
         )
@@ -141,7 +141,7 @@ class Environment(object):
         stack_statuses = self._get_initial_statuses()
         delete_dependencies = self._get_delete_dependencies()
 
-        self._check_for_circular_dependencies(delete_dependencies)
+        self._check_for_circular_dependencies()
         self._build(
             "delete", threading_events, stack_statuses, delete_dependencies
         )
@@ -330,7 +330,7 @@ class Environment(object):
                 delete_dependencies[dependency].append(stack_name)
         return delete_dependencies
 
-    def _check_for_circular_dependencies(self, dependencies):
+    def _check_for_circular_dependencies(self):
         """
         Checks to make sure that no stacks are dependent on stacks which are
         dependent on the first stack.
@@ -338,14 +338,19 @@ class Environment(object):
         :raises: sceptre.workplan.CircularDependenciesException
         """
         self.logger.debug("Checking for circular dependencies...")
-        for stack_name, stack_dependencies in dependencies.items():
-            for dependency in stack_dependencies:
-                if stack_name in dependencies[dependency]:
-                    raise CircularDependenciesError(
-                        "The {0} stack is dependent on the {1} stack, which "
-                        "is in turn dependent on the {0} "
-                        "stack.".format(stack_name, dependency)
+
+        if self.is_leaf:
+            encountered_stacks = {}
+            for stack in self.stacks.values():
+                if encountered_stacks.get(stack, "UNENCOUNTERED") != "DONE":
+                    encountered_stacks[stack] = "ENCOUNTERED"
+                    encountered_stacks = _detect_cycles(
+                        stack,
+                        encountered_stacks,
+                        self.stacks,
+                        [stack.name]
                     )
+                    encountered_stacks[stack] = "DONE"
         self.logger.debug("No circular dependencies found")
 
     def _get_config(self):
