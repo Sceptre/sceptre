@@ -135,7 +135,7 @@ class Template(object):
         Uploads the template to ``bucket_name`` and returns its URL.
 
         The template is uploaded with the key
-        ``<key_prefix>/<region>/<environment_path>/<stack_name>-<timestamp>.json``.
+        ``<key_prefix>/<region>/<environment_path>/<stack_name>-<timestamp>.<extension>``.
 
         :param region: The AWS region to create the bucket in.
         :type region: str
@@ -164,15 +164,19 @@ class Template(object):
 
         # Remove any leading or trailing slashes the user may have added.
         key_prefix = key_prefix.strip("/")
+        
+        file_extension = os.path.splitext(self.path)[1]
 
         template_key = "/".join([
             key_prefix,
             region,
             environment_path,
-            "{stack_name}-{time_stamp}.json".format(
+            "{stack_name}-{time_stamp}".format(
                 stack_name=stack_name,
                 time_stamp=datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%fZ")
-            )
+            ),
+            ".",
+            file_extension
         ])
 
         self.logger.debug(
