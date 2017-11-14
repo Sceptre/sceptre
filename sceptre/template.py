@@ -134,7 +134,7 @@ class Template(object):
         else:
             for char in self.body:
                 if (not char.isspace()):
-                    # based on the first non-whitespace char in the rendered template
+                    # determine extension based on the first non-whitespace char in the rendered template
                     if (char=="{"):
                         return ".json"
                     else:
