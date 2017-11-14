@@ -186,7 +186,7 @@ class Template(object):
             key_prefix,
             region,
             environment_path,
-            "{stack_name}-{time_stamp}.{extension}".format(
+            "{stack_name}-{time_stamp}{extension}".format(
                 stack_name=stack_name,
                 time_stamp=datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%fZ"),
                 extension=file_extension
