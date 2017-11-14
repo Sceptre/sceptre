@@ -127,7 +127,7 @@ class Template(object):
             sys.path.remove(os.path.join(os.getcwd(), directory))
         return body
 
-    def get_template_extension(self):
+    def get_rendered_template_extension(self):
         file_extension = os.path.splitext(self.path)[1]
         if file_extension in {".json", ".yaml"}:
             return file_extension
@@ -180,7 +180,7 @@ class Template(object):
         # Remove any leading or trailing slashes the user may have added.
         key_prefix = key_prefix.strip("/")
         
-        file_extension = self.get_template_extension()
+        file_extension = self.get_rendered_template_extension()
 
         template_key = "/".join([
             key_prefix,
