@@ -127,6 +127,21 @@ class Template(object):
             sys.path.remove(os.path.join(os.getcwd(), directory))
         return body
 
+    def get_template_extension(self):
+        file_extension = os.path.splitext(self.path)[1]
+        if file_extension in {".json", ".yaml"}:
+            return file_extension
+        else:
+            for char in self.body:
+                if (not char.isspace()):
+                    # based on the first non-whitespace char in the rendered template
+                    if (char=="{"):
+                        return ".json"
+                    else:
+                        return ".yaml"
+
+        return ".json"
+
     def upload_to_s3(
             self, region, bucket_name, key_prefix, environment_path,
             stack_name, connection_manager
@@ -165,7 +180,7 @@ class Template(object):
         # Remove any leading or trailing slashes the user may have added.
         key_prefix = key_prefix.strip("/")
         
-        file_extension = os.path.splitext(self.path)[1]
+        file_extension = self.get_template_extension()
 
         template_key = "/".join([
             key_prefix,
