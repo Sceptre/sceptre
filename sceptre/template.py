@@ -128,14 +128,20 @@ class Template(object):
         return body
 
     def get_rendered_template_extension(self):
+        """
+        Determine the extension of the rendered template.
+        If the file extension is .json or .yaml, assume this is the value.
+        Otherwise, determine based on the first non-whitespace char in the rendered template.
+
+        Used as the extension of the file to upload to S3.
+        """
         file_extension = os.path.splitext(self.path)[1]
         if file_extension in {".json", ".yaml"}:
             return file_extension
         else:
             for char in self.body:
-                if (not char.isspace()):
-                    # determine extension based on the first non-whitespace char in the rendered template
-                    if (char=="{"):
+                if not char.isspace():
+                    if char == "{":
                         return ".json"
                     else:
                         return ".yaml"
@@ -179,7 +185,7 @@ class Template(object):
 
         # Remove any leading or trailing slashes the user may have added.
         key_prefix = key_prefix.strip("/")
-        
+
         file_extension = self.get_rendered_template_extension()
 
         template_key = "/".join([
