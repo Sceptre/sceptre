@@ -165,13 +165,15 @@ class Template(object):
         # Remove any leading or trailing slashes the user may have added.
         key_prefix = key_prefix.strip("/")
         
-        file_extension = os.path.splitext(self.path)[1]
+        file_extension = os.path.splitext(self.path)[1]        
+        if file_extension not in {".json", ".yaml"}:
+            file_extension = ".template"
 
         template_key = "/".join([
             key_prefix,
             region,
             environment_path,
-            "{stack_name}-{time_stamp}.{extension}".format(
+            "{stack_name}-{time_stamp}{extension}".format(
                 stack_name=stack_name,
                 time_stamp=datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%fZ"),
                 extension=file_extension
