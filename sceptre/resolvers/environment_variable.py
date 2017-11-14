@@ -23,4 +23,4 @@ class EnvironmentVariable(Resolver):
         :returns: Value of the environment variable.
         :rtype: str
         """
-        return os.environ.get(self.argument)
+        return os.environ.get(None if self.argument == {} else self.argument)

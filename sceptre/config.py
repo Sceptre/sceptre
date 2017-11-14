@@ -7,6 +7,7 @@ This module implements a Config class, which stores a stack or environment's
 configuration.
 """
 
+import copy
 import logging
 import os
 import yaml
@@ -254,7 +255,7 @@ class Config(dict):
             :rtype: func
             """
             return lambda loader, node: node_class(
-                loader.construct_scalar(node),
+                loader.construct_object(self.resolve_node_tag(loader, node)),
                 connection_manager,
                 environment_config,
                 self
@@ -291,8 +292,9 @@ class Config(dict):
             :returns: A lambda that constructs hook objects.
             :rtype: func
             """
+
             return lambda loader, node: node_class(
-                loader.construct_scalar(node),
+                loader.construct_object(self.resolve_node_tag(loader, node)),
                 connection_manager,
                 environment_config,
                 self
@@ -333,3 +335,9 @@ class Config(dict):
                 "Added constructor for %s with node tag %s",
                 str(node_class), node_tag
             )
+
+
+    def resolve_node_tag(self, loader, node):
+        node = copy.copy(node)
+        node.tag = loader.resolve(type(node), node.value, (True, False))
+        return node

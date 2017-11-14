@@ -3,46 +3,6 @@ import abc
 import logging
 
 
-class Resolver(object):
-    """
-    Resolver is an abstract base class that should be inherited by all
-    resolvers. Environment config, stack config and the connection
-    manager are supplied to the class, as they may be of use to inheriting
-    classes.
-
-    :param environment_config: The environment_config from config.yaml files.
-    :type environment_config: sceptre.config.Config
-    :param stack_config: The stack config.
-    :type stack_config: sceptre.config.Config
-    :param connection_manager: A connection manager.
-    :type connection_manager: sceptre.connection_manager.ConnectionManager
-    :param argument: Arguments to pass to the resolver.
-    :type argument: str
-    """
-
-    __metaclass__ = abc.ABCMeta
-
-    def __init__(
-        self, argument=None, connection_manager=None,
-        environment_config=None, stack_config=None
-    ):
-        self.logger = logging.getLogger(__name__)
-        self.environment_config = environment_config
-        self.stack_config = stack_config
-        self.connection_manager = connection_manager
-        self.argument = argument
-
-    @abc.abstractmethod
-    def resolve(self):
-        """
-        An abstract method which must be overwritten by all inheriting classes.
-        This method is called to retrieve the final desired value.
-        Implementation of this method in subclasses must return a suitable
-        object or primitive type.
-        """
-        pass  # pragma: no cover
-
-
 class ResolvableProperty(object):
     """
     This is a descriptor class used to store an attribute that may contain
@@ -98,3 +58,45 @@ class ResolvableProperty(object):
                 elif isinstance(value, list) or isinstance(value, dict):
                     self.resolve_values(value)
         return attr
+
+
+class Resolver(object):
+    """
+    Resolver is an abstract base class that should be inherited by all
+    resolvers. Environment config, stack config and the connection
+    manager are supplied to the class, as they may be of use to inheriting
+    classes.
+
+    :param environment_config: The environment_config from config.yaml files.
+    :type environment_config: sceptre.config.Config
+    :param stack_config: The stack config.
+    :type stack_config: sceptre.config.Config
+    :param connection_manager: A connection manager.
+    :type connection_manager: sceptre.connection_manager.ConnectionManager
+    :param argument: Arguments to pass to the resolver.
+    :type argument: str
+    """
+
+    __metaclass__ = abc.ABCMeta
+    argument = ResolvableProperty("argument")
+    config = {}
+
+    def __init__(
+        self, argument=None, connection_manager=None,
+        environment_config=None, stack_config=None
+    ):
+        self.logger = logging.getLogger(__name__)
+        self.environment_config = environment_config
+        self.stack_config = stack_config
+        self.connection_manager = connection_manager
+        self.argument = argument
+
+    @abc.abstractmethod
+    def resolve(self):
+        """
+        An abstract method which must be overwritten by all inheriting classes.
+        This method is called to retrieve the final desired value.
+        Implementation of this method in subclasses must return a suitable
+        object or primitive type.
+        """
+        pass  # pragma: no cover
