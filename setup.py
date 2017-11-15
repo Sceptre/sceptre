@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from sceptre import __version__
 from setuptools import setup
-
 
 with open("README.rst") as readme_file:
     readme = readme_file.read()
@@ -35,9 +35,9 @@ setup_requirements = [
 
 setup(
     name="sceptre",
-    version="1.3.1",
+    version=__version__,
     description="Cloud Provisioning Tool",
-    long_description=readme + "\n\n" + history,
+    long_description=readme,
     author="Cloudreach",
     author_email="sceptre@cloudreach.com",
     license='Apache2',
