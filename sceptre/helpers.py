@@ -194,7 +194,7 @@ def _detect_cycles(node, encountered_nodes, available_nodes, path):
         status = encountered_nodes.get(dependency)
         if status == "ENCOUNTERED":
             # Reformat path to only include the cycle
-            path.insert(0, dependency_name)
+            path.append(dependency_name)
             cycle = path[path.index(dependency_name):]
             raise CircularDependenciesError(
                 "Found circular dependency involving "
@@ -202,7 +202,7 @@ def _detect_cycles(node, encountered_nodes, available_nodes, path):
             )
         elif status is None:
             encountered_nodes[dependency] = "ENCOUNTERED"
-            path.insert(0, dependency_name)
+            path.append(dependency_name)
             _detect_cycles(
                 dependency,
                 encountered_nodes,
