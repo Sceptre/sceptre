@@ -131,7 +131,8 @@ class Template(object):
         """
         Determine the extension of the rendered template.
         If the file extension is .json or .yaml, assume this is the value.
-        Otherwise, determine based on the first non-whitespace char in the rendered template.
+        Otherwise, determine based on the first non-whitespace char in the
+        rendered template.
 
         Used as the extension of the file to upload to S3.
         """
