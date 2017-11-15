@@ -109,6 +109,25 @@ jobs:
               make docs-dev
               aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/dev/ --delete
             fi
+  deploy-pypi:
+    docker:
+      - image: circleci/python:2.7.13
+        environment:
+          AWS_DEFAULT_REGION: eu-west-1
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - run:
+          name: 'Create Distributions'
+          command: |
+            . ./venv/bin/activate
+            make dist
+      - run:
+          name: 'Upload Distributions'
+          command: |
+            . ./venv/bin/activate
+            pip install twine
+            twine upload -u $PYPI_USERNAME -p $PYPI_PASSWORD dist/*
 workflows:
   version: 2
   build-test-and-deploy:
@@ -130,3 +149,23 @@ workflows:
           filters:
             branches:
               only: master
+      - deploy-pypi-approval:
+          type: approval
+          requires:
+            - lint-and-unit-tests
+            - integration-tests
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/
+      - deploy-pypi:
+          requires:
+            - deploy-pypi-approval
+            - lint-and-unit-tests
+            - integration-tests
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/
