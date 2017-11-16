@@ -178,13 +178,10 @@ class CustomResolver(Resolver):
         return self.argument
 ```
 
-This resolver can be used in a stack config file with the following syntax:
+The resolver name is the lower snake-case version of the class name. The argument of the resolver (`<value>`) will be available inside the resolver as `self.argument`. The resolver subclass above can be used in a stack config file with the following syntax:
 
 ```yaml
 template_path: <...>
 parameters:
-    # <your resolver name> is the lower snake case version of your class name,
-    # e.g `custom_resolver` <value> will be passed to the resolver's resolve()
-    # method.
     param1: !<your_resolver_name> <value>
 ```
