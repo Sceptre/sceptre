@@ -5,8 +5,7 @@ from functools import wraps
 
 class Hook(object):
     """
-    Hook is an abstract base class that should be inherited by all
-    hooks used in hooks.
+    Hook is an abstract base class that should be inherited by all hooks.
 
     :param argument: The argument of the hook.
     :type argument: str

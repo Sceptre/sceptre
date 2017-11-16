@@ -28,14 +28,14 @@ class TestEnvironment(object):
         assert self.environment.path == "path"
         assert self.environment._options == sentinel.options
         assert self.environment.stacks == []
-        assert self.environment.environments == []
+        assert self.environment.sub_environments == []
 
     def test_initialise_environment_with_no_options(self):
         environment = Environment(path="path")
         assert environment.path == "path"
         assert environment._options == {}
         assert environment.stacks == []
-        assert environment.environments == []
+        assert environment.sub_environments == []
 
     def test_repr(self):
         self.environment.path = "path"

@@ -764,7 +764,7 @@ def _get_stack(ctx, environment, stack):
     :type environment: str
     :param stack: The name of the stack.
     :type stack: str
-    :returns: An Stack.
+    :returns: A Stack.
     :rtype: sceptre.stack.Stack
     """
     path = os.path.join(environment, stack) + ".yaml"

@@ -346,7 +346,7 @@ class TestConfigReader(object):
                 assert sorted(details["stacks"]) == sorted([
                     stack.name for stack in environment.stacks
                 ])
-                for sub_env in environment.environments:
+                for sub_env in environment.sub_environments:
                     sub_env_details = details["environments"][sub_env.path]
                     check_environment(sub_env, sub_env_details)
 

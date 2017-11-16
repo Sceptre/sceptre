@@ -46,7 +46,7 @@ class Environment(object):
         self.path = path
 
         self.stacks = []
-        self.environments = []
+        self.sub_environments = []
 
         self._options = {} if options is None else options
 

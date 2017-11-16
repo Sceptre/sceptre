@@ -45,7 +45,7 @@ class TestHelpers(object):
     def test_recurse_into_sub_environments(self):
         environment = MagicMock(spec=Environment)
         environment.name = "environment"
-        environment.environments = []
+        environment.sub_environments = []
 
         def do(self):
             return {self.name: sentinel.response}
@@ -63,7 +63,7 @@ class TestHelpers(object):
 
             def __init__(self, name):
                 self.name = name
-                self.environments = []
+                self.sub_environments = []
 
             @recurse_into_sub_environments
             def do(self):
@@ -72,7 +72,7 @@ class TestHelpers(object):
         mock_env = MockEnv("environment_1")
 
         # Add leaf sub-environments
-        mock_env.environments = [
+        mock_env.sub_environments = [
             MockEnv("environment_2"), MockEnv("environment_3")
         ]
 

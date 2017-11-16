@@ -39,7 +39,7 @@ def recurse_into_sub_environments(func):
     def decorated(self, *args, **kwargs):
         function_name = func.__name__
         responses = {}
-        num_environments = len(self.environments)
+        num_environments = len(self.sub_environments)
 
         # As commands carried out by sub-environments may be blocking,
         # execute them on separate threads.
@@ -49,7 +49,7 @@ def recurse_into_sub_environments(func):
                     executor.submit(
                         getattr(environment, function_name), *args, **kwargs
                     )
-                    for environment in self.environments
+                    for environment in self.sub_environments
                 ]
                 for future in as_completed(futures):
                     response = future.result()

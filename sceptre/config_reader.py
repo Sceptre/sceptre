@@ -71,7 +71,6 @@ class ConfigReader(object):
 
     def __init__(self, sceptre_dir, variables=None):
         self.logger = logging.getLogger(__name__)
-        self._deferred_constructors = []
 
         self.sceptre_dir = sceptre_dir
 
@@ -376,7 +375,7 @@ class ConfigReader(object):
         Construct a Stack object from a config path with the environment config
         as the base config.
 
-        :param rel_path: A relative stack config path.
+        :param rel_path: A relative stack config path from the config folder.
         :type rel_path: str
         """
         directory = path.split(rel_path)[0]
@@ -388,7 +387,7 @@ class ConfigReader(object):
         Construct an Environment object from a environment path with all
         associated sub-environments and stack objects.
 
-        :param rel_path: A relative environment path.
+        :param rel_path: A relative environment path from the config folder.
         :type rel_path: str
         """
         environment_config = self.read(path.join(rel_path, "config.yaml"))
@@ -409,7 +408,7 @@ class ConfigReader(object):
 
         for abs_path, rel_path in paths.items():
             if not is_leaf and path.isdir(abs_path):
-                environment.environments.append(
+                environment.sub_environments.append(
                     self.construct_environment(rel_path)
                 )
             elif is_leaf and path.isfile(abs_path):
