@@ -1,5 +1,6 @@
 import subprocess
 import warnings
+from six import string_types
 
 from colorama import Fore, Style
 
@@ -31,7 +32,7 @@ class Bash(Hook):
             .format(Fore.YELLOW, Style.RESET_ALL),
             DeprecationWarning
         )
-        if not isinstance(self.argument, basestring):
+        if not isinstance(self.argument, string_types):
             raise InvalidHookArgumentTypeError(
                 'The argument "{0}" is the wrong type - Bash hooks require '
                 'arguments of type string.'.format(self.argument)

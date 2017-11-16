@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import abc
+import six
 import logging
 from botocore.exceptions import ClientError
 
@@ -9,11 +10,11 @@ from sceptre.exceptions import DependencyStackMissingOutputError
 from sceptre.exceptions import StackDoesNotExistError
 
 
+@six.add_metaclass(abc.ABCMeta)
 class StackOutputBase(Resolver):
     """
     A abstract base class which provides methods for getting stack outputs.
     """
-    __metaclass__ = abc.ABCMeta
 
     def __init__(self, *args, **kwargs):
         self.logger = logging.getLogger(__name__)

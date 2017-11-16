@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import warnings
+from six import string_types
 
 from colorama import Fore, Style
 
@@ -33,7 +34,7 @@ class ASGScheduledActions(Hook):
             .format(Fore.YELLOW, Style.RESET_ALL),
             DeprecationWarning
         )
-        if not isinstance(self.argument, basestring):
+        if not isinstance(self.argument, string_types):
             raise InvalidHookArgumentTypeError(
                 'The argument "{0}" is the wrong type - asg_scheduled_actions '
                 'hooks require arguments of type string.'.format(self.argument)

@@ -4,3 +4,4 @@ PyYaml==3.12
 Jinja2==2.8
 packaging==16.8
 colorama==0.3.7
+six==1.11.0
