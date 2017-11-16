@@ -13,6 +13,7 @@ from sceptre.cli import cli
 from sceptre.exceptions import SceptreException
 from sceptre.stack_status import StackStatus
 from sceptre.stack_status import StackChangeSetStatus
+from botocore.exceptions import ClientError
 
 
 class TestCli(object):
@@ -31,12 +32,47 @@ class TestCli(object):
 
     @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli.get_env")
-    def test_validate_template(self, mock_get_env, mock_getcwd):
+    def test_validate_template_with_valid_template(
+            self, mock_get_env, mock_getcwd
+            ):
         mock_getcwd.return_value = sentinel.cwd
-        self.runner.invoke(cli, ["validate-template", "dev", "vpc"])
+        mock_get_env.return_value.stacks["vpc"].validate_template\
+            .return_value = {
+                    "Parameters": "Example",
+                    "ResponseMetadata": {
+                        "HTTPStatusCode": 200
+                    }
+                }
+        result = self.runner.invoke(cli, ["validate-template", "dev", "vpc"])
         mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
         mock_get_env.return_value.stacks["vpc"].validate_template\
             .assert_called_with()
+
+        assert result.output == "Template is valid. Template details:\n\n" \
+            "Parameters: Example\n\n"
+
+    @patch("sceptre.cli.os.getcwd")
+    @patch("sceptre.cli.get_env")
+    def test_validate_template_with_invalid_template(
+            self, mock_get_env, mock_getcwd
+            ):
+        mock_getcwd.return_value = sentinel.cwd
+        client_error = ClientError(
+            {
+                "Errors":
+                {
+                    "Message": "Unrecognized resource types",
+                    "Code": "ValidationError",
+                }
+            },
+            "ValidateTemplate"
+        )
+        mock_get_env.return_value.stacks["vpc"].\
+            validate_template.side_effect = client_error
+
+        expected_result = str(client_error) + "\n"
+        result = self.runner.invoke(cli, ["validate-template", "dev", "vpc"])
+        assert result.output == expected_result
 
     @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli.get_env")
@@ -114,22 +150,6 @@ class TestCli(object):
         )
         mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
         mock_get_env.return_value.stacks["vpc"].describe_resources\
-            .assert_called_with()
-        # Assert that there is output.
-        assert result.output
-
-    @patch("sceptre.cli.os.getcwd")
-    @patch("sceptre.cli.get_env")
-    def test_diff_stack(self, mock_get_env, mock_getcwd):
-        mock_getcwd.return_value = sentinel.cwd
-        mock_get_env.return_value.stacks["vpc"].diff\
-            .return_value = ""
-
-        result = self.runner.invoke(
-            cli, ["diff", "dev", "vpc"]
-        )
-        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
-        mock_get_env.return_value.stacks["vpc"].diff\
             .assert_called_with()
         # Assert that there is output.
         assert result.output
@@ -713,3 +733,14 @@ class TestCli(object):
         encoder = sceptre.cli.CustomJsonEncoder()
         response = encoder.encode(datetime.datetime(2016, 5, 3))
         assert response == '"2016-05-03 00:00:00"'
+
+    def test_remove_metadata(self):
+        original_response = {
+            "Parameters": "Example",
+            "ResponseMetadata": {
+                "HTTPStatusCode": 200
+            }
+        }
+        modified_response = \
+            sceptre.cli._remove_response_metadata(original_response.copy())
+        assert modified_response == {"Parameters": "Example"}

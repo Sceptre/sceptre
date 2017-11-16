@@ -30,7 +30,7 @@ When considering how to split environemnts up, it's useful to remember the follo
 
 1. Region specific. There is no way for an environment to launch stack in multiple regions (an environment can, however, contain sub-environments in different regions). An environment should therefore contain stacks which belong in the same region.
 
-2. Command related. Environment level commands (like `launch-env`) are applied to every stack in an environment. There is no way to exclude stacks from an environemnt level command. Therefore, environments should contain stacks that can be launched deleted together.
+2. Command related. Environment level commands (like `launch-env`) are applied to every stack in an environment. There is no way to exclude stacks from an environment level command. Therefore, environments should contain stacks that can be launched and deleted together.
     Some stacks are inherently longer-lived than others. Stacks containing VPC-level infrastructure are likely to be longer lived than stacks containing an ephemeral testing environment. It therefore makes sense to split these up into separate environments.
 
 ## Example architectures
@@ -50,7 +50,7 @@ The following examples demonstrate how we might architect various Sceptre projec
                 - security-group.yaml
     ```
 
-- DevOps team who manage all the infrastructure for thier service
+- DevOps team who manage all the infrastructure for their service
 
     ```
     - config

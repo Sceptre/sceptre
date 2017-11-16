@@ -155,8 +155,12 @@ def validate_template(ctx, environment, stack):
     Validates ENVIRONMENT/STACK's template.
     """
     env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    result = env.stacks[stack].validate_template()
-    write(result, ctx.obj["output_format"])
+    response = env.stacks[stack].validate_template()
+    if response['ResponseMetadata']['HTTPStatusCode'] == 200:
+        success_message = "Template is valid. Template details:\n"
+        response = _remove_response_metadata(response)
+        write(success_message, 'str')
+        write(response, ctx.obj["output_format"])
 
 
 @cli.command(name="generate-template")
@@ -233,23 +237,6 @@ def describe_stack_resources(ctx, environment, stack):
     response = env.stacks[stack].describe_resources()
 
     write(response, ctx.obj["output_format"])
-
-
-@cli.command(name="diff")
-@stack_options
-@click.pass_context
-@catch_exceptions
-def diff(ctx, environment, stack):
-    """
-    Prints the diff between the currently deployed stack with the local
-    version of that stack.
-
-    Diffs ENVIRONMENT/STACK.
-    """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    diff = env.stacks[stack].diff()
-
-    write(diff)
 
 
 @cli.command(name="create-stack")
@@ -845,6 +832,21 @@ def write(var, output_format="str", no_colour=True):
         stream = stack_status_colourer.colour(stream)
 
     click.echo(stream)
+
+
+def _remove_response_metadata(response):
+    """
+    Removes the Response Metadata from an AWS API reponse.
+
+    :param response: The AWS response that you wish to remove the Response \
+    Metadata from.
+    :type response: dict
+    :returns: The original dict with the Response Metadata removed.
+    :rtype: dict
+    """
+    if "ResponseMetadata" in response:
+        del response['ResponseMetadata']
+    return response
 
 
 class ColouredFormatter(Formatter):

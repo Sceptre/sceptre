@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
+
+from datetime import datetime
+from dateutil import tz
+
 import pytest
 from mock import Mock, patch, sentinel
 from moto import mock_s3
+from freezegun import freeze_time
+
+from boto3.session import Session
+from botocore.exceptions import ClientError, UnknownServiceError
 
 from sceptre.connection_manager import ConnectionManager, _retry_boto_call
 from sceptre.exceptions import RetryLimitExceededError
-from boto3.session import Session
-import botocore
-from botocore.exceptions import ClientError
-from datetime import datetime
 
 
 class TestConnectionManager(object):
@@ -169,7 +173,7 @@ class TestConnectionManager(object):
     @patch("sceptre.connection_manager.boto3.session.Session.get_credentials")
     def test_get_client_with_invalid_client_type(self, mock_get_credentials):
         service = "invalid_type"
-        with pytest.raises(botocore.exceptions.UnknownServiceError):
+        with pytest.raises(UnknownServiceError):
             self.connection_manager._get_client(service)
 
     @patch("sceptre.connection_manager.boto3.session.Session.get_credentials")
@@ -188,6 +192,39 @@ class TestConnectionManager(object):
         client_1 = self.connection_manager._get_client(service)
         client_2 = self.connection_manager._get_client(service)
         assert client_1 == client_2
+
+    def test_clear_session_cache_if_expired_with_no_iam_role(self):
+        self.connection_manager.iam_role = None
+        self.connection_manager._boto_session_expiration = sentinel.expiration
+        self.connection_manager.clients = sentinel.clients
+        self.connection_manager._boto_session = sentinel.boto_session
+        self.connection_manager._clear_session_cache_if_expired()
+        assert self.connection_manager.clients == sentinel.clients
+        assert self.connection_manager._boto_session == sentinel.boto_session
+
+    @freeze_time("2000-01-30")
+    def test_clear_session_cache_if_expired_with_future_date(self):
+        self.connection_manager.iam_role = "iam_role"
+        future_date = datetime(2015, 1, 30, tzinfo=tz.tzutc())
+        self.connection_manager._boto_session_expiration = future_date
+        self.connection_manager.clients = sentinel.clients
+        self.connection_manager._boto_session = sentinel.boto_session
+        self.connection_manager._clear_session_cache_if_expired()
+        assert self.connection_manager.clients == sentinel.clients
+        assert self.connection_manager._boto_session == sentinel.boto_session
+
+    @freeze_time("2015-01-30")
+    def test_clear_session_cache_if_expired_with_expired_date(self):
+        self.connection_manager.iam_role = "iam_role"
+        past_date = datetime(2000, 1, 30, tzinfo=tz.tzutc())
+        self.connection_manager._boto_session_expiration = past_date
+
+        self.connection_manager.clients = sentinel.clients
+        self.connection_manager._boto_session = sentinel.boto_session
+
+        self.connection_manager._clear_session_cache_if_expired()
+        assert self.connection_manager.clients == {}
+        assert self.connection_manager._boto_session is None
 
     @mock_s3
     def test_call_with_valid_service_and_call(self):

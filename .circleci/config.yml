@@ -120,6 +120,9 @@ workflows:
       - integration-tests:
           requires:
             - build
+          filters:
+            branches:
+              ignore: /^pull\/.*/
       - deploy-docs:
           requires:
             - lint-and-unit-tests

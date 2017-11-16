@@ -13,7 +13,6 @@ import logging
 import os
 import time
 import threading
-import difflib
 
 from dateutil.tz import tzutc
 import botocore
@@ -195,6 +194,7 @@ class Stack(object):
             "StackName": self.external_name,
             "Parameters": self._format_parameters(self.parameters),
             "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+            "NotificationARNs": self.config.get("notifications", []),
             "Tags": [
                 {"Key": str(k), "Value": str(v)}
                 for k, v in self.config.get("stack_tags", {}).items()
@@ -233,6 +233,7 @@ class Stack(object):
             "StackName": self.external_name,
             "Parameters": self._format_parameters(self.parameters),
             "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+            "NotificationARNs": self.config.get("notifications", []),
             "Tags": [
                 {"Key": str(k), "Value": str(v)}
                 for k, v in self.config.get("stack_tags", {}).items()
@@ -385,35 +386,6 @@ class Stack(object):
             kwargs={"StackName": self.external_name}
         )
 
-    def diff(self):
-        """
-        Returns the diff between the template body of the currently deployed
-        stack and the local one.
-
-        :returns: differences
-        :rtype: string
-        """
-        raw_remote_template = self.connection_manager.call(
-            service="cloudformation",
-            command="get_template",
-            kwargs={"StackName": self.external_name}
-        )["TemplateBody"]
-
-        raw_local_template = self.template.body
-
-        remote_template = raw_remote_template.split("\n")
-        local_template = raw_local_template.split("\n")
-
-        differences = difflib.unified_diff(
-            remote_template, local_template, fromfile="remote_template",
-            tofile="local_template", lineterm=""
-            )
-
-        output = ""
-        for line in differences:
-            output += line+"\n"
-        return output
-
     def describe_events(self):
         """
         Returns a dictionary contianing the stack events.
@@ -554,6 +526,7 @@ class Stack(object):
             "Parameters": self._format_parameters(self.parameters),
             "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
             "ChangeSetName": change_set_name,
+            "NotificationARNs": self.config.get("notifications", []),
             "Tags": [
                 {"Key": str(k), "Value": str(v)}
                 for k, v in self.config.get("stack_tags", {}).items()

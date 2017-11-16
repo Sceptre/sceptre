@@ -2,6 +2,7 @@
 Sceptre
 =======
 
+.. image:: https://circleci.com/gh/cloudreach/sceptre.png?style=shield
 
 About
 -----
