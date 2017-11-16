@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from six import string_types
 
 from sceptre.hooks import Hook
 from sceptre.exceptions import InvalidHookArgumentTypeError
@@ -26,7 +27,7 @@ class ASGScalingProcesses(Hook):
         :raises: InvalidHookArgumentValueError, if not using resume or suspend.
         """
 
-        if not isinstance(self.argument, basestring):
+        if not isinstance(self.argument, string_types):
             raise InvalidHookArgumentTypeError(
                 'The argument "{0}" is the wrong type - asg_scaling_processes '
                 'hooks require arguments of type string.'.format(self.argument)

@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import abc
+import six
 import logging
 
 
-class Resolver(object):
+@six.add_metaclass(abc.ABCMeta)
+class Resolver():
     """
     Resolver is an abstract base class that should be inherited by all
     resolvers. Environment config, stack config and the connection
@@ -19,8 +21,6 @@ class Resolver(object):
     :param argument: Arguments to pass to the resolver.
     :type argument: str
     """
-
-    __metaclass__ = abc.ABCMeta
 
     def __init__(
         self, argument=None, connection_manager=None,

@@ -116,7 +116,7 @@ class Template(object):
         try:
             body = module.sceptre_handler(self.sceptre_user_data)
         except AttributeError as e:
-            if 'sceptre_handler' in e.message:
+            if 'sceptre_handler' in str(e):
                 raise TemplateSceptreHandlerError(
                     "The template does not have the required "
                     "'sceptre_handler(sceptre_user_data)' function."

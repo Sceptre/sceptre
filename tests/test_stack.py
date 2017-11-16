@@ -853,11 +853,15 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             "key3": "value3"
         }
         formatted_parameters = self.stack._format_parameters(parameters)
-        assert sorted(formatted_parameters) == sorted([
+        sorted_formatted_parameters = sorted(
+            formatted_parameters,
+            key=lambda x: x["ParameterKey"]
+        )
+        assert sorted_formatted_parameters == [
             {"ParameterKey": "key1", "ParameterValue": "value1"},
             {"ParameterKey": "key2", "ParameterValue": "value2"},
             {"ParameterKey": "key3", "ParameterValue": "value3"}
-        ])
+        ]
 
     def test_format_parameters_with_none_values(self):
         parameters = {
@@ -866,7 +870,11 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             "key3": None
         }
         formatted_parameters = self.stack._format_parameters(parameters)
-        assert sorted(formatted_parameters) == []
+        sorted_formatted_parameters = sorted(
+            formatted_parameters,
+            key=lambda x: x["ParameterKey"]
+        )
+        assert sorted_formatted_parameters == []
 
     def test_format_parameters_with_none_and_string_values(self):
         parameters = {
@@ -875,10 +883,14 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             "key3": "value3"
         }
         formatted_parameters = self.stack._format_parameters(parameters)
-        assert sorted(formatted_parameters) == sorted([
+        sorted_formatted_parameters = sorted(
+            formatted_parameters,
+            key=lambda x: x["ParameterKey"]
+        )
+        assert sorted_formatted_parameters == [
             {"ParameterKey": "key1", "ParameterValue": "value1"},
             {"ParameterKey": "key3", "ParameterValue": "value3"}
-        ])
+        ]
 
     def test_format_parameters_with_list_values(self):
         parameters = {
@@ -887,11 +899,15 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             "key3": ["value7", "value8", "value9"]
         }
         formatted_parameters = self.stack._format_parameters(parameters)
-        assert sorted(formatted_parameters) == sorted([
+        sorted_formatted_parameters = sorted(
+            formatted_parameters,
+            key=lambda x: x["ParameterKey"]
+        )
+        assert sorted_formatted_parameters == [
             {"ParameterKey": "key1", "ParameterValue": "value1,value2,value3"},
             {"ParameterKey": "key2", "ParameterValue": "value4,value5,value6"},
             {"ParameterKey": "key3", "ParameterValue": "value7,value8,value9"}
-        ])
+        ]
 
     def test_format_parameters_with_none_and_list_values(self):
         parameters = {
@@ -900,10 +916,14 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             "key3": ["value7", "value8", "value9"]
         }
         formatted_parameters = self.stack._format_parameters(parameters)
-        assert sorted(formatted_parameters) == sorted([
+        sorted_formatted_parameters = sorted(
+            formatted_parameters,
+            key=lambda x: x["ParameterKey"]
+        )
+        assert sorted_formatted_parameters == [
             {"ParameterKey": "key1", "ParameterValue": "value1,value2,value3"},
             {"ParameterKey": "key3", "ParameterValue": "value7,value8,value9"}
-        ])
+        ]
 
     def test_format_parameters_with_list_and_string_values(self):
         parameters = {
@@ -912,11 +932,15 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             "key3": ["value5", "value6", "value7"]
         }
         formatted_parameters = self.stack._format_parameters(parameters)
-        assert sorted(formatted_parameters) == sorted([
+        sorted_formatted_parameters = sorted(
+            formatted_parameters,
+            key=lambda x: x["ParameterKey"]
+        )
+        assert sorted_formatted_parameters == [
             {"ParameterKey": "key1", "ParameterValue": "value1,value2,value3"},
             {"ParameterKey": "key2", "ParameterValue": "value4"},
             {"ParameterKey": "key3", "ParameterValue": "value5,value6,value7"}
-        ])
+        ]
 
     def test_format_parameters_with_none_list_and_string_values(self):
         parameters = {
@@ -925,10 +949,14 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             "key3": None
         }
         formatted_parameters = self.stack._format_parameters(parameters)
-        assert sorted(formatted_parameters) == sorted([
+        sorted_formatted_parameters = sorted(
+            formatted_parameters,
+            key=lambda x: x["ParameterKey"]
+        )
+        assert sorted_formatted_parameters == [
             {"ParameterKey": "key1", "ParameterValue": "value1,value2,value3"},
             {"ParameterKey": "key2", "ParameterValue": "value4"},
-        ])
+        ]
 
     @patch("sceptre.stack.Stack.describe")
     def test_get_status_with_created_stack(self, mock_describe):

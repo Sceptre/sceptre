@@ -18,7 +18,7 @@ class TestFileContentsResolver(object):
         )
 
     def test_resolving_with_existing_file(self):
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(mode='w+') as f:
             f.write("file contents")
             f.seek(0)
             self.file_contents_resolver.argument = f.name
