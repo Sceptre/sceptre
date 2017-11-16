@@ -183,7 +183,7 @@ This resolver can be used in a stack config file with the following syntax:
 ```yaml
 template_path: <...>
 parameters:
-    # <your resolver name> is the lower camel-case version of your class name,
+    # <your resolver name> is the lower snake case version of your class name,
     # e.g `custom_resolver` <value> will be passed to the resolver's resolve()
     # method.
     param1: !<your_resolver_name> <value>
