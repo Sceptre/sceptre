@@ -127,6 +127,28 @@ class Template(object):
             sys.path.remove(os.path.join(os.getcwd(), directory))
         return body
 
+    def get_rendered_template_extension(self):
+        """
+        Determine the extension of the rendered template.
+        If the file extension is .json or .yaml, assume this is the value.
+        Otherwise, determine based on the first non-whitespace char in the
+        rendered template.
+
+        Used as the extension of the file to upload to S3.
+        """
+        file_extension = os.path.splitext(self.path)[1]
+        if file_extension in {".json", ".yaml"}:
+            return file_extension
+        else:
+            for char in self.body:
+                if not char.isspace():
+                    if char == "{":
+                        return ".json"
+                    else:
+                        return ".yaml"
+
+        return ".json"
+
     def upload_to_s3(
             self, region, bucket_name, key_prefix, environment_path,
             stack_name, connection_manager
@@ -135,7 +157,7 @@ class Template(object):
         Uploads the template to ``bucket_name`` and returns its URL.
 
         The template is uploaded with the key
-        ``<key_prefix>/<region>/<environment_path>/<stack_name>-<timestamp>.json``.
+        ``<key_prefix>/<region>/<environment_path>/<stack_name>-<timestamp>.<extension>``.
 
         :param region: The AWS region to create the bucket in.
         :type region: str
@@ -165,13 +187,16 @@ class Template(object):
         # Remove any leading or trailing slashes the user may have added.
         key_prefix = key_prefix.strip("/")
 
+        file_extension = self.get_rendered_template_extension()
+
         template_key = "/".join([
             key_prefix,
             region,
             environment_path,
-            "{stack_name}-{time_stamp}.json".format(
+            "{stack_name}-{time_stamp}{extension}".format(
                 stack_name=stack_name,
-                time_stamp=datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%fZ")
+                time_stamp=datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%fZ"),
+                extension=file_extension
             )
         ])
 
