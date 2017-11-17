@@ -117,8 +117,9 @@ serve-docs-commit: docs-commit
 	$(MAKE) -C docs serve-commit
 
 dist: clean
+	python setup.py check -r -s
 	python setup.py sdist
-	python setup.py bdist_wheel
+	python setup.py bdist_wheel --universal
 	ls -l dist
 
 install: clean
