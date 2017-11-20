@@ -10,22 +10,27 @@ with open("README.rst") as readme_file:
 with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
-with open("requirements.txt") as requirements_file:
-    requirements = [
-        requirement for requirement in requirements_file.read().split("\n")
-        if requirement != ""
-    ]
-
+install_requirements = [
+    "boto3>=1.3.0,<1.5.0",
+    "click==6.6",
+    "PyYaml==3.12",
+    "Jinja2==2.8",
+    "packaging==16.8",
+    "colorama==0.3.7",
+    "six==1.11.0"
+]
 
 test_requirements = [
-    "pytest==2.8.5",
-    "moto==0.4.19",
-    "mock==1.3.0",
-    "behave==1.2.5"
+    "pytest>=3.2",
+    "troposphere>=2.0.0",
+    "moto==0.4.31",
+    "mock==2.0.0",
+    "behave==1.2.5",
+    "freezegun==0.3.9"
 ]
 
 setup_requirements = [
-    "pytest-runner==2.6.2"
+    "pytest-runner>=3"
 ]
 
 setup(
@@ -57,7 +62,6 @@ setup(
         ])
     ],
     include_package_data=True,
-    install_requires=requirements,
     zip_safe=False,
     keywords="sceptre",
     classifiers=[
@@ -65,12 +69,16 @@ setup(
         "Intended Audience :: Developers",
         "Natural Language :: English",
         "Environment :: Console",
-        "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 2.6",
         "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.5"
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6"
     ],
     test_suite="tests",
+    install_requires=install_requirements,
     tests_require=test_requirements,
-    setup_requires=setup_requirements
+    setup_requires=setup_requirements,
+    extras_require={
+        "test": test_requirements
+    }
 )

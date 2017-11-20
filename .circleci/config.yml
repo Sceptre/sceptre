@@ -2,66 +2,66 @@ version: 2
 jobs:
   build:
     docker:
-      - image: cloudreach/sceptre-circleci:0.1
+      - image: cloudreach/sceptre-circleci:0.2
     steps:
       - checkout
       - run:
           name: 'Creating Virtualenv'
           command: virtualenv venv
       - restore_cache:
-          key: v2-requirements-{{ arch }}-{{ checksum "requirements.txt" }}
+          key: v3-requirements-{{ arch }}-{{ checksum "requirements.txt" }}
       - run:
           name: 'Installing Requirements'
           command: |
             . ./venv/bin/activate
-            pip install -r requirements_tests.txt
+            pip install -r requirements.txt
             pip install awscli
       - save_cache:
-          key: v2-requirements-{{ arch }}-{{ checksum "requirements.txt" }}
+          key: v3-requirements-{{ arch }}-{{ checksum "requirements.txt" }}
           paths:
             - venv
       - run:
           name: 'Installing Sceptre'
           command: |
             . ./venv/bin/activate
-            make install
+            pip install .
       - persist_to_workspace:
           root: /home/circleci
           paths:
             - project
   lint-and-unit-tests:
     docker:
-      - image: circleci/python:2.7.13
+      - image: cloudreach/sceptre-circleci:0.2
     steps:
       - attach_workspace:
           at: /home/circleci
+      - restore_cache:
+          key: v4-tox-requirements-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "tox.ini" }}
       - run:
-          name: Linting
+          name: 'Linting'
           command: |
             . ./venv/bin/activate
             make lint
-      - restore_cache:
-          key: v1-tox-requirements-{{ arch }}-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
       - run:
-          name: 'Unit Testing'
+          name: 'Unit Test and Coverage'
           command: |
-            . ./venv/bin/activate
-            make test-all
-      - save_cache:
-          key: v1-tox-requirements-{{ arch }}-{{ checksum "requirements_tests.txt" }}-{{ checksum "tox.ini" }}
-          paths:
-            - .tox/py269
-            - .tox/py27
-            - .tox/py352
-            - .tox/py361
+            tox
+      - store_test_results:
+          path: htmlcov
+      - store_test_results:
+          path: htmlcov
       - store_test_results:
           path: build/pytest
       - store_artifacts:
           path: build/pytest
+      - save_cache:
+          key: v4-tox-requirements-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "tox.ini" }}
+          paths:
+            - .tox
   integration-tests:
     parallelism: 4
     docker:
-      - image: circleci/python:2.7.13
+      - image: cloudreach/sceptre-circleci:0.2
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
@@ -80,7 +80,7 @@ jobs:
           path: build/behave
   deploy-docs:
     docker:
-      - image: cloudreach/sceptre-circleci:0.1
+      - image: cloudreach/sceptre-circleci:0.2
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:

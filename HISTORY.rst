@@ -3,14 +3,14 @@ History
 =======
 
 1.3.1 (2017.10.23)
------------------
+------------------
 
 * Removing sceptre diff command.
 * Adding support for the stack notifications attribute in stack config.
 * Fixing bug which caused session re-creation on every boto call.
 
 1.3.0 (2017.10.16)
------------------
+------------------
 
 * Re-adding the ability to specify credential profile in the environment config.
 * Adding init project command to help initialize a new Sceptre project.
