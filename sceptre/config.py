@@ -20,6 +20,7 @@ from . import __version__
 from .exceptions import ConfigItemNotFoundError
 from .exceptions import EnvironmentPathNotFoundError
 from .exceptions import VersionIncompatibleError
+from .exceptions import ImportFailureError
 from .hooks import Hook
 from .resolvers import Resolver
 from .helpers import get_subclasses
@@ -118,6 +119,71 @@ class Config(dict):
         obj.add_hook_constructors(
             environment_config, connection_manager)
         return obj
+
+    @classmethod
+    def import_config(
+            cls,
+            template,
+            connection_manager,
+            aws_stack_name,
+            config_path):
+        config_path += ".yaml"
+
+        if os.path.isfile(config_path):
+            raise ImportFailureError(
+                "Unable to import config. "
+                "File already exists: file = {}".format(config_path)
+            )
+
+        response = connection_manager.call(
+            service='cloudformation',
+            command='describe_stacks',
+            kwargs={
+                'StackName': aws_stack_name
+            }
+        )
+
+        config = {}
+        config['template_path'] = template.path
+        config['stack_name'] = aws_stack_name
+
+        if 'EnableTerminationProtection' in response['Stacks'][0] \
+                and response['Stacks'][0]['EnableTerminationProtection']:
+            config['protect'] = True
+
+        if 'RoleARN' in response['Stacks'][0] \
+                and response['Stacks'][0]['RoleARN']:
+            config['role_arn'] = response['Stacks'][0]['RoleARN']
+
+        if 'Parameters' in response['Stacks'][0]:
+            # we use YAML only as JSON is a subset
+            template_body = yaml.safe_load(template.body)
+            template_parameters = template_body['Parameters'] \
+                if 'Parameters' in template_body else {}
+            config['parameters'] = []
+            for parameter in response['Stacks'][0]['Parameters']:
+                key = parameter['ParameterKey']
+                value = parameter['ParameterValue']
+                # parameter is always defined in template,
+                # otherwise stack would not create
+                template_key = template_parameters[key]
+                if 'Default' not in template_key \
+                        or value != template_key['Default']:
+                    config['parameters'].append({key: value})
+        else:
+            config['parameters'] = []
+
+        if 'Tags' in response['Stacks'][0] \
+                and len(response['Stacks'][0]['Tags']) > 0:
+            config['stack_tags'] = [
+                {
+                    tag['Key']: tag['Value']
+                } for tag in response['Stacks'][0]['Tags']
+            ]
+
+        with open(config_path + ".yaml", 'w') as config_file:
+            text = yaml.safe_dump(config, default_flow_style=False)
+            config_file.write(text)
 
     def __getitem__(self, item):
         """

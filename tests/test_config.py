@@ -3,6 +3,7 @@
 from contextlib import contextmanager
 from tempfile import mkdtemp
 import shutil
+import json
 import os
 from mock import patch, sentinel, call, Mock, ANY
 import pytest
@@ -13,6 +14,8 @@ from sceptre.resolvers import Resolver
 from sceptre.exceptions import ConfigItemNotFoundError
 from sceptre.exceptions import EnvironmentPathNotFoundError
 from sceptre.exceptions import VersionIncompatibleError
+from sceptre.exceptions import ImportFailureError
+from sceptre.template import Template
 
 
 class TestConfig(object):
@@ -207,3 +210,108 @@ class TestConfig(object):
             call("sceptre_dir/hooks", Hook, ANY)
         ]
         mock_add_yaml_constructors.assert_has_calls(calls, any_order=False)
+
+    @patch("sceptre.config.os.path.isfile")
+    def test_import_config__exists(
+        self, mock_isfile
+    ):
+        mock_isfile.return_value = True
+        with pytest.raises(ImportFailureError):
+            Config.import_config(
+                template=Template('fake-path', []),
+                connection_manager=sentinel.connection_manager,
+                aws_stack_name="fake-aws-stack-name",
+                config_path="environment_path/config"
+            )
+
+    @patch("sceptre.config.os.path.isfile")
+    @patch("sceptre.config.open")
+    def test_import_config__empty_stack(
+        self, mock_open, mock_isfile
+    ):
+        mock_connection_manager = Mock()
+        mock_connection_manager.call.return_value = {'Stacks': [
+                {
+                }
+            ]}
+
+        mock_isfile.return_value = False
+        Config.import_config(
+            template=Template('fake-path', []),
+            connection_manager=mock_connection_manager,
+            aws_stack_name="fake-aws-stack-name",
+            config_path="environment_path/config"
+        )
+
+        mock_open.return_value.__enter__.return_value.write.assert_called_with(
+            "parameters: []\n"
+            "stack_name: fake-aws-stack-name\n"
+            "template_path: fake-path\n"
+        )
+
+    @patch("sceptre.config.os.path.isfile")
+    @patch("sceptre.config.open")
+    def test_import_config__all_details_stack(
+        self, mock_open, mock_isfile
+    ):
+        mock_template = Mock()
+        mock_template.path = 'fake-path'
+        mock_template.body = json.dumps({
+            'Parameters': {
+                'fake-key1': {
+                },
+                'fake-key2': {
+                    'Default': 'wrong-value'
+                },
+                'fake-key3': {
+                    'Default': 'match-default-value'
+                }
+            }
+        }, encoding='ascii')
+        mock_connection_manager = Mock()
+        mock_connection_manager.call.return_value = {'Stacks': [
+                {
+                    'EnableTerminationProtection': True,
+                    'RoleARN': 'fake-role-arn',
+                    'Parameters': [
+                        {
+                            'ParameterKey': 'fake-key1',
+                            'ParameterValue': 'no-default-value'
+                        },
+                        {
+                            'ParameterKey': 'fake-key2',
+                            'ParameterValue': 'mismatch-default-value'
+                        },
+                        {
+                            'ParameterKey': 'fake-key3',
+                            'ParameterValue': 'match-default-value'
+                        }
+                    ],
+                    'Tags': [
+                        {
+                            'Key': 'fake-tag-key',
+                            'Value': 'fake-tag-value'
+                        }
+                    ]
+                }
+            ]}
+
+        mock_isfile.return_value = False
+        Config.import_config(
+            template=mock_template,
+            connection_manager=mock_connection_manager,
+            aws_stack_name="fake-aws-stack-name",
+            config_path="environment_path/config"
+        )
+
+        mock_open.return_value.__enter__.return_value.write.assert_called_with(
+            "parameters:\n"
+            "- fake-key1: no-default-value\n"
+            "- fake-key2: mismatch-default-value\n"
+            "protect: true\n"
+            "role_arn: fake-role-arn\n"
+            "stack_name: fake-aws-stack-name\n"
+            "stack_tags:\n"
+            "- fake-tag-key: fake-tag-value\n"
+            "template_path: fake-path\n"
+        )

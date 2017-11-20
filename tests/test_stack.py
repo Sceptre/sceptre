@@ -46,6 +46,42 @@ class TestStack(object):
         # Set default value for stack properties
         self.stack._external_name = sentinel.external_name
 
+    @patch("sceptre.stack.Stack.__init__")
+    @patch("sceptre.config.Config.import_config")
+    @patch("sceptre.template.Template.import_template")
+    def test_import_stack(self, mock_template, mock_config, mock_stack):
+        self.mock_environment_config.sceptre_dir = 'fake-sceptre-dir'
+        mock_stack.return_value = None
+        mock_template.return_value = Mock()
+
+        result = Stack.import_stack(
+            self.mock_environment_config,
+            sentinel.connection_manager,
+            'fake-aws-stack-name',
+            'fake-template-path',
+            'fake-config-path'
+        )
+        assert result is not None
+
+        mock_template.assert_called_once_with(
+            sentinel.connection_manager,
+            'fake-aws-stack-name',
+            'fake-sceptre-dir/fake-template-path'
+        )
+
+        mock_config.assert_called_once_with(
+            mock_template.return_value,
+            sentinel.connection_manager,
+            'fake-aws-stack-name',
+            'fake-sceptre-dir/config/fake-config-path'
+        )
+
+        mock_stack.assert_called_once_with(
+            connection_manager=sentinel.connection_manager,
+            environment_config=self.mock_environment_config,
+            name='fake-config-path'
+        )
+
     def test_initiate_stack(self):
         assert self.stack.name == "stack_name"
         assert self.stack.environment_config == self.mock_environment_config

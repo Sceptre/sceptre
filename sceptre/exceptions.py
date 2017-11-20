@@ -139,3 +139,9 @@ class StackDoesNotExistError(SceptreException):
     """
     Error raised when a stack does not exist.
     """
+
+
+class ImportFailureError(SceptreException):
+    """
+    Error raised when import of a stack from AWS fails.
+    """
