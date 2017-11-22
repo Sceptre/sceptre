@@ -121,7 +121,9 @@ class Template(object):
         else:
             with open(path, 'r') as template_file:
                 existing_body = template_file.read()
-            if body != existing_body:
+            existing_dict = yaml.safe_load(existing_body)
+            new_dict = yaml.safe_load(body)
+            if cmp(existing_dict, new_dict) != 0:
                 raise ImportFailureError(
                     "Unable to import template. "
                     "File already exists and is different: "

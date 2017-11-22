@@ -243,6 +243,11 @@ class TestConfig(object):
             config_path="environment_path/config"
         )
 
+        mock_open.assert_called_with(
+            "environment_path/config.yaml",
+            'w'
+        )
+
         mock_open.return_value.__enter__.return_value.write.assert_called_with(
             "parameters: []\n"
             "stack_name: fake-aws-stack-name\n"

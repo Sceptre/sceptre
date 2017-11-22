@@ -181,7 +181,7 @@ class Config(dict):
                 } for tag in response['Stacks'][0]['Tags']
             ]
 
-        with open(config_path + ".yaml", 'w') as config_file:
+        with open(config_path, 'w') as config_file:
             text = yaml.safe_dump(config, default_flow_style=False)
             config_file.write(text)
 
