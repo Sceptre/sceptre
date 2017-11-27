@@ -121,7 +121,7 @@ More information on suspend and resume processes can be found in the AWS [docume
 
 ## Examples
 
-A stack's `config.yml` where multiple hooks with multiple commands are specified:
+A stack's `config.yaml` where multiple hooks with multiple commands are specified:
 
 ```yaml
 template_path: templates/example.py
