@@ -2,6 +2,8 @@
 Contributing to Sceptre
 =======================
 
+Thanks for your interest in Sceptre! We greatly appreciate any contributions to the project.
+
 - `Code of Conduct`_
 - `How to Contribute`_
 
@@ -22,6 +24,7 @@ This project adheres to the Contributor Covenant `code of conduct <http://contri
 How to Contribute
 -----------------
 
+
 Report Bugs
 ***********
 
@@ -41,8 +44,6 @@ Enhancement proposals should:
 * Describe the current behaviour and explain which behaviour you expected to see instead.
 * Keep the scope as narrow as possible, to make it easier to implement.
 
-Remember that this is a volunteer-driven project, and that contributions are welcome.
-
 
 Contributing Code
 *****************
@@ -61,7 +62,9 @@ A good pull request:
 * Includes tests cases that demonstrates the previous flaw that now passes with the included patch, or demonstrates the newly added feature. Tests should have 100% code coverage.
 * Is appropriately licensed (Apache 2.0).
 
+Please keep in mind:
 
+* The benefit of contribution must be compared against the cost of maintaining the feature, as maintenance burden of new contributions are usually put on the maintainers of the project.
 
 Get Started
 -----------
@@ -69,51 +72,57 @@ Get Started
 1. Fork the ``sceptre`` repository on GitHub.
 2. Clone your fork locally::
 
-    $ git clone git@github.org:your_name_here/sceptre.git
+    $ git clone git@github.org:<github_username>/sceptre.git
 
-3. Install your local copy into a `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_. Assuming you have virtualenv installed, this is how you set up your fork for local development:
+3. Install sceptre for development (we recommend you use a `virtual environment <http://docs.python-guide.org/en/latest/dev/virtualenvs/>`_):
 
-.. code-block:: shell
+   .. code-block:: shell
 
     $ cd sceptre/
-    $ # Enable your virtual environment
-    $ virtualenv env
-    $ source env/bin/activate
-    $ # Install Sceptre's development requirements
-    $ pip install -r requirements_dev.txt
-    $ # Install Sceptre's test requirements
-    $ pip install -r requirements_tests.txt
-    $ # Install sceptre locally, so you can test your changes
+    $ pip install -r requirements.txt
     $ pip install -e .
 
 4. Create a branch for local development:
 
-.. code-block:: shell
+   .. code-block:: shell
 
-    $ git checkout -b <GitHub issue number>-<short description>
+    $ git checkout -b <branch-name>
 
-5. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox:
+5. When you're done making changes, check that your changes pass linting, unit tests and have sufficient coverage:
 
-.. code-block:: shell
+   Check linting:
 
-    $ make lint
-    $ make test-all
-    $ make coverage  # coverage should be 100%
+   .. code-block:: shell
+
+      $ make lint
+
+   Run unit tests or coverage in your current environment - (handy for quickly running unit tests):
+
+   .. code-block:: shell
+
+      $ make test
+      $ make coverage
+
+   Note: Sceptre aims to be compatible with Python 2 & 3, please run unit test against both versions. You will need the corresponding versions of Python installed on your system.
+
+   Run unit tests and coverage using tox for Python 2.7 and 3.6:
+
+   .. code-block:: shell
+
+      $ tox -e py27
+      $ tox -e py36
+
+   If you use pyenv to manage Python versions, try `pip install tox-pyenv` to make tox and pyenv play nicely.
 
 6. Make sure the changes comply with the pull request guidelines in the section on `Contributing Code`_.
 
-7. Commit your changes:
+7. Commit and push your changes.
 
-.. code-block:: shell
+   Commit messages should follow `these guidelines <https://github.com/erlang/otp/wiki/Writing-good-commit-messages>`_.
 
-    $ git add .
-    $ git commit
+   Use the following commit message format ``[Resolves #issue_number] Short description of change``.
 
-Commit messages should follow `these guidelines <https://github.com/erlang/otp/wiki/Writing-good-commit-messages>`_.
-
-Push your branch to GitHub::
-
-    $ git push origin <description of pull request>
+   e.g. ``[Resolves #123] Fix description of resolver syntax in documentation``
 
 8. Submit a pull request through the GitHub website.
 

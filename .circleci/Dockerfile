@@ -1,21 +1,32 @@
-FROM circleci/python:2.7.13
+FROM library/alpine:3.6
 
-SHELL ["/bin/bash", "-c"]
+RUN apk add --update \
+    patch \
+    git \
+    openssh \
+    ca-certificates \
+    build-base \
+    curl \
+    bzip2-dev \
+    bash \
+    python2 \
+    python3 \
+    py2-pip \
+    libffi-dev \
+    ruby \
+    ruby-dev \
+    ruby-bundler \
+    ruby-json
+
+RUN pip install virtualenv \
+ && pip install tox \
+ && addgroup -g 3434 circleci \
+ && adduser -D -u 3434 -G circleci -s /bin/bash circleci
+
 USER circleci
-ENV RUBY_VERSION 2.4.1
-ENV BUNDLER_VERSION 1.14.6
-
 WORKDIR /home/circleci
-RUN set -ex \
-    \
-    && git clone https://github.com/rbenv/rbenv.git $HOME/.rbenv \
-    && git clone https://github.com/rbenv/ruby-build.git $HOME/.rbenv/plugins/ruby-build \
-    && echo "export PATH=$HOME/.rbenv/bin:$PATH" >> $HOME/.bashrc \
-    && echo 'eval "$(rbenv init -)"' >> $HOME/.bashrc
 
-ENV PATH "/home/circleci/.rbenv/shims:/home/circleci/.rbenv/bin:$PATH"
-RUN set -ex \
-    \
-    && rbenv install $RUBY_VERSION \
-    && rbenv global $RUBY_VERSION \
-    && gem install bundler --version "$BUNDLER_VERSION"
+ENV LANG=C.UTF-8 \
+    HOME=/home/circleci
+
+CMD ["/bin/sh"]
