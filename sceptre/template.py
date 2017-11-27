@@ -35,14 +35,14 @@ class Template(object):
     _boto_s3_lock = threading.Lock()
 
     def __init__(
-        self, path, sceptre_user_data, connection_manager=None, s3_props=None
+        self, path, sceptre_user_data, connection_manager=None, s3_details=None
     ):
         self.logger = logging.getLogger(__name__)
 
         self.path = path
         self.sceptre_user_data = sceptre_user_data
         self.connection_manager = connection_manager
-        self.s3_props = s3_props
+        self.s3_details = s3_details
 
         self.name = os.path.basename(path).split(".")[0]
         self._body = None
@@ -50,8 +50,8 @@ class Template(object):
     def __repr__(self):
         return (
             "sceptre.template.Template(name='{0}', path='{1}', "
-            "sceptre_user_data={2}, s3_props={3})".format(
-                self.name, self.path, self.sceptre_user_data, self.s3_props
+            "sceptre_user_data={2}, s3_details={3})".format(
+                self.name, self.path, self.sceptre_user_data, self.s3_details
             )
         )
 
@@ -149,8 +149,8 @@ class Template(object):
                 self._create_bucket()
 
         # Remove any leading or trailing slashes the user may have added.
-        bucket_name = self.s3_props["bucket_name"]
-        bucket_key = self.s3_props["bucket_key"]
+        bucket_name = self.s3_details["bucket_name"]
+        bucket_key = self.s3_details["bucket_key"]
 
         self.logger.debug(
             "%s - Uploading template to: 's3://%s/%s'",
@@ -184,7 +184,7 @@ class Template(object):
         :raises: botocore.exception.ClientError
 
         """
-        bucket_name = self.s3_props["bucket_name"]
+        bucket_name = self.s3_details["bucket_name"]
         self.logger.debug(
             "%s - Attempting to find template bucket '%s'",
             self.name, bucket_name
@@ -215,7 +215,7 @@ class Template(object):
         :raises: botocore.exception.ClientError
 
         """
-        bucket_name = self.s3_props["bucket_name"]
+        bucket_name = self.s3_details["bucket_name"]
 
         self.logger.debug(
             "%s - Creating new bucket '%s'", self.name, bucket_name
@@ -249,7 +249,7 @@ class Template(object):
         :returns: The boto call parameter for the template.
         :rtype: dict
         """
-        if self.s3_props:
+        if self.s3_details:
             url = self.upload_to_s3()
             return {"TemplateURL": url}
         else:

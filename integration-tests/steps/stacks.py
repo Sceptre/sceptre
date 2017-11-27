@@ -1,10 +1,10 @@
 from behave import *
 import time
-import os
 from botocore.exceptions import ClientError
-from sceptre.environment import Environment
 from helpers import read_template_file, get_cloudformation_stack_name
 from helpers import retry_boto_call
+
+from sceptre.config_reader import ConfigReader
 
 
 @given('stack "{stack_name}" does not exist')
@@ -61,10 +61,10 @@ def step_impl(context, stack_name, template_name):
 
 @when('the user creates stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
-    env = Environment(context.sceptre_dir, environment_name)
+    config_reader = ConfigReader(context.sceptre_dir)
+    stack = config_reader.construct_stack(stack_name + ".yaml")
     try:
-        env.stacks[basename].create()
+        stack.create()
     except ClientError as e:
         if e.response['Error']['Code'] == 'AlreadyExistsException' \
           and e.response['Error']['Message'].endswith("already exists"):
@@ -75,10 +75,10 @@ def step_impl(context, stack_name):
 
 @when('the user updates stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
-    env = Environment(context.sceptre_dir, environment_name)
+    config_reader = ConfigReader(context.sceptre_dir)
+    stack = config_reader.construct_stack(stack_name + ".yaml")
     try:
-        env.stacks[basename].update()
+        stack.update()
     except ClientError as e:
         message = e.response['Error']['Message']
         if e.response['Error']['Code'] == 'ValidationError' \
@@ -91,10 +91,10 @@ def step_impl(context, stack_name):
 
 @when('the user deletes stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
-    env = Environment(context.sceptre_dir, environment_name)
+    config_reader = ConfigReader(context.sceptre_dir)
+    stack = config_reader.construct_stack(stack_name + ".yaml")
     try:
-        env.stacks[basename].delete()
+        stack.delete()
     except ClientError as e:
         if e.response['Error']['Code'] == 'ValidationError' \
           and e.response['Error']['Message'].endswith("does not exist"):
@@ -105,20 +105,20 @@ def step_impl(context, stack_name):
 
 @when('the user launches stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
-    env = Environment(context.sceptre_dir, environment_name)
+    config_reader = ConfigReader(context.sceptre_dir)
+    stack = config_reader.construct_stack(stack_name + ".yaml")
     try:
-        env.stacks[basename].launch()
+        stack.launch()
     except Exception as e:
         context.error = e
 
 
 @when('the user describes the resources of stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
-    env = Environment(context.sceptre_dir, environment_name)
+    config_reader = ConfigReader(context.sceptre_dir)
+    stack = config_reader.construct_stack(stack_name + ".yaml")
 
-    context.output = env.stacks[basename].describe_resources()
+    context.output = stack.describe_resources()
 
 
 @then('stack "{stack_name}" exists in "{desired_status}" state')
