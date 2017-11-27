@@ -59,6 +59,14 @@ def step_impl(context, stack_name, template_name):
     assert (status == "CREATE_COMPLETE")
 
 
+@given('stack "{stack_name}" does not exist in config')
+def step_impl(context, stack_name):
+    filepath = os.path.join(
+        context.sceptre_dir, "config", stack_name + '.yaml'
+    )
+    os.remove(filepath) if os.path.isfile(filepath) else None
+
+
 @when('the user creates stack "{stack_name}"')
 def step_impl(context, stack_name):
     environment_name, basename = os.path.split(stack_name)
@@ -150,6 +158,14 @@ def step_impl(context, stack_name):
     ]
 
     assert formatted_response == context.output
+
+
+@then('stack "{stack_name}" file exists in config')
+def step_impl(context, stack_name):
+    filepath = os.path.join(
+        context.sceptre_dir, "config", stack_name + '.yaml'
+    )
+    assert os.path.exists(filepath), "stack '{}' not found at '{}'".format(stack_name, filepath)
 
 
 def get_stack_status(context, stack_name):

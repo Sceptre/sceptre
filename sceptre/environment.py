@@ -185,6 +185,23 @@ class Environment(object):
                     raise
         return response
 
+    def import_stack(self, aws_stack_name, stack, template_path):
+        config = self._get_config()
+
+        connection_manager = ConnectionManager(
+            region=config["region"],
+            iam_role=config.get("iam_role"),
+            profile=config.get("profile")
+        )
+
+        Stack.import_stack(
+            environment_config=config,
+            connection_manager=connection_manager,
+            aws_stack_name=aws_stack_name,
+            template_path=template_path,
+            config_path="/".join([self.path, stack])
+        )
+
     @recurse_into_sub_environments
     def _build(self, command, threading_events, stack_statuses, dependencies):
         """
