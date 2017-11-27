@@ -1,7 +1,7 @@
 from behave import *
 import os
 import time
-from sceptre.environment import Environment
+from sceptre.config_reader import ConfigReader
 from botocore.exceptions import ClientError
 from helpers import read_template_file, get_cloudformation_stack_name
 from helpers import retry_boto_call
@@ -43,25 +43,25 @@ def step_impl(context, environment_name, status):
 
 @when('the user launches environment "{environment_name}"')
 def step_impl(context, environment_name):
-    env = Environment(context.sceptre_dir, environment_name)
+    env = ConfigReader(context.sceptre_dir).construct_environment(environment_name)
     env.launch()
 
 
 @when('the user deletes environment "{environment_name}"')
 def step_impl(context, environment_name):
-    env = Environment(context.sceptre_dir, environment_name)
+    env = ConfigReader(context.sceptre_dir).construct_environment(environment_name)
     env.delete()
 
 
 @when('the user describes environment "{environment_name}"')
 def step_impl(context, environment_name):
-    env = Environment(context.sceptre_dir, environment_name)
+    env = ConfigReader(context.sceptre_dir).construct_environment(environment_name)
     context.response = env.describe()
 
 
 @when('the user describes resources in environment "{environment_name}"')
 def step_impl(context, environment_name):
-    env = Environment(context.sceptre_dir, environment_name)
+    env = ConfigReader(context.sceptre_dir).construct_environment(environment_name)
     context.response = env.describe_resources()
 
 

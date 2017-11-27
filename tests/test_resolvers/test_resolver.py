@@ -25,18 +25,12 @@ class TestResolver(object):
 
     def setup_method(self, test_method):
         self.mock_resolver = MockResolver(
-            environment_config=sentinel.environment_config,
-            stack_config=sentinel.stack_config,
-            connection_manager=sentinel.connection_manager,
-            argument=sentinel.argument
+            argument=sentinel.argument,
+            stack=sentinel.stack
         )
 
     def test_init(self):
-        assert self.mock_resolver.environment_config == \
-            sentinel.environment_config
-        assert self.mock_resolver.stack_config == sentinel.stack_config
-        assert self.mock_resolver.connection_manager == \
-            sentinel.connection_manager
+        assert self.mock_resolver.stack == sentinel.stack
         assert self.mock_resolver.argument == sentinel.argument
 
 
@@ -75,8 +69,7 @@ class TestResolvablePropertyDescriptor(object):
 
     def test_getting_resolvable_property_with_none(self):
         self.mock_object._resolvable_property = None
-        self.mock_object.config.get.return_value = {}
-        assert self.mock_object.resolvable_property == {}
+        assert self.mock_object.resolvable_property is None
 
     def test_getting_resolvable_property_with_nested_lists(self):
         mock_resolver = MagicMock(spec=MockResolver)

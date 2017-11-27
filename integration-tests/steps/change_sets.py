@@ -1,8 +1,7 @@
 from behave import *
 import time
-import os
 
-from sceptre.environment import Environment
+from sceptre.config_reader import ConfigReader
 from botocore.exceptions import ClientError
 from helpers import read_template_file, get_cloudformation_stack_name
 from helpers import retry_boto_call
@@ -49,9 +48,8 @@ def step_impl(context, stack_name):
 
 @when('the user creates change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
-    environment_name, basename = os.path.split(stack_name)
-    env = Environment(context.sceptre_dir, environment_name)
-    stack = env.stacks[basename]
+    config_reader = ConfigReader(context.sceptre_dir)
+    stack = config_reader.construct_stack(stack_name + ".yaml")
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
     try:
         stack.create_change_set(change_set_name)
@@ -66,9 +64,8 @@ def step_impl(context, change_set_name, stack_name):
 
 @when('the user deletes change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
-    environment_name, basename = os.path.split(stack_name)
-    env = Environment(context.sceptre_dir, environment_name)
-    stack = env.stacks[basename]
+    config_reader = ConfigReader(context.sceptre_dir)
+    stack = config_reader.construct_stack(stack_name + ".yaml")
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
     try:
         stack.delete_change_set(change_set_name)
@@ -82,9 +79,8 @@ def step_impl(context, change_set_name, stack_name):
 
 @when('the user lists change sets for stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
-    env = Environment(context.sceptre_dir, environment_name)
-    stack = env.stacks[basename]
+    config_reader = ConfigReader(context.sceptre_dir)
+    stack = config_reader.construct_stack(stack_name + ".yaml")
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
     try:
         response = stack.list_change_sets()
@@ -99,9 +95,8 @@ def step_impl(context, stack_name):
 
 @when('the user executes change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
-    environment_name, basename = os.path.split(stack_name)
-    env = Environment(context.sceptre_dir, environment_name)
-    stack = env.stacks[basename]
+    config_reader = ConfigReader(context.sceptre_dir)
+    stack = config_reader.construct_stack(stack_name + ".yaml")
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
     try:
         stack.execute_change_set(change_set_name)
@@ -115,9 +110,8 @@ def step_impl(context, change_set_name, stack_name):
 
 @when('the user describes change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
-    environment_name, basename = os.path.split(stack_name)
-    env = Environment(context.sceptre_dir, environment_name)
-    stack = env.stacks[basename]
+    config_reader = ConfigReader(context.sceptre_dir)
+    stack = config_reader.construct_stack(stack_name + ".yaml")
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
     try:
         response = stack.describe_change_set(change_set_name)

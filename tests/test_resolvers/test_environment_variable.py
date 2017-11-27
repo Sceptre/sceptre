@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from mock import patch, sentinel
+from mock import patch
 
 from sceptre.resolvers.environment_variable import EnvironmentVariable
 
@@ -9,9 +9,6 @@ class TestEnvironmentVariableResolver(object):
 
     def setup_method(self, test_method):
         self.environment_variable_resolver = EnvironmentVariable(
-            environment_config=sentinel.environment_config,
-            stack_config=sentinel.config,
-            connection_manager=sentinel.connection_manager,
             argument=None
         )
 
