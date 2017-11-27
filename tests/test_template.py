@@ -68,7 +68,7 @@ class TestTemplate(object):
 
         expected_template_key = (
             "prefix/eu-west-1/environment/path/"
-            "stack-name-2012-01-01-00-00-00-000000Z.json"
+            "stack-name-2012-01-01-00-00-00-000000Z.template"
         )
 
         self.connection_manager.call.assert_called_once_with(
