@@ -42,6 +42,7 @@ $ sceptre diff
 $ sceptre execute-change-set
 $ sceptre generate-template
 $ sceptre get-stack-policy
+$ sceptre import-stack
 $ sceptre init
 $ sceptre launch-env
 $ sceptre launch-stack

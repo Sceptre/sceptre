@@ -65,6 +65,14 @@ def step_impl(context, environment_name):
     context.response = env.describe_resources()
 
 
+@when('the user imports AWS stack "{aws_stack_name}" into Sceptre stack "{stack_name}" and template "{template_name}"')
+def step_impl(context, aws_stack_name, stack_name, template_name):
+    full_aws_stack_name = get_cloudformation_stack_name(context, aws_stack_name)
+    env = Environment(context.sceptre_dir, os.path.dirname(stack_name))
+    stack_base_name = os.path.basename(stack_name)
+    context.response = env.import_stack(full_aws_stack_name, stack_base_name, template_name)
+
+
 @then('all the stacks in environment "{environment_name}" are in "{status}"')
 def step_impl(context, environment_name, status):
     full_stack_names = get_full_stack_names(context, environment_name).values()

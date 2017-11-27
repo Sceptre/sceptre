@@ -8,16 +8,20 @@ and implements methods for uploading it to S3.
 """
 
 from datetime import datetime
+from six import string_types
 import imp
+import json
 import logging
 import os
 import sys
 import threading
+import yaml
 
 import botocore
 import jinja2
 from .exceptions import UnsupportedTemplateFileTypeError
 from .exceptions import TemplateSceptreHandlerError
+from .exceptions import ImportFailureError
 
 
 class Template(object):
@@ -51,6 +55,82 @@ class Template(object):
             )
         )
 
+    @classmethod
+    def import_template(cls, connection_manager, aws_stack_name, path):
+        """
+        Saves a template imported from AWS CloudFormation.
+
+        :param path: The absolute path to the file which stores the template.
+        :type path: str
+        :param body: The body of the imported template.
+        :type region: str or dict
+        :raises: UnsupportedTemplateFileTypeError
+        """
+        logging.getLogger(__name__).debug(
+            "%s - Preparing to Import CloudFormation to %s",
+            os.path.basename(path).split(".")[0],
+            path
+        )
+
+        response = connection_manager.call(
+            service='cloudformation',
+            command='get_template',
+            kwargs={
+                'StackName': aws_stack_name,
+                'TemplateStage': 'Original'
+            }
+        )
+        cls._write_template(
+            path,
+            cls._normalize_template_for_write(
+                response['TemplateBody'],
+                os.path.splitext(path)[1]
+            )
+        )
+        return Template(path, [])
+
+    # If body is a string it is a YAML string;
+    # otherwise, it is a dict resulting from JSON document.
+    @classmethod
+    def _normalize_template_for_write(cls, body, ext):
+        if ext == ".json":
+            # if it's YAML, make it a dict
+            if isinstance(body, string_types):
+                body = yaml.safe_load(body)
+            # now make it a JSON string
+            body = json.dumps(body)
+
+        elif ext == ".yaml":
+            # if it's JSON, make it a YAML string
+            if not isinstance(body, string_types):
+                body = yaml.safe_dump(body, default_flow_style=False)
+
+        else:
+            raise UnsupportedTemplateFileTypeError(
+                    "Template file has has extension %s. Only .yaml, "
+                    "and .json are supported, when importing from AWS.",
+                    ext
+            )
+        return body
+
+    @classmethod
+    def _write_template(cls, path, body):
+        if not os.path.isfile(path):
+            with open(path, 'w') as template_file:
+                template_file.write(body)
+        else:
+            with open(path, 'r') as template_file:
+                existing_body = template_file.read()
+            existing_dict = yaml.safe_load(existing_body)
+            new_dict = yaml.safe_load(body)
+            if cmp(existing_dict, new_dict) != 0:
+                raise ImportFailureError(
+                    "Unable to import template. "
+                    "File already exists and is different: "
+                    "file = {}, existing_body={}, new_body={}"
+                    .format(path, existing_body, body)
+                )
+
     @property
     def body(self):
         """
@@ -62,7 +142,7 @@ class Template(object):
         if self._body is None:
             file_extension = os.path.splitext(self.path)[1]
 
-            if file_extension in {".json", ".yaml"}:
+            if file_extension in {".json", ".yaml", ".yml"}:
                 with open(self.path) as template_file:
                     self._body = template_file.read()
             elif file_extension == ".j2":
@@ -77,7 +157,7 @@ class Template(object):
             else:
                 raise UnsupportedTemplateFileTypeError(
                     "Template has file extension %s. Only .py, .yaml, "
-                    ".json and .j2 are supported.",
+                    ".yml, .json and .j2 are supported.",
                     os.path.splitext(self.path)[1]
                 )
         return self._body
@@ -116,7 +196,7 @@ class Template(object):
         try:
             body = module.sceptre_handler(self.sceptre_user_data)
         except AttributeError as e:
-            if 'sceptre_handler' in str(e):
+            if 'sceptre_handler' in e.message:
                 raise TemplateSceptreHandlerError(
                     "The template does not have the required "
                     "'sceptre_handler(sceptre_user_data)' function."
@@ -135,7 +215,7 @@ class Template(object):
         Uploads the template to ``bucket_name`` and returns its URL.
 
         The template is uploaded with the key
-        ``<key_prefix>/<region>/<environment_path>/<stack_name>-<timestamp>.template``.
+        ``<key_prefix>/<region>/<environment_path>/<stack_name>-<timestamp>.json``.
 
         :param region: The AWS region to create the bucket in.
         :type region: str
@@ -169,7 +249,7 @@ class Template(object):
             key_prefix,
             region,
             environment_path,
-            "{stack_name}-{time_stamp}.template".format(
+            "{stack_name}-{time_stamp}.json".format(
                 stack_name=stack_name,
                 time_stamp=datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%fZ")
             )

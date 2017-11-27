@@ -79,6 +79,52 @@ class Stack(object):
             )
         )
 
+    @classmethod
+    def import_stack(
+            cls,
+            environment_config,
+            connection_manager,
+            aws_stack_name,
+            template_path,
+            config_path):
+        logger = logging.getLogger(__name__)
+
+        abs_template_path = os.path.join(
+            environment_config.sceptre_dir,
+            template_path
+        )
+
+        template = Template.import_template(
+            connection_manager,
+            aws_stack_name,
+            abs_template_path
+        )
+
+        logger.info("Imported AWS CloudFormation template '{}'"
+                    " into '{}'".format(aws_stack_name, template_path))
+
+        abs_config_path = os.path.join(
+            environment_config.sceptre_dir,
+            'config',
+            config_path
+        )
+
+        Config.import_config(
+            template,
+            connection_manager,
+            aws_stack_name,
+            abs_config_path
+        )
+
+        logger.info("Imported AWS CloudFormation template '{}' "
+                    "into 'config/{}'".format(aws_stack_name, config_path))
+
+        return Stack(
+                name=config_path,
+                environment_config=environment_config,
+                connection_manager=connection_manager
+            )
+
     @property
     def config(self):
         """

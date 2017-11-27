@@ -178,6 +178,25 @@ def generate_template(ctx, environment, stack):
     write(template_output)
 
 
+@cli.command(name="import-stack")
+@stack_options
+@click.argument("aws_stack_name")
+@click.option("--template", "template_path", help="Specify template path.")
+@click.pass_context
+@catch_exceptions
+def import_stack(ctx, environment, stack, aws_stack_name, template_path):
+    """
+    Import a Sceptre stack from AWS Cloudformation.
+    """
+    if not template_path:
+        template_path = os.path.join(
+            "templates",
+            aws_stack_name + ".yaml"
+        )
+    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
+    env.import_stack(aws_stack_name, stack, template_path)
+
+
 @cli.command(name="lock-stack")
 @stack_options
 @click.pass_context

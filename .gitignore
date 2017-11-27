@@ -117,3 +117,8 @@ _site/
 /docs/_api/sceptre.rst
 /docs/_api/sceptre.hooks.rst
 /docs/_api/sceptre.resolvers.rst
+
+# Ecipse PyDev IDE
+/.project
+/.pydevproject
+/.settings/

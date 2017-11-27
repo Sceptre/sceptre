@@ -20,9 +20,26 @@ def set_template_path(context, stack_name, template_name):
         yaml.safe_dump(stack_config, config_file, default_flow_style=False)
 
 
+@given('template "{template_name}" does not exist')
+def step_impl(context, template_name):
+    filepath = os.path.join(
+        context.sceptre_dir, template_name
+    )
+    os.remove(filepath) if os.path.isfile(filepath) else None
+
+
 @given('the template for stack "{stack_name}" is "{template_name}"')
 def step_impl(context, stack_name, template_name):
     set_template_path(context, stack_name, template_name)
+
+
+@given('template "{template_name}" exists')
+def step_impl(context, template_name):
+    filepath = os.path.join(
+        context.sceptre_dir, template_name
+    )
+    assert os.path.exists(filepath), "template '{}' not found at '{}'".format(template_name, filepath)
+    context.template_file_mtime = os.stat(filepath).st_mtime
 
 
 @when('the user validates the template for stack "{stack_name}"')
@@ -64,3 +81,21 @@ def step_impl(context, filename):
     module = imp.load_source("template", filepath)
     body = module.sceptre_handler({})
     assert body == context.output
+
+
+@then('template "{template_name}" exists')
+def step_impl(context, template_name):
+    filepath = os.path.join(
+        context.sceptre_dir, template_name
+    )
+    assert os.path.exists(filepath), "template '{}' not found at '{}'".format(template_name, filepath)
+
+    
+@then('template "{template_name}" is unchanged')
+def step_impl(context, template_name):
+    filepath = os.path.join(
+        context.sceptre_dir, template_name
+    )
+    assert context.template_file_mtime == os.stat(filepath).st_mtime, "template '{}' has been changed.".format(template_name)
+
+    

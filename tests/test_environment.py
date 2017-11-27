@@ -261,6 +261,40 @@ class TestEnvironment(object):
         with pytest.raises(ClientError):
             self.environment.describe_resources()
 
+    @patch("sceptre.stack.Stack.import_stack")
+    @patch("sceptre.environment.ConnectionManager")
+    @patch("sceptre.environment.Environment._get_config")
+    def test_import_stack(
+            self, mock_get_config, mock_ConnectionManager,
+            mock_import_stack
+    ):
+        mock_config = {
+            "region": sentinel.region,
+            "iam_role": sentinel.iam_role,
+            "profile": sentinel.profile
+        }
+        mock_get_config.return_value = mock_config
+        mock_ConnectionManager.return_value = sentinel.connection_manager
+
+        self.environment.import_stack(
+            aws_stack_name='fake-aws-stack',
+            stack='fake-sceptre-stack',
+            template_path='fake-template-path'
+        )
+        mock_ConnectionManager.assert_called_once_with(
+            region=sentinel.region,
+            iam_role=sentinel.iam_role,
+            profile=sentinel.profile
+        )
+
+        mock_import_stack.assert_called_once_with(
+            environment_config=mock_config,
+            connection_manager=mock_ConnectionManager.return_value,
+            aws_stack_name='fake-aws-stack',
+            template_path='fake-template-path',
+            config_path='environment_path/fake-sceptre-stack'
+        )
+
     @patch("sceptre.environment.wait")
     @patch("sceptre.environment.ThreadPoolExecutor")
     def test_build(self, mock_ThreadPoolExecutor, mock_wait):

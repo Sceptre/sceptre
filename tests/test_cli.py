@@ -87,6 +87,43 @@ class TestCli(object):
 
     @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli.get_env")
+    def test_import_stack_default_template_dir(
+            self, mock_get_env, mock_getcwd
+    ):
+        mock_getcwd.return_value = sentinel.cwd
+
+        self.runner.invoke(cli,
+                           ["import-stack", "dev", "vpc", "fake-aws-stack"])
+
+        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
+        fake_template_path = os.path.join(
+            "templates",
+            "fake-aws-stack.yaml"
+        )
+        mock_get_env.return_value.import_stack \
+            .assert_called_with("fake-aws-stack", "vpc", fake_template_path)
+
+    @patch("sceptre.cli.os.getcwd")
+    @patch("sceptre.cli.get_env")
+    def test_import_stack_user_template_dir(self, mock_get_env, mock_getcwd):
+        mock_getcwd.return_value = sentinel.cwd
+        fake_template_path = "user-templates/fake-aws-stack.yaml"
+        self.runner.invoke(cli, [
+                "import-stack",
+                "--template", fake_template_path,
+                "dev",
+                "vpc",
+                "fake-aws-stack"
+            ]
+        )
+
+        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
+
+        mock_get_env.return_value.import_stack\
+            .assert_called_with("fake-aws-stack", "vpc", fake_template_path)
+
+    @patch("sceptre.cli.os.getcwd")
+    @patch("sceptre.cli.get_env")
     def test_lock_stack(self, mock_get_env, mock_getcwd):
         mock_getcwd.return_value = sentinel.cwd
         self.runner.invoke(cli, ["lock-stack", "dev", "vpc"])

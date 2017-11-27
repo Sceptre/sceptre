@@ -16,6 +16,7 @@ from sceptre.template import Template
 from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 from sceptre.exceptions import TemplateSceptreHandlerError
+from sceptre.exceptions import ImportFailureError
 
 
 class TestTemplate(object):
@@ -33,6 +34,117 @@ class TestTemplate(object):
             path="/folder/template.py",
             sceptre_user_data={}
         )
+
+    @patch("sceptre.template.Template._write_template")
+    @patch("sceptre.template.Template._normalize_template_for_write")
+    def test_import_template__json_template_new_json_target(
+            self, mock_normalize, mock_write):
+        fake_template_body = {
+            'TemplateBody': {
+                'Key': 'Value'
+            }
+        }
+        fake_template_body_string = \
+            json.dumps(fake_template_body['TemplateBody'])
+        self.connection_manager.call.return_value = fake_template_body
+        mock_normalize.return_value = fake_template_body_string
+
+        Template.import_template(
+            self.connection_manager,
+            'fake-aws-stack-name',
+            'templates/fake-template-path.json'
+        )
+
+        self.connection_manager.call.assert_called_once_with(
+            service='cloudformation',
+            command='get_template',
+            kwargs={
+                'StackName': 'fake-aws-stack-name',
+                'TemplateStage': 'Original'
+            }
+        )
+
+        mock_normalize.assert_called_once_with(
+            fake_template_body['TemplateBody'],
+            '.json'
+        )
+
+        mock_write.assert_called_once_with(
+            'templates/fake-template-path.json',
+            fake_template_body_string
+        )
+
+    def test__normalize_template_for_write_json_to_json(self):
+        result = Template._normalize_template_for_write(
+            {'Key': 'Value'},
+            ".json"
+        )
+        assert result == '{"Key": "Value"}'
+
+    def test__normalize_template_for_write_yaml_to_json(self):
+        result = Template._normalize_template_for_write(
+            'Key: Value\n',
+            ".json"
+        )
+        assert result == '{"Key": "Value"}'
+
+    def test__normalize_template_for_write_json_to_yaml(self):
+        result = Template._normalize_template_for_write(
+            {'Key': 'Value'},
+            ".yaml"
+        )
+        assert result == 'Key: Value\n'
+
+    def test__normalize_template_for_write_yaml_to_yaml(self):
+        result = Template._normalize_template_for_write(
+            'Key: Value\n',
+            ".yaml"
+        )
+        assert result == 'Key: Value\n'
+
+    def test__normalize_template_for_write_yaml_to_unsupported(self):
+        with pytest.raises(UnsupportedTemplateFileTypeError):
+            Template._normalize_template_for_write('Key: Value\n', ".txt")
+
+    @patch("sceptre.template.open")
+    @patch("sceptre.template.os.path.isfile")
+    def test__write_template__new_file(self, mock_isfile, mock_open):
+        mock_isfile.return_value = False
+
+        Template._write_template('fake-path', 'fake-body')
+
+        mock_open.called_once_with('fake-path')
+        mock_open.return_value.__enter__.return_value\
+            .write.called_once_with('fake-body')
+        mock_open.return_value.__enter__.return_value\
+            .read.assert_not_called()
+
+    @patch("sceptre.template.open")
+    @patch("sceptre.template.os.path.isfile")
+    def test__write_template__existing_same_file(self, mock_isfile, mock_open):
+        mock_isfile.return_value = True
+        mock_open.return_value.__enter__.return_value\
+            .read.return_value = 'fake-body'
+
+        Template._write_template('fake-path', 'fake-body')
+
+        mock_open.called_once_with('fake-path')
+        mock_open.return_value.read.called_once()
+        mock_open.write.assert_not_called()
+
+    @patch("sceptre.template.open")
+    @patch("sceptre.template.os.path.isfile")
+    def test__write_template__existing_diff_file(self, mock_isfile, mock_open):
+        mock_isfile.return_value = True
+        mock_open.return_value.__enter__.return_value\
+            .read.return_value = 'fake-diff-body'
+
+        with pytest.raises(ImportFailureError):
+            Template._write_template('fake-path', 'fake-body')
+
+        mock_open.called_once_with('fake-path')
+        mock_open.return_value.read.called_once()
+        mock_open.write.assert_not_called()
 
     def test_initialise_template(self):
         assert self.template.path == "/folder/template.py"
@@ -164,6 +276,18 @@ class TestTemplate(object):
         self.template.path = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc.yaml"
+        )
+        output = self.template.body
+        output_dict = yaml.load(output)
+        with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
+            expected_output_dict = json.loads(f.read())
+        assert output_dict == expected_output_dict
+
+    def test_body_with_yml_template(self):
+        self.template.name = "vpc"
+        self.template.path = os.path.join(
+            os.getcwd(),
+            "tests/fixtures/templates/vpc.yml"
         )
         output = self.template.body
         output_dict = yaml.load(output)

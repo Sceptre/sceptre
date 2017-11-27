@@ -1,3 +1,4 @@
+import logging
 import os
 import time
 import uuid
@@ -6,6 +7,9 @@ import boto3
 
 
 def before_all(context):
+    if not context.config.log_capture:
+        logging.basicConfig(level=logging.DEBUG)
+
     context.uuid = uuid.uuid1().hex
     context.project_code = "sceptre-integration-tests-{0}".format(
         context.uuid
