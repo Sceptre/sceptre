@@ -2,6 +2,15 @@
 History
 =======
 
+1.3.2 (2017.11.28)
+------------------
+
+* Improving stack dependency resolution.
+* Improving CLI output for validate template command.
+* Consolidating pip requirements files.
+* Fixing Python 3 support.
+* Fixing documentation typos.
+
 1.3.1 (2017.10.23)
 ------------------
 
