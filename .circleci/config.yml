@@ -155,8 +155,6 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
       - deploy-pypi:
           requires:
             - deploy-pypi-approval
@@ -165,5 +163,3 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
