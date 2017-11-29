@@ -520,28 +520,57 @@ class Stack(object):
 
         :param change_set_name: The name of the change set.
         :type change_set_name: str
+        :raises: botocore.exceptions.ClientError
         """
-        create_change_set_kwargs = {
-            "StackName": self.external_name,
-            "Parameters": self._format_parameters(self.parameters),
-            "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
-            "ChangeSetName": change_set_name,
-            "NotificationARNs": self.config.get("notifications", []),
-            "Tags": [
-                {"Key": str(k), "Value": str(v)}
-                for k, v in self.config.get("stack_tags", {}).items()
-            ]
-        }
-        create_change_set_kwargs.update(self._get_template_details())
-        create_change_set_kwargs.update(self._get_role_arn())
-        self.logger.debug(
-            "%s - Creating change set '%s'", self.name, change_set_name
-        )
-        self.connection_manager.call(
-            service="cloudformation",
-            command="create_change_set",
-            kwargs=create_change_set_kwargs
-        )
+        for change_set_type in ["UPDATE", "CREATE"]:
+            create_change_set_kwargs = {
+                "StackName": self.external_name,
+                "Parameters": self._format_parameters(self.parameters),
+                "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                "ChangeSetName": change_set_name,
+                "NotificationARNs": self.config.get("notifications", []),
+                "ChangeSetType": change_set_type,
+                "Tags": [
+                    {"Key": str(k), "Value": str(v)}
+                    for k, v in self.config.get("stack_tags", {}).items()
+                ]
+            }
+            create_change_set_kwargs.update(self._get_template_details())
+            create_change_set_kwargs.update(self._get_role_arn())
+            self.logger.debug(
+                "%s - Creating %s change set '%s'",
+                self.name, change_set_type, change_set_name
+            )
+            try:
+                self.connection_manager.call(
+                    service="cloudformation",
+                    command="create_change_set",
+                    kwargs=create_change_set_kwargs
+                )
+            except botocore.exceptions.ClientError as e:
+                # If a stack does not exist, describe_stacks will throw an
+                # exception. Unfortunately we don't have a better way than
+                # parsing the exception msg to understand the nature of this
+                # exception.
+                msg = str(e)
+
+                if (
+                        "Stack with id {0} does not exist".format(
+                            self.external_name)
+                        in msg
+                ):
+                    self.logger.debug(
+                        "%s - Stack with id %s does not exist".format(
+                            self.name, self.external_name))
+                    continue
+                else:
+                    # We don't know anything about this exception. Don't handle
+                    self.logger.debug("%s - Unable to get stack details.",
+                                      self.name, exc_info=e)
+                    raise e
+            else:
+                break
+
         # After the call successfully completes, AWS CloudFormation
         # starts creating the change set.
         self.logger.info(
