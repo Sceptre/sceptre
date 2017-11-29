@@ -232,7 +232,9 @@ class TestConfigReader(object):
                 role_arn=None,
                 protected=False,
                 tags={},
-                external_name=None
+                external_name=None,
+                notifications=None,
+                on_failure=None
         )
         assert stack == sentinel.stack
 
