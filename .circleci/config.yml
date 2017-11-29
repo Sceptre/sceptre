@@ -130,14 +130,22 @@ workflows:
   version: 2
   build-test-and-deploy:
     jobs:
-      - build
+      - build:
+          filters:
+            tags:
+              only: /.*/
       - lint-and-unit-tests:
           requires:
             - build
+          filters:
+            tags:
+              only: /.*/
       - integration-tests:
           requires:
             - build
           filters:
+            tags:
+              only: /.*/
             branches:
               ignore: /^pull\/.*/
       - deploy-docs:
@@ -155,11 +163,13 @@ workflows:
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/
       - deploy-pypi:
           requires:
             - deploy-pypi-approval
-            - lint-and-unit-tests
-            - integration-tests
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/
