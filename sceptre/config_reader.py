@@ -363,7 +363,9 @@ class ConfigReader(object):
                 role_arn=config.get("role_arn"),
                 protected=config.get("protect", False),
                 tags=config.get("stack_tags", {}),
-                external_name=config.get("external_name")
+                external_name=config.get("external_name"),
+                notifications=config.get("notifications"),
+                on_failure=config.get("on_failure")
             )
 
             self._construct_nodes(config, stack)
