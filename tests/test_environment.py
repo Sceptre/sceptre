@@ -356,6 +356,19 @@ class TestEnvironment(object):
         # Check this runs without throwing an exception
         self.environment._check_for_circular_dependencies()
 
+    def test_no_circular_dependencies_with_nested_stacks(self):
+        stack1 = MagicMock(Spec=Stack)
+        stack2 = MagicMock(Spec=Stack)
+        stack1.dependencies = ["env1/stack2"]
+        stack1.name = "stack1"
+        stack2.dependencies = []
+        stack2.name = "env1/stack2"
+        stacks = [stack1, stack2]
+
+        self.environment.stacks = stacks
+        # Check this runs without throwing an exception
+        self.environment._check_for_circular_dependencies()
+
     def test_DAG_diamond_throws_no_circ_dependencies_error(self):
         """
         Ensures
