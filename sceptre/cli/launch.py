@@ -7,7 +7,9 @@ from sceptre.stack_status import StackStatus
 
 @click.command(name="launch")
 @click.argument("path")
-@click.option("-y", "--yes", is_flag=True)
+@click.option(
+    "-y", "--yes", is_flag=True, help="Assume yes to all questions."
+)
 @click.pass_context
 @catch_exceptions
 def launch_command(ctx, path, yes):

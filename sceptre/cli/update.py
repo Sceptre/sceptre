@@ -2,16 +2,24 @@ from uuid import uuid1
 
 import click
 
-from sceptre.cli.helpers import catch_exceptions, confirmation, write
+from sceptre.cli.helpers import catch_exceptions, confirmation, get_stack
+from sceptre.cli.helpers import write
 from sceptre.cli.helpers import simplify_change_set_description
 from sceptre.stack_status import StackStatus, StackChangeSetStatus
 
 
 @click.command(name="update")
 @click.argument("path")
-@click.option("-c", "--change-set", is_flag=True)
-@click.option("-v", "--verbose", is_flag=True)
-@click.option("-y", "--yes", is_flag=True)
+@click.option(
+    "-c", "--change-set", is_flag=True,
+    help="Create a change set before updating."
+)
+@click.option(
+    "-v", "--verbose", is_flag=True, help="Display verbose output."
+)
+@click.option(
+    "-y", "--yes", is_flag=True, help="Assume yes to all questions."
+)
 @click.pass_context
 @catch_exceptions
 def update_command(ctx, path, change_set, verbose, yes):
@@ -22,7 +30,7 @@ def update_command(ctx, path, change_set, verbose, yes):
     change-set when the change-set flag is set.
     """
 
-    stack = ctx.obj["config_reader"].construct_stack(path)
+    stack = get_stack(ctx, path)
     if change_set:
         change_set_name = "-".join(["change-set", uuid1().hex])
         stack.create_change_set(change_set_name)

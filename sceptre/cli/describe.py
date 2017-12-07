@@ -1,11 +1,12 @@
 import click
 
-from sceptre.cli.helpers import catch_exceptions, write
+from sceptre.cli.helpers import catch_exceptions, get_stack, write
 from sceptre.cli.helpers import simplify_change_set_description
 
 
 @click.group(name="describe")
-def describe_group():
+@click.pass_context
+def describe_group(ctx):
     """
     Commands for describing attributes of stacks.
     """
@@ -15,7 +16,9 @@ def describe_group():
 @describe_group.command(name="change-set")
 @click.argument("path")
 @click.argument("change-set-name")
-@click.option("-v", "--verbose", is_flag=True)
+@click.option(
+    "-v", "--verbose", is_flag=True, help="Display verbose output."
+)
 @click.pass_context
 @catch_exceptions
 def describe_change_set(ctx, path, change_set_name, verbose):
@@ -23,7 +26,7 @@ def describe_change_set(ctx, path, change_set_name, verbose):
     Describes the change set.
 
     """
-    stack = ctx.obj["config_reader"].construct_stack(path)
+    stack = get_stack(ctx, path)
     description = stack.describe_change_set(change_set_name)
     if not verbose:
         description = simplify_change_set_description(description)
@@ -39,6 +42,6 @@ def describe_policy(ctx, path):
     Displays the stack policy used.
 
     """
-    stack = ctx.obj["config_reader"].construct_stack(path)
+    stack = get_stack(ctx, path)
     response = stack.get_policy()
     write(response.get('StackPolicyBody', {}))

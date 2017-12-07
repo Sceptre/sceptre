@@ -15,7 +15,6 @@ import colorama
 import yaml
 
 from sceptre import __version__
-from sceptre.config_reader import ConfigReader
 from sceptre.cli.init import init_group
 from sceptre.cli.create import create_command
 from sceptre.cli.update import update_command
@@ -72,9 +71,6 @@ def cli(
             user_variables.update({variable_key: variable_value})
     if user_variables:
         ctx.obj["options"]["user_variables"] = user_variables
-    ctx.obj["config_reader"] = ConfigReader(
-        ctx.obj["sceptre_dir"], ctx.obj["options"]
-    )
 
 
 cli.add_command(init_group)

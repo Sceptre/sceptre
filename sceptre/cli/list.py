@@ -1,6 +1,7 @@
 import click
 
-from sceptre.cli.helpers import catch_exceptions, get_stack_or_env, write
+from sceptre.cli.helpers import catch_exceptions, get_stack
+from sceptre.cli.helpers import get_stack_or_env, write
 
 
 @click.group(name="list")
@@ -14,10 +15,9 @@ def list_group():
 
 @list_group.command(name="resources")
 @click.argument("path")
-@click.option("-r", "--recursive", is_flag=True)
 @click.pass_context
 @catch_exceptions
-def list_resources(ctx, path, recursive):
+def list_resources(ctx, path):
     """
     List resources for stack or environment.
 
@@ -33,7 +33,10 @@ def list_resources(ctx, path, recursive):
 
 @list_group.command(name="outputs")
 @click.argument("path")
-@click.option("-e", "--export", type=click.Choice(["envvar"]))
+@click.option(
+    "-e", "--export", type=click.Choice(["envvar"]),
+    help="Specify the export formatting."
+)
 @click.pass_context
 @catch_exceptions
 def list_outputs(ctx, path, export):
@@ -41,7 +44,7 @@ def list_outputs(ctx, path, export):
     List outputs for stack.
 
     """
-    stack = ctx.obj["config_reader"].construct_stack(path)
+    stack = get_stack(ctx, path)
     response = stack.describe_outputs()
 
     if export == "envvar":
@@ -66,7 +69,7 @@ def list_change_sets(ctx, path):
     List change sets for stack.
 
     """
-    stack = ctx.obj["config_reader"].construct_stack(path)
+    stack = get_stack(ctx, path)
     response = stack.list_change_sets()
     if response['ResponseMetadata']['HTTPStatusCode'] == 200:
         del response['ResponseMetadata']

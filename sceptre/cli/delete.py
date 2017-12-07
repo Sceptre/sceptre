@@ -8,7 +8,9 @@ from sceptre.stack_status import StackStatus
 @click.command(name="delete")
 @click.argument("path")
 @click.argument("change-set-name", required=False)
-@click.option("-y", "--yes", is_flag=True)
+@click.option(
+    "-y", "--yes", is_flag=True, help="Assume yes to all questions."
+)
 @click.pass_context
 @catch_exceptions
 def delete_command(ctx, path, change_set_name, yes):
@@ -23,7 +25,6 @@ def delete_command(ctx, path, change_set_name, yes):
     stack, env = get_stack_or_env(ctx, path)
 
     if stack:
-        stack = ctx.obj["config_reader"].construct_stack(path)
         if change_set_name:
             confirmation(action, yes, change_set=change_set_name, stack=path)
             stack.delete_change_set(change_set_name)
@@ -34,7 +35,6 @@ def delete_command(ctx, path, change_set_name, yes):
                 exit(1)
     elif env:
         confirmation(action, yes, environment=path)
-        env = ctx.obj["config_reader"].construct_environment(path)
         response = env.delete()
         if not all(
             status == StackStatus.COMPLETE for status in response.values()

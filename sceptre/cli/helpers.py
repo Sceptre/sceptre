@@ -7,6 +7,8 @@ from json import JSONEncoder
 import click
 import yaml
 
+from sceptre.config_reader import ConfigReader
+
 from boto3.exceptions import Boto3Error
 from botocore.exceptions import BotoCoreError, ClientError
 from jinja2.exceptions import TemplateError
@@ -69,7 +71,7 @@ def write(var, output_format="str", no_colour=True):
     :param output_format: The format to print the output as. Allowed values: \
     "str", "json", "yaml"
     :type output_format: str
-    :param no_colour: Whether to color stack statuses
+    :param no_colour: Whether to colour stack statuses
     :type no_colour: bool
     """
     if output_format == "json":
@@ -99,12 +101,28 @@ def get_stack_or_env(ctx, path):
     stack = None
     env = None
 
+    config_reader = ConfigReader(ctx.obj["sceptre_dir"], ctx.obj["options"])
+
     if os.path.splitext(path)[1]:
-        stack = ctx.obj["config_reader"].construct_stack(path)
+        stack = config_reader.construct_stack(path)
     else:
-        env = ctx.obj["config_reader"].construct_environment(path)
+        env = config_reader.construct_environment(path)
 
     return (stack, env)
+
+
+def get_stack(ctx, path):
+    """
+    Parses the path to generate relevant Envrionment and Stack object.
+
+    :param ctx: Cli context.
+    :type ctx: click.Context
+    :param path: Path to either stack config or environment folder.
+    :type path: str
+    """
+    return ConfigReader(
+        ctx.obj["sceptre_dir"], ctx.obj["options"]
+    ).construct_stack(path)
 
 
 def setup_logging(debug, no_colour):

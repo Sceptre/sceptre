@@ -23,7 +23,7 @@ from sceptre.exceptions import SceptreException
 class TestCli(object):
 
     def setup_method(self, test_method):
-        self.patcher_ConfigReader = patch("sceptre.cli.ConfigReader")
+        self.patcher_ConfigReader = patch("sceptre.cli.helpers.ConfigReader")
         self.patcher_getcwd = patch("sceptre.cli.os.getcwd")
 
         self.mock_ConfigReader = self.patcher_ConfigReader.start()
