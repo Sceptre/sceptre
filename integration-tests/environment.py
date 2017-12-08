@@ -10,10 +10,15 @@ def before_all(context):
     context.project_code = "sceptre-integration-tests-{0}".format(
         context.uuid
     )
+    context.bucket_name = "sceptre-integration-tests-templates"
+
+    if not os.environ.get("CIRCLECI"):
+        context.bucket_name = context.bucket_name + "-" + str(context.uuid)
+
     context.sceptre_dir = os.path.join(
         os.getcwd(), "integration-tests", "sceptre-project"
     )
-    update_project_code(context)
+    update_config(context)
     context.cloudformation = boto3.resource('cloudformation')
     context.client = boto3.client("cloudformation")
 
@@ -24,13 +29,14 @@ def before_scenario(context, scenario):
     context.output = None
 
 
-def update_project_code(context):
+def update_config(context):
     config_path = os.path.join(
         context.sceptre_dir, "config", "config.yaml"
     )
     with open(config_path) as config_file:
         env_config = yaml.safe_load(config_file)
 
+    env_config["template_bucket_name"] = context.bucket_name
     env_config["project_code"] = context.project_code
 
     with open(config_path, 'w') as config_file:
@@ -45,3 +51,6 @@ def after_all(context):
             context.client.delete_stack(
                 StackName=stack["StackName"]
             )
+    context.project_code = "sceptre-integration-tests"
+    context.bucket_name = "sceptre-integration-tests-templates"
+    update_config(context)

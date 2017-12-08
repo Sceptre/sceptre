@@ -1,1 +1,3 @@
-project_code: sceptre-integration-tests-941d57d4a9df11e7956dacbc328d8bb1
+project_code: sceptre-integration-tests
+region: eu-west-1
+template_bucket_name: sceptre-integration-tests-templates
