@@ -121,7 +121,33 @@ where `variables.yaml` contains::
 iam_role: <your iam role>
 ```
 
-The `--var` flag can be used multiple times to supply multiple variables. If both `--var` and `--var-file` are supplied, `--var` overwrites any common values in `--var-file`.
+Both the `--var` and `--var-file` flags can be used multiple times. If multiple `--var-file` options are supplied, the variables from these files will be merged, with a higher precedence given to options specified later in the command. Values supplied using `--var` take the highest precedence and will overwrite any value defined in the variable files. 
+
+For example if we have the following variable files:
+
+```yaml
+---- default.yaml
+region: eu-west-1
+profile: dev
+project_code: api
+
+---- prod.yaml
+profile: prod
+```
+
+The following sceptre command: 
+ 
+```shell 
+sceptre --var-file=default.yaml --var-file=prod.yaml --var region=us-east-1 <COMMAND>
+```
+
+Will result in the following variables being available to the jinja templating:
+
+```yaml
+region: us-east-1
+profile: prod
+project_code: api
+```
 
 For command line flags, Sceptre splits the string on the first equals sign "=", and sets the key to be the first substring, and the value to be the second. Due to the large number of possible user inputs, no error checking is performed on the value of the --var flag, and it is the user's responsibility to make sure that the value is correctly formatted.
 

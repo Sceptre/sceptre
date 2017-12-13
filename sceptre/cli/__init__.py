@@ -40,18 +40,18 @@ from sceptre.cli.helpers import setup_logging, catch_exceptions
 @click.option(
     "--var", multiple=True, help="A variable to template into config files.")
 @click.option(
-    "--var-file", type=click.File("rb"),
+    "--var-file", multiple=True, type=click.File("rb"),
     help="A YAML file of variables to template into config files.")
 @click.pass_context
 @catch_exceptions
 def cli(
         ctx, debug, directory, no_colour, output, var, var_file
-):  # pragma: no cover
+):
     """
     Sceptre is a tool to manage your cloud native infrastructure deployments.
 
     """
-    setup_logging(debug, no_colour)
+    logger = setup_logging(debug, no_colour)
     colorama.init()
     # Enable deprecation warnings
     warnings.simplefilter("always", DeprecationWarning)
@@ -63,11 +63,27 @@ def cli(
     }
     user_variables = {}
     if var_file:
-        user_variables.update(yaml.safe_load(var_file.read()))
+        for fh in var_file:
+            parsed = yaml.safe_load(fh.read())
+            # intersection
+            overloaded_keys = set(user_variables.keys()) & set(parsed.keys())
+            if overloaded_keys:
+                logger.debug(
+                    "Duplicate variables encountered: {0}. "
+                    "Using values from: {1}."
+                    .format(", ".join(overloaded_keys), fh.name)
+                )
+            user_variables.update(parsed)
     if var:
         # --var options overwrite --var-file options
         for variable in var:
             variable_key, variable_value = variable.split("=")
+            if variable_key in user_variables:
+                logger.debug(
+                    "Duplicate variable encountered: {0}. "
+                    "Using value from --var option."
+                    .format(variable_key)
+                )
             user_variables.update({variable_key: variable_value})
     if user_variables:
         ctx.obj["options"]["user_variables"] = user_variables
