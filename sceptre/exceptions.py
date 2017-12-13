@@ -152,3 +152,10 @@ class ConfigFileNotFoundError(SceptreException):
     Error raised when a config file does not exist.
     """
     pass
+
+
+class EnvironmentNotFoundError(SceptreException):
+    """
+    Error raised when a environment does not exist.
+    """
+    pass

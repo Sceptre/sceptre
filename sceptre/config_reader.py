@@ -23,7 +23,7 @@ from packaging.version import Version
 
 from . import __version__
 from .exceptions import InvalidSceptreDirectoryError, ConfigFileNotFoundError
-from .exceptions import VersionIncompatibleError
+from .exceptions import EnvironmentNotFoundError, VersionIncompatibleError
 from .environment import Environment
 from .stack import Stack
 
@@ -380,6 +380,10 @@ class ConfigReader(object):
         :param rel_path: A relative stack config path from the config folder.
         :type rel_path: str
         """
+        if not path.isfile(path.join(self.config_folder, rel_path)):
+            raise ConfigFileNotFoundError(
+                "Config file not found for '{}'".format(rel_path)
+            )
         directory = path.split(rel_path)[0]
         environment_config = self.read(path.join(directory, "config.yaml"))
         return self._construct_stack(rel_path, environment_config)
@@ -392,6 +396,10 @@ class ConfigReader(object):
         :param rel_path: A relative environment path from the config folder.
         :type rel_path: str
         """
+        if not path.isdir(path.join(self.config_folder, rel_path)):
+            raise EnvironmentNotFoundError(
+                "Environment not found for '{}'".format(rel_path)
+            )
         environment_config = self.read(path.join(rel_path, "config.yaml"))
         environment = Environment(rel_path)
 
