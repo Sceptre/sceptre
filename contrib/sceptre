@@ -9,7 +9,7 @@ _sceptre ()
 
     # commands we'll complete
     commands="--version --debug --dir --output --no-colour --var --var-file
-	--help console create list continue-update-rollback create-change-set
+	--help continue-update-rollback create-change-set
 	create-stack delete-change-set delete-env delete-stack
 	describe-change-set describe-env describe-env-resources
 	describe-stack-outputs describe-stack-resources execute-change-set
