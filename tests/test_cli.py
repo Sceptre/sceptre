@@ -8,6 +8,7 @@ from uuid import UUID
 from click.testing import CliRunner
 from mock import MagicMock, patch, sentinel
 import pytest
+import click
 
 from sceptre.cli import cli
 from sceptre.config_reader import ConfigReader
@@ -54,6 +55,68 @@ class TestCli(object):
 
         raises_exception()
         mock_exit.assert_called_once_with(1)
+
+    @pytest.mark.parametrize("command,files,output", [
+        # one --var option
+        (
+            ["--var", "a=1", "noop"],
+            {},
+            {"a": "1"}
+        ),
+        # multiple --var options
+        (
+            ["--var", "a=1", "--var", "b=2", "noop"],
+            {},
+            {"a": "1", "b": "2"}
+        ),
+        # one --var-file option
+        (
+            ["--var-file", "foo.yaml", "noop"],
+            {
+                "foo.yaml": {"key1": "val1", "key2": "val2"}
+            },
+            {"key1": "val1", "key2": "val2"}
+        ),
+        # multiple --var-file option
+        (
+            ["--var-file", "foo.yaml", "--var-file", "bar.yaml", "noop"],
+            {
+                "foo.yaml": {"key1": "parent_value1", "key2": "parent_value2"},
+                "bar.yaml": {"key2": "child_value2", "key3": "child_value3"}
+            },
+            {
+                "key1": "parent_value1",
+                "key2": "child_value2",
+                "key3": "child_value3"
+            }
+        ),
+        # mix of --var and --var-file
+        (
+            ["--var-file", "foo.yaml", "--var", "key2=var2", "noop"],
+            {
+                "foo.yaml": {"key1": "file1", "key2": "file2"}
+            },
+            {"key1": "file1", "key2": "var2"}
+        ),
+    ])
+    def test_user_variables(self, command, files, output):
+        @cli.command()
+        @click.pass_context
+        def noop(ctx):
+            click.echo(yaml.safe_dump(ctx.obj["options"]["user_variables"]))
+
+        self.patcher_getcwd.stop()
+        with self.runner.isolated_filesystem():
+            for name, content in files.items():
+                with open(name, "w") as fh:
+                    yaml.safe_dump(content, fh)
+
+            result = self.runner.invoke(cli, command)
+        self.patcher_getcwd.start()
+
+        user_variables = yaml.safe_load(result.output)
+        assert result.exit_code == 0
+        assert user_variables == output
 
     def test_validate_template_with_valid_template(self):
         self.mock_stack.template.validate.return_value = {
