@@ -56,37 +56,38 @@ def cli(
     # Enable deprecation warnings
     warnings.simplefilter("always", DeprecationWarning)
     ctx.obj = {
-        "options": {},
+        "user_variables": {},
         "output_format": output,
         "no_colour": no_colour,
         "sceptre_dir": directory if directory else os.getcwd()
     }
-    user_variables = {}
     if var_file:
         for fh in var_file:
             parsed = yaml.safe_load(fh.read())
-            # intersection
-            overloaded_keys = set(user_variables.keys()) & set(parsed.keys())
+            ctx.obj["user_variables"].update(parsed)
+
+            # the rest of this block is for debug purposes only
+            existing_keys = set(ctx.obj["user_variables"].keys())
+            new_keys = set(parsed.keys())
+            overloaded_keys = existing_keys & new_keys  # intersection
             if overloaded_keys:
                 logger.debug(
                     "Duplicate variables encountered: {0}. "
                     "Using values from: {1}."
                     .format(", ".join(overloaded_keys), fh.name)
                 )
-            user_variables.update(parsed)
+
     if var:
         # --var options overwrite --var-file options
         for variable in var:
             variable_key, variable_value = variable.split("=")
-            if variable_key in user_variables:
+            if variable_key in ctx.obj["user_variables"]:
                 logger.debug(
                     "Duplicate variable encountered: {0}. "
                     "Using value from --var option."
                     .format(variable_key)
                 )
-            user_variables.update({variable_key: variable_value})
-    if user_variables:
-        ctx.obj["options"]["user_variables"] = user_variables
+            ctx.obj["user_variables"].update({variable_key: variable_value})
 
 
 cli.add_command(init_group)
