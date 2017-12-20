@@ -47,6 +47,7 @@ class Stack(object):
 
     parameters = ResolvableProperty("parameters")
     sceptre_user_data = ResolvableProperty("sceptre_user_data")
+    notifications = ResolvableProperty("notifications")
 
     def __init__(
         self, name, project_code, template_path, region, iam_role=None,
@@ -67,6 +68,7 @@ class Stack(object):
         self.hooks = hooks or {}
         self.parameters = parameters or {}
         self.sceptre_user_data = sceptre_user_data or {}
+        self.notifications = notifications or []
 
         self.template_path = template_path
         self.s3_details = s3_details
@@ -75,7 +77,6 @@ class Stack(object):
         self.protected = protected
         self.role_arn = role_arn
         self.on_failure = on_failure
-        self.notifications = notifications or []
         self.dependencies = dependencies or []
         self.tags = tags or {}
 
