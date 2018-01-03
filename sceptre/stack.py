@@ -19,6 +19,7 @@ import botocore
 from .connection_manager import ConnectionManager
 from .helpers import get_external_stack_name
 from .resolvers import ResolvableProperty
+from .hooks import HookProperty
 from .stack_status import StackStatus
 from .stack_status import StackChangeSetStatus
 from .template import Template
@@ -48,6 +49,7 @@ class Stack(object):
     parameters = ResolvableProperty("parameters")
     sceptre_user_data = ResolvableProperty("sceptre_user_data")
     notifications = ResolvableProperty("notifications")
+    hooks = HookProperty("hooks")
 
     def __init__(
         self, name, project_code, template_path, region, iam_role=None,
@@ -78,6 +80,7 @@ class Stack(object):
         self.hooks = hooks or {}
         self.parameters = parameters or {}
         self.sceptre_user_data = sceptre_user_data or {}
+        self.notifications = notifications or []
 
     def __repr__(self):
         return (

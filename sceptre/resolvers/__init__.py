@@ -3,6 +3,8 @@ import abc
 import six
 import logging
 
+from sceptre.helpers import _call_func_on_values
+
 
 @six.add_metaclass(abc.ABCMeta)
 class Resolver():
@@ -25,10 +27,9 @@ class Resolver():
 
     def setup(self):
         """
-        An abstract method which must be overwritten by all inheriting classes.
-        This method is called to retrieve the final desired value.
-        Implementation of this method in subclasses must return a suitable
-        object or primitive type.
+        This method is called at during stack initialisation.
+        Implementation of this method in subclasses can be used to do any
+        initial setup of the object.
         """
         pass  # pragma: no cover
 
@@ -65,41 +66,23 @@ class ResolvableProperty(object):
         :return: The attribute stored with the suffix ``name`` in the instance.
         :rtype: dict or list
         """
+        def resolve(attr, key, value):
+            attr[key] = value.resolve()
 
         if hasattr(instance, self.name):
-            return self._call_func_on_values(
-                getattr(instance, self.name), "resolve"
+            return _call_func_on_values(
+                resolve, getattr(instance, self.name), Resolver
             )
 
     def __set__(self, instance, value):
-        self._call_func_on_values(
-            value, "setup", {"stack": instance}
-        )
+        """
+        Attribute setter which adds a stack reference to any resolvers in the
+        data structure `value` and calls the setup method.
+
+        """
+        def setup(attr, key, value):
+            value.stack = instance
+            value.setup()
+
+        _call_func_on_values(setup, value, Resolver)
         setattr(instance, self.name, value)
-
-    def _call_func_on_values(self, attr, func_name, kwargs=None):
-        """
-        Searches through dictionary or list for Resolver objects and replaces
-        them with the resolved value. Supports nested dictionaries and lists.
-        Does not detect Resolver objects used as keys in dictionaries.
-
-        :param attr: A complex data structure to search through.
-        :type attr: dict or list
-        :return: A complex data structure without Resolver objects.
-        :rtype: dict or list
-        """
-        kwargs = kwargs or {}
-
-        if isinstance(attr, dict):
-            for key, value in attr.items():
-                if isinstance(value, Resolver):
-                    attr[key] = getattr(value, func_name)(**kwargs)
-                elif isinstance(value, list) or isinstance(value, dict):
-                    self._call_func_on_values(value, func_name, kwargs)
-        elif isinstance(attr, list):
-            for index, value in enumerate(attr):
-                if isinstance(value, Resolver):
-                    attr[index] = getattr(value, func_name)(**kwargs)
-                elif isinstance(value, list) or isinstance(value, dict):
-                    self._call_func_on_values(value, func_name, kwargs)
-        return attr

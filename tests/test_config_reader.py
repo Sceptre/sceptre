@@ -5,7 +5,6 @@ from mock import patch, sentinel
 import pytest
 import yaml
 import errno
-from functools import partial
 
 from sceptre.exceptions import VersionIncompatibleError
 from sceptre.exceptions import ConfigFileNotFoundError
@@ -142,28 +141,6 @@ class TestConfigReader(object):
                 "param5": "region",
                 "param6": "environment_region"
             }
-        }
-
-    def test_construct_nodes(self):
-        def add(value):
-            return 1 + value
-
-        attr = {
-            "parameters": {
-                "param1": partial(add),
-                "param2": {"param3": partial(add), "param4": partial(add)},
-                "param5": [partial(add), partial(add)]
-            },
-            "sceptre_user_data": [partial(add), [partial(add), partial(add)]]
-        }
-        ConfigReader._construct_nodes(attr, 1)
-        assert attr == {
-            "parameters": {
-                "param1": 2,
-                "param2": {"param3": 2, "param4": 2},
-                "param5": [2, 2]
-            },
-            "sceptre_user_data": [2, [2, 2]]
         }
 
     def test_aborts_on_incompatible_version_requirement(self):

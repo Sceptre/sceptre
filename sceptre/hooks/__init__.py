@@ -2,6 +2,8 @@ import abc
 import logging
 from functools import wraps
 
+from sceptre.helpers import _call_func_on_values
+
 
 class Hook(object):
     """
@@ -19,6 +21,13 @@ class Hook(object):
         self.argument = argument
         self.stack = stack
 
+    def setup(self):
+        """
+        setup is a method that may be overwritten by inheriting classes. Allows
+        hooks to run so initalisation steps when config is first read.
+        """
+        pass  # pragma: no cover
+
     @abc.abstractmethod
     def run(self):
         """
@@ -26,6 +35,42 @@ class Hook(object):
         inheriting classes. Run should execute the logic of the hook.
         """
         pass  # pragma: no cover
+
+
+class HookProperty(object):
+    """
+    This is a descriptor class used to store an attribute that may contain
+    Hook objects. Used to setup Hooks when added as a attribute. Supports
+    nested dictionary and lists.
+
+    :param name: Attribute suffix used to store the property in the instance.
+    :type name: string
+    """
+    def __init__(self, name):
+        self.name = "_" + name
+        self.logger = logging.getLogger(__name__)
+
+    def __get__(self, instance, type):
+        """
+        Attribute getter for Hook containing data structure.
+
+        :return: The attribute stored with the suffix ``name`` in the instance.
+        :rtype: dict or list
+        """
+        return getattr(instance, self.name)
+
+    def __set__(self, instance, value):
+        """
+        Attribute setter which adds a stack reference to any hooks in the
+        data structure `value` and calls the setup method.
+
+        """
+        def setup(attr, key, value):
+            value.stack = instance
+            value.setup()
+
+        _call_func_on_values(setup, value, Hook)
+        setattr(instance, self.name, value)
 
 
 def execute_hooks(hooks):

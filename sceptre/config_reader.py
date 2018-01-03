@@ -104,22 +104,16 @@ class ConfigReader(object):
 
         def constructor_factory(node_class):
             """
-            Returns a partial function that will initialise objects from a
+            Returns constructor that will initialise objects from a
             given node class.
 
             :param node_class: Class representing the node.
             :type node_class: class
-            :returns: Partial function of class initialiser.
-            :rtype: partial
+            :returns: Class initialiser.
+            :rtype: func
             """
             # This function signture is required by PyYAML
             def class_constructor(loader, node):
-                # Returning partial as initialisation needs to be deferred
-                # until config file has been completely parsed. This because
-                # the config itself is passed to the node_class and can be used
-                # during initialisation. Construct_nodes function will call any
-                # partials within the config to finially initialise objects
-                # after the config has been loaded by PyYAML.
                 return node_class(
                     loader.construct_scalar(node)
                 )  # pragma: no cover
@@ -269,30 +263,6 @@ class ConfigReader(object):
                     )
                 )
 
-    # @classmethod
-    # def _construct_nodes(cls, attr, stack):
-    #     """
-    #     Search through a data structure to call any partial functions to
-    #     finialise contruction of YAML objects.
-    #
-    #     :param attr: Data structure to search through.
-    #     :type attr: dict
-    #     :param stack: Stack object to associate to objects.
-    #     :type directory_path: sceptre.stack.Stack
-    #     """
-    #     if isinstance(attr, dict):
-    #         for key, value in attr.items():
-    #             if isinstance(value, partial):
-    #                 attr[key] = value(stack)
-    #             elif isinstance(value, list) or isinstance(value, dict):
-    #                 cls._construct_nodes(value, stack)
-    #     elif isinstance(attr, list):
-    #         for index, value in enumerate(attr):
-    #             if isinstance(value, partial):
-    #                 attr[index] = value(stack)
-    #             elif isinstance(value, list) or isinstance(value, dict):
-    #                 cls._construct_nodes(value, stack)
-
     @staticmethod
     def _collect_s3_details(stack_name, config):
         """
@@ -324,13 +294,6 @@ class ConfigReader(object):
                  "bucket_key": template_key
             }
         return s3_details
-
-    def rendered_config(self, rel_path):
-        directory, filename = path.split(rel_path)
-        environment_config = self.read(path.join(directory, "config.yaml"))
-        self.templating_vars["environment_config"] = environment_config
-        config = self.read(rel_path, environment_config)
-        return config
 
     def _construct_stack(self, rel_path, environment_config=None):
         """
@@ -370,12 +333,11 @@ class ConfigReader(object):
                 role_arn=config.get("role_arn"),
                 protected=config.get("protect", False),
                 tags=config.get("stack_tags", {}),
-                external_name=config.get("external_name"),
+                external_name=config.get("stack_name"),
                 notifications=config.get("notifications"),
                 on_failure=config.get("on_failure")
             )
 
-            # self._construct_nodes(config, stack)
             del self.templating_vars["environment_config"]
             return stack
 
