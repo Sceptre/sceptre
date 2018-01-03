@@ -65,11 +65,6 @@ class Stack(object):
 
         self.connection_manager = ConnectionManager(region, iam_role)
 
-        self.hooks = hooks or {}
-        self.parameters = parameters or {}
-        self.sceptre_user_data = sceptre_user_data or {}
-        self.notifications = notifications or []
-
         self.template_path = template_path
         self.s3_details = s3_details
         self._template = None
@@ -79,6 +74,10 @@ class Stack(object):
         self.on_failure = on_failure
         self.dependencies = dependencies or []
         self.tags = tags or {}
+
+        self.hooks = hooks or {}
+        self.parameters = parameters or {}
+        self.sceptre_user_data = sceptre_user_data or {}
 
     def __repr__(self):
         return (

@@ -23,6 +23,15 @@ class Resolver():
         self.argument = argument
         self.stack = stack
 
+    def setup(self):
+        """
+        An abstract method which must be overwritten by all inheriting classes.
+        This method is called to retrieve the final desired value.
+        Implementation of this method in subclasses must return a suitable
+        object or primitive type.
+        """
+        pass  # pragma: no cover
+
     @abc.abstractmethod
     def resolve(self):
         """
@@ -58,12 +67,17 @@ class ResolvableProperty(object):
         """
 
         if hasattr(instance, self.name):
-            return self.resolve_values(getattr(instance, self.name))
+            return self._call_func_on_values(
+                getattr(instance, self.name), "resolve"
+            )
 
     def __set__(self, instance, value):
+        self._call_func_on_values(
+            value, "setup", {"stack": instance}
+        )
         setattr(instance, self.name, value)
 
-    def resolve_values(self, attr):
+    def _call_func_on_values(self, attr, func_name, kwargs=None):
         """
         Searches through dictionary or list for Resolver objects and replaces
         them with the resolved value. Supports nested dictionaries and lists.
@@ -74,16 +88,18 @@ class ResolvableProperty(object):
         :return: A complex data structure without Resolver objects.
         :rtype: dict or list
         """
+        kwargs = kwargs or {}
+
         if isinstance(attr, dict):
             for key, value in attr.items():
                 if isinstance(value, Resolver):
-                    attr[key] = value.resolve()
+                    attr[key] = getattr(value, func_name)(**kwargs)
                 elif isinstance(value, list) or isinstance(value, dict):
-                    self.resolve_values(value)
+                    self._call_func_on_values(value, func_name, kwargs)
         elif isinstance(attr, list):
             for index, value in enumerate(attr):
                 if isinstance(value, Resolver):
-                    attr[index] = value.resolve()
+                    attr[index] = getattr(value, func_name)(**kwargs)
                 elif isinstance(value, list) or isinstance(value, dict):
-                    self.resolve_values(value)
+                    self._call_func_on_values(value, func_name, kwargs)
         return attr

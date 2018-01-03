@@ -14,7 +14,6 @@ import datetime
 import logging
 from os import path, environ
 from pkg_resources import iter_entry_points
-from functools import partial
 import yaml
 
 import jinja2
@@ -121,8 +120,8 @@ class ConfigReader(object):
                 # during initialisation. Construct_nodes function will call any
                 # partials within the config to finially initialise objects
                 # after the config has been loaded by PyYAML.
-                return partial(
-                    node_class, loader.construct_scalar(node)
+                return node_class(
+                    loader.construct_scalar(node)
                 )  # pragma: no cover
 
             return class_constructor
@@ -234,6 +233,7 @@ class ConfigReader(object):
                 environment_path=directory_path.split("/"),
                 **self.templating_vars
             )
+
             config = yaml.safe_load(rendered_template)
             return config
 
@@ -269,29 +269,29 @@ class ConfigReader(object):
                     )
                 )
 
-    @classmethod
-    def _construct_nodes(cls, attr, stack):
-        """
-        Search through a data structure to call any partial functions to
-        finialise contruction of YAML objects.
-
-        :param attr: Data structure to search through.
-        :type attr: dict
-        :param stack: Stack object to associate to objects.
-        :type directory_path: sceptre.stack.Stack
-        """
-        if isinstance(attr, dict):
-            for key, value in attr.items():
-                if isinstance(value, partial):
-                    attr[key] = value(stack)
-                elif isinstance(value, list) or isinstance(value, dict):
-                    cls._construct_nodes(value, stack)
-        elif isinstance(attr, list):
-            for index, value in enumerate(attr):
-                if isinstance(value, partial):
-                    attr[index] = value(stack)
-                elif isinstance(value, list) or isinstance(value, dict):
-                    cls._construct_nodes(value, stack)
+    # @classmethod
+    # def _construct_nodes(cls, attr, stack):
+    #     """
+    #     Search through a data structure to call any partial functions to
+    #     finialise contruction of YAML objects.
+    #
+    #     :param attr: Data structure to search through.
+    #     :type attr: dict
+    #     :param stack: Stack object to associate to objects.
+    #     :type directory_path: sceptre.stack.Stack
+    #     """
+    #     if isinstance(attr, dict):
+    #         for key, value in attr.items():
+    #             if isinstance(value, partial):
+    #                 attr[key] = value(stack)
+    #             elif isinstance(value, list) or isinstance(value, dict):
+    #                 cls._construct_nodes(value, stack)
+    #     elif isinstance(attr, list):
+    #         for index, value in enumerate(attr):
+    #             if isinstance(value, partial):
+    #                 attr[index] = value(stack)
+    #             elif isinstance(value, list) or isinstance(value, dict):
+    #                 cls._construct_nodes(value, stack)
 
     @staticmethod
     def _collect_s3_details(stack_name, config):
@@ -324,6 +324,13 @@ class ConfigReader(object):
                  "bucket_key": template_key
             }
         return s3_details
+
+    def rendered_config(self, rel_path):
+        directory, filename = path.split(rel_path)
+        environment_config = self.read(path.join(directory, "config.yaml"))
+        self.templating_vars["environment_config"] = environment_config
+        config = self.read(rel_path, environment_config)
+        return config
 
     def _construct_stack(self, rel_path, environment_config=None):
         """
@@ -368,7 +375,7 @@ class ConfigReader(object):
                 on_failure=config.get("on_failure")
             )
 
-            self._construct_nodes(config, stack)
+            # self._construct_nodes(config, stack)
             del self.templating_vars["environment_config"]
             return stack
 
