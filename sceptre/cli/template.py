@@ -1,6 +1,6 @@
 import click
 
-from sceptre.cli.helpers import catch_exceptions, get_stack, write
+from sceptre.cli.helpers import catch_exceptions, get_stack_or_env, write
 
 
 @click.command(name="validate")
@@ -13,7 +13,7 @@ def validate_command(ctx, path):
 
     Validates the template used for stack in PATH.
     """
-    stack = get_stack(ctx, path)
+    stack, _ = get_stack_or_env(ctx, path)
     response = stack.template.validate()
     if response['ResponseMetadata']['HTTPStatusCode'] == 200:
         del response['ResponseMetadata']
@@ -31,5 +31,5 @@ def generate_command(ctx, path):
 
     Prints the template used for stack in PATH.
     """
-    stack = get_stack(ctx, path)
+    stack, _ = get_stack_or_env(ctx, path)
     write(stack.template.body)

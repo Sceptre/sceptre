@@ -1,7 +1,6 @@
 import click
 
-from sceptre.cli.helpers import catch_exceptions, get_stack
-from sceptre.cli.helpers import get_stack_or_env, write
+from sceptre.cli.helpers import catch_exceptions, get_stack_or_env, write
 
 
 @click.group(name="list")
@@ -44,7 +43,7 @@ def list_outputs(ctx, path, export):
     List outputs for stack.
 
     """
-    stack = get_stack(ctx, path)
+    stack, _ = get_stack_or_env(ctx, path)
     response = stack.describe_outputs()
 
     if export == "envvar":
@@ -69,7 +68,7 @@ def list_change_sets(ctx, path):
     List change sets for stack.
 
     """
-    stack = get_stack(ctx, path)
+    stack, _ = get_stack_or_env(ctx, path)
     response = stack.list_change_sets()
     if response['ResponseMetadata']['HTTPStatusCode'] == 200:
         del response['ResponseMetadata']
