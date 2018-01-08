@@ -18,7 +18,7 @@ def list_group():
 @catch_exceptions
 def list_resources(ctx, path):
     """
-    List resources for stack or environment.
+    List resources for stack or executor.
 
     """
     stack, env = get_stack_or_env(ctx, path)

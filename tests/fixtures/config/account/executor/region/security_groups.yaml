@@ -1,0 +1,7 @@
+parameters:
+  param1: {{ var.user_variable }}
+  param2: {{ executor_variable.TEST_ENV_VAR }}
+  param3: {{ executor_path.0 }}
+  param4: {{ executor_path.1 }}
+  param5: {{ executor_path.2 }}
+  param6: {{ executor_config.region }}

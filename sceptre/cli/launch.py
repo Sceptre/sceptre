@@ -14,9 +14,9 @@ from sceptre.stack_status import StackStatus
 @catch_exceptions
 def launch_command(ctx, path, yes):
     """
-    Launch a stack or environment.
+    Launch a stack or executor.
 
-    Launch a stack or environment for a given config PATH.
+    Launch a stack or executor for a given config PATH.
     """
     action = "launch"
 
@@ -28,7 +28,7 @@ def launch_command(ctx, path, yes):
         if response != StackStatus.COMPLETE:
             exit(1)
     elif env:
-        confirmation(action, yes, environment=path)
+        confirmation(action, yes, executor=path)
         response = env.launch()
         if not all(
             status == StackStatus.COMPLETE for status in response.values()

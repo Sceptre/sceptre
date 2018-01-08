@@ -1,0 +1,9 @@
+template_path: path/to/template
+parameters:
+  param1: !executor_variable example
+  param2:
+    param3: !executor_variable example
+    param4: !executor_variable example
+  param5:
+    - param6: !executor_variable example
+    - param7: !executor_variable example

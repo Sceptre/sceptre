@@ -67,7 +67,7 @@ class TestConfigReader(object):
 
             assert config == {
                 "sceptre_dir": sceptre_dir,
-                "environment_path": os.path.split(target)[0],
+                "executor_path": os.path.split(target)[0],
                 "filepath": target
             }
 
@@ -95,7 +95,7 @@ class TestConfigReader(object):
 
             assert config == {
                 "sceptre_dir": sceptre_dir,
-                "environment_path": "A",
+                "executor_path": "A",
                 "config": "config",
                 "base_config": "base_config"
             }
@@ -111,10 +111,12 @@ class TestConfigReader(object):
 
     def test_read_with_empty_config_file(self):
         config_reader = ConfigReader(self.test_sceptre_directory)
-        config = config_reader.read("account/environment/region/subnets.yaml")
+        config = config_reader.read(
+          "account/executor/region/subnets.yaml"
+        )
         assert config == {
             "sceptre_dir": self.test_sceptre_directory,
-            "environment_path": "account/environment/region"
+            "executor_path": "account/executor/region"
         }
 
     def test_read_with_templated_config_file(self):
@@ -122,24 +124,24 @@ class TestConfigReader(object):
             self.test_sceptre_directory,
             {"user_variable": "user_variable_value"}
         )
-        config_reader.templating_vars["environment_config"] = {
-            "region": "environment_region"
+        config_reader.templating_vars["executor_config"] = {
+            "region": "executor_region"
         }
-        os.environ["TEST_ENV_VAR"] = "environment_variable_value"
+        os.environ["TEST_ENV_VAR"] = "executor_variable_value"
         config = config_reader.read(
-            "account/environment/region/security_groups.yaml"
+            "account/executor/region/security_groups.yaml"
         )
         # self.config.read({"user_variable": "user_variable_value"})
         assert config == {
             'sceptre_dir': config_reader.sceptre_dir,
-            "environment_path": "account/environment/region",
+            "executor_path": "account/executor/region",
             "parameters": {
                 "param1": "user_variable_value",
-                "param2": "environment_variable_value",
+                "param2": "executor_variable_value",
                 "param3": "account",
-                "param4": "environment",
+                "param4": "executor",
                 "param5": "region",
-                "param6": "environment_region"
+                "param6": "executor_region"
             }
         }
 
@@ -191,10 +193,10 @@ class TestConfigReader(object):
         mock_collect_s3_details.return_value = sentinel.s3_details
         config_reader = ConfigReader(self.test_sceptre_directory)
         stack = config_reader.construct_stack(
-            "account/environment/region/vpc.yaml"
+            "account/executor/region/vpc.yaml"
         )
         mock_Stack.assert_called_with(
-                name="account/environment/region/vpc",
+                name="account/executor/region/vpc",
                 project_code="account_project_code",
                 template_path=os.path.join(
                     self.test_sceptre_directory, "path/to/template"
@@ -220,7 +222,7 @@ class TestConfigReader(object):
         (
             ["A/1.yaml"], ["A"], [
                 {
-                    "A": {"stacks": ["A/1"], "environments": {}}
+                    "A": {"stacks": ["A/1"], "executors": {}}
                 }
             ]
         ),
@@ -229,7 +231,7 @@ class TestConfigReader(object):
                 {
                     "A": {
                         "stacks": ["A/3", "A/2", "A/1"],
-                        "environments": {}
+                        "executors": {}
                     }
                 }
             ]
@@ -239,16 +241,16 @@ class TestConfigReader(object):
                 {
                     "A": {
                         "stacks": [],
-                        "environments": {
+                        "executors": {
                             "A/A": {
                                 "stacks": ["A/A/1"],
-                                "environments": {}
+                                "executors": {}
                             },
                         }
                     }
                 },
                 {
-                    "A/A": {"stacks": ["A/A/1"], "environments": {}}
+                    "A/A": {"stacks": ["A/A/1"], "executors": {}}
                 }
             ]
         ),
@@ -257,40 +259,46 @@ class TestConfigReader(object):
                 {
                     "A": {
                         "stacks": [],
-                        "environments": {
+                        "executors": {
                             "A/A": {
-                                "stacks": ["A/A/1", "A/A/2"],
-                                "environments": {}
+                              "stacks": ["A/A/1", "A/A/2"],
+                              "executors": {}
                             },
                         }
                     }
                 },
                 {
-                    "A/A": {"stacks": ["A/A/1", "A/A/2"], "environments": {}}
+                    "A/A": {
+                      "stacks": ["A/A/1", "A/A/2"], "executors": {}
+                    }
                 }
-            ]
+                ]
         ),
         (
             ["A/A/1.yaml", "A/B/1.yaml"], ["A", "A/A", "A/B"], [
                 {
                     "A": {
                         "stacks": [],
-                        "environments": {
-                            "A/A": {"stacks": ["A/A/1"], "environments": {}},
-                            "A/B": {"stacks": ["A/B/1"], "environments": {}}
+                        "executors": {
+                            "A/A": {
+                              "stacks": ["A/A/1"], "executors": {}
+                            },
+                            "A/B": {
+                              "stacks": ["A/B/1"], "executors": {}
+                            }
                         }
                     }
                 },
                 {
-                    "A/A": {"stacks": ["A/A/1"], "environments":{}}
+                    "A/A": {"stacks": ["A/A/1"], "executors":{}}
                 },
                 {
-                    "A/B": {"stacks": ["A/B/1"], "environments":{}}
+                    "A/B": {"stacks": ["A/B/1"], "executors":{}}
                 }
             ]
         )
     ])
-    def test_construct_environment_with_valid_config(
+    def test_construct_executor_with_valid_config(
         self, filepaths, targets, results
     ):
         with self.runner.isolated_filesystem():
@@ -322,15 +330,19 @@ class TestConfigReader(object):
 
             config_reader = ConfigReader(sceptre_dir)
 
-            def check_environment(environment, details):
+            def check_executor(executor, details):
                 assert sorted(details["stacks"]) == sorted([
-                    stack.name for stack in environment.stacks
+                    stack.name for stack in executor.stacks
                 ])
-                for sub_env in environment.sub_environments:
-                    sub_env_details = details["environments"][sub_env.path]
-                    check_environment(sub_env, sub_env_details)
+                for sub_env in executor.sub_executors:
+                    sub_env_details =\
+                      details["executors"][sub_env.path]
+                    check_executor(sub_env, sub_env_details)
 
             for i, target in enumerate(targets):
-                environment = config_reader.construct_environment(target)
+                executor =\
+                  config_reader.construct_executor(target)
                 expected = results[i]
-                check_environment(environment, expected[environment.path])
+                check_executor(
+                  executor, expected[executor.path]
+                )

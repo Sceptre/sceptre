@@ -22,9 +22,9 @@ class InvalidSceptreDirectoryError(SceptreException):
     pass
 
 
-class InvalidEnvironmentPathError(SceptreException):
+class InvalidExecutorPathError(SceptreException):
     """
-    Error raised if the environment path string is invalid
+    Error raised if the executor path string is invalid
     """
     pass
 
@@ -154,8 +154,8 @@ class ConfigFileNotFoundError(SceptreException):
     pass
 
 
-class EnvironmentNotFoundError(SceptreException):
+class ExecutorNotFoundError(SceptreException):
     """
-    Error raised when a environment does not exist.
+    Error raised when a executor does not exist.
     """
     pass

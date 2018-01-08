@@ -27,31 +27,35 @@ def camel_to_snake_case(string):
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 
-def recurse_into_sub_environments(func):
+def recurse_into_sub_executors(func):
     """
-    Two types of Environments exist, non-leaf and leaf. Non-leaf environments
-    contain sub-environments, while leaf environments contain stacks. If a
-    command is executed by a leaf environment, it should execute that command
-    on the stacks it contains. If a command is executed by a non-leaf
-    environment, it should invoke that command on each of its sub-environments.
-    recurse is a decorator used by sceptre.environment.Environment to do this.
-    The function passed, ``func``, must return a dictionary.
+    Two types of Executors exist, non-leaf and leaf. Non-leaf
+    executors contain sub-executors, while leaf
+    executors contain stacks. If acommand is executed by a leaf
+    executor, it should execute that command on the stacks it
+    contains. If a command is executed by a non-leaf executor, it
+    should invoke that command on each of its sub-executors. Recurse
+    is a decorator used by sceptre.executor.Executor to do
+    this. The function passed, ``func``, must return a dictionary.
     """
     @wraps(func)
     def decorated(self, *args, **kwargs):
         function_name = func.__name__
         responses = {}
-        num_environments = len(self.sub_environments)
+        num_executors = len(self.sub_executors)
 
-        # As commands carried out by sub-environments may be blocking,
+        # As commands carried out by sub-executors may be blocking,
         # execute them on separate threads.
-        if num_environments:
-            with ThreadPoolExecutor(max_workers=num_environments) as executor:
+        if num_executors:
+            with ThreadPoolExecutor(max_workers=num_executors)\
+              as thread_executor:
                 futures = [
-                    executor.submit(
-                        getattr(environment, function_name), *args, **kwargs
+                    thread_executor.submit(
+                        getattr(executor, function_name),
+                        *args,
+                        **kwargs
                     )
-                    for environment in self.sub_environments
+                    for executor in self.sub_executors
                 ]
                 for future in as_completed(futures):
                     response = future.result()
@@ -83,7 +87,7 @@ def resolve_stack_name(source_stack_name, destination_stack_path):
     Returns a stack's full name.
 
     A dependancy stack's name can be provided as either a full stack name, or
-    as the file base name of a stack from the same environment.
+    as the file base name of a stack from the same executor.
     resolve_stack_name calculates the dependency's stack's full name from this.
 
     :param source_stack_name: The name of the stack with the parameter to be \

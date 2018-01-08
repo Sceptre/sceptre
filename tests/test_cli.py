@@ -13,7 +13,7 @@ import click
 from sceptre.cli import cli
 from sceptre.config_reader import ConfigReader
 from sceptre.stack import Stack
-from sceptre.environment import Environment
+from sceptre.executor import Executor
 from sceptre.stack_status import StackStatus, StackChangeSetStatus
 from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
 from sceptre.cli.helpers import CustomJsonEncoder, catch_exceptions
@@ -33,11 +33,11 @@ class TestCli(object):
 
         self.mock_config_reader = MagicMock(spec=ConfigReader)
         self.mock_stack = MagicMock(spec=Stack)
-        self.mock_environment = MagicMock(spec=Environment)
+        self.mock_executor = MagicMock(spec=Executor)
 
         self.mock_config_reader.construct_stack.return_value = self.mock_stack
-        self.mock_config_reader.construct_environment.return_value = \
-            self.mock_environment
+        self.mock_config_reader.construct_executor.return_value = \
+            self.mock_executor
 
         self.mock_ConfigReader.return_value = self.mock_config_reader
         self.mock_getcwd.return_value = sentinel.cwd
@@ -251,7 +251,7 @@ class TestCli(object):
                 ]
             }
         }
-        self.mock_environment.describe_resources.return_value = response
+        self.mock_executor.describe_resources.return_value = response
         result = self.runner.invoke(cli, ["list", "resources", "dev"])
         assert yaml.load(result.output) == response
         assert result.exit_code == 0
@@ -345,7 +345,7 @@ class TestCli(object):
         status = StackStatus.COMPLETE if success else StackStatus.FAILED
         response = {"stack": status}
 
-        getattr(self.mock_environment, command).return_value = response
+        getattr(self.mock_executor, command).return_value = response
 
         kwargs = {"args": [command, "dev"]}
         if yes_flag:
@@ -355,7 +355,7 @@ class TestCli(object):
 
         result = self.runner.invoke(cli, **kwargs)
 
-        getattr(self.mock_environment, command).assert_called_with()
+        getattr(self.mock_executor, command).assert_called_with()
         assert result.exit_code == exit_code
 
     @patch('sceptre.cli.update.uuid1')
@@ -519,7 +519,7 @@ class TestCli(object):
         assert yaml.load(result.output) == "export SCEPTRE_Key=Value"
 
     def test_status_with_env(self):
-        self.mock_environment.describe.return_value = {"stack": "status"}
+        self.mock_executor.describe.return_value = {"stack": "status"}
 
         result = self.runner.invoke(cli, ["status", "dev"])
         assert result.exit_code == 0
@@ -594,7 +594,8 @@ class TestCli(object):
             assert str(result.exception) == str(OSError(errno.EINVAL))
         self.patcher_getcwd.start()
 
-    @pytest.mark.parametrize("environment,config_structure,stdin,result", [
+    @pytest.mark.parametrize(
+      "executor,config_structure,stdin,result", [
         (
          "A",
          {"": {}},
@@ -626,9 +627,10 @@ class TestCli(object):
          },
          'y\nA\nA\n', {}
         )
-    ])
-    def test_init_environment(
-        self, environment, config_structure, stdin, result
+      ]
+    )
+    def test_init_executor(
+        self, executor, config_structure, stdin, result
     ):
         self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():
@@ -636,7 +638,7 @@ class TestCli(object):
             config_dir = os.path.join(sceptre_dir, "config")
             os.makedirs(config_dir)
 
-            env_dir = os.path.join(sceptre_dir, "config", environment)
+            env_dir = os.path.join(sceptre_dir, "config", executor)
             for env_path, config in config_structure.items():
                 path = os.path.join(config_dir, env_path)
                 try:
@@ -656,7 +658,7 @@ class TestCli(object):
             os.chdir(sceptre_dir)
 
             cmd_result = self.runner.invoke(
-                cli, ["init", "env", environment],
+                cli, ["init", "env", executor],
                 input=stdin
             )
 
@@ -670,7 +672,7 @@ class TestCli(object):
                 )
         self.patcher_getcwd.start()
 
-    def test_init_environment_with_existing_folder(self):
+    def test_init_executor_with_existing_folder(self):
         self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():
             sceptre_dir = os.path.abspath('./example')
@@ -685,7 +687,7 @@ class TestCli(object):
             )
 
             assert cmd_result.output.startswith(
-                "Environment path exists. "
+                "Executor path exists. "
                 "Do you want initialise config.yaml?"
             )
             with open(os.path.join(env_dir, "config.yaml")) as config_file:
@@ -694,7 +696,7 @@ class TestCli(object):
 
         self.patcher_getcwd.start()
 
-    def test_init_environment_with_another_exception(self):
+    def test_init_executor_with_another_exception(self):
         self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():
             sceptre_dir = os.path.abspath('./example')

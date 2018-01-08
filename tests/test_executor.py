@@ -8,49 +8,48 @@ from botocore.exceptions import ClientError
 from sceptre.exceptions import CircularDependenciesError
 from sceptre.exceptions import StackDoesNotExistError
 
-from sceptre.environment import Environment
+from sceptre.executor import Executor
 from sceptre.stack import Stack
 from sceptre.stack_status import StackStatus
 
 
-class TestEnvironment(object):
+class TestExecutor(object):
 
     def setup_method(self, test_method):
-        self.environment = Environment(
+        self.executor = Executor(
             path="path",
             options=sentinel.options
         )
 
-        # Run the rest of the tests against a leaf environment
-        self.environment._is_leaf = True
+        # Run the rest of the tests against a leaf executor
+        self.executor._is_leaf = True
 
-    def test_initialise_environment(self):
-        assert self.environment.path == "path"
-        assert self.environment._options == sentinel.options
-        assert self.environment.stacks == []
-        assert self.environment.sub_environments == []
+    def test_initialise_executor(self):
+        assert self.executor.path == "path"
+        assert self.executor._options == sentinel.options
+        assert self.executor.stacks == []
+        assert self.executor.sub_executors == []
 
-    def test_initialise_environment_with_no_options(self):
-        environment = Environment(path="path")
-        assert environment.path == "path"
-        assert environment._options == {}
-        assert environment.stacks == []
-        assert environment.sub_environments == []
+    def test_initialise_executor_with_no_options(self):
+        executor = Executor(path="path")
+        assert executor.path == "path"
+        assert executor._options == {}
+        assert executor.stacks == []
+        assert executor.sub_executors == []
 
     def test_repr(self):
-        self.environment.path = "path"
-        self.environment.sceptre_dir = "sceptre_dir"
-        self.environment._options = {}
-        response = self.environment.__repr__()
-        assert response == (
-            "sceptre.environment.Environment(path='path', options='{}')"
-        )
+        self.executor.path = "path"
+        self.executor.sceptre_dir = "sceptre_dir"
+        self.executor._options = {}
+        response = self.executor.__repr__()
+        assert response == \
+            ("sceptre.executor.Executor(""path='path', options='{}')")
 
-    @patch("sceptre.environment.Environment._build")
-    @patch("sceptre.environment.Environment._check_for_circular_dependencies")
-    @patch("sceptre.environment.Environment._get_launch_dependencies")
-    @patch("sceptre.environment.Environment._get_initial_statuses")
-    @patch("sceptre.environment.Environment._get_threading_events")
+    @patch("sceptre.executor.Executor._build")
+    @patch("sceptre.executor.Executor._check_for_circular_dependencies")
+    @patch("sceptre.executor.Executor._get_launch_dependencies")
+    @patch("sceptre.executor.Executor._get_initial_statuses")
+    @patch("sceptre.executor.Executor._get_threading_events")
     def test_launch_calls_build_with_correct_args(
             self, mock_get_threading_events, mock_get_initial_statuses,
             mock_get_launch_dependencies, mock_check_for_circular_dependencies,
@@ -61,7 +60,7 @@ class TestEnvironment(object):
         mock_get_launch_dependencies.return_value = \
             sentinel.dependencies
 
-        self.environment.launch()
+        self.executor.launch()
 
         mock_check_for_circular_dependencies.assert_called_once_with()
         mock_build.assert_called_once_with(
@@ -70,15 +69,15 @@ class TestEnvironment(object):
         )
 
     def test_launch_succeeds_with_empty_env(self):
-        self.environment.stacks = {}
-        response = self.environment.launch()
+        self.executor.stacks = {}
+        response = self.executor.launch()
         assert response == {}
 
-    @patch("sceptre.environment.Environment._build")
-    @patch("sceptre.environment.Environment._check_for_circular_dependencies")
-    @patch("sceptre.environment.Environment._get_delete_dependencies")
-    @patch("sceptre.environment.Environment._get_initial_statuses")
-    @patch("sceptre.environment.Environment._get_threading_events")
+    @patch("sceptre.executor.Executor._build")
+    @patch("sceptre.executor.Executor._check_for_circular_dependencies")
+    @patch("sceptre.executor.Executor._get_delete_dependencies")
+    @patch("sceptre.executor.Executor._get_initial_statuses")
+    @patch("sceptre.executor.Executor._get_threading_events")
     def test_delete_calls_build_with_correct_args(
             self, mock_get_threading_events, mock_get_initial_statuses,
             mock_get_delete_dependencies, mock_check_for_circular_dependencies,
@@ -86,10 +85,9 @@ class TestEnvironment(object):
     ):
         mock_get_threading_events.return_value = sentinel.threading_events
         mock_get_initial_statuses.return_value = sentinel.stack_statuses
-        mock_get_delete_dependencies.return_value = \
-            sentinel.dependencies
+        mock_get_delete_dependencies.return_value = sentinel.dependencies
 
-        self.environment.delete()
+        self.executor.delete()
 
         mock_check_for_circular_dependencies.assert_called_once_with()
         mock_build.assert_called_once_with(
@@ -98,26 +96,26 @@ class TestEnvironment(object):
         )
 
     def test_delete_succeeds_with_empty_env(self):
-        self.environment.stacks = {}
-        response = self.environment.delete()
+        self.executor.stacks = {}
+        response = self.executor.delete()
         assert response == {}
 
     def test_describe_with_running_stack(self):
         mock_stack = MagicMock(spec=Stack)
         mock_stack.name = "stack"
         mock_stack.get_status.return_value = "status"
-        self.environment.stacks = [mock_stack]
+        self.executor.stacks = [mock_stack]
 
-        response = self.environment.describe()
+        response = self.executor.describe()
         assert response == {"stack": "status"}
 
     def test_describe_with_missing_stack(self):
         mock_stack = MagicMock(spec=Stack)
         mock_stack.name = "stack"
         mock_stack.get_status.side_effect = StackDoesNotExistError()
-        self.environment.stacks = [mock_stack]
+        self.executor.stacks = [mock_stack]
 
-        response = self.environment.describe()
+        response = self.executor.describe()
         assert response == {"stack": "PENDING"}
 
     def test_describe_resources_forms_response(self):
@@ -130,8 +128,8 @@ class TestEnvironment(object):
             }
         ]
 
-        self.environment.stacks = [mock_stack]
-        response = self.environment.describe_resources()
+        self.executor.stacks = [mock_stack]
+        response = self.executor.describe_resources()
         assert response == {
             "stack": [
                 {
@@ -154,8 +152,8 @@ class TestEnvironment(object):
             sentinel.operation
         )
 
-        self.environment.stacks = [mock_stack]
-        response = self.environment.describe_resources()
+        self.executor.stacks = [mock_stack]
+        response = self.executor.describe_resources()
         assert response == {}
 
     def test_describe_resources_raises_other_client_errors(self):
@@ -171,18 +169,18 @@ class TestEnvironment(object):
             sentinel.operation
         )
 
-        self.environment.stacks = [mock_stack]
+        self.executor.stacks = [mock_stack]
         with pytest.raises(ClientError):
-            self.environment.describe_resources()
+            self.executor.describe_resources()
 
-    @patch("sceptre.environment.wait")
-    @patch("sceptre.environment.ThreadPoolExecutor")
+    @patch("sceptre.executor.wait")
+    @patch("sceptre.executor.ThreadPoolExecutor")
     def test_build(self, mock_ThreadPoolExecutor, mock_wait):
-        self.environment.stacks = {"mock_stack": sentinel.stack}
+        self.executor.stacks = {"mock_stack": sentinel.stack}
         mock_ThreadPoolExecutor.return_value.__enter__.return_value\
             .submit.return_value = sentinel.future
 
-        self.environment._build(
+        self.executor._build(
             sentinel.command, sentinel.threading_events,
             sentinel.stack_statuses, sentinel.dependencies
         )
@@ -200,7 +198,7 @@ class TestEnvironment(object):
         mock_stack_2 = Mock()
         mock_stack_2.name = "stack_2"
 
-        self.environment._manage_stack_build(
+        self.executor._manage_stack_build(
             mock_stack_2,
             sentinel.command,
             threading_events,
@@ -221,7 +219,7 @@ class TestEnvironment(object):
         mock_stack.name = "stack"
         mock_stack.launch.return_value = StackStatus.COMPLETE
 
-        self.environment._manage_stack_build(
+        self.executor._manage_stack_build(
             mock_stack,
             "launch",
             threading_events,
@@ -242,7 +240,7 @@ class TestEnvironment(object):
         mock_stack.name = "stack"
         mock_stack.launch.side_effect = Exception()
 
-        self.environment._manage_stack_build(
+        self.executor._manage_stack_build(
             mock_stack,
             "launch",
             threading_events,
@@ -254,16 +252,16 @@ class TestEnvironment(object):
         # Check that that stack's event is set
         threading_events["stack"].set.assert_called_once_with()
 
-    @patch("sceptre.environment.threading.Event")
+    @patch("sceptre.executor.threading.Event")
     def test_get_threading_events(self, mock_Event):
         mock_stack = MagicMock(spec=Stack)
         mock_stack.name = "stack"
 
-        self.environment.stacks = [mock_stack]
+        self.executor.stacks = [mock_stack]
 
         mock_Event.return_value = sentinel.event
 
-        response = self.environment._get_threading_events()
+        response = self.executor._get_threading_events()
         assert response == {
             "stack": sentinel.event
         }
@@ -272,9 +270,9 @@ class TestEnvironment(object):
         mock_stack = MagicMock(spec=Stack)
         mock_stack.name = "stack"
 
-        self.environment.stacks = [mock_stack]
+        self.executor.stacks = [mock_stack]
 
-        response = self.environment._get_initial_statuses()
+        response = self.executor._get_initial_statuses()
         assert response == {
             "stack": StackStatus.PENDING
         }
@@ -289,17 +287,17 @@ class TestEnvironment(object):
             "prod/sg"
         ]
 
-        self.environment.stacks = [mock_stack]
+        self.executor.stacks = [mock_stack]
 
-        response = self.environment._get_launch_dependencies("dev")
+        response = self.executor._get_launch_dependencies("dev")
 
         # Note that "prod/sg" is filtered out, because it's not under the
-        # top level environment path "dev".
+        # top level executor path "dev".
         assert response == {
             "dev/mock_stack": ["dev/vpc", "dev/subnets"]
         }
 
-    @patch("sceptre.environment.Environment._get_launch_dependencies")
+    @patch("sceptre.executor.Executor._get_launch_dependencies")
     def test_get_delete_dependencies(self, mock_get_launch_dependencies):
         mock_get_launch_dependencies.return_value = {
             "dev/mock_stack_1": [],
@@ -307,7 +305,7 @@ class TestEnvironment(object):
             "dev/mock_stack_3": ["dev/mock_stack_1", "dev/mock_stack_2"],
         }
 
-        dependencies = self.environment._get_delete_dependencies()
+        dependencies = self.executor._get_delete_dependencies()
         assert dependencies == {
             "dev/mock_stack_1": ["dev/mock_stack_3"],
             "dev/mock_stack_2": ["dev/mock_stack_3"],
@@ -322,9 +320,9 @@ class TestEnvironment(object):
         stack2.dependencies = ["stack1"]
         stack2.name = "stack2"
         stacks = [stack1, stack2]
-        self.environment.stacks = stacks
+        self.executor.stacks = stacks
         with pytest.raises(CircularDependenciesError) as ex:
-            self.environment._check_for_circular_dependencies()
+            self.executor._check_for_circular_dependencies()
         assert all(x in str(ex) for x in ['stack2', 'stack1'])
 
     def test_circular_dependencies_with_3_circular_dependencies(self):
@@ -338,9 +336,9 @@ class TestEnvironment(object):
         stack3.dependencies = ["stack1"]
         stack3.name = "stack3"
         stacks = [stack1, stack2, stack3]
-        self.environment.stacks = stacks
+        self.executor.stacks = stacks
         with pytest.raises(CircularDependenciesError) as ex:
-            self.environment._check_for_circular_dependencies()
+            self.executor._check_for_circular_dependencies()
         assert all(x in str(ex) for x in ['stack3', 'stack2', 'stack1'])
 
     def test_no_circular_dependencies_throws_no_error(self):
@@ -352,9 +350,9 @@ class TestEnvironment(object):
         stack2.name = "stack2"
         stacks = [stack1, stack2]
 
-        self.environment.stacks = stacks
+        self.executor.stacks = stacks
         # Check this runs without throwing an exception
-        self.environment._check_for_circular_dependencies()
+        self.executor._check_for_circular_dependencies()
 
     def test_no_circular_dependencies_with_nested_stacks(self):
         stack1 = MagicMock(Spec=Stack)
@@ -365,9 +363,9 @@ class TestEnvironment(object):
         stack2.name = "env1/stack2"
         stacks = [stack1, stack2]
 
-        self.environment.stacks = stacks
+        self.executor.stacks = stacks
         # Check this runs without throwing an exception
-        self.environment._check_for_circular_dependencies()
+        self.executor._check_for_circular_dependencies()
 
     def test_DAG_diamond_throws_no_circ_dependencies_error(self):
         """
@@ -393,8 +391,8 @@ class TestEnvironment(object):
         stack4.name = "stack4"
         stacks = [stack1, stack2, stack3, stack4]
 
-        self.environment.stacks = stacks
-        self.environment._check_for_circular_dependencies()
+        self.executor.stacks = stacks
+        self.executor._check_for_circular_dependencies()
 
     def test_modified_DAG_diamond_throws_no_circ_dependencies_error(self):
         """
@@ -423,8 +421,8 @@ class TestEnvironment(object):
         stack5.name = "stack5"
         stacks = [stack1, stack2, stack3, stack4, stack5]
 
-        self.environment.stacks = stacks
-        self.environment._check_for_circular_dependencies()
+        self.executor.stacks = stacks
+        self.executor._check_for_circular_dependencies()
 
     def test_DAG_diamond_with_triangle_throws_no_circ_dependencies_error(self):
         """
@@ -453,8 +451,8 @@ class TestEnvironment(object):
         stack5.name = "stack5"
         stacks = [stack1, stack2, stack3, stack4, stack5]
 
-        self.environment.stacks = stacks
-        self.environment._check_for_circular_dependencies()
+        self.executor.stacks = stacks
+        self.executor._check_for_circular_dependencies()
 
     def test_4_cycle_throws_circ_dependencies_error(self):
         """
@@ -478,9 +476,9 @@ class TestEnvironment(object):
         stack4.name = "stack4"
         stacks = [stack1, stack2, stack3, stack4]
 
-        self.environment.stacks = stacks
+        self.executor.stacks = stacks
         with pytest.raises(CircularDependenciesError) as ex:
-            self.environment._check_for_circular_dependencies()
+            self.executor._check_for_circular_dependencies()
         assert all(x in str(ex) for x in ['stack4', 'stack3', 'stack2',
                                           'stack1'])
 
@@ -507,8 +505,8 @@ class TestEnvironment(object):
         stack4.name = "stack4"
         stacks = [stack1, stack2, stack3, stack4]
 
-        self.environment.stacks = stacks
+        self.executor.stacks = stacks
         with pytest.raises(CircularDependenciesError) as ex:
-            self.environment._check_for_circular_dependencies()
+            self.executor._check_for_circular_dependencies()
         assert (all(x in str(ex) for x in ['stack4', 'stack3', 'stack2']) and
                 'stack1' not in str(ex))

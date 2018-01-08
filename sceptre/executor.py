@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
 """
-sceptre.environment
+sceptre.executor
 
-This module implements the Environment class, which stores data and logic to
-represent a logical grouping of stacks as an environment.
+This module implements the Executor class, which stores data and logic
+to represent a logical grouping of stacks as an executor.
 
 """
 
@@ -17,26 +17,27 @@ from concurrent.futures import ThreadPoolExecutor, wait
 
 from .exceptions import StackDoesNotExistError
 
-from .helpers import recurse_into_sub_environments, _detect_cycles
+from .helpers import recurse_into_sub_executors, _detect_cycles
 from .stack_status import StackStatus
 
 
-class Environment(object):
+class Executor(object):
     """
-    Environment stores information about the current environment.
+    Executor stores information about the current executor.
 
-    It implements methods for carrying out environment-level operations.
+    It implements methods for carrying out executor-level operations.
 
-    Two types of Environments exist, non-leaf and leaf. Non-leaf environments
-    contain sub-environments, while leaf environments contain stacks. If a
-    command is executed by a leaf environment, it should execute that command
-    on the stacks it contains. If a command is executed by a non-leaf
-    environment, it should invoke that command on each of its sub-environments.
-    This is done using the
-    ``sceptre.helpers.recurse_into_sub_environments`` decorator.
+    Two types of Executors exist, non-leaf and leaf. Non-leaf
+    executors contain sub-executors, while leaf
+    executors contain stacks. If a command is executed by a leaf
+    executor, it should execute that command on the stacks it
+    contains. If a command is executed by a non-leaf executor, it
+    should invoke that command on each of its sub-executors. This is
+    done using the ``sceptre.helpers.recurse_into_sub_executors``
+    decorator.
 
-    :param environment_path: The name of the environment.
-    :type environment_path: str
+    :param executor_path: The name of the executor.
+    :type executor_path: str
     :param options: A dict of key-value pairs to update self.config with.
     :type debug: dict
     """
@@ -45,24 +46,24 @@ class Environment(object):
         self.path = path
 
         self.stacks = []
-        self.sub_environments = []
+        self.sub_executors = []
 
         self._options = {} if options is None else options
 
     def __repr__(self):
         return (
-            "sceptre.environment.Environment("
+            "sceptre.executor.Executor("
             "path=\'{path}\', options=\'{options}\'"
             ")".format(path=self.path, options={})
         )
 
     def launch(self):
         """
-        Creates or updates all stacks in the environment.
+        Creates or updates all stacks in the executor.
 
         :returns: dict
         """
-        self.logger.debug("Launching environment '%s'", self.path)
+        self.logger.debug("Launching executor '%s'", self.path)
         threading_events = self._get_threading_events()
         stack_statuses = self._get_initial_statuses()
         launch_dependencies = self._get_launch_dependencies(self.path)
@@ -76,11 +77,11 @@ class Environment(object):
 
     def delete(self):
         """
-        Deletes all stacks in the environment.
+        Deletes all stacks in the executor.
 
         :returns: dict
         """
-        self.logger.debug("Deleting environment '%s'", self.path)
+        self.logger.debug("Deleting executor '%s'", self.path)
         threading_events = self._get_threading_events()
         stack_statuses = self._get_initial_statuses()
         delete_dependencies = self._get_delete_dependencies()
@@ -91,7 +92,7 @@ class Environment(object):
         )
         return stack_statuses
 
-    @recurse_into_sub_environments
+    @recurse_into_sub_executors
     def describe(self):
         """
         Returns each stack's status.
@@ -108,10 +109,10 @@ class Environment(object):
             response.update({stack.name: status})
         return response
 
-    @recurse_into_sub_environments
+    @recurse_into_sub_executors
     def describe_resources(self):
         """
-        Describes the resources of each stack in the environment.
+        Describes the resources of each stack in the executor.
 
         :returns: A description of each stack's resources, keyed by the stack's
             name.
@@ -129,15 +130,15 @@ class Environment(object):
                     raise
         return response
 
-    @recurse_into_sub_environments
+    @recurse_into_sub_executors
     def _build(self, command, threading_events, stack_statuses, dependencies):
         """
-        Launches or deletes all stacks in the environment.
+        Launches or deletes all stacks in the executor.
 
         Whether the stack is launched or delete depends on the value of
         <command>. It does this by calling stack.<command>() for
-        each stack in the environment. Stack.<command>() is blocking, because
-        it waits for the stack to be built, so each command is run on a
+        each stack in the executor. Stack.<command>() is blocking,
+        because it waits for the stack to be built, so each command is run on a
         separate thread. As some stacks need to be built before others,
         depending on their depedencies, threading.Events() are used to notify
         the other stacks when a particular stack is done building.
@@ -157,7 +158,7 @@ class Environment(object):
                 wait(futures)
         else:
             self.logger.info(
-                "No stacks found for environment: '%s'", self.path
+                "No stacks found for executor: '%s'", self.path
             )
 
     def _manage_stack_build(
@@ -202,10 +203,10 @@ class Environment(object):
 
         threading_events[stack.name].set()
 
-    @recurse_into_sub_environments
+    @recurse_into_sub_executors
     def _get_threading_events(self):
         """
-        Returns a threading.Event() for each stack in every sub-environment.
+        Returns a threading.Event() for each stack in every sub-stack.
 
         :returns: A threading.Event object for each stack, keyed by the
             stack's name.
@@ -216,11 +217,11 @@ class Environment(object):
             for stack in self.stacks
         }
 
-    @recurse_into_sub_environments
+    @recurse_into_sub_executors
     def _get_initial_statuses(self):
         """
         Returns a "pending" sceptre.stack_status.StackStatus for each stack
-        in every sub-environment.
+        in every sub-stack.
 
         :returns: A "pending" stack status for each stack, keyed by the
             stack's name.
@@ -231,8 +232,8 @@ class Environment(object):
             for stack in self.stacks
         }
 
-    @recurse_into_sub_environments
-    def _get_launch_dependencies(self, top_level_environment_path):
+    @recurse_into_sub_executors
+    def _get_launch_dependencies(self, top_level_executor_path):
         """
         Returns a dict of each stack's launch dependencies.
 
@@ -250,7 +251,7 @@ class Environment(object):
             stack_name: [
                 dependency
                 for dependency in dependencies
-                if dependency.startswith(top_level_environment_path)
+                if dependency.startswith(top_level_executor_path)
             ]
             for stack_name, dependencies in all_dependencies.items()
         }

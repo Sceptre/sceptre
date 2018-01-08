@@ -19,22 +19,22 @@ def init_group():
 
 
 @init_group.command("env")
-@click.argument('environment')
+@click.argument('executor')
 @catch_exceptions
 @click.pass_context
-def init_environment(ctx, environment):
+def init_executor(ctx, executor):
     """
-    Initialises an environment in a project.
+    Initialises an executor in a project.
 
     Creates ENVIRONMENT folder in the project and a config.yaml with any
     required properties.
     """
     cwd = ctx.obj["sceptre_dir"]
     for item in os.listdir(cwd):
-        # If already a config folder create a sub environment
+        # If already a config folder create a sub executor
         if os.path.isdir(item) and item == "config":
             config_dir = os.path.join(os.getcwd(), "config")
-            _create_new_environment(config_dir, environment)
+            _create_new_executor(config_dir, executor)
 
 
 @init_group.command("project")
@@ -54,7 +54,7 @@ def init_project(ctx, project_name):
     try:
         os.mkdir(project_folder)
     except OSError as e:
-        # Check if environment folder already exists
+        # Check if executor folder already exists
         if e.errno == errno.EEXIST:
             raise ProjectAlreadyExistsError(
                 'Folder \"{0}\" already exists.'.format(project_name)
@@ -75,28 +75,29 @@ def init_project(ctx, project_name):
     _create_config_file(config_path, config_path, defaults)
 
 
-def _create_new_environment(config_dir, new_path):
+def _create_new_executor(config_dir, new_path):
     """
-    Creates the subfolder for the environment specified by `path` starting
-    from the `config_dir`. Even if folder path already exists, ask the user if
+    Creates the subfolder for the executor specified by `path`
+    starting from the `config_dir`. Even if folder path already exists,
     they want to initialise `config.yaml`.
 
     :param config_dir: The directory path to the top-level config folder.
     :type config_dir: str
-    :param path: The directory path to the environment folder.
+    :param path: The directory path to the executor folder.
     :type path: str
     """
-    # Create full path to environment
+    # Create full path to executor
     folder_path = os.path.join(config_dir, new_path)
     init_config_msg = 'Do you want initialise config.yaml?'
 
-    # Make folders for the environment
+    # Make folders for the executor
     try:
         os.makedirs(folder_path)
     except OSError as e:
-        # Check if environment folder already exists
+        # Check if executor folder already exists
         if e.errno == errno.EEXIST:
-            init_config_msg = 'Environment path exists. ' + init_config_msg
+            init_config_msg =\
+              'Executor path exists. ' + init_config_msg
         else:
             raise
 
@@ -111,14 +112,14 @@ def _get_nested_config(config_dir, path):
 
     :param config_dir: The directory path to the top-level config folder.
     :type config_dir: str
-    :param path: The directory path to the environment folder.
+    :param path: The directory path to the executor folder.
     :type path: str
     :returns: The nested config.
     :rtype: dict
     """
     config = {}
     for root, _, files in os.walk(config_dir):
-        # Check that folder is within the final environment path
+        # Check that folder is within the final executor path
         if path.startswith(root) and "config.yaml" in files:
             config_path = os.path.join(root, "config.yaml")
             with open(config_path) as config_file:
@@ -137,7 +138,7 @@ def _create_config_file(config_dir, path, defaults={}):
 
     :param config_dir: The directory path to the top-level config folder.
     :type config_dir: str
-    :param path: The directory path to the environment folder.
+    :param path: The directory path to the executor folder.
     :type path: str
     :param defaults: Defaults to present to the user for config.
     :type defaults: dict

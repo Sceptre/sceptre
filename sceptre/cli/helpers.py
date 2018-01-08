@@ -46,12 +46,12 @@ def catch_exceptions(func):
 
 
 def confirmation(
-    command, ignore, environment=None, stack=None, change_set=None
+    command, ignore, executor=None, stack=None, change_set=None
 ):
     if not ignore:
         msg = "Do you want to {} ".format(command)
-        if environment:
-            msg = msg + "environment '{0}'?".format(environment)
+        if executor:
+            msg = msg + "executor '{0}'?".format(executor)
         elif change_set and stack:
             msg = msg + "change set '{0}' for stack '{1}'".format(
                 change_set, stack
@@ -95,7 +95,7 @@ def get_stack_or_env(ctx, path):
 
     :param ctx: Cli context.
     :type ctx: click.Context
-    :param path: Path to either stack config or environment folder.
+    :param path: Path to either stack config or executor folder.
     :type path: str
     """
     stack = None
@@ -108,9 +108,23 @@ def get_stack_or_env(ctx, path):
     if os.path.splitext(path)[1]:
         stack = config_reader.construct_stack(path)
     else:
-        env = config_reader.construct_environment(path)
+        env = config_reader.construct_executor(path)
 
     return (stack, env)
+
+
+def get_stack(ctx, path):
+    """
+    Parses the path to generate relevant Executor and Stack object.
+
+    :param ctx: Cli context.
+    :type ctx: click.Context
+    :param path: Path to either stack config or executor folder.
+    :type path: str
+    """
+    return ConfigReader(
+        ctx.obj["sceptre_dir"], ctx.obj["options"]
+    ).construct_stack(path)
 
 
 def setup_logging(debug, no_colour):

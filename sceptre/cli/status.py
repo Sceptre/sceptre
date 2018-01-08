@@ -9,10 +9,10 @@ from sceptre.cli.helpers import catch_exceptions, get_stack_or_env, write
 @catch_exceptions
 def status_command(ctx, path):
     """
-    Print status of stack or environment.
+    Print status of stack or executor.
 
-    Prints the stack status or the status of the stacks within a environment
-    for a given config PATH.
+    Prints the stack status or the status of the stacks within a
+    executor for a given config PATH.
     """
     output_format = ctx.obj["output_format"]
     no_colour = ctx.obj["no_colour"]
