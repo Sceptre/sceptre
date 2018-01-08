@@ -111,20 +111,6 @@ def get_stack_or_env(ctx, path):
     return (stack, env)
 
 
-def get_stack(ctx, path):
-    """
-    Parses the path to generate relevant Envrionment and Stack object.
-
-    :param ctx: Cli context.
-    :type ctx: click.Context
-    :param path: Path to either stack config or environment folder.
-    :type path: str
-    """
-    return ConfigReader(
-        ctx.obj["sceptre_dir"], ctx.obj["options"]
-    ).construct_stack(path)
-
-
 def setup_logging(debug, no_colour):
     """
     Sets up logging.

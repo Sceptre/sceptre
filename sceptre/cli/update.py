@@ -2,8 +2,8 @@ from uuid import uuid1
 
 import click
 
-from sceptre.cli.helpers import catch_exceptions, confirmation, get_stack
-from sceptre.cli.helpers import write
+from sceptre.cli.helpers import catch_exceptions, confirmation
+from sceptre.cli.helpers import write, get_stack_or_env
 from sceptre.cli.helpers import simplify_change_set_description
 from sceptre.stack_status import StackStatus, StackChangeSetStatus
 
@@ -30,7 +30,7 @@ def update_command(ctx, path, change_set, verbose, yes):
     change-set when the change-set flag is set.
     """
 
-    stack = get_stack(ctx, path)
+    stack, _ = get_stack_or_env(ctx, path)
     if change_set:
         change_set_name = "-".join(["change-set", uuid1().hex])
         stack.create_change_set(change_set_name)
