@@ -91,7 +91,7 @@ def write(var, output_format="str", no_colour=True):
 
 def get_stack_or_env(ctx, path):
     """
-    Parses the path to generate relevant Envrionment and Stack object.
+    Parses the path to generate relevant Environment and Stack object.
 
     :param ctx: Cli context.
     :type ctx: click.Context
@@ -101,7 +101,9 @@ def get_stack_or_env(ctx, path):
     stack = None
     env = None
 
-    config_reader = ConfigReader(ctx.obj["sceptre_dir"], ctx.obj["options"])
+    config_reader = ConfigReader(
+        ctx.obj["sceptre_dir"], ctx.obj["user_variables"]
+    )
 
     if os.path.splitext(path)[1]:
         stack = config_reader.construct_stack(path)

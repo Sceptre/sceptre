@@ -17,6 +17,7 @@ from sceptre.environment import Environment
 from sceptre.stack_status import StackStatus, StackChangeSetStatus
 from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
 from sceptre.cli.helpers import CustomJsonEncoder, catch_exceptions
+from sceptre.cli.helpers import get_stack_or_env
 from botocore.exceptions import ClientError
 from sceptre.exceptions import SceptreException
 
@@ -103,7 +104,7 @@ class TestCli(object):
         @cli.command()
         @click.pass_context
         def noop(ctx):
-            click.echo(yaml.safe_dump(ctx.obj["options"]["user_variables"]))
+            click.echo(yaml.safe_dump(ctx.obj["user_variables"]))
 
         self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():
@@ -732,3 +733,39 @@ class TestCli(object):
         encoder = CustomJsonEncoder()
         response = encoder.encode(datetime.datetime(2016, 5, 3))
         assert response == '"2016-05-03 00:00:00"'
+
+    def test_get_stack_or_env_with_stack(self):
+        ctx = MagicMock(obj={
+            "sceptre_dir": sentinel.sceptre_dir,
+            "user_variables": sentinel.user_variables
+        })
+        stack, env = get_stack_or_env(ctx, "stack.yaml")
+        self.mock_ConfigReader.assert_called_once_with(
+            sentinel.sceptre_dir, sentinel.user_variables
+        )
+        assert isinstance(stack, Stack)
+        assert env is None
+
+    def test_get_stack_or_env_with_nested_stack(self):
+        ctx = MagicMock(obj={
+            "sceptre_dir": sentinel.sceptre_dir,
+            "user_variables": sentinel.user_variables
+        })
+        stack, env = get_stack_or_env(ctx, "environment/dir/stack.yaml")
+        self.mock_ConfigReader.assert_called_once_with(
+            sentinel.sceptre_dir, sentinel.user_variables
+        )
+        assert isinstance(stack, Stack)
+        assert env is None
+
+    def test_get_stack_or_env_with_env(self):
+        ctx = MagicMock(obj={
+            "sceptre_dir": sentinel.sceptre_dir,
+            "user_variables": sentinel.user_variables
+        })
+        stack, env = get_stack_or_env(ctx, "environment/dir")
+        self.mock_ConfigReader.assert_called_once_with(
+            sentinel.sceptre_dir, sentinel.user_variables
+        )
+        assert isinstance(env, Environment)
+        assert stack is None
