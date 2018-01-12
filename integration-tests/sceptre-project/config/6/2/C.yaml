@@ -1,4 +1,4 @@
 template_path: templates/dependencies/dependent_template.json
-region: eu-west-2
+region: eu-west-3
 parameters:
-  DependentStackName: !stack_output A::StackName
+  DependentStackName: !stack_output B::StackName

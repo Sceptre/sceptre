@@ -2,6 +2,7 @@ from behave import *
 import time
 import os
 import yaml
+from contextlib import contextmanager
 from botocore.exceptions import ClientError
 from helpers import read_template_file, get_cloudformation_stack_name
 from helpers import retry_boto_call
@@ -29,6 +30,17 @@ def step_impl(context, stack_name):
     if status is not None:
         delete_stack(context, full_name)
     status = get_stack_status(context, full_name)
+    assert (status is None)
+
+
+@given('stack "{stack_name}" does not exist in "{region_name}"')
+def step_impl(context, stack_name, region_name):
+    full_name = get_cloudformation_stack_name(context, stack_name)
+    with region(region_name):
+        status = get_stack_status(context, full_name)
+        if status is not None:
+            delete_stack(context, full_name)
+        status = get_stack_status(context, full_name)
     assert (status is None)
 
 
@@ -141,6 +153,17 @@ def step_impl(context, stack_name):
     context.output = stack.describe_resources()
 
 
+@then(
+    'stack "{stack_name}" in "{region_name}" '
+    'exists in "{desired_status}" state'
+)
+def step_impl(context, stack_name, region_name, desired_status):
+    with region(region_name):
+        full_name = get_cloudformation_stack_name(context, stack_name)
+        status = get_stack_status(context, full_name)
+        assert (status == desired_status)
+
+
 @then('stack "{stack_name}" exists in "{desired_status}" state')
 def step_impl(context, stack_name, desired_status):
     full_name = get_cloudformation_stack_name(context, stack_name)
@@ -209,6 +232,13 @@ def delete_stack(context, stack_name):
     waiter.config.delay = 4
     waiter.config.max_attempts = 240
     waiter.wait(StackName=stack_name)
+
+
+@contextmanager
+def region(region_name):
+    os.environ["AWS_REGION"] = region_name
+    yield
+    del os.environ["AWS_REGION"]
 
 
 def wait_for_final_state(context, stack_name):

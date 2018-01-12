@@ -64,7 +64,8 @@ class StackOutputBase(Resolver):
             response = connection_manager.call(
                 service="cloudformation",
                 command="describe_stacks",
-                kwargs={"StackName": stack_name}
+                kwargs={"StackName": stack_name},
+                stack_name=stack_name
             )
         except ClientError as e:
             if "does not exist" in e.response["Error"]["Message"]:

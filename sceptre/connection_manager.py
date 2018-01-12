@@ -11,8 +11,6 @@ import functools
 import logging
 import threading
 import time
-from datetime import datetime
-from dateutil import tz
 
 import boto3
 from botocore.exceptions import ClientError
@@ -75,28 +73,28 @@ class ConnectionManager(object):
 
     _session_lock = threading.Lock()
     _client_lock = threading.Lock()
+    _boto_sessions = {}
+    _clients = {}
+    _stack_keys = {}
 
-    def __init__(self, region, iam_role=None, profile=None):
+    def __init__(self, region, profile=None, stack_name=None):
         self.logger = logging.getLogger(__name__)
 
         self.region = region
-        self.iam_role = iam_role
         self.profile = profile
-        self._boto_session = None
-        self._boto_session_expiration = None
 
-        self.clients = {}
+        if stack_name:
+            self._stack_keys[stack_name] = (region, profile)
 
     def __repr__(self):
         return (
             "sceptre.connection_manager.ConnectionManager(region='{0}', "
             "iam_role='{1}', profile='{2}')".format(
-                self.region, self.iam_role, self.profile
+                self.region, self.profile
             )
         )
 
-    @property
-    def boto_session(self):
+    def _get_session(self, profile):
         """
         Returns a boto session in the target account.
 
@@ -113,67 +111,31 @@ class ConnectionManager(object):
         with self._session_lock:
             self.logger.debug("Getting Boto3 session")
 
-            self._clear_session_cache_if_expired()
-
-            if self._boto_session is None:
+            if self._boto_sessions.get(profile) is None:
                 self.logger.debug("No Boto3 session found, creating one...")
-                if self.iam_role:
-                    self.logger.debug("Assuming role '%s'...", self.iam_role)
-                    sts_session = boto3.session.Session(
-                        profile_name=self.profile,
-                        region_name=self.region
-                    )
-                    sts_client = sts_session.client("sts")
-                    sts_response = sts_client.assume_role(
-                        RoleArn=self.iam_role,
-                        RoleSessionName="{0}-session".format(
-                            self.iam_role.split("/")[-1]
-                        )
-                    )
-                    credentials = sts_response["Credentials"]
-                    self._boto_session = boto3.session.Session(
-                        aws_access_key_id=credentials["AccessKeyId"],
-                        aws_secret_access_key=credentials["SecretAccessKey"],
-                        aws_session_token=credentials["SessionToken"],
-                        region_name=self.region
-                    )
-                    self._boto_session_expiration = credentials["Expiration"]
-                    self.logger.debug(
-                        "Using temporary credential set: %s",
-                        {
-                            "AccessKeyId": mask_key(
-                                credentials["AccessKeyId"]
-                            ),
-                            "SecretAccessKey": mask_key(
-                                credentials["SecretAccessKey"]
-                            )
-                        }
-                    )
-                else:
-                    self.logger.debug("Using cli credentials...")
-                    self._boto_session = boto3.session.Session(
-                        profile_name=self.profile,
-                        region_name=self.region
-                    )
-                    self.logger.debug(
-                        "Using credential set from %s: %s",
-                        self._boto_session.get_credentials().method,
-                        {
-                            "AccessKeyId": mask_key(
-                                self._boto_session.get_credentials().access_key
-                            ),
-                            "SecretAccessKey": mask_key(
-                                self._boto_session.get_credentials().secret_key
-                            ),
-                            "Region": self._boto_session.region_name
-                        }
-                    )
+                self.logger.debug("Using cli credentials...")
+                session = boto3.session.Session(profile_name=profile)
+                self._boto_sessions[profile] = session
+
+                self.logger.debug(
+                    "Using credential set from %s: %s",
+                    session.get_credentials().method,
+                    {
+                        "AccessKeyId": mask_key(
+                            session.get_credentials().access_key
+                        ),
+                        "SecretAccessKey": mask_key(
+                            session.get_credentials().secret_key
+                        ),
+                        "Region": session.region_name
+                    }
+                )
 
                 self.logger.debug("Boto3 session created")
 
-            return self._boto_session
+            return self._boto_sessions[profile]
 
-    def _get_client(self, service):
+    def _get_client(self, service, region, profile):
         """
         Returns the Boto3 client associated with <service>.
 
@@ -186,28 +148,19 @@ class ConnectionManager(object):
         :rtype: boto3.client.Client
         """
         with self._client_lock:
-            self._clear_session_cache_if_expired()
-
-            if self.clients.get(service) is None:
+            key = (service, region)
+            if self._clients.get(key) is None:
                 self.logger.debug(
                     "No %s client found, creating one...", service
                 )
-                self.clients[service] = self.boto_session.client(service)
-            return self.clients[service]
-
-    def _clear_session_cache_if_expired(self):
-        """
-        Removes boto_session and all clients if the existing session has
-        expired.
-        """
-        if self.iam_role and self._boto_session_expiration:
-            if datetime.now(tz.tzutc()) >= self._boto_session_expiration:
-                self.logger.debug("Boto session has expired")
-                self.clients = {}
-                self._boto_session = None
+                self._clients[key] = self._get_session(profile).client(service)
+            return self._clients[key]
 
     @_retry_boto_call
-    def call(self, service, command, kwargs=None):
+    def call(
+        self, service, command, kwargs=None, profile=None, region=None,
+        stack_name=None
+    ):
         """
         Makes a threadsafe Boto3 client call.
 
@@ -222,7 +175,13 @@ class ConnectionManager(object):
         :returns: The response from the Boto3 call.
         :rtype: dict
         """
+        if stack_name:
+            region, profile = self._stack_keys[stack_name]
+        else:
+            profile = profile or self.profile
+            region = region or self.region
+
         if kwargs is None:  # pragma: no cover
             kwargs = {}
-        client = self._get_client(service)
+        client = self._get_client(service, region, profile)
         return getattr(client, command)(**kwargs)
