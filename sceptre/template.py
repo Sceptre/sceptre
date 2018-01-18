@@ -66,7 +66,7 @@ class Template(object):
         if self._body is None:
             file_extension = os.path.splitext(self.path)[1]
 
-            if file_extension in {".json", ".yaml"}:
+            if file_extension in {".json", ".yaml", ".template"}:
                 with open(self.path) as template_file:
                     self._body = template_file.read()
             elif file_extension == ".j2":
@@ -81,7 +81,7 @@ class Template(object):
             else:
                 raise UnsupportedTemplateFileTypeError(
                     "Template has file extension %s. Only .py, .yaml, "
-                    ".json and .j2 are supported.",
+                    ".template, .json and .j2 are supported.",
                     os.path.splitext(self.path)[1]
                 )
         return self._body
