@@ -9,18 +9,18 @@ from stacks import wait_for_final_state
 from templates import set_template_path
 
 
-@given('executor "{executor_name}" does not exist')
-def step_impl(context, executor_name):
-    full_stack_names = get_full_stack_names(context, executor_name).values()
+@given('stack_group "{stack_group_name}" does not exist')
+def step_impl(context, stack_group_name):
+    full_stack_names = get_full_stack_names(context, stack_group_name).values()
 
     delete_stacks(context, full_stack_names)
 
     check_stack_status(context, full_stack_names, None)
 
 
-@given('all the stacks in executor "{executor_name}" are in "{status}"')
-def step_impl(context, executor_name, status):
-    full_stack_names = get_full_stack_names(context, executor_name).values()
+@given('all the stacks in stack_group "{stack_group_name}" are in "{status}"')
+def step_impl(context, stack_group_name, status):
+    full_stack_names = get_full_stack_names(context, stack_group_name).values()
 
     response = retry_boto_call(context.client.describe_stacks)
 
@@ -34,54 +34,54 @@ def step_impl(context, executor_name, status):
 
     delete_stacks(context, stacks_to_delete)
 
-    for stack in get_stack_names(context, executor_name):
+    for stack in get_stack_names(context, stack_group_name):
         set_template_path(context, stack, "valid_template.json")
     create_stacks(context, full_stack_names)
 
     check_stack_status(context, full_stack_names, status)
 
 
-@when('the user launches executor "{executor_name}"')
-def step_impl(context, executor_name):
-    env = ConfigReader(context.sceptre_dir).construct_executor(executor_name)
-    env.launch()
+@when('the user launches stack_group "{stack_group_name}"')
+def step_impl(context, stack_group_name):
+    group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
+    group.launch()
 
 
-@when('the user deletes executor "{executor_name}"')
-def step_impl(context, executor_name):
-    env = ConfigReader(context.sceptre_dir).construct_executor(executor_name)
-    env.delete()
+@when('the user deletes stack_group "{stack_group_name}"')
+def step_impl(context, stack_group_name):
+    group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
+    group.delete()
 
 
-@when('the user describes executor "{executor_name}"')
-def step_impl(context, executor_name):
-    env = ConfigReader(context.sceptre_dir).construct_executor(executor_name)
-    context.response = env.describe()
+@when('the user describes stack_group "{stack_group_name}"')
+def step_impl(context, stack_group_name):
+    group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
+    context.response = group.describe()
 
 
-@when('the user describes resources in executor "{executor_name}"')
-def step_impl(context, executor_name):
-    env = ConfigReader(context.sceptre_dir).construct_executor(executor_name)
-    context.response = env.describe_resources()
+@when('the user describes resources in stack_group "{stack_group_name}"')
+def step_impl(context, stack_group_name):
+    group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
+    context.response = group.describe_resources()
 
 
-@then('all the stacks in executor "{executor_name}" are in "{status}"')
-def step_impl(context, executor_name, status):
-    full_stack_names = get_full_stack_names(context, executor_name).values()
+@then('all the stacks in stack_group "{stack_group_name}" are in "{status}"')
+def step_impl(context, stack_group_name, status):
+    full_stack_names = get_full_stack_names(context, stack_group_name).values()
 
     check_stack_status(context, full_stack_names, status)
 
 
-@then('all the stacks in executor "{executor_name}" do not exist')
-def step_impl(context, executor_name):
-    full_stack_names = get_full_stack_names(context, executor_name).values()
+@then('all the stacks in stack_group "{stack_group_name}" do not exist')
+def step_impl(context, stack_group_name):
+    full_stack_names = get_full_stack_names(context, stack_group_name).values()
 
     check_stack_status(context, full_stack_names, None)
 
 
-@then('all stacks in executor "{executor_name}" are described as "{status}"')
-def step_impl(context, executor_name, status):
-    stacks_names = get_stack_names(context, executor_name)
+@then('all stacks in stack_group "{stack_group_name}" are described as "{status}"')
+def step_impl(context, stack_group_name, status):
+    stacks_names = get_stack_names(context, stack_group_name)
     expected_response = {stack_name: status for stack_name in stacks_names}
     assert context.response == expected_response
 
@@ -96,9 +96,9 @@ def step_impl(context, stack_name, status):
     assert context.response[stack_name] == status
 
 
-@then('only all resources in executor "{executor_name}" are described')
-def step_impl(context, executor_name):
-    stacks_names = get_full_stack_names(context, executor_name)
+@then('only all resources in stack_group "{stack_group_name}" are described')
+def step_impl(context, stack_group_name):
+    stacks_names = get_full_stack_names(context, stack_group_name)
     expected_resources = {}
     sceptre_response = []
     for stack_resources in context.response.values():
@@ -161,21 +161,21 @@ def get_stack_creation_times(context, stacks):
     return creation_times
 
 
-def get_stack_names(context, executor_name):
-    path = os.path.join(context.sceptre_dir, "config", executor_name)
+def get_stack_names(context, stack_group_name):
+    path = os.path.join(context.sceptre_dir, "config", stack_group_name)
     stack_names = []
     for root, dirs, files in os.walk(path):
         for filepath in files:
             filename = os.path.splitext(filepath)[0]
             if not filename == "config":
-                prefix = executor_name
-                env = root[path.find(prefix):]
-                stack_names.append(os.path.join(env, filename))
+                prefix = stack_group_name
+                group = root[path.find(prefix):]
+                stack_names.append(os.path.join(group, filename))
     return stack_names
 
 
-def get_full_stack_names(context, executor_name):
-    stack_names = get_stack_names(context, executor_name)
+def get_full_stack_names(context, stack_group_name):
+    stack_names = get_stack_names(context, stack_group_name)
 
     return {
         stack_name: get_cloudformation_stack_name(context, stack_name)

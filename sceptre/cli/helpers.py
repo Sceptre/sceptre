@@ -46,12 +46,12 @@ def catch_exceptions(func):
 
 
 def confirmation(
-    command, ignore, executor=None, stack=None, change_set=None
+    command, ignore, stack_group=None, stack=None, change_set=None
 ):
     if not ignore:
         msg = "Do you want to {} ".format(command)
-        if executor:
-            msg = msg + "executor '{0}'?".format(executor)
+        if stack_group:
+            msg = msg + "stack_group '{0}'?".format(stack_group)
         elif change_set and stack:
             msg = msg + "change set '{0}' for stack '{1}'".format(
                 change_set, stack
@@ -89,17 +89,17 @@ def write(var, output_format="str", no_colour=True):
     click.echo(stream)
 
 
-def get_stack_or_env(ctx, path):
+def get_stack_or_group(ctx, path):
     """
-    Parses the path to generate relevant Environment and Stack object.
+    Parses the path to generate relevant Stack Group and Stack object.
 
     :param ctx: Cli context.
     :type ctx: click.Context
-    :param path: Path to either stack config or executor folder.
+    :param path: Path to either stack config or stack_group folder.
     :type path: str
     """
     stack = None
-    env = None
+    group = None
 
     config_reader = ConfigReader(
         ctx.obj["sceptre_dir"], ctx.obj["user_variables"]
@@ -108,18 +108,18 @@ def get_stack_or_env(ctx, path):
     if os.path.splitext(path)[1]:
         stack = config_reader.construct_stack(path)
     else:
-        env = config_reader.construct_executor(path)
+        group = config_reader.construct_stack_group(path)
 
-    return (stack, env)
+    return (stack, group)
 
 
 def get_stack(ctx, path):
     """
-    Parses the path to generate relevant Executor and Stack object.
+    Parses the path to generate relevant StackGroup and Stack object.
 
     :param ctx: Cli context.
     :type ctx: click.Context
-    :param path: Path to either stack config or executor folder.
+    :param path: Path to either stack config or stack_group folder.
     :type path: str
     """
     return ConfigReader(

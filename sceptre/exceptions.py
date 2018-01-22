@@ -22,9 +22,9 @@ class InvalidSceptreDirectoryError(SceptreException):
     pass
 
 
-class InvalidExecutorPathError(SceptreException):
+class InvalidStackGroupPathError(SceptreException):
     """
-    Error raised if the executor path string is invalid
+    Error raised if the stack_group path string is invalid
     """
     pass
 
@@ -154,8 +154,8 @@ class ConfigFileNotFoundError(SceptreException):
     pass
 
 
-class ExecutorNotFoundError(SceptreException):
+class StackGroupNotFoundError(SceptreException):
     """
-    Error raised when a executor does not exist.
+    Error raised when a stack_group does not exist.
     """
     pass

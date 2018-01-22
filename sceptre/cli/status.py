@@ -1,6 +1,6 @@
 import click
 
-from sceptre.cli.helpers import catch_exceptions, get_stack_or_env, write
+from sceptre.cli.helpers import catch_exceptions, get_stack_or_group, write
 
 
 @click.command(name="status")
@@ -9,17 +9,18 @@ from sceptre.cli.helpers import catch_exceptions, get_stack_or_env, write
 @catch_exceptions
 def status_command(ctx, path):
     """
-    Print status of stack or executor.
+    Print status of stack or stack_group.
 
     Prints the stack status or the status of the stacks within a
-    executor for a given config PATH.
+    stack_group for a given config PATH.
     """
     output_format = ctx.obj["output_format"]
     no_colour = ctx.obj["no_colour"]
 
-    stack, env = get_stack_or_env(ctx, path)
+    stack, group = get_stack_or_group(ctx, path)
 
     if stack:
         write(stack.get_status(), no_colour=no_colour)
-    elif env:
-        write(env.describe(), output_format=output_format, no_colour=no_colour)
+    elif group:
+        write(group.describe(), output_format=output_format,
+              no_colour=no_colour)

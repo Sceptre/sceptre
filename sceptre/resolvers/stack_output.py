@@ -91,7 +91,7 @@ class StackOutputBase(Resolver):
 class StackOutput(StackOutputBase):
     """
     Resolver for retrieving the value of a stack output within the current
-    Sceptre executor. Adds the target stack to the dependencies of the
+    Sceptre stack_group. Adds the target stack to the dependencies of the
     stack using the resolver.
 
     :param argument: The stack name and output name to get.
@@ -134,7 +134,7 @@ class StackOutput(StackOutputBase):
 class StackOutputExternal(StackOutputBase):
     """
     Resolver for retrieving the value of an output of any stack within the
-    current Sceptre executor's account and region.
+    current Sceptre stack_group's account and region.
 
     :param argument: The stack name and output name to get.
     :type argument: str in the format ``"<full stack name>::<output key>"``

@@ -38,13 +38,13 @@ def update_config(context):
         context.sceptre_dir, "config", "config.yaml"
     )
     with open(config_path) as config_file:
-        env_config = yaml.safe_load(config_file)
+        group_config = yaml.safe_load(config_file)
 
-    env_config["template_bucket_name"] = context.bucket_name
-    env_config["project_code"] = context.project_code
+    group_config["template_bucket_name"] = context.bucket_name
+    group_config["project_code"] = context.project_code
 
     with open(config_path, 'w') as config_file:
-        yaml.safe_dump(env_config, config_file, default_flow_style=False)
+        yaml.safe_dump(group_config, config_file, default_flow_style=False)
 
 
 def after_all(context):

@@ -27,35 +27,35 @@ def camel_to_snake_case(string):
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 
-def recurse_into_sub_executors(func):
+def recurse_into_sub_stack_groups(func):
     """
-    Two types of Executors exist, non-leaf and leaf. Non-leaf
-    executors contain sub-executors, while leaf
-    executors contain stacks. If acommand is executed by a leaf
-    executor, it should execute that command on the stacks it
-    contains. If a command is executed by a non-leaf executor, it
-    should invoke that command on each of its sub-executors. Recurse
-    is a decorator used by sceptre.executor.Executor to do
+    Two types of StackGroups exist, non-leaf and leaf. Non-leaf
+    stack_groups contain sub-stack_groups, while leaf
+    stack_groups contain stacks. If acommand is executed by a leaf
+    stack_group, it should execute that command on the stacks it
+    contains. If a command is executed by a non-leaf stack_group, it
+    should invoke that command on each of its sub-stack_groups. Recurse
+    is a decorator used by sceptre.stack_group.StackGroup to do
     this. The function passed, ``func``, must return a dictionary.
     """
     @wraps(func)
     def decorated(self, *args, **kwargs):
         function_name = func.__name__
         responses = {}
-        num_executors = len(self.sub_executors)
+        num_stack_groups = len(self.sub_stack_groups)
 
-        # As commands carried out by sub-executors may be blocking,
+        # As commands carried out by sub-stack_groups may be blocking,
         # execute them on separate threads.
-        if num_executors:
-            with ThreadPoolExecutor(max_workers=num_executors)\
-              as thread_executor:
+        if num_stack_groups:
+            with ThreadPoolExecutor(max_workers=num_stack_groups)\
+              as thread_stack_group:
                 futures = [
-                    thread_executor.submit(
-                        getattr(executor, function_name),
+                    thread_stack_group.submit(
+                        getattr(stack_group, function_name),
                         *args,
                         **kwargs
                     )
-                    for executor in self.sub_executors
+                    for stack_group in self.sub_stack_groups
                 ]
                 for future in as_completed(futures):
                     response = future.result()
@@ -87,7 +87,7 @@ def resolve_stack_name(source_stack_name, destination_stack_path):
     Returns a stack's full name.
 
     A dependancy stack's name can be provided as either a full stack name, or
-    as the file base name of a stack from the same executor.
+    as the file base name of a stack from the same stack_group.
     resolve_stack_name calculates the dependency's stack's full name from this.
 
     :param source_stack_name: The name of the stack with the parameter to be \

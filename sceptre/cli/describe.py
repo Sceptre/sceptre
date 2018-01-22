@@ -1,6 +1,6 @@
 import click
 
-from sceptre.cli.helpers import catch_exceptions, get_stack_or_env, write
+from sceptre.cli.helpers import catch_exceptions, get_stack_or_group, write
 from sceptre.cli.helpers import simplify_change_set_description
 
 
@@ -26,7 +26,7 @@ def describe_change_set(ctx, path, change_set_name, verbose):
     Describes the change set.
 
     """
-    stack, _ = get_stack_or_env(ctx, path)
+    stack, _ = get_stack_or_group(ctx, path)
     description = stack.describe_change_set(change_set_name)
     if not verbose:
         description = simplify_change_set_description(description)
@@ -42,6 +42,6 @@ def describe_policy(ctx, path):
     Displays the stack policy used.
 
     """
-    stack, _ = get_stack_or_env(ctx, path)
+    stack, _ = get_stack_or_group(ctx, path)
     response = stack.get_policy()
     write(response.get('StackPolicyBody', {}))

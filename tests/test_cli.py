@@ -13,11 +13,11 @@ import click
 from sceptre.cli import cli
 from sceptre.config_reader import ConfigReader
 from sceptre.stack import Stack
-from sceptre.executor import Executor
+from sceptre.stack_group import StackGroup
 from sceptre.stack_status import StackStatus, StackChangeSetStatus
 from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
 from sceptre.cli.helpers import CustomJsonEncoder, catch_exceptions
-from sceptre.cli.helpers import get_stack_or_env
+from sceptre.cli.helpers import get_stack_or_group
 from botocore.exceptions import ClientError
 from sceptre.exceptions import SceptreException
 
@@ -33,11 +33,11 @@ class TestCli(object):
 
         self.mock_config_reader = MagicMock(spec=ConfigReader)
         self.mock_stack = MagicMock(spec=Stack)
-        self.mock_executor = MagicMock(spec=Executor)
+        self.mock_stack_group = MagicMock(spec=StackGroup)
 
         self.mock_config_reader.construct_stack.return_value = self.mock_stack
-        self.mock_config_reader.construct_executor.return_value = \
-            self.mock_executor
+        self.mock_config_reader.construct_stack_group.return_value = \
+            self.mock_stack_group
 
         self.mock_ConfigReader.return_value = self.mock_config_reader
         self.mock_getcwd.return_value = sentinel.cwd
@@ -232,7 +232,7 @@ class TestCli(object):
         assert result.exit_code == 0
         assert result.output == "Body\n"
 
-    def test_list_env_resources(self):
+    def test_list_group_resources(self):
         response = {
             "stack-name-1": {
                 "StackResources": [
@@ -251,7 +251,7 @@ class TestCli(object):
                 ]
             }
         }
-        self.mock_executor.describe_resources.return_value = response
+        self.mock_stack_group.describe_resources.return_value = response
         result = self.runner.invoke(cli, ["list", "resources", "dev"])
         assert yaml.load(result.output) == response
         assert result.exit_code == 0
@@ -341,11 +341,11 @@ class TestCli(object):
             ("launch", False, False, 1)
         ]
     )
-    def test_env_commands(self, command, success, yes_flag, exit_code):
+    def test_group_commands(self, command, success, yes_flag, exit_code):
         status = StackStatus.COMPLETE if success else StackStatus.FAILED
         response = {"stack": status}
 
-        getattr(self.mock_executor, command).return_value = response
+        getattr(self.mock_stack_group, command).return_value = response
 
         kwargs = {"args": [command, "dev"]}
         if yes_flag:
@@ -355,7 +355,7 @@ class TestCli(object):
 
         result = self.runner.invoke(cli, **kwargs)
 
-        getattr(self.mock_executor, command).assert_called_with()
+        getattr(self.mock_stack_group, command).assert_called_with()
         assert result.exit_code == exit_code
 
     @patch('sceptre.cli.update.uuid1')
@@ -518,8 +518,8 @@ class TestCli(object):
         assert result.exit_code == 0
         assert yaml.load(result.output) == "export SCEPTRE_Key=Value"
 
-    def test_status_with_env(self):
-        self.mock_executor.describe.return_value = {"stack": "status"}
+    def test_status_with_group(self):
+        self.mock_stack_group.describe.return_value = {"stack": "status"}
 
         result = self.runner.invoke(cli, ["status", "dev"])
         assert result.exit_code == 0
@@ -595,7 +595,7 @@ class TestCli(object):
         self.patcher_getcwd.start()
 
     @pytest.mark.parametrize(
-      "executor,config_structure,stdin,result", [
+      "stack_group,config_structure,stdin,result", [
         (
          "A",
          {"": {}},
@@ -629,8 +629,8 @@ class TestCli(object):
         )
       ]
     )
-    def test_init_executor(
-        self, executor, config_structure, stdin, result
+    def test_init_stack_group(
+        self, stack_group, config_structure, stdin, result
     ):
         self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():
@@ -638,9 +638,9 @@ class TestCli(object):
             config_dir = os.path.join(sceptre_dir, "config")
             os.makedirs(config_dir)
 
-            env_dir = os.path.join(sceptre_dir, "config", executor)
-            for env_path, config in config_structure.items():
-                path = os.path.join(config_dir, env_path)
+            group_dir = os.path.join(sceptre_dir, "config", stack_group)
+            for group_path, config in config_structure.items():
+                path = os.path.join(config_dir, group_path)
                 try:
                     os.makedirs(path)
                 except OSError as e:
@@ -658,12 +658,13 @@ class TestCli(object):
             os.chdir(sceptre_dir)
 
             cmd_result = self.runner.invoke(
-                cli, ["init", "env", executor],
+                cli, ["init", "grp", stack_group],
                 input=stdin
             )
 
             if result:
-                with open(os.path.join(env_dir, "config.yaml")) as config_file:
+                with open(os.path.join(group_dir, "config.yaml"))\
+                  as config_file:
                     config = yaml.load(config_file)
                 assert config == result
             else:
@@ -672,44 +673,44 @@ class TestCli(object):
                 )
         self.patcher_getcwd.start()
 
-    def test_init_executor_with_existing_folder(self):
+    def test_init_stack_group_with_existing_folder(self):
         self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():
             sceptre_dir = os.path.abspath('./example')
             config_dir = os.path.join(sceptre_dir, "config")
-            env_dir = os.path.join(config_dir, "A")
+            group_dir = os.path.join(config_dir, "A")
 
-            os.makedirs(env_dir)
+            os.makedirs(group_dir)
             os.chdir(sceptre_dir)
 
             cmd_result = self.runner.invoke(
-                cli, ["init", "env", "A"], input="y\n\n\n"
+                cli, ["init", "grp", "A"], input="y\n\n\n"
             )
 
             assert cmd_result.output.startswith(
-                "Executor path exists. "
+                "StackGroup path exists. "
                 "Do you want initialise config.yaml?"
             )
-            with open(os.path.join(env_dir, "config.yaml")) as config_file:
+            with open(os.path.join(group_dir, "config.yaml")) as config_file:
                 config = yaml.load(config_file)
             assert config == {"project_code": "", "region": ""}
 
         self.patcher_getcwd.start()
 
-    def test_init_executor_with_another_exception(self):
+    def test_init_stack_group_with_another_exception(self):
         self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():
             sceptre_dir = os.path.abspath('./example')
             config_dir = os.path.join(sceptre_dir, "config")
-            env_dir = os.path.join(config_dir, "A")
+            group_dir = os.path.join(config_dir, "A")
 
-            os.makedirs(env_dir)
+            os.makedirs(group_dir)
             os.chdir(sceptre_dir)
 
             patcher_mkdir = patch("sceptre.cli.init.os.mkdir")
             mock_mkdir = patcher_mkdir.start()
             mock_mkdir.side_effect = OSError(errno.EINVAL)
-            result = self.runner.invoke(cli, ["init", "env", "A"])
+            result = self.runner.invoke(cli, ["init", "grp", "A"])
             mock_mkdir = patcher_mkdir.stop()
             assert str(result.exception) == str(OSError(errno.EINVAL))
 
@@ -773,38 +774,38 @@ class TestCli(object):
         response = encoder.encode(datetime.datetime(2016, 5, 3))
         assert response == '"2016-05-03 00:00:00"'
 
-    def test_get_stack_or_env_with_stack(self):
+    def test_get_stack_or_group_with_stack(self):
         ctx = MagicMock(obj={
             "sceptre_dir": sentinel.sceptre_dir,
             "user_variables": sentinel.user_variables
         })
-        stack, env = get_stack_or_env(ctx, "stack.yaml")
+        stack, group = get_stack_or_group(ctx, "stack.yaml")
         self.mock_ConfigReader.assert_called_once_with(
             sentinel.sceptre_dir, sentinel.user_variables
         )
         assert isinstance(stack, Stack)
-        assert env is None
+        assert group is None
 
-    def test_get_stack_or_env_with_nested_stack(self):
+    def test_get_stack_or_group_with_nested_stack(self):
         ctx = MagicMock(obj={
             "sceptre_dir": sentinel.sceptre_dir,
             "user_variables": sentinel.user_variables
         })
-        stack, env = get_stack_or_env(ctx, "environment/dir/stack.yaml")
+        stack, group = get_stack_or_group(ctx, "stack-group/dir/stack.yaml")
         self.mock_ConfigReader.assert_called_once_with(
             sentinel.sceptre_dir, sentinel.user_variables
         )
         assert isinstance(stack, Stack)
-        assert env is None
+        assert group is None
 
-    def test_get_stack_or_env_with_env(self):
+    def test_get_stack_or_group_with_group(self):
         ctx = MagicMock(obj={
             "sceptre_dir": sentinel.sceptre_dir,
             "user_variables": sentinel.user_variables
         })
-        stack, env = get_stack_or_env(ctx, "environment/dir")
+        stack, group = get_stack_or_group(ctx, "stack-group/dir")
         self.mock_ConfigReader.assert_called_once_with(
             sentinel.sceptre_dir, sentinel.user_variables
         )
-        assert isinstance(env, Environment)
+        assert isinstance(group, StackGroup)
         assert stack is None

@@ -1,0 +1,7 @@
+parameters:
+  param1: {{ var.user_variable }}
+  param2: {{ stack_group_variable.TEST_ENV_VAR }}
+  param3: {{ stack_group_path.0 }}
+  param4: {{ stack_group_path.1 }}
+  param5: {{ stack_group_path.2 }}
+  param6: {{ stack_group_config.region }}

@@ -6,10 +6,10 @@ import types
 import pytest
 from mock import sentinel, MagicMock
 
-from sceptre.executor import Executor
+from sceptre.stack_group import StackGroup
 from sceptre.helpers import get_subclasses
 from sceptre.helpers import camel_to_snake_case
-from sceptre.helpers import recurse_into_sub_executors
+from sceptre.helpers import recurse_into_sub_stack_groups
 from sceptre.helpers import get_name_tuple
 from sceptre.helpers import resolve_stack_name
 from sceptre.helpers import get_external_stack_name
@@ -42,45 +42,45 @@ class TestHelpers(object):
         snake_case_string = camel_to_snake_case("ASGScalingProcesses")
         assert snake_case_string == "asg_scaling_processes"
 
-    def test_recurse_into_sub_executors(self):
-        executor = MagicMock(spec=Executor)
-        executor.name = "executor"
-        executor.sub_executors = []
+    def test_recurse_into_sub_stack_groups(self):
+        stack_group = MagicMock(spec=StackGroup)
+        stack_group.name = "stack_group"
+        stack_group.sub_stack_groups = []
 
         def do(self):
             return {self.name: sentinel.response}
 
-        executor.do = types.MethodType(
-            recurse_into_sub_executors(do),
-            executor
+        stack_group.do = types.MethodType(
+            recurse_into_sub_stack_groups(do),
+            stack_group
         )
 
-        response = executor.do()
-        assert response == {"executor": sentinel.response}
+        response = stack_group.do()
+        assert response == {"stack_group": sentinel.response}
 
-    def test_recurse_into_sub_executors_with_non_leaf_object(self):
-        class MockEnv(object):
+    def test_recurse_into_sub_stack_groups_with_non_leaf_object(self):
+        class MockStackGroup(object):
 
             def __init__(self, name):
                 self.name = name
-                self.sub_executors = []
+                self.sub_stack_groups = []
 
-            @recurse_into_sub_executors
+            @recurse_into_sub_stack_groups
             def do(self):
                 return {self.name: sentinel.response}
 
-        mock_env = MockEnv("executor_1")
+        mock_group = MockStackGroup("stack_group_1")
 
-        # Add leaf sub-executors
-        mock_env.sub_executors = [
-            MockEnv("executor_2"), MockEnv("executor_3")
+        # Add leaf sub-stack_groups
+        mock_group.sub_stack_groups = [
+            MockStackGroup("stack_group_2"), MockStackGroup("stack_group_3")
         ]
 
-        response = mock_env.do()
+        response = mock_group.do()
         assert response == {
-            "executor_1": sentinel.response,
-            "executor_2": sentinel.response,
-            "executor_3": sentinel.response
+            "stack_group_1": sentinel.response,
+            "stack_group_2": sentinel.response,
+            "stack_group_3": sentinel.response
         }
 
     def test_get_name_tuple(self):

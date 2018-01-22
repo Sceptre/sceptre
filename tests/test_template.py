@@ -23,7 +23,7 @@ class TestTemplate(object):
     def setup_method(self, test_method):
         self.region = "region"
         self.bucket_name = "bucket_name"
-        self.executor_path = "executor_path"
+        self.stack_group_path = "stack_group_path"
         self.stack_name = "stack_name"
 
         connection_manager = Mock(spec=ConnectionManager)

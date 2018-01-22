@@ -4,7 +4,7 @@ import errno
 import click
 import yaml
 
-from sceptre.config_reader import ENVIRONMENT_CONFIG_ATTRIBUTES
+from sceptre.config_reader import STACK_GROUP_CONFIG_ATTRIBUTES
 from sceptre.cli.helpers import catch_exceptions
 from sceptre.exceptions import ProjectAlreadyExistsError
 
@@ -18,23 +18,23 @@ def init_group():
     pass
 
 
-@init_group.command("env")
-@click.argument('executor')
+@init_group.command("grp")
+@click.argument('stack_group')
 @catch_exceptions
 @click.pass_context
-def init_executor(ctx, executor):
+def init_stack_group(ctx, stack_group):
     """
-    Initialises an executor in a project.
+    Initialises a stack_group in a project.
 
-    Creates ENVIRONMENT folder in the project and a config.yaml with any
+    Creates STACK_GROUP folder in the project and a config.yaml with any
     required properties.
     """
     cwd = ctx.obj["sceptre_dir"]
     for item in os.listdir(cwd):
-        # If already a config folder create a sub executor
+        # If already a config folder create a sub stack_group
         if os.path.isdir(item) and item == "config":
             config_dir = os.path.join(os.getcwd(), "config")
-            _create_new_executor(config_dir, executor)
+            _create_new_stack_group(config_dir, stack_group)
 
 
 @init_group.command("project")
@@ -54,7 +54,7 @@ def init_project(ctx, project_name):
     try:
         os.mkdir(project_folder)
     except OSError as e:
-        # Check if executor folder already exists
+        # Check if stack_group folder already exists
         if e.errno == errno.EEXIST:
             raise ProjectAlreadyExistsError(
                 'Folder \"{0}\" already exists.'.format(project_name)
@@ -75,29 +75,29 @@ def init_project(ctx, project_name):
     _create_config_file(config_path, config_path, defaults)
 
 
-def _create_new_executor(config_dir, new_path):
+def _create_new_stack_group(config_dir, new_path):
     """
-    Creates the subfolder for the executor specified by `path`
+    Creates the subfolder for the stack_group specified by `path`
     starting from the `config_dir`. Even if folder path already exists,
     they want to initialise `config.yaml`.
 
     :param config_dir: The directory path to the top-level config folder.
     :type config_dir: str
-    :param path: The directory path to the executor folder.
+    :param path: The directory path to the stack_group folder.
     :type path: str
     """
-    # Create full path to executor
+    # Create full path to stack_group
     folder_path = os.path.join(config_dir, new_path)
     init_config_msg = 'Do you want initialise config.yaml?'
 
-    # Make folders for the executor
+    # Make folders for the stack_group
     try:
         os.makedirs(folder_path)
     except OSError as e:
-        # Check if executor folder already exists
+        # Check if stack_group folder already exists
         if e.errno == errno.EEXIST:
             init_config_msg =\
-              'Executor path exists. ' + init_config_msg
+              'StackGroup path exists. ' + init_config_msg
         else:
             raise
 
@@ -112,14 +112,14 @@ def _get_nested_config(config_dir, path):
 
     :param config_dir: The directory path to the top-level config folder.
     :type config_dir: str
-    :param path: The directory path to the executor folder.
+    :param path: The directory path to the stack_group folder.
     :type path: str
     :returns: The nested config.
     :rtype: dict
     """
     config = {}
     for root, _, files in os.walk(config_dir):
-        # Check that folder is within the final executor path
+        # Check that folder is within the final stack_group path
         if path.startswith(root) and "config.yaml" in files:
             config_path = os.path.join(root, "config.yaml")
             with open(config_path) as config_file:
@@ -138,12 +138,12 @@ def _create_config_file(config_dir, path, defaults={}):
 
     :param config_dir: The directory path to the top-level config folder.
     :type config_dir: str
-    :param path: The directory path to the executor folder.
+    :param path: The directory path to the stack_group folder.
     :type path: str
     :param defaults: Defaults to present to the user for config.
     :type defaults: dict
     """
-    config = dict.fromkeys(ENVIRONMENT_CONFIG_ATTRIBUTES.required, "")
+    config = dict.fromkeys(STACK_GROUP_CONFIG_ATTRIBUTES.required, "")
     parent_config = _get_nested_config(config_dir, path)
 
     # Add standard defaults

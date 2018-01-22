@@ -67,7 +67,7 @@ class TestConfigReader(object):
 
             assert config == {
                 "sceptre_dir": sceptre_dir,
-                "executor_path": os.path.split(target)[0],
+                "stack_group_path": os.path.split(target)[0],
                 "filepath": target
             }
 
@@ -75,12 +75,13 @@ class TestConfigReader(object):
         with self.runner.isolated_filesystem():
             sceptre_dir = os.path.abspath('./example')
             config_dir = os.path.join(sceptre_dir, "config")
-            env_dir = os.path.join(config_dir, "A")
+            group_dir = os.path.join(config_dir, "A")
 
-            os.makedirs(env_dir)
+            os.makedirs(group_dir)
 
             config = {"config": "config"}
-            with open(os.path.join(env_dir, "stack.yaml"), 'w') as config_file:
+            with open(os.path.join(group_dir, "stack.yaml"), 'w') as\
+                    config_file:
                 yaml.safe_dump(
                     config, stream=config_file, default_flow_style=False
                 )
@@ -95,7 +96,7 @@ class TestConfigReader(object):
 
             assert config == {
                 "sceptre_dir": sceptre_dir,
-                "executor_path": "A",
+                "stack_group_path": "A",
                 "config": "config",
                 "base_config": "base_config"
             }
@@ -112,11 +113,11 @@ class TestConfigReader(object):
     def test_read_with_empty_config_file(self):
         config_reader = ConfigReader(self.test_sceptre_directory)
         config = config_reader.read(
-          "account/executor/region/subnets.yaml"
+          "account/stack-group/region/subnets.yaml"
         )
         assert config == {
             "sceptre_dir": self.test_sceptre_directory,
-            "executor_path": "account/executor/region"
+            "stack_group_path": "account/stack-group/region"
         }
 
     def test_read_with_templated_config_file(self):
@@ -124,24 +125,24 @@ class TestConfigReader(object):
             self.test_sceptre_directory,
             {"user_variable": "user_variable_value"}
         )
-        config_reader.templating_vars["executor_config"] = {
-            "region": "executor_region"
+        config_reader.templating_vars["stack_group_config"] = {
+            "region": "stack_group_region"
         }
-        os.environ["TEST_ENV_VAR"] = "executor_variable_value"
+        os.environ["TEST_ENV_VAR"] = "stack_group_variable_value"
         config = config_reader.read(
-            "account/executor/region/security_groups.yaml"
+            "account/stack-group/region/security_groups.yaml"
         )
         # self.config.read({"user_variable": "user_variable_value"})
         assert config == {
             'sceptre_dir': config_reader.sceptre_dir,
-            "executor_path": "account/executor/region",
+            "stack_group_path": "account/stack-group/region",
             "parameters": {
                 "param1": "user_variable_value",
-                "param2": "executor_variable_value",
+                "param2": "stack_group_variable_value",
                 "param3": "account",
-                "param4": "executor",
+                "param4": "stack-group",
                 "param5": "region",
-                "param6": "executor_region"
+                "param6": "stack_group_region"
             }
         }
 
@@ -193,10 +194,10 @@ class TestConfigReader(object):
         mock_collect_s3_details.return_value = sentinel.s3_details
         config_reader = ConfigReader(self.test_sceptre_directory)
         stack = config_reader.construct_stack(
-            "account/executor/region/vpc.yaml"
+            "account/stack-group/region/vpc.yaml"
         )
         mock_Stack.assert_called_with(
-                name="account/executor/region/vpc",
+                name="account/stack-group/region/vpc",
                 project_code="account_project_code",
                 template_path=os.path.join(
                     self.test_sceptre_directory, "path/to/template"
@@ -222,7 +223,7 @@ class TestConfigReader(object):
         (
             ["A/1.yaml"], ["A"], [
                 {
-                    "A": {"stacks": ["A/1"], "executors": {}}
+                    "A": {"stacks": ["A/1"], "stack_groups": {}}
                 }
             ]
         ),
@@ -231,7 +232,7 @@ class TestConfigReader(object):
                 {
                     "A": {
                         "stacks": ["A/3", "A/2", "A/1"],
-                        "executors": {}
+                        "stack_groups": {}
                     }
                 }
             ]
@@ -241,16 +242,16 @@ class TestConfigReader(object):
                 {
                     "A": {
                         "stacks": [],
-                        "executors": {
+                        "stack_groups": {
                             "A/A": {
                                 "stacks": ["A/A/1"],
-                                "executors": {}
+                                "stack_groups": {}
                             },
                         }
                     }
                 },
                 {
-                    "A/A": {"stacks": ["A/A/1"], "executors": {}}
+                    "A/A": {"stacks": ["A/A/1"], "stack_groups": {}}
                 }
             ]
         ),
@@ -259,17 +260,17 @@ class TestConfigReader(object):
                 {
                     "A": {
                         "stacks": [],
-                        "executors": {
+                        "stack_groups": {
                             "A/A": {
                               "stacks": ["A/A/1", "A/A/2"],
-                              "executors": {}
+                              "stack_groups": {}
                             },
                         }
                     }
                 },
                 {
                     "A/A": {
-                      "stacks": ["A/A/1", "A/A/2"], "executors": {}
+                      "stacks": ["A/A/1", "A/A/2"], "stack_groups": {}
                     }
                 }
                 ]
@@ -279,26 +280,26 @@ class TestConfigReader(object):
                 {
                     "A": {
                         "stacks": [],
-                        "executors": {
+                        "stack_groups": {
                             "A/A": {
-                              "stacks": ["A/A/1"], "executors": {}
+                              "stacks": ["A/A/1"], "stack_groups": {}
                             },
                             "A/B": {
-                              "stacks": ["A/B/1"], "executors": {}
+                              "stacks": ["A/B/1"], "stack_groups": {}
                             }
                         }
                     }
                 },
                 {
-                    "A/A": {"stacks": ["A/A/1"], "executors":{}}
+                    "A/A": {"stacks": ["A/A/1"], "stack_groups":{}}
                 },
                 {
-                    "A/B": {"stacks": ["A/B/1"], "executors":{}}
+                    "A/B": {"stacks": ["A/B/1"], "stack_groups":{}}
                 }
             ]
         )
     ])
-    def test_construct_executor_with_valid_config(
+    def test_construct_stack_group_with_valid_config(
         self, filepaths, targets, results
     ):
         with self.runner.isolated_filesystem():
@@ -330,19 +331,19 @@ class TestConfigReader(object):
 
             config_reader = ConfigReader(sceptre_dir)
 
-            def check_executor(executor, details):
+            def check_stack_group(stack_group, details):
                 assert sorted(details["stacks"]) == sorted([
-                    stack.name for stack in executor.stacks
+                    stack.name for stack in stack_group.stacks
                 ])
-                for sub_env in executor.sub_executors:
-                    sub_env_details =\
-                      details["executors"][sub_env.path]
-                    check_executor(sub_env, sub_env_details)
+                for sub_group in stack_group.sub_stack_groups:
+                    sub_group_details =\
+                      details["stack_groups"][sub_group.path]
+                    check_stack_group(sub_group, sub_group_details)
 
             for i, target in enumerate(targets):
-                executor =\
-                  config_reader.construct_executor(target)
+                stack_group =\
+                  config_reader.construct_stack_group(target)
                 expected = results[i]
-                check_executor(
-                  executor, expected[executor.path]
+                check_stack_group(
+                  stack_group, expected[stack_group.path]
                 )
