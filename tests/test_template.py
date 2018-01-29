@@ -207,6 +207,18 @@ class TestTemplate(object):
             expected_output_dict = json.loads(f.read())
         assert output_dict == expected_output_dict
 
+    def test_body_with_generic_template(self):
+        self.template.name = "vpc"
+        self.template.path = os.path.join(
+            os.getcwd(),
+            "tests/fixtures/templates/vpc.template"
+        )
+        output = self.template.body
+        output_dict = json.loads(output)
+        with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
+            expected_output_dict = json.loads(f.read())
+        assert output_dict == expected_output_dict
+
     def test_body_with_missing_file(self):
         self.template.path = "incorrect/template/path.py"
         with pytest.raises(IOError):
