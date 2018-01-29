@@ -3,6 +3,10 @@ Sceptre
 =======
 
 .. image:: https://circleci.com/gh/cloudreach/sceptre.png?style=shield
+    :target: https://circleci.com/gh/cloudreach/sceptre/tree/master
+    
+.. image:: https://badge.fury.io/py/sceptre.svg
+    :target: https://badge.fury.io/py/sceptre
 
 About
 -----
