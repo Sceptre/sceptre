@@ -24,10 +24,10 @@ The docs can be built with:
 make docs-latest
 ```
 
-To serve the docs and watch for changes, run:
+To makes and serve the docs and watch for changes, run:
 
 ```shell
-make serve-latest
+make serve-docs-latest
 ```
 
 View them at `http://localhost:4000/latest/`
