@@ -96,6 +96,11 @@ class StackOutput(StackOutputBase):
 
     def __init__(self, *args, **kwargs):
         super(StackOutput, self).__init__(*args, **kwargs)
+
+    def setup(self):
+        """
+        Adds dependency to stack.
+        """
         self.dependency_stack_name, self.output_key = self.argument.split("::")
         if "/" not in self.dependency_stack_name:
             self.dependency_stack_name = "/".join([

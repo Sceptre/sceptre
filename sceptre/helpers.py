@@ -211,3 +211,30 @@ def _detect_cycles(node, encountered_nodes, available_nodes, path):
             )
             encountered_nodes[dependency] = "DONE"
     return encountered_nodes
+
+
+def _call_func_on_values(func, attr, cls):
+    """
+    Searches through dictionary or list for objects of type `cls` and calls the
+    supplied function `func`. Supports nested dictionaries and lists.
+    Does not detect objects used as keys in dictionaries.
+
+    :param attr: A dictionary or list to search through.
+    :type attr: dict or list
+    :return: The dictionary or list structure.
+    :rtype: dict or list
+    """
+
+    def func_on_instance(key):
+        if isinstance(value, cls):
+            func(attr, key, value)
+        elif isinstance(value, list) or isinstance(value, dict):
+            _call_func_on_values(func, value, cls)
+
+    if isinstance(attr, dict):
+        for key, value in attr.items():
+            func_on_instance(key)
+    elif isinstance(attr, list):
+        for index, value in enumerate(attr):
+            func_on_instance(index)
+    return attr

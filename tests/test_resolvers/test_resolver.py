@@ -66,6 +66,7 @@ class TestResolvablePropertyDescriptor(object):
 
         self.mock_object.resolvable_property = complex_data_structure
         assert self.mock_object._resolvable_property == complex_data_structure
+        assert mock_resolver.stack == self.mock_object
 
     def test_getting_resolvable_property_with_none(self):
         self.mock_object._resolvable_property = None
@@ -116,8 +117,8 @@ class TestResolvablePropertyDescriptor(object):
         ]
 
         self.mock_object._resolvable_property = complex_data_structure
-        property = self.mock_object.resolvable_property
-        assert property == resolved_complex_data_structure
+        prop = self.mock_object.resolvable_property
+        assert prop == resolved_complex_data_structure
 
     def test_getting_resolvable_property_with_nested_dictionaries_and_lists(
         self
@@ -212,8 +213,8 @@ class TestResolvablePropertyDescriptor(object):
         }
 
         self.mock_object._resolvable_property = complex_data_structure
-        property = self.mock_object.resolvable_property
-        assert property == resolved_complex_data_structure
+        prop = self.mock_object.resolvable_property
+        assert prop == resolved_complex_data_structure
 
     def test_getting_resolvable_property_with_nested_dictionaries(self):
         mock_resolver = MagicMock(spec=MockResolver)
@@ -254,5 +255,5 @@ class TestResolvablePropertyDescriptor(object):
         }
 
         self.mock_object._resolvable_property = complex_data_structure
-        property = self.mock_object.resolvable_property
-        assert property == resolved_complex_data_structure
+        prop = self.mock_object.resolvable_property
+        assert prop == resolved_complex_data_structure

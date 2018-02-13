@@ -27,7 +27,7 @@ class TestStackOutputResolver(object):
             "account/dev/vpc::VpcId", stack
         )
         mock_get_output_value.return_value = "output_value"
-
+        stack_output_resolver.setup()
         result = stack_output_resolver.resolve()
         assert result == "output_value"
         mock_get_output_value.assert_called_once_with(
@@ -48,7 +48,9 @@ class TestStackOutputResolver(object):
         )
         mock_get_output_value.return_value = "output_value"
 
+        stack_output_resolver.setup()
         result = stack_output_resolver.resolve()
+
         assert result == "output_value"
         mock_get_output_value.assert_called_once_with(
             "project-code-account-dev-vpc", "VpcId"
@@ -69,7 +71,9 @@ class TestStackOutputResolver(object):
         stack_output_resolver = StackOutput("vpc::VpcId", stack)
         mock_get_output_value.return_value = "output_value"
 
+        stack_output_resolver.setup()
         result = stack_output_resolver.resolve()
+
         assert result == "output_value"
         mock_get_output_value.assert_called_once_with(
             "project-code-account-dev-vpc", "VpcId"

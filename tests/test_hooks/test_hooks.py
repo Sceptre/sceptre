@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from mock import MagicMock
 
-from sceptre.hooks import Hook, add_stack_hooks, execute_hooks
+from sceptre.hooks import Hook, HookProperty, add_stack_hooks, execute_hooks
 
 
 class MockHook(Hook):
@@ -66,3 +66,24 @@ class TestHook(object):
 
     def test_hook_inheritance(self):
         assert isinstance(self.hook, Hook)
+
+
+class MockClass(object):
+    hook_property = HookProperty("hook_property")
+    config = MagicMock()
+
+
+class TestHookPropertyDescriptor(object):
+
+    def setup_method(self, test_method):
+        self.mock_object = MockClass()
+
+    def test_setting_hook_property(self):
+        mock_hook = MagicMock(spec=MockHook)
+
+        self.mock_object.hook_property = [mock_hook]
+        assert self.mock_object._hook_property == [mock_hook]
+
+    def test_getting_hook_property(self):
+        self.mock_object._hook_property = self.mock_object
+        assert self.mock_object.hook_property == self.mock_object
