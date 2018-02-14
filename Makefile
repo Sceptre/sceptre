@@ -52,7 +52,7 @@ clean-test:
 	rm -f test-results.xml
 
 lint:
-	flake8 sceptre tests
+	flake8 .
 	python setup.py check -r -s -m
 
 test:

@@ -1,4 +1,4 @@
-from behave import *
+from behave import given, when, then
 import time
 from botocore.exceptions import ClientError
 from helpers import read_template_file, get_cloudformation_stack_name

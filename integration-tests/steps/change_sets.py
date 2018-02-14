@@ -1,4 +1,4 @@
-from behave import *
+from behave import given, when, then
 import time
 
 from sceptre.config_reader import ConfigReader

@@ -1,6 +1,5 @@
-from behave import *
+from behave import given, when, then
 import json
-import os
 
 from botocore.exceptions import ClientError
 from sceptre.config_reader import ConfigReader

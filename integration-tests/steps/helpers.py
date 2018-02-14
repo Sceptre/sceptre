@@ -1,4 +1,4 @@
-from behave import *
+from behave import then
 import os
 import time
 
