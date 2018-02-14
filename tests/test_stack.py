@@ -778,6 +778,39 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             }
         )
 
+    @patch("sceptre.stack.Stack.get_status")
+    def test_create_change_set_sends_correct_request_for_nonexistent_stack(
+        self, mock_get_status
+    ):
+        self.get_status = mock_get_status
+        mock_get_status.side_effect = StackDoesNotExistError()
+
+        self.stack._template.get_boto_call_parameter.return_value = {
+            "Template": sentinel.template
+        }
+
+        self.stack.create_change_set(sentinel.change_set_name)
+        self.stack.connection_manager.call.assert_called_with(
+            service="cloudformation",
+            command="create_change_set",
+            kwargs={
+                "StackName": sentinel.external_name,
+                "Template": sentinel.template,
+                "Parameters": [{
+                    "ParameterKey": "key1",
+                    "ParameterValue": "val1"
+                }],
+                "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                "ChangeSetName": sentinel.change_set_name,
+                "RoleARN": sentinel.role_arn,
+                "NotificationARNs": [sentinel.notification],
+                "Tags": [
+                    {"Key": "tag1", "Value": "val1"}
+                ],
+                "ChangeSetType": "CREATE"
+            }
+        )
+
     def test_delete_change_set_sends_correct_request(self):
         self.stack.delete_change_set(sentinel.change_set_name)
         self.stack.connection_manager.call.assert_called_with(

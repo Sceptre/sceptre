@@ -534,6 +534,12 @@ class Stack(object):
         }
         create_change_set_kwargs.update(self._get_template_details())
         create_change_set_kwargs.update(self._get_role_arn())
+
+        try:
+            self.get_status()
+        except StackDoesNotExistError:
+            create_change_set_kwargs["ChangeSetType"] = "CREATE"
+
         self.logger.debug(
             "%s - Creating change set '%s'", self.name, change_set_name
         )
