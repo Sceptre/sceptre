@@ -459,6 +459,12 @@ class Stack(object):
             self.template.get_boto_call_parameter()
         )
         create_change_set_kwargs.update(self._get_role_arn())
+
+        try:
+            self.get_status()
+        except StackDoesNotExistError:
+            create_change_set_kwargs["ChangeSetType"] = "CREATE"
+
         self.logger.debug(
             "%s - Creating change set '%s'", self.name, change_set_name
         )
