@@ -25,6 +25,7 @@ help:
 	@echo "docs - generate Sphinx HTML documentation, including API docs"
 	@echo "dist - package"
 	@echo "install - install the package to the active Python's site-packages"
+	@echo "install-dev - install the test requirements to the active Python's site-packages"
 
 clean: clean-build clean-pyc clean-test
 
