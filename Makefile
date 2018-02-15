@@ -22,12 +22,12 @@ help:
 	@echo "test-integration - run integration tests"
 	@echo "coverage - check code coverage quickly with the default Python"
 	@echo "coverage-ci - check code coverage and generate cobertura report"
+	@echo "dist - package"
 	@echo "install - install the package to the active Python's site-packages"
 	@echo "install-dev - install the test requirements to the active Python's site-packages"
-	@echo "serve-docs - generate the latest docs and open them in a browser (and update on changes)"
+	@echo "docs - generate Sphinx HTML documentation, including API docs"
 	@echo ""
 	@ $(MAKE) -C docs help
-
 
 clean: clean-build clean-pyc clean-test docs-clean
 
@@ -81,29 +81,16 @@ docs:
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
 
-serve-docs: docs
-	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
-
-docs-api:
-	rm -f docs/_api/sceptre.rst
-	rm -f docs/_api/modules.rst
-	sphinx-apidoc -o docs/_api sceptre
-	$(MAKE) -C docs/_api clean
-	$(MAKE) -C docs/_api html
-	rm -rf docs/docs/api/
-	cp -r docs/_api/_build/html docs/docs/
-	mv docs/docs/html docs/docs/api
-
-docs-latest: docs-api
+docs-latest:
 	$(MAKE) -C docs build-latest
 
-docs-build-tag: docs-api
+docs-build-tag:
 	$(MAKE) -C docs build-tag
 
-docs-build-dev: docs-api
+docs-build-dev:
 	$(MAKE) -C docs build-dev
 
-docs-build-commit: docs-api
+docs-build-commit:
 	$(MAKE) -C docs build-commit
 
 docs-serve-latest:

@@ -9,34 +9,46 @@ help:
 	@echo "e.g docs-serve-latest"
 	@echo ""
 	@echo "install - install jekyll and it's dependencies"
-	@echo "build-(X) - build the latest docs version of the docs and store it in (X)"
-	@echo "serve-(X) - build and serve using a baseurl with (X)"
+	@echo "build-{latest,dev,tag,commit} - build the latest docs using a baseurl of {latest,dev,tag,commit}"
+	@echo "serve-{latest,dev,tag,commit} - build and locally serve the latest docs on a baseurl of localhost:400/{latest,dev,tag,commit}"
 	@echo ""
-	@echo "Where (X) can be:"
-	@echo " latest"
-	@echo " dev"
-	@echo " tag - based on the current git tag"
-	@echo " sha1 - based on the current git sha1"
+	@echo "baseurls:"
+	@echo "- latest - static"
+	@echo "- dev -static"
+	@echo "- tag - dynamic based on the current git tag"
+	@echo "- commit - dynamic based on the current git sha1"
 	@echo ""
 	@echo "note: There is also a makefile in docs/_api (cd to docs/api and run make help for more info)"
 
 install:
 	bundle install --path vendor
 
-clean:
+clean: clean-api
 	rm -rf _site/
 	rm -rf .sass-cache/
 
-build-latest: clean
+clean-api:
+	rm -f _api/sceptre.rst
+	rm -f _api/modules.rst
+	sphinx-apidoc -o _api ../sceptre
+	$(MAKE) -C _api clean
+
+build-api: clean-api
+	$(MAKE) -C _api html
+	rm -rf docs/api/
+	cp -r _api/_build/html docs/
+	mv docs/html docs/api
+
+build-latest: clean build-api
 	bundle exec jekyll build --baseurl /latest
 
-build-tag: clean
+build-tag: clean build-api
 	bundle exec jekyll build --baseurl /$(GIT_TAG)
 
-build-dev: clean
+build-dev: clean build-api
 	bundle exec jekyll build --baseurl /dev
 
-build-commit: clean
+build-commit: clean build-api
 	bundle exec jekyll build --baseurl /$(SHA1)
 
 serve-latest: clean build-latest
