@@ -8,7 +8,13 @@ The docs is written using the [Jekyll](https://jekyllrb.com) framework.
 
 Jekyll depends on Ruby. Documentation on installing Ruby can be found [here](https://www.ruby-lang.org/en/documentation/installation/).
 
-## Install Jekyll
+## Usage Summary
+
+For more details see `make help`,
+
+Note: The below assumes you are in the docs directory, if not prefix make commands with `docs-` e.g `make docs-install`
+
+### Install Jekyll
 
 Jekyll and its dependencies can be installed with:
 
@@ -16,18 +22,18 @@ Jekyll and its dependencies can be installed with:
 make install
 ```
 
-## Build and serve docs locally
+### Build and serve docs locally
 
 The docs can be built with:
 
 ```shell
-make docs-latest
+make build-latest
 ```
 
-To makes and serve the docs and watch for changes, run:
+To make and serve the docs and watch for changes, run:
 
 ```shell
-make serve-docs-latest
+make serve-latest
 ```
 
 View them at `http://localhost:4000/latest/`
