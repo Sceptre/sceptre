@@ -56,33 +56,3 @@ def after_all(context):
     context.project_code = "sceptre-integration-tests"
     context.bucket_name = "sceptre-integration-tests-templates"
     update_config(context)
-
-
-def get_integration_test_bucket_name():
-    bucket_prefix = "sceptre-integration-tests-templates"
-
-    if os.environ.get("CIRCLECI"):
-        return bucket_prefix
-
-    s3 = boto3.client('s3')
-
-    existing_buckets = [
-        bucket['Name'] for bucket in s3.list_buckets()['Buckets']
-        if bucket['Name'].startswith(bucket_prefix)
-    ]
-
-    if existing_buckets:
-        return existing_buckets[0]
-
-    iam = boto3.client("iam")
-    account_aliases = iam.list_account_aliases()['AccountAliases']
-    if account_aliases:
-        account_alias = account_aliases[0]
-        return '{}-{}'.format(
-            bucket_prefix[:62 - len(account_alias)],
-            account_alias
-        )
-
-    sts = boto3.client("sts")
-    account_number = sts.get_caller_identity()['Account']
-    return '{}-{}'.format(bucket_prefix, account_number)
