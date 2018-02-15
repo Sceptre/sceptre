@@ -1,0 +1,17 @@
+{
+    "ResourceTypes": [
+        "AWS::EC2::VPC", 
+        "AWS::EC2::InternetGateway", 
+        "AWS::EC2::VPCGatewayAttachment"
+    ], 
+    "Version": "2010-09-09", 
+    "Parameters": [
+        {
+            "ParameterType": "String", 
+            "DefaultValue": "10.0.0.0/16", 
+            "ParameterConstraints": {}, 
+            "NoEcho": false, 
+            "ParameterKey": "CidrBlock"
+        }
+    ]
+}
