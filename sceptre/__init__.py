@@ -5,7 +5,7 @@ import logging
 
 __author__ = 'Cloudreach'
 __email__ = 'sceptre@cloudreach.com'
-__version__ = '1.3.3'
+__version__ = '1.3.4'
 
 
 # Set up logging to ``/dev/null`` like a library is supposed to.
