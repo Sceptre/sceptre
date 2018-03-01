@@ -1,5 +1,6 @@
 ---
 layout: docs
+title: Installation
 ---
 
 # Installation
@@ -24,4 +25,3 @@ Update Sceptre:
 ```shell
 $ pip install sceptre -U
 ```
-

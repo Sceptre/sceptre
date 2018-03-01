@@ -1,5 +1,6 @@
 ---
 layout: docs
+title: Get Started
 ---
 
 # Get Started
