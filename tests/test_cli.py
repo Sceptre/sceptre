@@ -149,6 +149,43 @@ class TestCli(object):
         result = self.runner.invoke(cli, ["validate", "dev/vpc.yaml"])
         assert result.output == expected_result
 
+    def test_estimate_template_cost_with_browser(self):
+        self.mock_stack.template.estimate_cost.return_value = {
+                "Url": "http://example.com",
+                "ResponseMetadata": {
+                    "HTTPStatusCode": 200
+                }
+            }
+
+        args = ["estimate-cost", "dev/vpc.yaml"]
+        result = self.runner.invoke(cli, args)
+
+        self.mock_stack.template.estimate_cost.assert_called_with()
+
+        assert result.output == \
+            '{0}{1}'.format("View the estimated cost at:\n",
+                            "http://example.com\n\n")
+
+    def test_estimate_template_cost_with_no_browser(self):
+        client_error = ClientError(
+            {
+                "Errors":
+                {
+                    "Message": "No Browser",
+                    "Code": "Error",
+                }
+            },
+            "Webbrowser"
+        )
+        self.mock_stack.template.estimate_cost.side_effect = client_error
+
+        expected_result = str(client_error) + "\n"
+        result = self.runner.invoke(
+                    cli,
+                    ["estimate-cost", "dev/vpc.yaml"]
+                )
+        assert result.output == expected_result
+
     def test_generate_template(self):
         self.mock_stack.template.body = "body"
         result = self.runner.invoke(cli, ["generate", "dev/vpc.yaml"])
