@@ -1,5 +1,6 @@
 ---
 layout: docs
+title: Architecting Sceptre
 ---
 
 # Architecting Sceptre
@@ -24,7 +25,7 @@ templates
 
 ## Environment structure
 
-Environments can be arbitrarily nested, and environment commands can be applied to any level of the environment tree. This can make it difficult to know how to split environments up. 
+Environments can be arbitrarily nested, and environment commands can be applied to any level of the environment tree. This can make it difficult to know how to split environments up.
 
 When considering how to split environemnts up, it's useful to remember the following properties of environments:
 
@@ -94,4 +95,3 @@ The following examples demonstrate how we might architect various Sceptre projec
             - iam-role-admin.yaml
             - iam-role-developer.yaml
     ```
-
