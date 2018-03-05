@@ -55,7 +55,7 @@ class Stack(object):
         self, name, project_code, template_path, region, iam_role=None,
         parameters=None, sceptre_user_data=None, hooks=None, s3_details=None,
         dependencies=None, role_arn=None, protected=False, tags=None,
-        external_name=None, notifications=None, on_failure=None
+        external_name=None, notifications=None, on_failure=None, profile=None
     ):
         self.logger = logging.getLogger(__name__)
 
@@ -65,7 +65,9 @@ class Stack(object):
         self.external_name = external_name or \
             get_external_stack_name(self.project_code, self.name)
 
-        self.connection_manager = ConnectionManager(region, iam_role)
+        self.connection_manager = ConnectionManager(
+            region, iam_role=iam_role, profile=profile
+        )
 
         self.template_path = template_path
         self.s3_details = s3_details

@@ -335,7 +335,8 @@ class ConfigReader(object):
                 tags=config.get("stack_tags", {}),
                 external_name=config.get("stack_name"),
                 notifications=config.get("notifications"),
-                on_failure=config.get("on_failure")
+                on_failure=config.get("on_failure"),
+                profile=config.get("profile")
             )
 
             del self.templating_vars["environment_config"]

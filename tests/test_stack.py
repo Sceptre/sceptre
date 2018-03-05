@@ -49,7 +49,7 @@ class TestStack(object):
             external_name=sentinel.external_name
         )
         self.mock_ConnectionManager.assert_called_with(
-            sentinel.region, None
+            sentinel.region, iam_role=None, profile=None
         )
         assert stack.name == sentinel.stack_name
         assert stack.project_code == sentinel.project_code
