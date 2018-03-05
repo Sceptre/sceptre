@@ -1,5 +1,6 @@
 ---
 layout: docs
+title: CLI
 ---
 
 # Command Line Interface

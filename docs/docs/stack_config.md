@@ -1,5 +1,6 @@
 ---
 layout: docs
+title: Stack Config
 ---
 
 # Stack Config
