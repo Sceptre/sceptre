@@ -276,6 +276,25 @@ class Template(object):
         )
         return response
 
+    def estimate_cost(self):
+        """
+        Estimates a stack's cost.
+
+        :returns: An estimate of the stack's cost.
+        :rtype: dict
+        :raises: botocore.exceptions.ClientError
+        """
+        self.logger.debug("%s - Estimating template cost", self.name)
+        response = self.connection_manager.call(
+            service="cloudformation",
+            command="estimate_template_cost",
+            kwargs=self.get_boto_call_parameter()
+        )
+        self.logger.debug(
+            "%s - Estimate stack cost response: %s", self.name, response
+        )
+        return response
+
     @staticmethod
     def _render_jinja_template(template_dir, filename, jinja_vars):
         """

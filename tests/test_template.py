@@ -183,6 +183,22 @@ class TestTemplate(object):
             kwargs={"Template": sentinel.template}
         )
 
+    @patch("sceptre.template.Template.get_boto_call_parameter")
+    def test_estimate_cost_sends_correct_request(
+        self, mock_get_boto_call_parameter
+    ):
+        mock_get_boto_call_parameter.return_value = {
+            "Template": sentinel.template
+        }
+        self.template.estimate_cost()
+        self.template.connection_manager.call.assert_called_with(
+            service="cloudformation",
+            command="estimate_template_cost",
+            kwargs={
+                "Template": sentinel.template,
+            }
+        )
+
     def test_body_with_json_template(self):
         self.template.name = "vpc"
         self.template.path = os.path.join(
