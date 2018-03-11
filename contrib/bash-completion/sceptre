@@ -1,0 +1,127 @@
+# bash completion for sceptre                              -*- shell-script -*-
+
+_sceptre ()
+{
+    local cur prev words cword
+    _init_completion || return
+
+    local commands command options formats
+
+    # commands we'll complete (including options)
+    all_commands="--version --debug --dir --output --no-colour --var --var-file
+	--help continue-update-rollback create-change-set
+	create-stack delete-change-set delete-env delete-stack
+	describe-change-set describe-env describe-env-resources
+	describe-stack-outputs describe-stack-resources execute-change-set
+	generate-template get-stack-policy init launch-env launch-stack
+	list-change-sets lock-stack set-stack-policy unlock-stack update-stack
+	update-stack-cs validate-template"
+
+    # commands we'll complete
+    commands="continue-update-rollback create-change-set
+	create-stack delete-change-set delete-env delete-stack
+	describe-change-set describe-env describe-env-resources
+	describe-stack-outputs describe-stack-resources execute-change-set
+	generate-template get-stack-policy init launch-env launch-stack
+	list-change-sets lock-stack set-stack-policy unlock-stack update-stack
+	update-stack-cs validate-template"
+
+
+    # retrieve possible stack values, provided that the recommended dir
+    # structure and file names are used
+    function _varfile()
+    {
+        local var_file=$(find variables/* -type f -name *.yaml -print0 \
+	                  2>/dev/null | xargs -0 -I% basename %)
+        COMPREPLY=($(compgen -W "${var_file//.yaml/}" -- ${cur}))
+    }
+
+    # retrieve possible stack values, provided that the recommended dir
+    # structure and file names are used
+    function _stack()
+    {
+        local stack=$(find config/$prev/* -type f -name *.yaml -print0 \
+	                  2>/dev/null | xargs -0 -I% basename %)
+        COMPREPLY=($(compgen -W "${stack//.yaml/}" -- ${cur}))
+    }
+
+    # retrieve possible environment values
+    function _env ()
+    {
+        local environment=$(find config/* -type d -print0 2>/dev/null |\
+		                xargs -0 -I% basename %)
+        COMPREPLY=($(compgen -W "${environment}" -- ${cur}))
+        #COMPREPLY+=("--help")
+    }
+
+    # complete main command
+    function _cmd ()
+    {
+        if ([[ ${words[1]} =~ "--var" ]] || \
+	    [[ ${words[1]} =~ "--output" ]] || \
+	    [[ ${words[1]} =~ "--dir" ]]) \
+	    && [[ $cword -eq 3 ]]; then
+            COMPREPLY=($( compgen -W "$commands" -- "$cur" ))
+        elif ([[ ${words[1]} =~ "--debug" ]] || \
+	      [[ ${words[1]} =~ "--no-colour" ]]) \
+	      && [[ $cword -eq 2 ]]; then
+            COMPREPLY=($( compgen -W "$commands" -- "$cur" ))
+	else
+            case $prev in
+                continue-update-rollback|create-change-set|create-stack|delete-change-set|delete-env|delete-stack|describe-change-set|describe-env|describe-env-resources|describe-stack-outputs|describe-stack-resources|execute-change-set|generate-template|get-stack-policy|launch-env|launch-stack|list-change-sets|lock-stack|set-stack-policy|unlock-stack|update-stack|update-stack-cs|validate-template)
+                    _env
+                    return
+	        ;;
+                --var-file)
+	        _varfile
+	            return
+                ;;
+                init)
+                    COMPREPLY=($( compgen -W 'env project' -- "$cur" ))
+                    return
+                ;;
+                --output)
+                    COMPREPLY=($( compgen -W 'json yaml' -- "$cur" ))
+	            return
+                ;;
+                --debug|--no-colour)
+                    COMPREPLY=($( compgen -W "$commands" -- "$cur" ))
+	            return
+                ;;
+                --version|--help|--dir)
+	            return
+                ;;
+            esac
+	fi
+    }
+
+    # main
+    if [[ $cword -eq 1 ]]; then
+        COMPREPLY=($( compgen -W "$all_commands" -- "$cur" ))
+    else
+	_cmd
+        if [[ ${words[1]} =~ "--var" ]] || \
+	    [[ ${words[1]} =~ "--output" ]] || \
+	    [[ ${words[1]} =~ "--dir" ]]; then
+            _cmd
+            command=${words[3]}
+	elif [[ ${words[1]} =~ "--debug" ]] || \
+	    [[ ${words[1]} =~ "--no-colour" ]]; then
+            _cmd
+            command=${words[2]}
+	else
+            command=${words[1]}
+	fi
+        if [[ "$(find config/* -type d -print0 | xargs -0 -I% basename %)" =~ "$prev" ]]; then
+            case $command in
+                continue-update-rollback|create-change-set|create-stack|delete-change-set|delete-stack|describe-change-set|describe-stack-outputs|describe-stack-resources|execute-change-set|generate-template|get-stack-policy|launch-stack|list-change-sets|lock-stack|set-stack-policy|unlock-stack|update-stack|update-stack-cs|validate-template)
+		    _stack
+		    return
+                ;;
+            esac
+        else
+            return
+        fi
+    fi
+}
+complete -F _sceptre -o default sceptre
