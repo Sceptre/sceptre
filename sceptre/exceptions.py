@@ -5,6 +5,7 @@ class SceptreException(Exception):
     """
     Base class for all Sceptre errors
     """
+    pass
 
 
 class ProjectAlreadyExistsError(SceptreException):
@@ -14,9 +15,9 @@ class ProjectAlreadyExistsError(SceptreException):
     pass
 
 
-class EnvironmentPathNotFoundError(SceptreException):
+class InvalidSceptreDirectoryError(SceptreException):
     """
-    Error raised if a directory does not exist
+    Error raised if a sceptre directory is invalid.
     """
     pass
 
@@ -115,27 +116,46 @@ class InvalidHookArgumentTypeError(SceptreException):
     """
     Error raised if a hook's argument type is invalid.
     """
+    pass
 
 
 class InvalidHookArgumentSyntaxError(SceptreException):
     """
     Error raised if a hook's argument syntax is invalid.
     """
+    pass
 
 
 class InvalidHookArgumentValueError(SceptreException):
     """
     Error raised if a hook's argument value is invalid.
     """
+    pass
 
 
 class CannotUpdateFailedStackError(SceptreException):
     """
     Error raised when a failed stack is updated.
     """
+    pass
 
 
 class StackDoesNotExistError(SceptreException):
     """
     Error raised when a stack does not exist.
     """
+    pass
+
+
+class ConfigFileNotFoundError(SceptreException):
+    """
+    Error raised when a config file does not exist.
+    """
+    pass
+
+
+class EnvironmentNotFoundError(SceptreException):
+    """
+    Error raised when a environment does not exist.
+    """
+    pass

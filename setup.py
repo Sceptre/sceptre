@@ -51,10 +51,24 @@ setup(
         "sceptre": "sceptre"
     },
     py_modules=["sceptre"],
-    entry_points="""
-        [console_scripts]
-        sceptre=sceptre.cli:cli
-    """,
+    entry_points={
+        "console_scripts": [
+            'sceptre = sceptre.cli:cli'
+        ],
+        "sceptre.hooks": [
+            "asg_scheduled_actions ="
+            "sceptre.hooks.asg_scaling_processes:ASGScalingProcesses",
+            "cmd = sceptre.hooks.cmd:Cmd"
+        ],
+        "sceptre.resolvers": [
+            "environment_variable ="
+            "sceptre.resolvers.environment_variable:EnvironmentVariable",
+            "file_contents = sceptre.resolvers.file_contents:FileContents",
+            "stack_output = sceptre.resolvers.stack_output:StackOutput",
+            "stack_output_external ="
+            "sceptre.resolvers.stack_output:StackOutputExternal"
+        ]
+    },
     data_files=[
         ("sceptre/stack_policies", [
             "sceptre/stack_policies/lock.json",

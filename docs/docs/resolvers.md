@@ -101,38 +101,6 @@ parameters:
 ```
 
 
-### project_variables
-
-<div class="alert alert-warning">
-The project_variables resolver has been deprecated, and will be removed in a later version of Sceptre. Depending on your use case, you may find <a href="{{ site.baseurl }}/docs/environment_config.html#var">User Variables</a> appropriate.
-</div>
-
-Keys through the YAML object stored at `/path/to/file.yaml` with the segments of the stack name.
-
-Syntax:
-
-```yaml
-parameters | sceptre_user_data:
-    <name>: !project_variables /path/to/file.yaml
-```
-
-For example, given the stack `dev/vpc`, and the following file (`/my_config_file.yaml`):
-
-```yaml
-dev:
-    vpc:
-        Name: my_vpc
-```
-
-The resolver will return the dictionary `{"Name": "my_vpc"}`.
-
-Example (`config/dev/vpc.yaml`):
-
-```yaml
-parameters:
-    Tag: !project_variables /my_config_file.yaml
-```
-
 ## Custom Resolvers
 
 Users can define their own resolvers which are used by Sceptre to resolve the value of a parameter before it is passed to the CloudFormation template.
@@ -143,16 +111,21 @@ Resolvers are require to implement a `resolve()` function that takes no paramete
 
 Resolvers may have access to `argument`,  `stack_config`, `environment_config` and `connection_manager` as an attribute of `self`. For example `self.stack_config`.
 
-This class should be defined in a file which is located at:
+Sceptre uses the `sceptre.resolvers` entry point to locate resolver classes. Your custom resolver can be written anywhere and is installed as Python package.
 
-```
-<sceptre_dir>/resolvers/<your resolver>.py
-```
-
-An arbitrary file name may be used as it is not checked by Sceptre.
+### Example
 
 The following python module template can be copied and used:
 
+```bash
+custom_resolver
+├── custom_resolver.py
+└── setup.py
+```
+
+The following python module template can be copied and used:
+
+#### custom_resolver.py
 
 ```python
 from sceptre.resolvers import Resolver
@@ -180,6 +153,26 @@ class CustomResolver(Resolver):
 ```
 
 The resolver name is the lower snake-case version of the class name. The argument of the resolver (`<value>`) will be available inside the resolver as `self.argument`. The resolver subclass above can be used in a stack config file with the following syntax:
+
+
+#### setup.py
+
+```python
+from setuptools import setup
+
+setup(
+    name='custom_resolver',
+    entry_points={
+        'sceptre.hooks': [
+            'custom_resolver = custom_resolver:CustomResolver',
+        ],
+    }
+)
+```
+
+Then install using `python setup.py install` or `pip install .` commands.
+
+This resolver can be used in a stack config file with the following syntax:
 
 ```yaml
 template_path: <...>

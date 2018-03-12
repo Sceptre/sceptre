@@ -2,8 +2,9 @@ from behave import *
 import os
 import imp
 import yaml
-from sceptre.environment import Environment
+
 from botocore.exceptions import ClientError
+from sceptre.config_reader import ConfigReader
 
 
 def set_template_path(context, stack_name, template_name):
@@ -27,20 +28,20 @@ def step_impl(context, stack_name, template_name):
 
 @when('the user validates the template for stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
-    env = Environment(context.sceptre_dir, environment_name)
+    config_reader = ConfigReader(context.sceptre_dir)
+    stack = config_reader.construct_stack(stack_name + ".yaml")
     try:
-        context.response = env.stacks[basename].validate_template()
+        context.response = stack.template.validate()
     except ClientError as e:
         context.error = e
 
 
 @when('the user generates the template for stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
-    env = Environment(context.sceptre_dir, environment_name)
+    config_reader = ConfigReader(context.sceptre_dir)
+    stack = config_reader.construct_stack(stack_name + ".yaml")
     try:
-        context.output = env.stacks[basename].template.body
+        context.output = stack.template.body
     except Exception as e:
         context.error = e
 

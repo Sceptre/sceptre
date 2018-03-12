@@ -39,27 +39,29 @@ def recurse_into_sub_environments(func):
     """
     @wraps(func)
     def decorated(self, *args, **kwargs):
-        if self.is_leaf:
-            return func(self, *args, **kwargs)
-        else:
-            function_name = func.__name__
-            responses = {}
-            num_environments = len(self.environments)
+        function_name = func.__name__
+        responses = {}
+        num_environments = len(self.sub_environments)
 
-            # As commands carried out by sub-environments may be blocking,
-            # execute them on separate threads.
+        # As commands carried out by sub-environments may be blocking,
+        # execute them on separate threads.
+        if num_environments:
             with ThreadPoolExecutor(max_workers=num_environments) as executor:
                 futures = [
                     executor.submit(
                         getattr(environment, function_name), *args, **kwargs
                     )
-                    for environment in self.environments.values()
+                    for environment in self.sub_environments
                 ]
                 for future in as_completed(futures):
                     response = future.result()
                     if response:
                         responses.update(response)
-            return responses
+
+        response = func(self, *args, **kwargs)
+        if response:
+            responses.update(response)
+        return responses
 
     return decorated
 
@@ -183,14 +185,12 @@ def get_subclasses(class_type, directory=None):
 def _detect_cycles(node, encountered_nodes, available_nodes, path):
     """
     Use Depth-first search to detect cycles.
+
     :returns: A dictionary containing all of the nodes encountered
     during the depth first search.
     """
     for dependency_name in node.dependencies:
-        # The keys in _load_nodes() (where the available_nodes comes from)
-        # are prefixed with environment names separated by /, which is
-        # undesirable here, so we strip them out.
-        dependency = available_nodes[dependency_name.split("/")[-1]]
+        dependency = available_nodes[dependency_name]
         status = encountered_nodes.get(dependency)
         if status == "ENCOUNTERED":
             # Reformat path to only include the cycle

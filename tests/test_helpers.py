@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import os
+import types
 
 import pytest
-from mock import sentinel
+from mock import sentinel, MagicMock
 
+from sceptre.environment import Environment
 from sceptre.helpers import get_subclasses
 from sceptre.helpers import camel_to_snake_case
 from sceptre.helpers import recurse_into_sub_environments
@@ -32,54 +34,53 @@ class TestHelpers(object):
             "StackOutputExternal"
         assert classes["stack_output"].__name__ ==  \
             "StackOutput"
-        assert classes["project_variables"].__name__ == \
-            "ProjectVariables"
-        assert len(classes) == 5
+        assert len(classes) == 4
 
     def test_camel_to_snake_case(self):
-        snake_case_string = camel_to_snake_case("Bash")
-        assert snake_case_string == "bash"
-        snake_case_string = camel_to_snake_case("ASGScheduledActions")
-        assert snake_case_string == "asg_scheduled_actions"
+        snake_case_string = camel_to_snake_case("Cmd")
+        assert snake_case_string == "cmd"
+        snake_case_string = camel_to_snake_case("ASGScalingProcesses")
+        assert snake_case_string == "asg_scaling_processes"
 
-    def test_recurse_into_sub_environments_with_leaf_object(self):
-        class MockEnv(object):
+    def test_recurse_into_sub_environments(self):
+        environment = MagicMock(spec=Environment)
+        environment.name = "environment"
+        environment.sub_environments = []
 
-            def __init__(self, name, is_leaf):
-                self.name = name
-                self.is_leaf = is_leaf
+        def do(self):
+            return {self.name: sentinel.response}
 
-            @recurse_into_sub_environments
-            def do(self):
-                return {self.name: sentinel.response}
+        environment.do = types.MethodType(
+            recurse_into_sub_environments(do),
+            environment
+        )
 
-        mock_env = MockEnv("mock_stack", True)
-        response = mock_env.do()
-        assert response == {"mock_stack": sentinel.response}
+        response = environment.do()
+        assert response == {"environment": sentinel.response}
 
     def test_recurse_into_sub_environments_with_non_leaf_object(self):
         class MockEnv(object):
 
-            def __init__(self, name, is_leaf):
+            def __init__(self, name):
                 self.name = name
-                self.is_leaf = is_leaf
+                self.sub_environments = []
 
             @recurse_into_sub_environments
             def do(self):
                 return {self.name: sentinel.response}
 
-        mock_env = MockEnv("non-leaf-stack", False)
+        mock_env = MockEnv("environment_1")
 
         # Add leaf sub-environments
-        mock_env.environments = {
-            "mock-env-1": MockEnv("leaf-stack-1", True),
-            "mock-env-2": MockEnv("leaf-stack-2", True)
-        }
+        mock_env.sub_environments = [
+            MockEnv("environment_2"), MockEnv("environment_3")
+        ]
 
         response = mock_env.do()
         assert response == {
-            "leaf-stack-1": sentinel.response,
-            "leaf-stack-2": sentinel.response
+            "environment_1": sentinel.response,
+            "environment_2": sentinel.response,
+            "environment_3": sentinel.response
         }
 
     def test_get_name_tuple(self):

@@ -1,38 +1,23 @@
 # -*- coding: utf-8 -*-
 
-import os
 import pytest
-from mock import patch, sentinel, MagicMock, Mock, PropertyMock
+from mock import patch, sentinel, Mock, MagicMock
 
 from botocore.exceptions import ClientError
 
 from sceptre.exceptions import CircularDependenciesError
 from sceptre.exceptions import StackDoesNotExistError
-from sceptre.exceptions import InvalidEnvironmentPathError
 
 from sceptre.environment import Environment
-from sceptre.stack_status import StackStatus
 from sceptre.stack import Stack
+from sceptre.stack_status import StackStatus
 
 
 class TestEnvironment(object):
 
-    @patch("sceptre.environment.Environment._load_stacks")
-    @patch(
-        "sceptre.environment.Environment.is_leaf", new_callable=PropertyMock
-    )
-    @patch("sceptre.environment.Environment._validate_path")
-    def setup_method(
-            self, test_method, mock_validate_path,
-            mock_is_leaf, mock_load_stacks
-    ):
-        mock_is_leaf.return_value = True
-        mock_load_stacks.return_value = sentinel.stacks
-        mock_validate_path.return_value = "environment_path"
-
+    def setup_method(self, test_method):
         self.environment = Environment(
-            sceptre_dir="sceptre_dir",
-            environment_path="environment_path",
+            path="path",
             options=sentinel.options
         )
 
@@ -40,31 +25,17 @@ class TestEnvironment(object):
         self.environment._is_leaf = True
 
     def test_initialise_environment(self):
-        assert self.environment.sceptre_dir == "sceptre_dir"
-        assert self.environment.path == "environment_path"
+        assert self.environment.path == "path"
         assert self.environment._options == sentinel.options
-        assert self.environment.is_leaf is True
-        assert self.environment.stacks == sentinel.stacks
+        assert self.environment.stacks == []
+        assert self.environment.sub_environments == []
 
-    @patch("sceptre.environment.Environment._load_environments")
-    @patch(
-        "sceptre.environment.Environment.is_leaf", new_callable=PropertyMock
-    )
-    @patch("sceptre.environment.Environment._validate_path")
-    def test_initialise_environment_with_non_leaf_directory(
-            self, mock_validate_path,
-            mock_is_leaf, mock_load_environments
-    ):
-        mock_is_leaf.return_value = False
-        mock_load_environments.return_value = sentinel.environments
-
-        environment = Environment(
-            sceptre_dir="sceptre_dir",
-            environment_path="environment_path",
-            options=sentinel.options
-        )
-
-        assert environment.environments == sentinel.environments
+    def test_initialise_environment_with_no_options(self):
+        environment = Environment(path="path")
+        assert environment.path == "path"
+        assert environment._options == {}
+        assert environment.stacks == []
+        assert environment.sub_environments == []
 
     def test_repr(self):
         self.environment.path = "path"
@@ -72,65 +43,8 @@ class TestEnvironment(object):
         self.environment._options = {}
         response = self.environment.__repr__()
         assert response == (
-            "sceptre.environment.Environment(sceptre_dir='sceptre_dir', "
-            "environment_path='path', options={})"
+            "sceptre.environment.Environment(path='path', options='{}')"
         )
-
-    def test_validate_path_with_valid_path(self):
-        path = self.environment._validate_path("valid/env/path")
-        assert path == "valid/env/path"
-
-    def test_validate_path_with_backslashes_in_path(self):
-        path = self.environment._validate_path("valid\env\path")
-        assert path == "valid/env/path"
-
-    def test_validate_path_with_double_backslashes_in_path(self):
-        path = self.environment._validate_path("valid\\env\\path")
-        assert path == "valid/env/path"
-
-    def test_validate_path_with_leading_slash(self):
-        with pytest.raises(InvalidEnvironmentPathError):
-            self.environment._validate_path(
-                "/this/environment/path/is/invalid"
-            )
-
-    def test_validate_path_with_leading_backslash(self):
-        with pytest.raises(InvalidEnvironmentPathError):
-            self.environment._validate_path(
-                "\\this\environment\path\is\invalid"
-            )
-
-    def test_validate_path_with_trailing_slash(self):
-        with pytest.raises(InvalidEnvironmentPathError):
-            self.environment._validate_path(
-                "this/environment/path/is/invalid/"
-            )
-
-    def test_validate_path_with_trailing_backslash(self):
-        with pytest.raises(InvalidEnvironmentPathError):
-            self.environment._validate_path(
-                "this\environment\path\is\invalid\\"
-            )
-
-    def test_is_leaf_with_leaf_dir(self):
-        self.environment.sceptre_dir = os.path.join(
-            os.getcwd(), "tests", "fixtures"
-        )
-        self.environment.path = os.path.join(
-            "account", "environment", "region"
-        )
-        self.environment._is_leaf = None
-        assert self.environment.is_leaf is True
-
-    def test_is_leaf_with_non_leaf_dir(self):
-        self.environment.sceptre_dir = os.path.join(
-            os.getcwd(), "tests", "fixtures"
-        )
-        self.environment.path = os.path.join(
-            "account", "environment"
-        )
-        self.environment._is_leaf = None
-        assert self.environment.is_leaf is False
 
     @patch("sceptre.environment.Environment._build")
     @patch("sceptre.environment.Environment._check_for_circular_dependencies")
@@ -189,26 +103,26 @@ class TestEnvironment(object):
         assert response == {}
 
     def test_describe_with_running_stack(self):
-        mock_stack = Mock()
+        mock_stack = MagicMock(spec=Stack)
         mock_stack.name = "stack"
         mock_stack.get_status.return_value = "status"
-        self.environment.stacks = {"name": mock_stack}
+        self.environment.stacks = [mock_stack]
 
         response = self.environment.describe()
         assert response == {"stack": "status"}
 
     def test_describe_with_missing_stack(self):
-        mock_stack = Mock()
+        mock_stack = MagicMock(spec=Stack)
         mock_stack.name = "stack"
-        mock_stack.get_status.side_effect = StackDoesNotExistError
-        self.environment.stacks = {"stack": mock_stack}
+        mock_stack.get_status.side_effect = StackDoesNotExistError()
+        self.environment.stacks = [mock_stack]
 
         response = self.environment.describe()
         assert response == {"stack": "PENDING"}
 
     def test_describe_resources_forms_response(self):
-        mock_stack = Mock()
-        mock_stack.name = "stack-name"
+        mock_stack = MagicMock(spec=Stack)
+        mock_stack.name = "stack"
         mock_stack.describe_resources.return_value = [
             {
                 "LogicalResourceId": sentinel.logical_resource_id,
@@ -216,10 +130,10 @@ class TestEnvironment(object):
             }
         ]
 
-        self.environment.stacks = {"stack-name": mock_stack}
+        self.environment.stacks = [mock_stack]
         response = self.environment.describe_resources()
         assert response == {
-            "stack-name": [
+            "stack": [
                 {
                     "LogicalResourceId": sentinel.logical_resource_id,
                     "PhysicalResourceId": sentinel.physical_resource_id
@@ -228,8 +142,8 @@ class TestEnvironment(object):
         }
 
     def test_describe_resources_ignores_stack_does_not_exist_exception(self):
-        mock_stack = Mock()
-        mock_stack.full_stack_name = sentinel.full_stack_name
+        mock_stack = MagicMock(spec=Stack)
+        mock_stack.name = "stack"
         mock_stack.describe_resources.side_effect = ClientError(
             {
                 "Error": {
@@ -240,13 +154,13 @@ class TestEnvironment(object):
             sentinel.operation
         )
 
-        self.environment.stacks = {"name": mock_stack}
+        self.environment.stacks = [mock_stack]
         response = self.environment.describe_resources()
         assert response == {}
 
     def test_describe_resources_raises_other_client_errors(self):
-        mock_stack = Mock()
-        mock_stack.full_stack_name = sentinel.full_stack_name
+        mock_stack = MagicMock(spec=Stack)
+        mock_stack.name = "stack"
         mock_stack.describe_resources.side_effect = ClientError(
             {
                 "Error": {
@@ -257,7 +171,7 @@ class TestEnvironment(object):
             sentinel.operation
         )
 
-        self.environment.stacks = {"mock_stack": mock_stack}
+        self.environment.stacks = [mock_stack]
         with pytest.raises(ClientError):
             self.environment.describe_resources()
 
@@ -342,39 +256,40 @@ class TestEnvironment(object):
 
     @patch("sceptre.environment.threading.Event")
     def test_get_threading_events(self, mock_Event):
-        mock_stack = Mock()
-        mock_stack.name = "name"
+        mock_stack = MagicMock(spec=Stack)
+        mock_stack.name = "stack"
 
-        self.environment.stacks = {"mock_stack": mock_stack}
+        self.environment.stacks = [mock_stack]
 
         mock_Event.return_value = sentinel.event
 
         response = self.environment._get_threading_events()
         assert response == {
-            "name": sentinel.event
+            "stack": sentinel.event
         }
 
     def test_get_initial_statuses(self):
-        mock_stack = Mock()
-        mock_stack.name = "name"
+        mock_stack = MagicMock(spec=Stack)
+        mock_stack.name = "stack"
 
-        self.environment.stacks = {"name": mock_stack}
+        self.environment.stacks = [mock_stack]
 
         response = self.environment._get_initial_statuses()
         assert response == {
-            "name": StackStatus.PENDING
+            "stack": StackStatus.PENDING
         }
 
     def test_get_launch_dependencies(self):
-        mock_stack = Mock()
+        mock_stack = MagicMock(spec=Stack)
         mock_stack.name = "dev/mock_stack"
+
         mock_stack.dependencies = [
             "dev/vpc",
             "dev/subnets",
             "prod/sg"
         ]
 
-        self.environment.stacks = {"mock_stack": mock_stack}
+        self.environment.stacks = [mock_stack]
 
         response = self.environment._get_launch_dependencies("dev")
 
@@ -406,10 +321,7 @@ class TestEnvironment(object):
         stack1.name = "stack1"
         stack2.dependencies = ["stack1"]
         stack2.name = "stack2"
-        stacks = {
-            "stack1": stack1,
-            "stack2": stack2
-        }
+        stacks = [stack1, stack2]
         self.environment.stacks = stacks
         with pytest.raises(CircularDependenciesError) as ex:
             self.environment._check_for_circular_dependencies()
@@ -425,11 +337,7 @@ class TestEnvironment(object):
         stack2.name = "stack2"
         stack3.dependencies = ["stack1"]
         stack3.name = "stack3"
-        stacks = {
-            "stack1": stack1,
-            "stack2": stack2,
-            "stack3": stack3
-        }
+        stacks = [stack1, stack2, stack3]
         self.environment.stacks = stacks
         with pytest.raises(CircularDependenciesError) as ex:
             self.environment._check_for_circular_dependencies()
@@ -442,10 +350,21 @@ class TestEnvironment(object):
         stack1.name = "stack1"
         stack2.dependencies = []
         stack2.name = "stack2"
-        stacks = {
-            "stack1": stack1,
-            "stack2": stack2
-        }
+        stacks = [stack1, stack2]
+
+        self.environment.stacks = stacks
+        # Check this runs without throwing an exception
+        self.environment._check_for_circular_dependencies()
+
+    def test_no_circular_dependencies_with_nested_stacks(self):
+        stack1 = MagicMock(Spec=Stack)
+        stack2 = MagicMock(Spec=Stack)
+        stack1.dependencies = ["env1/stack2"]
+        stack1.name = "stack1"
+        stack2.dependencies = []
+        stack2.name = "env1/stack2"
+        stacks = [stack1, stack2]
+
         self.environment.stacks = stacks
         # Check this runs without throwing an exception
         self.environment._check_for_circular_dependencies()
@@ -472,12 +391,8 @@ class TestEnvironment(object):
         stack3.name = "stack3"
         stack4.dependencies = []
         stack4.name = "stack4"
-        stacks = {
-            "stack1": stack1,
-            "stack2": stack2,
-            "stack3": stack3,
-            "stack4": stack4
-        }
+        stacks = [stack1, stack2, stack3, stack4]
+
         self.environment.stacks = stacks
         self.environment._check_for_circular_dependencies()
 
@@ -506,13 +421,8 @@ class TestEnvironment(object):
         stack4.name = "stack4"
         stack5.dependencies = []
         stack5.name = "stack5"
-        stacks = {
-            "stack1": stack1,
-            "stack2": stack2,
-            "stack3": stack3,
-            "stack4": stack4,
-            "stack5": stack5
-        }
+        stacks = [stack1, stack2, stack3, stack4, stack5]
+
         self.environment.stacks = stacks
         self.environment._check_for_circular_dependencies()
 
@@ -541,13 +451,8 @@ class TestEnvironment(object):
         stack4.name = "stack4"
         stack5.dependencies = []
         stack5.name = "stack5"
-        stacks = {
-            "stack1": stack1,
-            "stack2": stack2,
-            "stack3": stack3,
-            "stack4": stack4,
-            "stack5": stack5
-        }
+        stacks = [stack1, stack2, stack3, stack4, stack5]
+
         self.environment.stacks = stacks
         self.environment._check_for_circular_dependencies()
 
@@ -571,12 +476,8 @@ class TestEnvironment(object):
         stack3.name = "stack3"
         stack4.dependencies = ["stack3"]
         stack4.name = "stack4"
-        stacks = {
-            "stack1": stack1,
-            "stack2": stack2,
-            "stack3": stack3,
-            "stack4": stack4
-        }
+        stacks = [stack1, stack2, stack3, stack4]
+
         self.environment.stacks = stacks
         with pytest.raises(CircularDependenciesError) as ex:
             self.environment._check_for_circular_dependencies()
@@ -604,104 +505,10 @@ class TestEnvironment(object):
         stack3.name = "stack3"
         stack4.dependencies = ["stack2"]
         stack4.name = "stack4"
-        stacks = {
-            "stack1": stack1,
-            "stack2": stack2,
-            "stack3": stack3,
-            "stack4": stack4
-        }
+        stacks = [stack1, stack2, stack3, stack4]
+
         self.environment.stacks = stacks
         with pytest.raises(CircularDependenciesError) as ex:
             self.environment._check_for_circular_dependencies()
         assert (all(x in str(ex) for x in ['stack4', 'stack3', 'stack2']) and
                 'stack1' not in str(ex))
-
-    @patch("sceptre.environment.Config")
-    def test_get_config(self, mock_Config):
-        mock_Config.return_value.read.return_value = {}
-
-        self.environment.sceptre_dir = "sceptre_dir"
-        self.environment.path = "environment_path"
-        self.environment._options = {
-            "cli_option": "value",
-            "user_variables": sentinel.user_variables
-        }
-
-        self.environment._get_config()
-        mock_Config.assert_called_once_with(
-            sceptre_dir="sceptre_dir",
-            environment_path="environment_path",
-            base_file_name="config"
-        )
-        mock_Config.return_value.read.assert_called_once_with(
-            sentinel.user_variables
-        )
-
-    def test_get_available_stacks(self):
-        self.environment.path = os.path.join(
-            "account", "environment", "region"
-        )
-        self.environment.sceptre_dir = os.path.join(
-            os.getcwd(), "tests", "fixtures"
-        )
-        response = self.environment._get_available_stacks()
-        assert sorted(response) == sorted([
-            "account/environment/region/vpc",
-            "account/environment/region/subnets",
-            "account/environment/region/security_groups"
-        ])
-
-    @patch("sceptre.environment.Stack")
-    @patch("sceptre.environment.Environment._get_available_stacks")
-    @patch("sceptre.environment.ConnectionManager")
-    @patch("sceptre.environment.Environment._get_config")
-    def test_load_stacks(
-            self, mock_get_config, mock_ConnectionManager,
-            mock_get_available_stacks, mock_Stack
-    ):
-        mock_config = {
-            "region": sentinel.region,
-            "iam_role": sentinel.iam_role,
-            "profile": sentinel.profile
-        }
-        mock_get_config.return_value = mock_config
-        mock_ConnectionManager.return_value = sentinel.connection_manager
-        mock_get_available_stacks.return_value = ["stack_name"]
-        mock_Stack.return_value = sentinel.stack
-
-        response = self.environment._load_stacks()
-
-        # Check ConnectionManager() is called with correct arguments
-        mock_ConnectionManager.assert_called_once_with(
-            region=sentinel.region,
-            iam_role=sentinel.iam_role,
-            profile=sentinel.profile
-        )
-
-        # Check Stack() is called with correct arguments
-        mock_Stack.assert_called_once_with(
-            name="stack_name",
-            environment_config=mock_config,
-            connection_manager=sentinel.connection_manager
-        )
-        # Check _load_stacks() returns list of stacks
-        assert response == {'stack_name': sentinel.stack}
-
-    def test_get_available_environments(self):
-        self.environment.path = "account"
-        self.environment.sceptre_dir = os.path.join(
-            os.getcwd(), "tests", "fixtures"
-        )
-        response = self.environment._get_available_environments()
-        assert response == ["account/environment"]
-
-    @patch("sceptre.environment.Environment")
-    @patch("sceptre.environment.Environment._get_available_environments")
-    def test_load_environments(
-            self, mock_get_available_environments, mock_Environment
-    ):
-        mock_get_available_environments.return_value = ["env"]
-        mock_Environment.return_value = sentinel.environment
-
-        response = self.environment._load_environments()
-        assert response == {"env": sentinel.environment}

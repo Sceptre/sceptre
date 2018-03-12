@@ -1,3 +1,0 @@
-iam_role: arn:aws:iam::458947373260:role/SceptreIntegrationTestsRole
-region: eu-west-1
-template_bucket_name: sceptre-integration-tests-templates

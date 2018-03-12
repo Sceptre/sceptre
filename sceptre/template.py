@@ -7,7 +7,6 @@ This module implements a Template class, which stores a CloudFormation template
 and implements methods for uploading it to S3.
 """
 
-from datetime import datetime
 import imp
 import logging
 import os
@@ -35,19 +34,24 @@ class Template(object):
 
     _boto_s3_lock = threading.Lock()
 
-    def __init__(self, path, sceptre_user_data):
+    def __init__(
+        self, path, sceptre_user_data, connection_manager=None, s3_details=None
+    ):
         self.logger = logging.getLogger(__name__)
 
         self.path = path
         self.sceptre_user_data = sceptre_user_data
+        self.connection_manager = connection_manager
+        self.s3_details = s3_details
+
         self.name = os.path.basename(path).split(".")[0]
         self._body = None
 
     def __repr__(self):
         return (
             "sceptre.template.Template(name='{0}', path='{1}', "
-            "sceptre_user_data={2})".format(
-                self.name, self.path, self.sceptre_user_data
+            "sceptre_user_data={2}, s3_details={3})".format(
+                self.name, self.path, self.sceptre_user_data, self.s3_details
             )
         )
 
@@ -127,30 +131,12 @@ class Template(object):
             sys.path.remove(os.path.join(os.getcwd(), directory))
         return body
 
-    def upload_to_s3(
-            self, region, bucket_name, key_prefix, environment_path,
-            stack_name, connection_manager
-    ):
+    def upload_to_s3(self):
         """
         Uploads the template to ``bucket_name`` and returns its URL.
 
-        The template is uploaded with the key
-        ``<key_prefix>/<region>/<environment_path>/<stack_name>-<timestamp>.template``.
+        The template is uploaded with the ``bucket_key``.
 
-        :param region: The AWS region to create the bucket in.
-        :type region: str
-        :param bucket_name: The name of the bucket to create.
-        :type bucket_name: str
-        :param key_prefix: A string to prefix to the key used to store the
-            template in S3.
-        :type key_prefix: str
-        :param environment_path: The environment that the stack belongs to.
-        :type env_path: str
-        :param stack_name: The name of the stack that this template creates.
-        :type stack_name: str
-        :param connection_manager: The connection manager used to make
-            AWS calls.
-        :type connection_manager: sceptre.connection_manager.ConnectionManager
         :returns: The URL of the template object in S3.
         :rtype: str
         :raises: botocore.exceptions.ClientError
@@ -159,65 +145,52 @@ class Template(object):
         self.logger.debug("%s - Uploading template to S3...", self.name)
 
         with self._boto_s3_lock:
-            if not self._bucket_exists(bucket_name, connection_manager):
-                self._create_bucket(region, bucket_name, connection_manager)
+            if not self._bucket_exists():
+                self._create_bucket()
 
         # Remove any leading or trailing slashes the user may have added.
-        key_prefix = key_prefix.strip("/")
-
-        template_key = "/".join([
-            key_prefix,
-            region,
-            environment_path,
-            "{stack_name}-{time_stamp}.template".format(
-                stack_name=stack_name,
-                time_stamp=datetime.utcnow().strftime("%Y-%m-%d-%H-%M-%S-%fZ")
-            )
-        ])
+        bucket_name = self.s3_details["bucket_name"]
+        bucket_key = self.s3_details["bucket_key"]
 
         self.logger.debug(
             "%s - Uploading template to: 's3://%s/%s'",
-            self.name, bucket_name, template_key
+            self.name, bucket_name, bucket_key
         )
-        connection_manager.call(
+        self.connection_manager.call(
             service="s3",
             command="put_object",
             kwargs={
                 "Bucket": bucket_name,
-                "Key": template_key,
+                "Key": bucket_key,
                 "Body": self.body,
                 "ServerSideEncryption": "AES256"
             }
         )
 
         url = "https://{0}.s3.amazonaws.com/{1}".format(
-            bucket_name, template_key
+            bucket_name, bucket_key
         )
 
         self.logger.debug("%s - Template URL: '%s'", self.name, url)
 
         return url
 
-    def _bucket_exists(self, bucket_name, connection_manager):
+    def _bucket_exists(self):
         """
         Checks if the bucket ``bucket_name`` exists.
 
-        :param bucket_name: The name of the bucket to check.
-        :type bucket_name: str
-        :param connection_manager: The connection manager used to make
-            AWS calls.
-        :type connection_manager: sceptre.connection_manager.ConnectionManager
         :returns: Boolean whether the bucket exists
         :rtype: bool
         :raises: botocore.exception.ClientError
 
         """
+        bucket_name = self.s3_details["bucket_name"]
         self.logger.debug(
             "%s - Attempting to find template bucket '%s'",
             self.name, bucket_name
         )
         try:
-            connection_manager.call(
+            self.connection_manager.call(
                 service="s3",
                 command="head_bucket",
                 kwargs={"Bucket": bucket_name}
@@ -235,40 +208,73 @@ class Template(object):
         )
         return True
 
-    def _create_bucket(self, region, bucket_name, connection_manager):
+    def _create_bucket(self):
         """
-        Create the bucket ``bucket_name`` in the region ``region``.
+        Create the s3 bucket ``bucket_name``.
 
-        :param region: The AWS region to create the bucket in.
-        :type region: str
-        :param bucket_name: The name of the bucket to create.
-        :type bucket_name: str
-        :param connection_manager: The connection manager used to make
-            AWS calls.
-        :type connection_manager: sceptre.connection_manager.ConnectionManager
         :raises: botocore.exception.ClientError
 
         """
+        bucket_name = self.s3_details["bucket_name"]
+
         self.logger.debug(
             "%s - Creating new bucket '%s'", self.name, bucket_name
         )
-        if region == "us-east-1":
-            connection_manager.call(
+
+        if self.connection_manager.region == "us-east-1":
+            self.connection_manager.call(
                 service="s3",
                 command="create_bucket",
                 kwargs={"Bucket": bucket_name}
             )
         else:
-            connection_manager.call(
+            self.connection_manager.call(
                 service="s3",
                 command="create_bucket",
                 kwargs={
                     "Bucket": bucket_name,
                     "CreateBucketConfiguration": {
-                        "LocationConstraint": region
+                        "LocationConstraint": self.connection_manager.region
                     }
                 }
             )
+
+    def get_boto_call_parameter(self):
+        """
+        Returns the CloudFormation template location.
+
+        Uploads the template to S3 and returns the object's URL, or returns
+        the template itself.
+
+        :returns: The boto call parameter for the template.
+        :rtype: dict
+        """
+        if self.s3_details:
+            url = self.upload_to_s3()
+            return {"TemplateURL": url}
+        else:
+            return {"TemplateBody": self.body}
+
+    def validate(self):
+        """
+        Validates the stack's CloudFormation template.
+
+        Raises an error if the template is invalid.
+
+        :returns: Information about the template.
+        :rtype: dict
+        :raises: botocore.exceptions.ClientError
+        """
+        self.logger.debug("%s - Validating template", self.name)
+        response = self.connection_manager.call(
+            service="cloudformation",
+            command="validate_template",
+            kwargs=self.get_boto_call_parameter()
+        )
+        self.logger.debug(
+            "%s - Validate template response: %s", self.name, response
+        )
+        return response
 
     @staticmethod
     def _render_jinja_template(template_dir, filename, jinja_vars):

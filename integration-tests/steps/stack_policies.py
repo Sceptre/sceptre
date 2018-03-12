@@ -3,7 +3,7 @@ import json
 import os
 
 from botocore.exceptions import ClientError
-from sceptre.environment import Environment
+from sceptre.config_reader import ConfigReader
 from helpers import get_cloudformation_stack_name, retry_boto_call
 
 
@@ -19,20 +19,20 @@ def step_impl(context, stack_name, state):
 
 @when('the user unlocks stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
-    env = Environment(context.sceptre_dir, environment_name)
+    config_reader = ConfigReader(context.sceptre_dir)
+    stack = config_reader.construct_stack(stack_name + ".yaml")
     try:
-        env.stacks[basename].unlock()
+        stack.unlock()
     except ClientError as e:
         context.error = e
 
 
 @when('the user locks stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
-    env = Environment(context.sceptre_dir, environment_name)
+    config_reader = ConfigReader(context.sceptre_dir)
+    stack = config_reader.construct_stack(stack_name + ".yaml")
     try:
-        env.stacks[basename].lock()
+        stack.lock()
     except ClientError as e:
         context.error = e
 
