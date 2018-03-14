@@ -433,6 +433,7 @@ class StackActions(object):
             "StackPolicyBody", json.dumps("No Policy Information")))
         return {self.stack.name: json_formatting}
 
+    @add_stack_hooks
     def create_change_set(self, change_set_name):
         """
         Creates a Change Set with the name ``change_set_name``.
