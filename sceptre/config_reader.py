@@ -325,6 +325,7 @@ class ConfigReader(object):
                 template_path=abs_template_path,
                 region=config["region"],
                 iam_role=config.get("iam_role"),
+                profile=config.get("profile", ""),
                 parameters=config.get("parameters", {}),
                 sceptre_user_data=config.get("sceptre_user_data", {}),
                 hooks=config.get("hooks", {}),
