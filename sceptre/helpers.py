@@ -182,7 +182,9 @@ def get_subclasses(class_type, directory=None):
     return classes
 
 
-def _detect_cycles(node, encountered_nodes, available_nodes, path):
+def _detect_cycles(
+        top_level_path, node, encountered_nodes,
+        available_nodes, path):
     """
     Use Depth-first search to detect cycles.
 
@@ -190,6 +192,10 @@ def _detect_cycles(node, encountered_nodes, available_nodes, path):
     during the depth first search.
     """
     for dependency_name in node.dependencies:
+        # if dependency not in available nodes, skip it
+        if not dependency_name.startswith(top_level_path):
+            continue  # skip
+
         dependency = available_nodes[dependency_name]
         status = encountered_nodes.get(dependency)
         if status == "ENCOUNTERED":
@@ -204,6 +210,7 @@ def _detect_cycles(node, encountered_nodes, available_nodes, path):
             encountered_nodes[dependency] = "ENCOUNTERED"
             path.append(dependency_name)
             _detect_cycles(
+                top_level_path,
                 dependency,
                 encountered_nodes,
                 available_nodes,

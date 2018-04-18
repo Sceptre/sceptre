@@ -282,12 +282,16 @@ class Environment(object):
         self.logger.debug("Checking for circular dependencies...")
 
         if self.stacks:
+            top_level_path = self.path + '/'  \
+                if self.path and self.path != '.' \
+                else ''
             encountered_stacks = {}
             available_nodes = {stack.name: stack for stack in self.stacks}
             for stack in self.stacks:
                 if encountered_stacks.get(stack, "UNENCOUNTERED") != "DONE":
                     encountered_stacks[stack] = "ENCOUNTERED"
                     encountered_stacks = _detect_cycles(
+                        top_level_path,
                         stack,
                         encountered_stacks,
                         available_nodes,
