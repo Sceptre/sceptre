@@ -19,20 +19,20 @@ def step_impl(context, stack_name, state):
 
 @when('the user unlocks stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
+    environment_name, _ = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
     try:
-        env.stacks[basename].unlock()
+        env.stacks[stack_name].unlock()
     except ClientError as e:
         context.error = e
 
 
 @when('the user locks stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
+    environment_name, _ = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
     try:
-        env.stacks[basename].lock()
+        env.stacks[stack_name].lock()
     except ClientError as e:
         context.error = e
 

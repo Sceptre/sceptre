@@ -22,7 +22,7 @@ from .exceptions import StackDoesNotExistError
 from .config import Config
 from .connection_manager import ConnectionManager
 from .exceptions import InvalidEnvironmentPathError
-from .helpers import recurse_into_sub_environments, get_name_tuple
+from .helpers import recurse_into_sub_environments
 from .helpers import _detect_cycles
 from .stack import Stack
 from .stack_status import StackStatus
@@ -338,13 +338,14 @@ class Environment(object):
         :raises: sceptre.workplan.CircularDependenciesException
         """
         self.logger.debug("Checking for circular dependencies...")
-
+        top_level_path = self.path if self.path and self.path != '.' else ''
         if self.is_leaf:
             encountered_stacks = {}
             for stack in self.stacks.values():
                 if encountered_stacks.get(stack, "UNENCOUNTERED") != "DONE":
                     encountered_stacks[stack] = "ENCOUNTERED"
                     encountered_stacks = _detect_cycles(
+                        top_level_path,
                         stack,
                         encountered_stacks,
                         self.stacks,
@@ -416,7 +417,7 @@ class Environment(object):
                 environment_config=config,
                 connection_manager=connection_manager
             )
-            stacks[get_name_tuple(stack_name)[-1]] = stack
+            stacks[stack_name] = stack
         return stacks
 
     def _get_available_environments(self):

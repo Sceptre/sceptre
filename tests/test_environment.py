@@ -402,38 +402,42 @@ class TestEnvironment(object):
     def test_check_for_circular_dependencies_with_circular_dependencies(self):
         stack1 = MagicMock(Spec=Stack)
         stack2 = MagicMock(Spec=Stack)
-        stack1.dependencies = ["stack2"]
-        stack1.name = "stack1"
-        stack2.dependencies = ["stack1"]
-        stack2.name = "stack2"
+        stack1.dependencies = ["environment_path/stack2"]
+        stack1.name = "environment_path/stack1"
+        stack2.dependencies = ["environment_path/stack1"]
+        stack2.name = "environment_path/stack2"
         stacks = {
-            "stack1": stack1,
-            "stack2": stack2
+            "environment_path/stack1": stack1,
+            "environment_path/stack2": stack2
         }
         self.environment.stacks = stacks
         with pytest.raises(CircularDependenciesError) as ex:
             self.environment._check_for_circular_dependencies()
-        assert all(x in str(ex) for x in ['stack2', 'stack1'])
+        assert all(x in str(ex) for x in ['environment_path/stack2',
+                                          'environment_path/stack1'])
 
     def test_circular_dependencies_with_3_circular_dependencies(self):
         stack1 = MagicMock(Spec=Stack)
         stack2 = MagicMock(Spec=Stack)
         stack3 = MagicMock(Spec=Stack)
-        stack1.dependencies = ["stack2"]
-        stack1.name = "stack1"
-        stack2.dependencies = ["stack3"]
-        stack2.name = "stack2"
-        stack3.dependencies = ["stack1"]
-        stack3.name = "stack3"
+        stack1.dependencies = ["environment_path/stack2"]
+        stack1.name = "environment_path/stack1"
+        stack2.dependencies = ["environment_path/stack3"]
+        stack2.name = "environment_path/stack2"
+        stack3.dependencies = ["environment_path/stack1"]
+        stack3.name = "environment_path/stack3"
         stacks = {
-            "stack1": stack1,
-            "stack2": stack2,
-            "stack3": stack3
+            "environment_path/stack1": stack1,
+            "environment_path/stack2": stack2,
+            "environment_path/stack3": stack3
         }
         self.environment.stacks = stacks
         with pytest.raises(CircularDependenciesError) as ex:
             self.environment._check_for_circular_dependencies()
-        assert all(x in str(ex) for x in ['stack3', 'stack2', 'stack1'])
+        assert all(x in str(ex) for x in ['environment_path/stack3',
+                                          'environment_path/stack2',
+                                          'environment_path/stack1'
+                                          ])
 
     def test_no_circular_dependencies_throws_no_error(self):
         stack1 = MagicMock(Spec=Stack)
@@ -443,8 +447,8 @@ class TestEnvironment(object):
         stack2.dependencies = []
         stack2.name = "stack2"
         stacks = {
-            "stack1": stack1,
-            "stack2": stack2
+            "environment_path/stack1": stack1,
+            "environment_path/stack2": stack2
         }
         self.environment.stacks = stacks
         # Check this runs without throwing an exception
@@ -464,19 +468,21 @@ class TestEnvironment(object):
         stack2 = MagicMock(Spec=Stack)
         stack3 = MagicMock(Spec=Stack)
         stack4 = MagicMock(Spec=Stack)
-        stack1.dependencies = ["stack2", "stack3"]
+        stack1.dependencies = ["environment_path/stack2",
+                               "environment_path/stack3"
+                               ]
         stack1.name = "stack1"
-        stack2.dependencies = ["stack4"]
+        stack2.dependencies = ["environment_path/stack4"]
         stack2.name = "stack2"
-        stack3.dependencies = ["stack4"]
+        stack3.dependencies = ["environment_path/stack4"]
         stack3.name = "stack3"
         stack4.dependencies = []
         stack4.name = "stack4"
         stacks = {
-            "stack1": stack1,
-            "stack2": stack2,
-            "stack3": stack3,
-            "stack4": stack4
+            "environment_path/stack1": stack1,
+            "environment_path/stack2": stack2,
+            "environment_path/stack3": stack3,
+            "environment_path/stack4": stack4
         }
         self.environment.stacks = stacks
         self.environment._check_for_circular_dependencies()
@@ -496,22 +502,26 @@ class TestEnvironment(object):
         stack3 = MagicMock(Spec=Stack)
         stack4 = MagicMock(Spec=Stack)
         stack5 = MagicMock(Spec=Stack)
-        stack1.dependencies = ["stack2", "stack3"]
+        stack1.dependencies = ["environment_path/stack2",
+                               "environment_path/stack3"
+                               ]
         stack1.name = "stack1"
-        stack2.dependencies = ["stack4"]
+        stack2.dependencies = ["environment_path/stack4"]
         stack2.name = "stack2"
-        stack3.dependencies = ["stack4", "stack5"]
+        stack3.dependencies = ["environment_path/stack4",
+                               "environment_path/stack5"
+                               ]
         stack3.name = "stack3"
         stack4.dependencies = []
         stack4.name = "stack4"
         stack5.dependencies = []
         stack5.name = "stack5"
         stacks = {
-            "stack1": stack1,
-            "stack2": stack2,
-            "stack3": stack3,
-            "stack4": stack4,
-            "stack5": stack5
+            "environment_path/stack1": stack1,
+            "environment_path/stack2": stack2,
+            "environment_path/stack3": stack3,
+            "environment_path/stack4": stack4,
+            "environment_path/stack5": stack5
         }
         self.environment.stacks = stacks
         self.environment._check_for_circular_dependencies()
@@ -531,22 +541,28 @@ class TestEnvironment(object):
         stack3 = MagicMock(Spec=Stack)
         stack4 = MagicMock(Spec=Stack)
         stack5 = MagicMock(Spec=Stack)
-        stack1.dependencies = ["stack2", "stack3"]
+        stack1.dependencies = [
+            "environment_path/stack2",
+            "environment_path/stack3"
+        ]
         stack1.name = "stack1"
-        stack2.dependencies = ["stack4"]
+        stack2.dependencies = ["environment_path/stack4"]
         stack2.name = "stack2"
-        stack3.dependencies = ["stack4", "stack5"]
+        stack3.dependencies = [
+            "environment_path/stack4",
+            "environment_path/stack5"
+        ]
         stack3.name = "stack3"
-        stack4.dependencies = ["stack5"]
+        stack4.dependencies = ["environment_path/stack5"]
         stack4.name = "stack4"
         stack5.dependencies = []
         stack5.name = "stack5"
         stacks = {
-            "stack1": stack1,
-            "stack2": stack2,
-            "stack3": stack3,
-            "stack4": stack4,
-            "stack5": stack5
+            "environment_path/stack1": stack1,
+            "environment_path/stack2": stack2,
+            "environment_path/stack3": stack3,
+            "environment_path/stack4": stack4,
+            "environment_path/stack5": stack5
         }
         self.environment.stacks = stacks
         self.environment._check_for_circular_dependencies()
@@ -563,25 +579,29 @@ class TestEnvironment(object):
         stack2 = MagicMock(Spec=Stack)
         stack3 = MagicMock(Spec=Stack)
         stack4 = MagicMock(Spec=Stack)
-        stack1.dependencies = ["stack4"]
-        stack1.name = "stack1"
-        stack2.dependencies = ["stack1"]
-        stack2.name = "stack2"
-        stack3.dependencies = ["stack2"]
-        stack3.name = "stack3"
-        stack4.dependencies = ["stack3"]
-        stack4.name = "stack4"
+        stack1.dependencies = ["environment_path/stack4"]
+        stack1.name = "environment_path/stack1"
+        stack2.dependencies = ["environment_path/stack1"]
+        stack2.name = "environment_path/stack2"
+        stack3.dependencies = ["environment_path/stack2"]
+        stack3.name = "environment_path/stack3"
+        stack4.dependencies = ["environment_path/stack3"]
+        stack4.name = "environment_path/stack4"
         stacks = {
-            "stack1": stack1,
-            "stack2": stack2,
-            "stack3": stack3,
-            "stack4": stack4
+            "environment_path/stack1": stack1,
+            "environment_path/stack2": stack2,
+            "environment_path/stack3": stack3,
+            "environment_path/stack4": stack4
         }
         self.environment.stacks = stacks
         with pytest.raises(CircularDependenciesError) as ex:
             self.environment._check_for_circular_dependencies()
-        assert all(x in str(ex) for x in ['stack4', 'stack3', 'stack2',
-                                          'stack1'])
+        assert all(x in str(ex) for x in [
+            'environment_path/stack4',
+            'environment_path/stack3',
+            'environment_path/stack2',
+            'environment_path/stack1'
+        ])
 
     def test_modified_3_cycle_throws_circ_dependencies_error(self):
         """
@@ -596,25 +616,28 @@ class TestEnvironment(object):
         stack2 = MagicMock(Spec=Stack)
         stack3 = MagicMock(Spec=Stack)
         stack4 = MagicMock(Spec=Stack)
-        stack1.dependencies = ["stack2"]
-        stack1.name = "stack1"
-        stack2.dependencies = ["stack3"]
-        stack2.name = "stack2"
-        stack3.dependencies = ["stack4"]
-        stack3.name = "stack3"
-        stack4.dependencies = ["stack2"]
-        stack4.name = "stack4"
+        stack1.dependencies = ["environment_path/stack2"]
+        stack1.name = "environment_path/stack1"
+        stack2.dependencies = ["environment_path/stack3"]
+        stack2.name = "environment_path/stack2"
+        stack3.dependencies = ["environment_path/stack4"]
+        stack3.name = "environment_path/stack3"
+        stack4.dependencies = ["environment_path/stack2"]
+        stack4.name = "environment_path/stack4"
         stacks = {
-            "stack1": stack1,
-            "stack2": stack2,
-            "stack3": stack3,
-            "stack4": stack4
+            "environment_path/stack1": stack1,
+            "environment_path/stack2": stack2,
+            "environment_path/stack3": stack3,
+            "environment_path/stack4": stack4
         }
         self.environment.stacks = stacks
         with pytest.raises(CircularDependenciesError) as ex:
             self.environment._check_for_circular_dependencies()
-        assert (all(x in str(ex) for x in ['stack4', 'stack3', 'stack2']) and
-                'stack1' not in str(ex))
+        assert (all(x in str(ex) for x in [
+            'environment_path/stack4',
+            'environment_path/stack3',
+            'environment_path/stack2'
+        ]) and 'environment_path/stack1' not in str(ex))
 
     @patch("sceptre.environment.Config")
     def test_get_config(self, mock_Config):
@@ -705,3 +728,55 @@ class TestEnvironment(object):
 
         response = self.environment._load_environments()
         assert response == {"env": sentinel.environment}
+
+    # External dependency is a dependency on a Sceptre stack that is
+    # not in the environment currently executing
+    def test_circular_dependencies_with_external_dependecies(self):
+        stack1 = MagicMock(Spec=Stack)
+        stack1.dependencies = ["path2/stack1"]
+        stack1.name = "environment_path/stack1"
+        stacks = {"stack1": stack1}
+
+        self.environment.stacks = stacks
+        # Check this runs without throwing an exception
+        self.environment._check_for_circular_dependencies()
+
+    def test__circular_dependencies_with_none_path(self):
+        stack1 = MagicMock(Spec=Stack)
+        stack2 = MagicMock(Spec=Stack)
+        stack1.dependencies = ["stack2"]
+        stack1.name = "stack1"
+        stack2.dependencies = ["stack1"]
+        stack2.name = "stack2"
+        stacks = {
+            "stack1": stack1,
+            "stack2": stack2
+        }
+        self.environment.path = None
+        self.environment.stacks = stacks
+        with pytest.raises(CircularDependenciesError) as ex:
+            self.environment._check_for_circular_dependencies()
+        assert all(x in str(ex) for x in [
+            "stack1",
+            "stack2"
+        ])
+
+    def test__circular_dependencies_with_dot_path(self):
+            stack1 = MagicMock(Spec=Stack)
+            stack2 = MagicMock(Spec=Stack)
+            stack1.dependencies = ["stack2"]
+            stack1.name = "stack1"
+            stack2.dependencies = ["stack1"]
+            stack2.name = "stack2"
+            stacks = {
+                "stack1": stack1,
+                "stack2": stack2
+            }
+            self.environment.path = '.'
+            self.environment.stacks = stacks
+            with pytest.raises(CircularDependenciesError) as ex:
+                self.environment._check_for_circular_dependencies()
+            assert all(x in str(ex) for x in [
+                "stack1",
+                "stack2"
+            ])

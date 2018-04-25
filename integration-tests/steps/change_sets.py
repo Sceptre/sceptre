@@ -49,9 +49,9 @@ def step_impl(context, stack_name):
 
 @when('the user creates change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
-    environment_name, basename = os.path.split(stack_name)
+    environment_name, _ = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
-    stack = env.stacks[basename]
+    stack = env.stacks[stack_name]
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
     try:
         stack.create_change_set(change_set_name)
@@ -66,9 +66,9 @@ def step_impl(context, change_set_name, stack_name):
 
 @when('the user deletes change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
-    environment_name, basename = os.path.split(stack_name)
+    environment_name, _ = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
-    stack = env.stacks[basename]
+    stack = env.stacks[stack_name]
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
     try:
         stack.delete_change_set(change_set_name)
@@ -82,9 +82,9 @@ def step_impl(context, change_set_name, stack_name):
 
 @when('the user lists change sets for stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
+    environment_name, _ = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
-    stack = env.stacks[basename]
+    stack = env.stacks[stack_name]
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
     try:
         response = stack.list_change_sets()
@@ -99,9 +99,9 @@ def step_impl(context, stack_name):
 
 @when('the user executes change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
-    environment_name, basename = os.path.split(stack_name)
+    environment_name, _ = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
-    stack = env.stacks[basename]
+    stack = env.stacks[stack_name]
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
     try:
         stack.execute_change_set(change_set_name)
@@ -115,9 +115,9 @@ def step_impl(context, change_set_name, stack_name):
 
 @when('the user describes change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
-    environment_name, basename = os.path.split(stack_name)
+    environment_name, _ = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
-    stack = env.stacks[basename]
+    stack = env.stacks[stack_name]
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
     try:
         response = stack.describe_change_set(change_set_name)

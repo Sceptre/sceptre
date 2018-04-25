@@ -27,20 +27,20 @@ def step_impl(context, stack_name, template_name):
 
 @when('the user validates the template for stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
+    environment_name, _ = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
     try:
-        context.response = env.stacks[basename].validate_template()
+        context.response = env.stacks[stack_name].validate_template()
     except ClientError as e:
         context.error = e
 
 
 @when('the user generates the template for stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
+    environment_name, _ = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
     try:
-        context.output = env.stacks[basename].template.body
+        context.output = env.stacks[stack_name].template.body
     except Exception as e:
         context.error = e
 

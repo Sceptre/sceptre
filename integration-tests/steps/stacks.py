@@ -61,10 +61,10 @@ def step_impl(context, stack_name, template_name):
 
 @when('the user creates stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
+    environment_name, _ = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
     try:
-        env.stacks[basename].create()
+        env.stacks[stack_name].create()
     except ClientError as e:
         if e.response['Error']['Code'] == 'AlreadyExistsException' \
           and e.response['Error']['Message'].endswith("already exists"):
@@ -75,10 +75,10 @@ def step_impl(context, stack_name):
 
 @when('the user updates stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
+    environment_name, _ = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
     try:
-        env.stacks[basename].update()
+        env.stacks[stack_name].update()
     except ClientError as e:
         message = e.response['Error']['Message']
         if e.response['Error']['Code'] == 'ValidationError' \
@@ -91,10 +91,10 @@ def step_impl(context, stack_name):
 
 @when('the user deletes stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
+    environment_name, _ = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
     try:
-        env.stacks[basename].delete()
+        env.stacks[stack_name].delete()
     except ClientError as e:
         if e.response['Error']['Code'] == 'ValidationError' \
           and e.response['Error']['Message'].endswith("does not exist"):
@@ -105,20 +105,20 @@ def step_impl(context, stack_name):
 
 @when('the user launches stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
+    environment_name, _ = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
     try:
-        env.stacks[basename].launch()
+        env.stacks[stack_name].launch()
     except Exception as e:
         context.error = e
 
 
 @when('the user describes the resources of stack "{stack_name}"')
 def step_impl(context, stack_name):
-    environment_name, basename = os.path.split(stack_name)
+    environment_name, _ = os.path.split(stack_name)
     env = Environment(context.sceptre_dir, environment_name)
 
-    context.output = env.stacks[basename].describe_resources()
+    context.output = env.stacks[stack_name].describe_resources()
 
 
 @then('stack "{stack_name}" exists in "{desired_status}" state')

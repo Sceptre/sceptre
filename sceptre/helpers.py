@@ -180,17 +180,25 @@ def get_subclasses(class_type, directory=None):
     return classes
 
 
-def _detect_cycles(node, encountered_nodes, available_nodes, path):
+def _detect_cycles(
+        top_level_path,
+        node,
+        encountered_nodes,
+        available_nodes,
+        path):
     """
     Use Depth-first search to detect cycles.
     :returns: A dictionary containing all of the nodes encountered
     during the depth first search.
     """
     for dependency_name in node.dependencies:
-        # The keys in _load_nodes() (where the available_nodes comes from)
-        # are prefixed with environment names separated by /, which is
-        # undesirable here, so we strip them out.
-        dependency = available_nodes[dependency_name.split("/")[-1]]
+        # Here we check if the dependency node belongs
+        # to the same environment as the current node
+        # If not, we do not consider it for the
+        # circular dependency check
+        if not dependency_name.startswith(top_level_path):
+            continue
+        dependency = available_nodes[dependency_name]
         status = encountered_nodes.get(dependency)
         if status == "ENCOUNTERED":
             # Reformat path to only include the cycle
@@ -204,6 +212,7 @@ def _detect_cycles(node, encountered_nodes, available_nodes, path):
             encountered_nodes[dependency] = "ENCOUNTERED"
             path.append(dependency_name)
             _detect_cycles(
+                top_level_path,
                 dependency,
                 encountered_nodes,
                 available_nodes,
