@@ -106,7 +106,7 @@ jobs:
               make docs-latest
               aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/latest/ --delete
             elif [[ "${CIRCLE_BRANCH}" == "master" ]]; then
-              make docs-dev
+              make docs-build-dev
               aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/dev/ --delete
             fi
   deploy-pypi:
