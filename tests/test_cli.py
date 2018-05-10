@@ -713,6 +713,88 @@ class TestCli(object):
 
         self.patcher_getcwd.start()
 
+    def test_init_template(self):
+        self.patcher_getcwd.stop()
+        with self.runner.isolated_filesystem():
+            sceptre_dir = os.path.abspath('./example')
+            config_dir = os.path.join(sceptre_dir, "config")
+            template_dir = os.path.join(sceptre_dir, "templates")
+
+            os.mkdir(sceptre_dir)
+            os.mkdir(config_dir)
+            os.mkdir(template_dir)
+            os.chdir(sceptre_dir)
+
+            template_name = "mytemplate.yaml"
+            result = self.runner.invoke(cli, ["init", "template", template_name])
+            assert os.path.isfile(os.path.join(template_dir, template_name))
+
+        self.patcher_getcwd.start()
+
+    def test_init_template_already_exists(self):
+        self.patcher_getcwd.stop()
+        with self.runner.isolated_filesystem():
+            sceptre_dir = os.path.abspath('./example')
+            config_dir = os.path.join(sceptre_dir, "config")
+            template_dir = os.path.join(sceptre_dir, "templates")
+
+            os.mkdir(sceptre_dir)
+            os.mkdir(config_dir)
+            os.mkdir(template_dir)
+            os.chdir(sceptre_dir)
+
+            template_name = "mytemplate.yaml"
+            result = self.runner.invoke(cli, ["init", "template", template_name])
+            assert os.path.isfile(os.path.join(template_dir, template_name))
+
+            result = self.runner.invoke(cli, ["init", "template", template_name])
+            assert result.output == 'Template \"{0}\" already exists.\n'.format(template_name)
+
+        self.patcher_getcwd.start()
+
+    def test_init_template_with_env_config(self):
+        self.patcher_getcwd.stop()
+        with self.runner.isolated_filesystem():
+            sceptre_dir = os.path.abspath('./example')
+            config_dir = os.path.join(sceptre_dir, "config")
+            template_dir = os.path.join(sceptre_dir, "templates")
+
+            os.mkdir(sceptre_dir)
+            os.mkdir(config_dir)
+            os.mkdir(template_dir)
+            os.chdir(sceptre_dir)
+
+            env_name = 'testenv'
+            self.runner.invoke(cli, ["init", "env", env_name], input="y\n\n\n")
+
+            template_name = "mytemplate.yaml"
+            result = self.runner.invoke(cli, ["init", "template", template_name, "--env", env_name])
+            assert result.output == 'Created template: "{0}"\nCreated config file in environment "{1}" for "{0}"\n'.format(template_name, env_name)
+
+            env_dir = os.path.join(config_dir, env_name)
+            assert os.path.isfile(os.path.join(env_dir, template_name))
+
+        self.patcher_getcwd.start()
+
+    def test_init_template_with_missing_env(self):
+        self.patcher_getcwd.stop()
+        with self.runner.isolated_filesystem():
+            sceptre_dir = os.path.abspath('./example')
+            config_dir = os.path.join(sceptre_dir, "config")
+            template_dir = os.path.join(sceptre_dir, "templates")
+
+            os.mkdir(sceptre_dir)
+            os.mkdir(config_dir)
+            os.mkdir(template_dir)
+            os.chdir(sceptre_dir)
+
+            env_name = 'testenv'
+            template_name = "mytemplate.yaml"
+            result = self.runner.invoke(cli, ["init", "template", template_name, "--env", env_name])
+            assert result.output == 'Created template: "{0}"\nEnvironment "{1}" does not exist.\n'.format(template_name, env_name)
+
+        self.patcher_getcwd.start()
+
     def test_setup_logging_with_debug(self):
         logger = setup_logging(True, False)
         assert logger.getEffectiveLevel() == logging.DEBUG
