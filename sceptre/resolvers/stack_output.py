@@ -45,7 +45,11 @@ class StackOutputBase(Resolver):
             )
             exit(1)
         except StackDoesNotHaveOutputsError:
-            self.logger.error("Unable to retrieve Output '{o}'. The Stack '{s}'' does not have any outputs.".format(o=output_key, s=stack_name))
+            self.logger.error(
+                "The Stack '{s}'' does not have any outputs.".format(
+                    s=stack_name
+                )
+            )
             exit(1)
 
     def _get_stack_outputs(self, stack_name):

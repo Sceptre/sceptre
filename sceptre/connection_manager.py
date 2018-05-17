@@ -202,7 +202,9 @@ class ConnectionManager(object):
                     self.clients[service] = self.boto_session.client(service)
                 return self.clients[service]
             except BotoSessionNotConfigured:
-                self.logger.error("Boto Session failed to create. Please check your environment configuration")
+                self.logger.error(
+                    "Boto Session failed to create. Please check your environment configuration"
+                )
                 exit(1)
 
     def _clear_session_cache_if_expired(self):
