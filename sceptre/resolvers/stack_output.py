@@ -8,6 +8,7 @@ from botocore.exceptions import ClientError
 from sceptre.resolvers import Resolver
 from sceptre.exceptions import DependencyStackMissingOutputError
 from sceptre.exceptions import StackDoesNotExistError
+from sceptre.exceptions import StackDoesNotHaveOutputsError
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -32,9 +33,9 @@ class StackOutputBase(Resolver):
         :rtype: str
         :raises: sceptre.exceptions.DependencyStackMissingOutputError
         """
-        outputs = self._get_stack_outputs(stack_name)
-
         try:
+            outputs = self._get_stack_outputs(stack_name)
+
             return outputs[output_key]
         except KeyError:
             raise DependencyStackMissingOutputError(
@@ -42,6 +43,10 @@ class StackOutputBase(Resolver):
                     stack_name, output_key
                 )
             )
+            exit(1)
+        except StackDoesNotHaveOutputsError:
+            self.logger.error("Unable to retrieve Output '{o}'. The Stack '{s}'' does not have any outputs.".format(o=output_key, s=stack_name))
+            exit(1)
 
     def _get_stack_outputs(self, stack_name):
         """
@@ -69,16 +74,19 @@ class StackOutputBase(Resolver):
             else:
                 raise e
         else:
-            outputs = response["Stacks"][0]["Outputs"]
+            outputs = response["Stacks"][0].get("Outputs", None)
 
-        self.logger.debug("Outputs: {0}".format(outputs))
+        if outputs:
+            self.logger.debug("Outputs: {0}".format(outputs))
 
-        formatted_outputs = dict(
-            (output["OutputKey"], output["OutputValue"])
-            for output in outputs
-        )
+            formatted_outputs = dict(
+                (output["OutputKey"], output["OutputValue"])
+                for output in outputs
+            )
 
-        return formatted_outputs
+            return formatted_outputs
+        else:
+            raise StackDoesNotHaveOutputsError
 
 
 class StackOutput(StackOutputBase):
