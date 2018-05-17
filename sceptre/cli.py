@@ -26,7 +26,7 @@ from jinja2.exceptions import TemplateError
 
 from .config import ENVIRONMENT_CONFIG_ATTRIBUTES
 from .environment import Environment
-from .exceptions import SceptreException, ProjectAlreadyExistsError, StackDoesNotExistError, StackConfigurationDoesNotExistError
+from .exceptions import SceptreException, ProjectAlreadyExistsError, StackConfigurationDoesNotExistError
 from .stack_status import StackStatus, StackChangeSetStatus
 from .stack_status_colourer import StackStatusColourer
 from . import __version__
@@ -298,6 +298,7 @@ def update_stack(ctx, environment, stack):
         write("Could not find a stack configuration with the name {s}".format(s=stack))
         exit(1)
 
+
 @cli.command(name="launch-stack")
 @stack_options
 @click.pass_context
@@ -316,7 +317,7 @@ def launch_stack(ctx, environment, stack):
         response = env.stacks[stack].launch()
         if response != StackStatus.COMPLETE:
             exit(1)
-    except StackConfigurationDoesNotExistError as e:
+    except StackConfigurationDoesNotExistError:
         write("Could not find a stack configuration with the name {s}".format(s=stack))
         exit(1)
 
