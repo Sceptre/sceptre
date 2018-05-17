@@ -139,3 +139,25 @@ class StackDoesNotExistError(SceptreException):
     """
     Error raised when a stack does not exist.
     """
+    pass
+
+
+class StackConfigurationDoesNotExistError(SceptreException):
+    """
+    Error raised when a stack configuration does not exist.
+    """
+    pass
+
+
+class BotoSessionNotConfigured(SceptreException):
+    """
+    Error raised when ConnectionManager can't create a session.
+    """
+    pass
+
+
+class StackDoesNotHaveOutputsError(SceptreException):
+    """
+    Error raised when Stack Outputs do not exist can't create a session.
+    """
+    pass

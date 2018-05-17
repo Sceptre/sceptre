@@ -26,7 +26,7 @@ from jinja2.exceptions import TemplateError
 
 from .config import ENVIRONMENT_CONFIG_ATTRIBUTES
 from .environment import Environment
-from .exceptions import SceptreException, ProjectAlreadyExistsError
+from .exceptions import SceptreException, ProjectAlreadyExistsError, StackConfigurationDoesNotExistError
 from .stack_status import StackStatus, StackChangeSetStatus
 from .stack_status_colourer import StackStatusColourer
 from . import __version__
@@ -263,9 +263,20 @@ def delete_stack(ctx, environment, stack):
     """Deletes the stack.
 
     Deletes ENVIRONMENT/STACK."""
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    response = env.stacks[stack].delete()
-    if response != StackStatus.COMPLETE:
+    try:
+        env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
+        if not env.stacks.get(stack, None):
+            raise StackConfigurationDoesNotExistError
+
+        response = env.stacks[stack].delete()
+        if response != StackStatus.COMPLETE:
+            exit(1)
+    except StackConfigurationDoesNotExistError:
+        write(
+            "Could not find a stack configuration with the name {s}".format(
+                s=stack
+            )
+        )
         exit(1)
 
 
@@ -279,9 +290,20 @@ def update_stack(ctx, environment, stack):
 
     Updates ENVIRONMENT/STACK.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    response = env.stacks[stack].update()
-    if response != StackStatus.COMPLETE:
+    try:
+        env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
+        if not env.stacks.get(stack, None):
+            raise StackConfigurationDoesNotExistError
+
+        response = env.stacks[stack].update()
+        if response != StackStatus.COMPLETE:
+            exit(1)
+    except StackConfigurationDoesNotExistError:
+        write(
+            "Could not find a stack configuration with the name {s}".format(
+                s=stack
+            )
+        )
         exit(1)
 
 
@@ -295,9 +317,20 @@ def launch_stack(ctx, environment, stack):
 
     Creates or updates ENVIRONMENT/STACK.
     """
-    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    response = env.stacks[stack].launch()
-    if response != StackStatus.COMPLETE:
+    try:
+        env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
+        if not env.stacks.get(stack, None):
+            raise StackConfigurationDoesNotExistError
+
+        response = env.stacks[stack].launch()
+        if response != StackStatus.COMPLETE:
+            exit(1)
+    except StackConfigurationDoesNotExistError:
+        write(
+            "Could not find a stack configuration with the name {s}".format(
+                s=stack
+            )
+        )
         exit(1)
 
 
