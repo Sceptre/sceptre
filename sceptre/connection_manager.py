@@ -18,7 +18,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from .helpers import mask_key
-from .exceptions import RetryLimitExceededError
+from .exceptions import RetryLimitExceededError, BotoSessionNotConfigured
 
 
 def _retry_boto_call(func):
@@ -137,6 +137,9 @@ class ConnectionManager(object):
                         aws_session_token=credentials["SessionToken"],
                         region_name=self.region
                     )
+                    if not self._boto_session.get_credentials():
+                        raise BotoSessionNotConfigured
+
                     self._boto_session_expiration = credentials["Expiration"]
                     self.logger.debug(
                         "Using temporary credential set: %s",
@@ -155,6 +158,9 @@ class ConnectionManager(object):
                         profile_name=self.profile,
                         region_name=self.region
                     )
+                    if not self._boto_session.get_credentials():
+                        raise BotoSessionNotConfigured
+
                     self.logger.debug(
                         "Using credential set from %s: %s",
                         self._boto_session.get_credentials().method,
@@ -186,14 +192,18 @@ class ConnectionManager(object):
         :rtype: boto3.client.Client
         """
         with self._client_lock:
-            self._clear_session_cache_if_expired()
+            try:
+                self._clear_session_cache_if_expired()
 
-            if self.clients.get(service) is None:
-                self.logger.debug(
-                    "No %s client found, creating one...", service
-                )
-                self.clients[service] = self.boto_session.client(service)
-            return self.clients[service]
+                if self.clients.get(service) is None:
+                    self.logger.debug(
+                        "No %s client found, creating one...", service
+                    )
+                    self.clients[service] = self.boto_session.client(service)
+                return self.clients[service]
+            except BotoSessionNotConfigured:
+                self.logger.error("Boto Session failed to create. Please check your environment configuration")
+                exit(1)
 
     def _clear_session_cache_if_expired(self):
         """
