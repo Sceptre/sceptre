@@ -158,6 +158,6 @@ class BotoSessionNotConfigured(SceptreException):
 
 class StackDoesNotHaveOutputsError(SceptreException):
     """
-    Error raised when ConnectionManager can't create a session.
+    Error raised when Stack Outputs do not exist can't create a session.
     """
     pass
