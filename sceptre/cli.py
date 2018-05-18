@@ -26,7 +26,9 @@ from jinja2.exceptions import TemplateError
 
 from .config import ENVIRONMENT_CONFIG_ATTRIBUTES
 from .environment import Environment
-from .exceptions import SceptreException, ProjectAlreadyExistsError, StackConfigurationDoesNotExistError
+from .exceptions import SceptreException
+from .exceptions import ProjectAlreadyExistsError
+from .exceptions import StackConfigurationDoesNotExistError
 from .stack_status import StackStatus, StackChangeSetStatus
 from .stack_status_colourer import StackStatusColourer
 from . import __version__

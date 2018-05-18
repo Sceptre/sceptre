@@ -203,7 +203,8 @@ class ConnectionManager(object):
                 return self.clients[service]
             except BotoSessionNotConfigured:
                 self.logger.error(
-                    "Boto Session failed to create. Please check your environment configuration"
+                    "Boto Session failed to create. \
+                        Please check your environment configuration"
                 )
                 exit(1)
 
