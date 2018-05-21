@@ -1,4 +1,4 @@
-from behave import given, when, then
+from behave import *
 import os
 import imp
 import yaml

@@ -1,4 +1,4 @@
-from behave import given, when, then
+from behave import *
 import json
 
 from botocore.exceptions import ClientError
