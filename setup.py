@@ -11,10 +11,10 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
 install_requirements = [
-    "boto3>=1.3.0,<1.5.0",
+    "boto3>=1.3.0,<2",
     "click==6.6",
     "PyYaml==3.12",
-    "Jinja2==2.8",
+    "Jinja2>=2.8,<3",
     "packaging==16.8",
     "colorama==0.3.7",
     "six==1.11.0"

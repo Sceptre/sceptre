@@ -1,5 +1,6 @@
 ---
 layout: docs
+title: Environment Config
 ---
 
 # Environment Config
@@ -121,7 +122,7 @@ where `variables.yaml` contains::
 iam_role: <your iam role>
 ```
 
-Both the `--var` and `--var-file` flags can be used multiple times. If multiple `--var-file` options are supplied, the variables from these files will be merged, with a higher precedence given to options specified later in the command. Values supplied using `--var` take the highest precedence and will overwrite any value defined in the variable files. 
+Both the `--var` and `--var-file` flags can be used multiple times. If multiple `--var-file` options are supplied, the variables from these files will be merged, with a higher precedence given to options specified later in the command. Values supplied using `--var` take the highest precedence and will overwrite any value defined in the variable files.
 
 For example if we have the following variable files:
 
@@ -135,9 +136,9 @@ project_code: api
 profile: prod
 ```
 
-The following sceptre command: 
- 
-```shell 
+The following sceptre command:
+
+```shell
 sceptre --var-file=default.yaml --var-file=prod.yaml --var region=us-east-1 <COMMAND>
 ```
 

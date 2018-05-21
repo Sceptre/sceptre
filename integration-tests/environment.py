@@ -10,10 +10,12 @@ def before_all(context):
     context.project_code = "sceptre-integration-tests-{0}".format(
         context.uuid
     )
-    context.bucket_name = "sceptre-integration-tests-templates"
 
-    if not os.environ.get("CIRCLECI"):
-        context.bucket_name = context.bucket_name + "-" + str(context.uuid)
+    sts = boto3.client("sts")
+    account_number = sts.get_caller_identity()['Account']
+    context.bucket_name = "sceptre-integration-tests-templates-{}".format(
+        account_number
+    )
 
     context.sceptre_dir = os.path.join(
         os.getcwd(), "integration-tests", "sceptre-project"
