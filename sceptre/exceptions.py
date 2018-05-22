@@ -149,7 +149,7 @@ class StackConfigurationDoesNotExistError(SceptreException):
     pass
 
 
-class BotoSessionNotConfigured(SceptreException):
+class BotoSessionNotConfiguredError(SceptreException):
     """
     Error raised when ConnectionManager can't create a session.
     """

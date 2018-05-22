@@ -18,7 +18,7 @@ import boto3
 from botocore.exceptions import ClientError
 
 from .helpers import mask_key
-from .exceptions import RetryLimitExceededError, BotoSessionNotConfigured
+from .exceptions import RetryLimitExceededError, BotoSessionNotConfiguredError
 
 
 def _retry_boto_call(func):
@@ -138,7 +138,7 @@ class ConnectionManager(object):
                         region_name=self.region
                     )
                     if not self._boto_session.get_credentials():
-                        raise BotoSessionNotConfigured
+                        raise BotoSessionNotConfiguredError
 
                     self._boto_session_expiration = credentials["Expiration"]
                     self.logger.debug(
@@ -159,7 +159,7 @@ class ConnectionManager(object):
                         region_name=self.region
                     )
                     if not self._boto_session.get_credentials():
-                        raise BotoSessionNotConfigured
+                        raise BotoSessionNotConfiguredError
 
                     self.logger.debug(
                         "Using credential set from %s: %s",
@@ -201,7 +201,7 @@ class ConnectionManager(object):
                     )
                     self.clients[service] = self.boto_session.client(service)
                 return self.clients[service]
-            except BotoSessionNotConfigured:
+            except BotoSessionNotConfiguredError:
                 self.logger.error(
                     "Boto Session failed to create. \
                         Please check your environment configuration"
