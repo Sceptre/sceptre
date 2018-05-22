@@ -73,7 +73,7 @@ class StackOutputBase(Resolver):
                 kwargs={"StackName": stack_name}
             )
 
-            outputs = response["Stacks"][0]
+            outputs = response["Stacks"][0]['Outputs']
             self.logger.debug("Outputs: {0}".format(outputs))
 
             formatted_outputs = dict(
