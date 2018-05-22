@@ -324,6 +324,29 @@ class Stack(object):
         self.logger.info("%s - delete %s", self.name, status)
         return status
 
+    def launch_using_change_set(self, change_set_name=None):
+        """
+        Create/Update a stack using a change set
+
+        :param change_set_name: (optional) change-set-name to use
+        :returns: The change set's execution status.
+        :rtype: str
+        """
+        if change_set_name is None:
+            change_set_name = "-".join(["change-set", uuid1().hex])
+        self.create_change_set(change_set_name)
+        self.wait_for_cs_completion(change_set_name)
+        cs_status = self.describe_change_set(change_set_name)
+        if cs_status['Status'] == 'FAILED' and \
+                cs_status['StatusReason'] == 'No updates are to be performed.':
+            self.logger.info("%s - No updates to perform - deleting %s",
+                             self.name,
+                             change_set_name
+                             )
+            return self.delete_change_set(change_set_name)
+        else:
+            return self.execute_change_set(change_set_name)
+
     def lock(self):
         """
         Locks the stack by applying a deny all updates stack policy.

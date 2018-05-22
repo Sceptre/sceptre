@@ -26,6 +26,9 @@ def step_impl(context, message):
     else:
         raise Exception("Step has incorrect message")
 
+@then('no exception is raised')
+def step_impl(context):
+    assert (context.error is None)
 
 @then('no exception is raised')
 def step_impl(context):
