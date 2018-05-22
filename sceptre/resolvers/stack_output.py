@@ -46,8 +46,8 @@ class StackOutputBase(Resolver):
             exit(1)
         except StackDoesNotHaveOutputsError:
             self.logger.error(
-                "The Stack '{s}'' does not have any outputs.".format(
-                    s=stack_name
+                "The Stack '{0}' does not have any outputs.".format(
+                    stack_name
                 )
             )
             exit(1)

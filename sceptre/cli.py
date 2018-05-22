@@ -275,8 +275,8 @@ def delete_stack(ctx, environment, stack):
             exit(1)
     except StackConfigurationDoesNotExistError:
         write(
-            "Could not find a stack configuration with the name {s}".format(
-                s=stack
+            "Could not find a stack configuration with the name {0}".format(
+                stack
             )
         )
         exit(1)
@@ -302,8 +302,8 @@ def update_stack(ctx, environment, stack):
             exit(1)
     except StackConfigurationDoesNotExistError:
         write(
-            "Could not find a stack configuration with the name {s}".format(
-                s=stack
+            "Could not find a stack configuration with the name {0}".format(
+                stack
             )
         )
         exit(1)
@@ -329,8 +329,8 @@ def launch_stack(ctx, environment, stack):
             exit(1)
     except StackConfigurationDoesNotExistError:
         write(
-            "Could not find a stack configuration with the name {s}".format(
-                s=stack
+            "Could not find a stack configuration with the name {0}".format(
+                stack
             )
         )
         exit(1)
