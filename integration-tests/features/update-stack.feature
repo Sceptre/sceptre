@@ -17,10 +17,3 @@ Feature: Update stack
     and the template for stack "1/A" is "updated_template.json"
     When the user updates stack "1/A"
     Then stack "1/A" does not exist
-
-Scenario: update a stack that is rolled back after timeout
-    Given stack "1/A" exists in "CREATE_COMPLETE" state
-    and the template for stack "1/A" is "updated_template.json"
-    and the stack_timeout for stack "1/A" is "0.01"
-    When the user updates stack "1/A"
-    Then stack "1/A" exists in "UPDATE_ROLLBACK_COMPLETE" state

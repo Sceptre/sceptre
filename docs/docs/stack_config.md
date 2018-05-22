@@ -22,7 +22,6 @@ A stack config file is a yaml object of key-value pairs configuring a particular
 - [role_arn](#role_arn) *(optional)*
 - [notifications](#notifications) *(optional)*
 - [template_path](#template_path) *(required)*
-- [stack_timeout](#stack_timeout) *(optional)*
 
 
 ### dependencies
@@ -123,10 +122,6 @@ The ARN of a [CloudFormation Service Role](http://docs.aws.amazon.com/AWSCloudFo
 ### notifications
 
 List of SNS topic ARNs to publish stack related events to. A maximum of 5 ARNs can be specified per stack. This configuration will be used by the `create-stack`, `update-stack`, and `create-change-set` commands. More information about stack notifications can found under the relevant section in the [AWS CloudFormation API documentation](http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStack.html).
-
-### stack_timeout
-
-A timeout in minutes before considering the stack deployment as failed. After the specified timeout, the stack will be rolled back. Specifiyng zero, as well as ommiting the field, will result in no timeout. Supports fractions of minutes, e.g. `stack_timeout: 0.5` equals to a 30 seconds timeout.
 
 ### template_path
 
