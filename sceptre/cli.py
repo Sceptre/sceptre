@@ -267,12 +267,12 @@ def delete_stack(ctx, environment, stack):
     Deletes ENVIRONMENT/STACK."""
     try:
         env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-        if not env.stacks.get(stack, None):
-            raise StackConfigurationDoesNotExistError
-
         response = env.stacks[stack].delete()
+
         if response != StackStatus.COMPLETE:
             exit(1)
+    except KeyError:
+        raise StackConfigurationDoesNotExistError
     except StackConfigurationDoesNotExistError:
         write(
             "Could not find a stack configuration with the name {0}".format(
@@ -294,12 +294,12 @@ def update_stack(ctx, environment, stack):
     """
     try:
         env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-        if not env.stacks.get(stack, None):
-            raise StackConfigurationDoesNotExistError
-
         response = env.stacks[stack].update()
+
         if response != StackStatus.COMPLETE:
             exit(1)
+    except KeyError:
+        raise StackConfigurationDoesNotExistError
     except StackConfigurationDoesNotExistError:
         write(
             "Could not find a stack configuration with the name {0}".format(
@@ -321,12 +321,12 @@ def launch_stack(ctx, environment, stack):
     """
     try:
         env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-        if not env.stacks.get(stack, None):
-            raise StackConfigurationDoesNotExistError
-
         response = env.stacks[stack].launch()
+
         if response != StackStatus.COMPLETE:
             exit(1)
+    except KeyError:
+        raise StackConfigurationDoesNotExistError
     except StackConfigurationDoesNotExistError:
         write(
             "Could not find a stack configuration with the name {0}".format(

@@ -72,15 +72,8 @@ class StackOutputBase(Resolver):
                 command="describe_stacks",
                 kwargs={"StackName": stack_name}
             )
-        except ClientError as e:
-            if "does not exist" in e.response["Error"]["Message"]:
-                raise StackDoesNotExistError(e.response["Error"]["Message"])
-            else:
-                raise e
-        else:
-            outputs = response["Stacks"][0].get("Outputs", None)
 
-        if outputs:
+            outputs = response["Stacks"][0]
             self.logger.debug("Outputs: {0}".format(outputs))
 
             formatted_outputs = dict(
@@ -89,7 +82,13 @@ class StackOutputBase(Resolver):
             )
 
             return formatted_outputs
-        else:
+
+        except ClientError as e:
+            if "does not exist" in e.response["Error"]["Message"]:
+                raise StackDoesNotExistError(e.response["Error"]["Message"])
+            else:
+                raise e
+        except KeyError:
             raise StackDoesNotHaveOutputsError
 
 
