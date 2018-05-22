@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 import logging
 import os
 import time
+from uuid import uuid1
 
 from dateutil.tz import tzutc
 import botocore
@@ -134,6 +135,9 @@ class Stack(object):
         :returns: The stack's status.
         :rtype: sceptre.stack_status.StackStatus
         """
+        if self.template.requires_change_set:
+            return self.launch_using_change_set()
+
         self._protect_execution()
         self.logger.info("%s - Creating stack", self.name)
         create_stack_kwargs = {
@@ -171,6 +175,14 @@ class Stack(object):
         :returns: The stack's status.
         :rtype: sceptre.stack_status.StackStatus
         """
+        if self.template.requires_change_set:
+            try:
+                self.get_status()
+            except StackDoesNotExistError:
+                return "PENDING"
+            else:
+                return self.launch_using_change_set()
+
         self._protect_execution()
         self.logger.info("%s - Updating stack", self.name)
         update_stack_kwargs = {
@@ -294,6 +306,29 @@ class Stack(object):
                 raise
         self.logger.info("%s - delete %s", self.name, status)
         return status
+
+    def launch_using_change_set(self, change_set_name=None):
+        """
+        Create/Update a stack using a change set
+
+        :param change_set_name: (optional) change-set-name to use
+        :returns: The change set's execution status.
+        :rtype: str
+        """
+        if change_set_name is None:
+            change_set_name = "-".join(["change-set", uuid1().hex])
+        self.create_change_set(change_set_name)
+        self.wait_for_cs_completion(change_set_name)
+        cs_status = self.describe_change_set(change_set_name)
+        if cs_status['Status'] == 'FAILED' and \
+                cs_status['StatusReason'] == 'No updates are to be performed.':
+            self.logger.info("%s - No updates to perform - deleting %s",
+                             self.name,
+                             change_set_name
+                             )
+            return self.delete_change_set(change_set_name)
+        else:
+            return self.execute_change_set(change_set_name)
 
     def lock(self):
         """
@@ -459,6 +494,12 @@ class Stack(object):
             self.template.get_boto_call_parameter()
         )
         create_change_set_kwargs.update(self._get_role_arn())
+
+        try:
+            self.get_status()
+        except StackDoesNotExistError:
+            create_change_set_kwargs["ChangeSetType"] = "CREATE"
+
         self.logger.debug(
             "%s - Creating change set '%s'", self.name, change_set_name
         )

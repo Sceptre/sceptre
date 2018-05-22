@@ -1,10 +1,15 @@
 Feature: Create stack
 
-  Scenario: create new stack
+  Scenario Outline: create new stack
     Given stack "1/A" does not exist
-    and the template for stack "1/A" is "valid_template.json"
+    and the template for stack "1/A" is "<filename>"
     When the user creates stack "1/A"
     Then stack "1/A" exists in "CREATE_COMPLETE" state
+
+  Examples: Template
+    | filename                           |
+    | valid_template.json                |
+    | valid_template_with_transform.yaml |
 
   Scenario: create a stack that already exists
     Given stack "1/A" exists in "CREATE_COMPLETE" state

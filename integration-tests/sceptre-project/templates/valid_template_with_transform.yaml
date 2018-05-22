@@ -1,3 +1,5 @@
+Transform: AWS::Serverless-2016-10-31
+
 Resources:
     WaitConditionHandle:
       Type: "AWS::CloudFormation::WaitConditionHandle"

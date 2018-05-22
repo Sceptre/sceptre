@@ -1,0 +1,7 @@
+{
+    "Version": "2010-09-09", 
+    "Parameters": [], 
+    "DeclaredTransforms": [
+        "AWS::Serverless-2016-10-31"
+    ]
+}
