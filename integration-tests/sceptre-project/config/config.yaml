@@ -1,3 +1,4 @@
+profile: test_sceptre_profile
 project_code: sceptre-integration-tests
 region: eu-west-1
 template_bucket_name: sceptre-integration-tests-templates

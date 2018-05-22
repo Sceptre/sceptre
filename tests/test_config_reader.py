@@ -201,6 +201,7 @@ class TestConfigReader(object):
                 ),
                 region="region_region",
                 iam_role="account_iam_role",
+                profile="profile_name",
                 parameters={"param1": "val1"},
                 sceptre_user_data={},
                 hooks={},
