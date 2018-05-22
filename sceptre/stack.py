@@ -53,10 +53,9 @@ class Stack(object):
 
     def __init__(
         self, name, project_code, template_path, region, iam_role=None,
-        parameters=None, sceptre_user_data=None, hooks=None,
-        s3_details=None, dependencies=None, role_arn=None,
-        protected=False, tags=None, external_name=None,
-        notifications=None, on_failure=None, stack_timeout=0
+        parameters=None, sceptre_user_data=None, hooks=None, s3_details=None,
+        dependencies=None, role_arn=None, protected=False, tags=None,
+        external_name=None, notifications=None, on_failure=None
     ):
         self.logger = logging.getLogger(__name__)
 
@@ -77,7 +76,6 @@ class Stack(object):
         self.on_failure = on_failure
         self.dependencies = dependencies or []
         self.tags = tags or {}
-        self.stack_timeout = stack_timeout
 
         self.hooks = hooks or {}
         self.parameters = parameters or {}
@@ -95,8 +93,7 @@ class Stack(object):
             "dependencies='{dependencies}', role_arn='{role_arn}', "
             "protected='{protected}', tags='{tags}', "
             "external_name='{external_name}', "
-            "notifications='{notifications}', on_failure='{on_failure}', "
-            "stack_timeout='{stack_timeout}'"
+            "notifications='{notifications}', on_failure='{on_failure}'"
             ")".format(
                 name=self.name, project_code=self.project_code,
                 template_path=self.template_path,
@@ -108,8 +105,7 @@ class Stack(object):
                 dependencies=self.dependencies, role_arn=self.role_arn,
                 protected=self.protected, tags=self.tags,
                 external_name=self.external_name,
-                notifications=self.notifications, on_failure=self.on_failure,
-                stack_timeout=self.stack_timeout
+                notifications=self.notifications, on_failure=self.on_failure
             )
         )
 
@@ -154,7 +150,6 @@ class Stack(object):
             create_stack_kwargs.update({"OnFailure": self.on_failure})
         create_stack_kwargs.update(self.template.get_boto_call_parameter())
         create_stack_kwargs.update(self._get_role_arn())
-        create_stack_kwargs.update(self._get_stack_timeout())
         response = self.connection_manager.call(
             service="cloudformation",
             command="create_stack",
@@ -199,33 +194,9 @@ class Stack(object):
             "%s - Update stack response: %s", self.name, response
         )
 
-        status = self._wait_for_completion(self.stack_timeout)
-        # Cancel update after timeout
-        if status == StackStatus.IN_PROGRESS:
-            status = self.cancel_stack_update()
+        status = self._wait_for_completion()
 
         return status
-
-    def cancel_stack_update(self):
-        """
-        Cancels a stack update.
-
-        :returns: The cancelled stack status.
-        :rtype: sceptre.stack_status.StackStatus
-        """
-        self.logger.warning(
-            "%s - Update stack time exceeded the specified timeout",
-            self.name
-        )
-        response = self.connection_manager.call(
-            service="cloudformation",
-            command="cancel_update_stack",
-            kwargs={"StackName": self.external_name}
-        )
-        self.logger.debug(
-            "%s - Cancel update stack response: %s", self.name, response
-        )
-        return self._wait_for_completion()
 
     def launch(self):
         """
@@ -643,21 +614,6 @@ class Stack(object):
         else:
             return {}
 
-    def _get_stack_timeout(self):
-        """
-        Return the timeout before considering the stack to be failing.
-
-        Returns an empty dict if no timeout is set.
-        :returns: the creation/update timeout
-        :rtype: dict
-        """
-        if self.stack_timeout:
-            return {
-                "TimeoutInMinutes": self.stack_timeout
-            }
-        else:
-            return {}
-
     def _protect_execution(self):
         """
         Raises a ProtectedStackError if protect == True.
@@ -671,33 +627,23 @@ class Stack(object):
                 "currently enabled".format(self.name)
             )
 
-    def _wait_for_completion(self, timeout=0):
+    def _wait_for_completion(self):
         """
         Waits for a stack operation to finish. Prints CloudFormation events
         while it waits.
 
-        :param timeout: Timeout before returning, in minutes.
-
         :returns: The final stack status.
         :rtype: sceptre.stack_status.StackStatus
         """
-        timeout = 60 * timeout
-
-        def timed_out(elapsed):
-            return elapsed >= timeout if timeout else False
-
         status = StackStatus.IN_PROGRESS
 
         self.most_recent_event_datetime = (
             datetime.now(tzutc()) - timedelta(seconds=3)
         )
-        elapsed = 0
-        while status == StackStatus.IN_PROGRESS and not timed_out(elapsed):
+        while status == StackStatus.IN_PROGRESS:
             status = self._get_simplified_status(self.get_status())
             self._log_new_events()
             time.sleep(4)
-            elapsed += 4
-
         return status
 
     @staticmethod
