@@ -53,7 +53,8 @@ STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
         "sceptre_user_data",
         "stack_name",
         "stack_tags",
-        "role_arn"
+        "role_arn",
+        "stack_timeout"
     }
 )
 
