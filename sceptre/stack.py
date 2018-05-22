@@ -15,6 +15,7 @@ import time
 import threading
 
 from dateutil.tz import tzutc
+from uuid import uuid1
 import botocore
 
 from .config import Config
@@ -70,6 +71,7 @@ class Stack(object):
         self._hooks = None
         self._dependencies = None
         self._external_name = None
+        self._template_summary = None
 
     def __repr__(self):
         return (
@@ -190,32 +192,35 @@ class Stack(object):
         """
         self._protect_execution()
         self.logger.info("%s - Creating stack", self.name)
-        create_stack_kwargs = {
-            "StackName": self.external_name,
-            "Parameters": self._format_parameters(self.parameters),
-            "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
-            "NotificationARNs": self.config.get("notifications", []),
-            "Tags": [
-                {"Key": str(k), "Value": str(v)}
-                for k, v in self.config.get("stack_tags", {}).items()
-            ]
-        }
-        if "on_failure" in self.config:
-            create_stack_kwargs.update({
-                "OnFailure": self.config.get("on_failure")
-            })
-        create_stack_kwargs.update(self._get_template_details())
-        create_stack_kwargs.update(self._get_role_arn())
-        response = self.connection_manager.call(
-            service="cloudformation",
-            command="create_stack",
-            kwargs=create_stack_kwargs
-        )
-        self.logger.debug(
-            "%s - Create stack response: %s", self.name, response
-        )
+        if self.requires_change_set:
+            status = self.launch_using_change_set()
+        else:
+            create_stack_kwargs = {
+                "StackName": self.external_name,
+                "Parameters": self._format_parameters(self.parameters),
+                "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                "NotificationARNs": self.config.get("notifications", []),
+                "Tags": [
+                    {"Key": str(k), "Value": str(v)}
+                    for k, v in self.config.get("stack_tags", {}).items()
+                ]
+            }
+            if "on_failure" in self.config:
+                create_stack_kwargs.update({
+                    "OnFailure": self.config.get("on_failure")
+                })
+            create_stack_kwargs.update(self._get_template_details())
+            create_stack_kwargs.update(self._get_role_arn())
+            response = self.connection_manager.call(
+                service="cloudformation",
+                command="create_stack",
+                kwargs=create_stack_kwargs
+            )
+            self.logger.debug(
+                "%s - Create stack response: %s", self.name, response
+            )
 
-        status = self._wait_for_completion()
+            status = self._wait_for_completion()
 
         return status
 
@@ -229,28 +234,40 @@ class Stack(object):
         """
         self._protect_execution()
         self.logger.info("%s - Updating stack", self.name)
-        update_stack_kwargs = {
-            "StackName": self.external_name,
-            "Parameters": self._format_parameters(self.parameters),
-            "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
-            "NotificationARNs": self.config.get("notifications", []),
-            "Tags": [
-                {"Key": str(k), "Value": str(v)}
-                for k, v in self.config.get("stack_tags", {}).items()
-            ]
-        }
-        update_stack_kwargs.update(self._get_template_details())
-        update_stack_kwargs.update(self._get_role_arn())
-        response = self.connection_manager.call(
-            service="cloudformation",
-            command="update_stack",
-            kwargs=update_stack_kwargs
-        )
-        self.logger.debug(
-            "%s - Update stack response: %s", self.name, response
-        )
+        if self.requires_change_set:
+            try:
+                status = self.get_status()
+            except StackDoesNotExistError:
+                self.logger.warn(
+                    "%s - Can't update non-existant stack",
+                    self.name
+                )
+                status = "PENDING"
+            else:
+                status = self.launch_using_change_set()
+        else:
+            update_stack_kwargs = {
+                "StackName": self.external_name,
+                "Parameters": self._format_parameters(self.parameters),
+                "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                "NotificationARNs": self.config.get("notifications", []),
+                "Tags": [
+                    {"Key": str(k), "Value": str(v)}
+                    for k, v in self.config.get("stack_tags", {}).items()
+                ]
+            }
+            update_stack_kwargs.update(self._get_template_details())
+            update_stack_kwargs.update(self._get_role_arn())
+            response = self.connection_manager.call(
+                service="cloudformation",
+                command="update_stack",
+                kwargs=update_stack_kwargs
+            )
+            self.logger.debug(
+                "%s - Update stack response: %s", self.name, response
+            )
 
-        status = self._wait_for_completion()
+            status = self._wait_for_completion()
 
         return status
 
@@ -350,6 +367,29 @@ class Stack(object):
                 raise
         self.logger.info("%s - delete %s", self.name, status)
         return status
+
+    def launch_using_change_set(self, change_set_name=None):
+        """
+        Create/Update a stack using a change set
+
+        :param change_set_name: (optional) change-set-name to use
+        :returns: The change set's execution status.
+        :rtype: str
+        """
+        if change_set_name is None:
+            change_set_name = "-".join(["change-set", uuid1().hex])
+        self.create_change_set(change_set_name)
+        self.wait_for_cs_completion(change_set_name)
+        cs_status = self.describe_change_set(change_set_name)
+        if cs_status['Status'] == 'FAILED' and \
+                cs_status['StatusReason'] == 'No updates are to be performed.':
+            self.logger.info("%s - No updates to perform - deleting %s",
+                             self.name,
+                             change_set_name
+                             )
+            return self.delete_change_set(change_set_name)
+        else:
+            return self.execute_change_set(change_set_name)
 
     def lock(self):
         """
@@ -701,6 +741,30 @@ class Stack(object):
             return {"TemplateURL": template_url}
         else:
             return {"TemplateBody": self.template.body}
+
+    @property
+    def get_template_summary(self):
+        """
+        The template summary
+        :returns: The template summary of the CloudFormation template.
+        :rtype: dict
+        """
+        if self._template_summary is None:
+            self._template_summary = self.connection_manager.call(
+                service="cloudformation",
+                command="get_template_summary",
+                kwargs=self._get_template_details()
+            )
+        return self._template_summary
+
+    @property
+    def requires_change_set(self):
+        """
+        Requires change set
+        :returns: whether the tempalte requires changes via change sets
+        :rtype: bool
+        """
+        return "DeclaredTransforms" in self.get_template_summary
 
     def _get_role_arn(self):
         """

@@ -5,6 +5,7 @@ from mock import patch, sentinel, Mock, MagicMock
 
 import datetime
 from dateutil.tz import tzutc
+from uuid import UUID
 
 from botocore.exceptions import ClientError
 
@@ -206,6 +207,7 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         self.stack._config = {"stack_tags": {
             "tag1": "val1"
         }}
+        self.stack._template_summary = {}
         self.stack._hooks = {}
         self.stack.config["role_arn"] = sentinel.role_arn
         self.stack.config["notifications"] = [sentinel.notification]
@@ -246,6 +248,7 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         self.stack._config = {"stack_tags": {
             "tag1": "val1"
         }}
+        self.stack._template_summary = {}
         self.stack._hooks = {}
         self.stack.config["role_arn"] = sentinel.role_arn
         self.stack.create()
@@ -285,6 +288,7 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         self.stack._config = {"stack_tags": {
             "tag1": "val1"
         }}
+        self.stack._template_summary = {}
         self.stack._hooks = {}
         self.stack.config["role_arn"] = sentinel.role_arn
         self.stack.config["notifications"] = [sentinel.notification]
@@ -327,6 +331,7 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         self.stack._config = {"stack_tags": {
             "tag1": "val1"
         }}
+        self.stack._template_summary = {}
         self.stack._hooks = {}
         self.stack.config["role_arn"] = sentinel.role_arn
         self.stack.config["notifications"] = [sentinel.notification]
@@ -367,6 +372,7 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         self.stack._config = {"stack_tags": {
             "tag1": "val1"
         }}
+        self.stack._template_summary = {}
         self.stack._hooks = {}
         self.stack.config["role_arn"] = sentinel.role_arn
 
@@ -388,11 +394,145 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         )
         mock_wait_for_completion.assert_called_once_with()
 
-    @patch("sceptre.stack.Stack.hooks")
+    @pytest.mark.parametrize("function",  ["create", "update"])
+    @patch("sceptre.stack.Stack.get_status")
+    @patch("sceptre.stack.Stack.launch_using_change_set")
+    def test_functions_calls_launch_using_change_set_when_required(
+            self, mock_launch_using_change_set, mock_get_status, function
+    ):
+        self.stack._config = {"protect": False}
+        self.stack._template_summary = {"DeclaredTransforms": []}
+        mock_get_status.return_value = "CREATE_COMPLETE"
+
+        self.stack.__getattribute__(function).__call__()
+
+        mock_launch_using_change_set.assert_called_once_with()
+
+    @patch("sceptre.stack.Stack.get_status")
+    @patch("sceptre.stack.Stack.launch_using_change_set")
+    def test_update_does_not_call_launch_using_change_set_when_non_existant(
+            self, mock_launch_using_change_set, mock_get_status
+    ):
+        self.stack._config = {"protect": False}
+        self.stack._template_summary = {"DeclaredTransforms": []}
+        mock_get_status.side_effect = StackDoesNotExistError()
+
+        self.stack.update()
+
+        mock_launch_using_change_set.assert_not_called()
+
+    @patch('sceptre.stack.uuid1')
+    @patch("sceptre.stack.Stack.execute_change_set")
+    @patch("sceptre.stack.Stack.delete_change_set")
+    @patch("sceptre.stack.Stack.describe_change_set")
+    @patch("sceptre.stack.Stack.wait_for_cs_completion")
+    @patch("sceptre.stack.Stack.create_change_set")
+    def test_launch_using_change_set_without_name(
+            self, mock_create_change_set, mock_wait_for_cs_completion,
+            mock_describe_change_set, mock_delete_change_set,
+            mock_execute_change_set, mock_uuid
+    ):
+        self.stack._config = {"protect": False}
+        self.stack._template_summary = {"DeclaredTransforms": []}
+
+        mock_delete_change_set.return_value = {'Status': 'SUCCESS'}
+        mock_uuid.return_value = UUID(int=0)
+
+        self.stack.launch_using_change_set()
+
+        mock_uuid.assert_called_once()
+        mock_create_change_set.assert_called_once_with(
+            "change-set-00000000000000000000000000000000")
+        mock_wait_for_cs_completion.assert_called_once_with(
+            "change-set-00000000000000000000000000000000")
+        mock_execute_change_set.assert_called_once_with(
+            "change-set-00000000000000000000000000000000")
+        mock_delete_change_set.assert_not_called()
+
+    @patch('sceptre.stack.uuid1')
+    @patch("sceptre.stack.Stack.execute_change_set")
+    @patch("sceptre.stack.Stack.delete_change_set")
+    @patch("sceptre.stack.Stack.describe_change_set")
+    @patch("sceptre.stack.Stack.wait_for_cs_completion")
+    @patch("sceptre.stack.Stack.create_change_set")
+    def test_launch_using_change_set_with_name(
+            self, mock_create_change_set, mock_wait_for_cs_completion,
+            mock_describe_change_set, mock_delete_change_set,
+            mock_execute_change_set, mock_uuid
+    ):
+        self.stack._config = {"protect": False}
+        self.stack._template_summary = {"DeclaredTransforms": []}
+        mock_describe_change_set.return_value = {'Status': 'SUCCESS'}
+
+        change_set_name = UUID(int=1)
+
+        self.stack.launch_using_change_set(change_set_name)
+
+        mock_uuid.asset_not_called()
+        mock_create_change_set.assert_called_once_with(change_set_name)
+        mock_wait_for_cs_completion.assert_called_once_with(change_set_name)
+        mock_execute_change_set.assert_called_once_with(change_set_name)
+        mock_delete_change_set.assert_not_called()
+
+    @patch('sceptre.stack.uuid1')
+    @patch("sceptre.stack.Stack.execute_change_set")
+    @patch("sceptre.stack.Stack.delete_change_set")
+    @patch("sceptre.stack.Stack.describe_change_set")
+    @patch("sceptre.stack.Stack.wait_for_cs_completion")
+    @patch("sceptre.stack.Stack.create_change_set")
+    def test_launch_using_change_set_with_name_and_failed_change_set(
+            self, mock_create_change_set, mock_wait_for_cs_completion,
+            mock_describe_change_set, mock_delete_change_set,
+            mock_execute_change_set, mock_uuid
+    ):
+        self.stack._config = {"protect": False}
+        self.stack._template_summary = {"DeclaredTransforms": []}
+        mock_describe_change_set.return_value = {
+            'Status': 'FAILED', 'StatusReason': 'Invalid Template'
+        }
+
+        change_set_name = UUID(int=1)
+
+        self.stack.launch_using_change_set(change_set_name)
+
+        mock_uuid.asset_not_called()
+        mock_create_change_set.assert_called_once_with(change_set_name)
+        mock_wait_for_cs_completion.assert_called_once_with(change_set_name)
+        mock_execute_change_set.assert_called_once_with(change_set_name)
+        mock_delete_change_set.assert_not_called()
+
+    @patch('sceptre.stack.uuid1')
+    @patch("sceptre.stack.Stack.execute_change_set")
+    @patch("sceptre.stack.Stack.delete_change_set")
+    @patch("sceptre.stack.Stack.describe_change_set")
+    @patch("sceptre.stack.Stack.wait_for_cs_completion")
+    @patch("sceptre.stack.Stack.create_change_set")
+    def test_launch_using_change_set_with_name_and_no_changes(
+            self, mock_create_change_set, mock_wait_for_cs_completion,
+            mock_describe_change_set, mock_delete_change_set,
+            mock_execute_change_set, mock_uuid
+    ):
+        self.stack._config = {"protect": False}
+        self.stack._template_summary = {"DeclaredTransforms": []}
+        mock_describe_change_set.return_value = {
+            'Status': 'FAILED',
+            'StatusReason': 'No updates are to be performed.'
+        }
+
+        change_set_name = UUID(int=1)
+
+        self.stack.launch_using_change_set(change_set_name)
+
+        mock_uuid.asset_not_called()
+        mock_create_change_set.assert_called_once_with(change_set_name)
+        mock_wait_for_cs_completion.assert_called_once_with(change_set_name)
+        mock_execute_change_set.assert_not_called()
+        mock_delete_change_set.assert_called_once_with(change_set_name)
+
     @patch("sceptre.stack.Stack.create")
     @patch("sceptre.stack.Stack.get_status")
     def test_launch_with_stack_that_does_not_exist(
-            self, mock_get_status, mock_create, mock_hooks
+            self, mock_get_status, mock_create
     ):
         self.stack._config = {"protect": False}
         mock_get_status.side_effect = StackDoesNotExistError()
@@ -401,12 +541,11 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         mock_create.assert_called_once_with()
         assert response == sentinel.launch_response
 
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.create")
     @patch("sceptre.stack.Stack.delete")
     @patch("sceptre.stack.Stack.get_status")
     def test_launch_with_stack_that_failed_to_create(
-            self, mock_get_status, mock_delete, mock_create, mock_hooks
+            self, mock_get_status, mock_delete, mock_create
     ):
         self.stack._config = {"protect": False}
         mock_get_status.return_value = "CREATE_FAILED"
@@ -416,11 +555,10 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         mock_create.assert_called_once_with()
         assert response == sentinel.launch_response
 
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.update")
     @patch("sceptre.stack.Stack.get_status")
     def test_launch_with_complete_stack_with_updates_to_perform(
-            self, mock_get_status, mock_update, mock_hooks
+            self, mock_get_status, mock_update
     ):
         self.stack._config = {"protect": False}
         mock_get_status.return_value = "CREATE_COMPLETE"
@@ -429,11 +567,10 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         mock_update.assert_called_once_with()
         assert response == sentinel.launch_response
 
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.update")
     @patch("sceptre.stack.Stack.get_status")
     def test_launch_with_complete_stack_with_no_updates_to_perform(
-            self, mock_get_status, mock_update, mock_hooks
+            self, mock_get_status, mock_update
     ):
         self.stack._config = {"protect": False}
         mock_get_status.return_value = "CREATE_COMPLETE"
@@ -450,11 +587,10 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         mock_update.assert_called_once_with()
         assert response == StackStatus.COMPLETE
 
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.update")
     @patch("sceptre.stack.Stack.get_status")
     def test_launch_with_complete_stack_with_unknown_client_error(
-            self, mock_get_status, mock_update, mock_hooks
+            self, mock_get_status, mock_update
     ):
         self.stack._config = {"protect": False}
         mock_get_status.return_value = "CREATE_COMPLETE"
@@ -470,27 +606,24 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         with pytest.raises(ClientError):
             self.stack.launch()
 
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.get_status")
-    def test_launch_with_in_progress_stack(self, mock_get_status, mock_hooks):
+    def test_launch_with_in_progress_stack(self, mock_get_status):
         self.stack._config = {"protect": False}
         mock_get_status.return_value = "CREATE_IN_PROGRESS"
         response = self.stack.launch()
         assert response == StackStatus.IN_PROGRESS
 
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.get_status")
-    def test_launch_with_failed_stack(self, mock_get_status, mock_hooks):
+    def test_launch_with_failed_stack(self, mock_get_status):
         self.stack._config = {"protect": False}
         mock_get_status.return_value = "UPDATE_FAILED"
         with pytest.raises(CannotUpdateFailedStackError):
             response = self.stack.launch()
             assert response == StackStatus.FAILED
 
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.get_status")
     def test_launch_with_unknown_stack_status(
-            self, mock_get_status, mock_hooks
+            self, mock_get_status
     ):
         self.stack._config = {"protect": False}
         mock_get_status.return_value = "UNKNOWN_STATUS"
@@ -498,10 +631,9 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             self.stack.launch()
 
     @patch("sceptre.stack.Stack._wait_for_completion")
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.get_status")
     def test_delete_with_created_stack(
-            self, mock_get_status, mock_hooks, mock_wait_for_completion
+            self, mock_get_status, mock_wait_for_completion
     ):
         self.stack._config = {"protect": False}
         mock_get_status.return_value = "CREATE_COMPLETE"
@@ -517,10 +649,9 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         )
 
     @patch("sceptre.stack.Stack._wait_for_completion")
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.get_status")
     def test_delete_when_wait_for_completion_raises_stack_does_not_exist_error(
-            self, mock_get_status, mock_hooks, mock_wait_for_completion
+            self, mock_get_status, mock_wait_for_completion
     ):
         self.stack._config = {"protect": False}
         mock_get_status.return_value = "CREATE_COMPLETE"
@@ -530,10 +661,9 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         assert status == StackStatus.COMPLETE
 
     @patch("sceptre.stack.Stack._wait_for_completion")
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.get_status")
     def test_delete_when_wait_for_completion_raises_non_existent_client_error(
-            self, mock_get_status, mock_hooks, mock_wait_for_completion
+            self, mock_get_status, mock_wait_for_completion
     ):
         self.stack._config = {"protect": False}
         mock_get_status.return_value = "CREATE_COMPLETE"
@@ -551,10 +681,9 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         assert status == StackStatus.COMPLETE
 
     @patch("sceptre.stack.Stack._wait_for_completion")
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.get_status")
     def test_delete_when_wait_for_completion_raises_unexpected_client_error(
-            self, mock_get_status, mock_hooks, mock_wait_for_completion
+            self, mock_get_status, mock_wait_for_completion
     ):
         self.stack._config = {"protect": False}
         mock_get_status.return_value = "CREATE_COMPLETE"
@@ -572,10 +701,9 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             self.stack.delete()
 
     @patch("sceptre.stack.Stack._wait_for_completion")
-    @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.get_status")
     def test_delete_with_non_existent_stack(
-            self, mock_get_status, mock_hooks, mock_wait_for_completion
+            self, mock_get_status, mock_wait_for_completion
     ):
         self.stack._config = {"protect": False}
         mock_get_status.side_effect = StackDoesNotExistError()
@@ -1059,16 +1187,31 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
 
         assert template_details == {"TemplateURL": sentinel.template_url}
 
-    def test_get_template_details_without_upload(self):
-        self.stack._template = Mock(spec=Template)
-        self.stack._template.body = sentinel.body
+    @patch("sceptre.stack.Stack._get_template_details")
+    def test_get_template_summary(self, mock_get_template_details):
+        mock_get_template_details.return_value = sentinel._get_template_details
+        self.stack._template_summary = None
+
+        self.stack.get_template_summary()
+        self.stack.get_template_summary()
+
+        self.stack.connection_manager.call.assert_called_with(
+            service="cloudformation",
+            command="get_template_summary",
+            kwargs=sentinel._get_template_details
+        )
+
+    @pytest.mark.parametrize("test_input,expected", [
+        ({"Parameters": []}, False),
+        ({"DeclaredTransforms": ["AWS::Serverless-2016-10-31"]}, True)
+    ])
+    def test_requires_change_set(self, test_input, expected):
+        self.stack._template_summary = test_input
         self.stack.environment_config = {
             "template_key_prefix": sentinel.template_key_prefix
         }
 
-        template_details = self.stack._get_template_details()
-
-        assert template_details == {"TemplateBody": sentinel.body}
+        assert self.stack.requires_change_set == expected
 
     def test_get_role_arn_without_role(self):
         self.stack._template = Mock(spec=Template)
