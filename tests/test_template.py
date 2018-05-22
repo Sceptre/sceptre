@@ -40,7 +40,6 @@ class TestTemplate(object):
         assert self.template.name == "template"
         assert self.template.sceptre_user_data == {}
         assert self.template._body is None
-        assert self.template._template_summary is None
 
     def test_repr(self):
         representation = self.template.__repr__()
@@ -310,47 +309,6 @@ class TestTemplate(object):
         )
         with pytest.raises(UnsupportedTemplateFileTypeError):
             self.template.body
-
-    @patch("sceptre.template.Template.get_boto_call_parameter")
-    def test_get_template_summary_sends_correct_request(
-        self, mock_get_boto_call_parameter
-    ):
-        mock_get_boto_call_parameter.return_value = {
-            "Template": sentinel.template
-        }
-
-        self.template.template_summary
-        self.template.connection_manager.call.assert_called_with(
-            service="cloudformation",
-            command="get_template_summary",
-            kwargs={"Template": sentinel.template}
-        )
-
-    @patch("sceptre.template.Template.get_boto_call_parameter")
-    def test_get_template_summary_not_called_when_there_is_a_value(
-        self, mock_get_boto_call_parameter
-    ):
-        self.template._template_summary = sentinel.template_summary
-        output = self.template.template_summary
-
-        assert output == sentinel.template_summary
-        self.template.connection_manager.call.assert_not_called()
-
-    @pytest.mark.parametrize("template_summary, expected_result", [
-        ("vpc", False),
-        ("template_with_transform", True)
-    ])
-    def test_get_template_summary(self, template_summary, expected_result):
-        template_file = os.path.join(
-            "tests/fixtures/template_summaries/",
-            "{}.json".format(template_summary)
-        )
-        with open(template_file) as f:
-            self.template._template_summary = json.load(f)
-
-        output = self.template.requires_change_set
-
-        assert output == expected_result
 
 
 @pytest.mark.parametrize("filename,sceptre_user_data,expected", [
