@@ -32,3 +32,14 @@ Feature: Launch stack
     | filename                             |
     | updated_template.json                |
     | updated_template_with_transform.yaml |
+
+  Scenario Outline: launch an existing stack with no changes
+    Given the template for stack "1/A" is "<filename>"
+    and stack "1/A" exists using "<filename>"
+    When the user launches stack "1/A"
+    Then no exception is raised
+
+  Examples: Template
+    | filename                             |
+    | updated_template.json                |
+    | updated_template_with_transform.yaml |

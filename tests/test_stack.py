@@ -300,15 +300,19 @@ class TestStack(object):
 
     @patch('sceptre.stack.uuid1')
     @patch("sceptre.stack.Stack.execute_change_set")
+    @patch("sceptre.stack.Stack.delete_change_set")
+    @patch("sceptre.stack.Stack.describe_change_set")
     @patch("sceptre.stack.Stack.wait_for_cs_completion")
     @patch("sceptre.stack.Stack.create_change_set")
     def test_launch_using_change_set_without_name(
             self, mock_create_change_set, mock_wait_for_cs_completion,
+            mock_describe_change_set, mock_delete_change_set,
             mock_execute_change_set, mock_uuid
     ):
         self.stack._template = Mock(spec=Template)
         self.stack._template.requires_change_set = True
 
+        mock_delete_change_set.return_value = {'Status': 'SUCCESS'}
         mock_uuid.return_value = UUID(int=0)
 
         self.stack.launch_using_change_set()
@@ -320,17 +324,22 @@ class TestStack(object):
             "change-set-00000000000000000000000000000000")
         mock_execute_change_set.assert_called_once_with(
             "change-set-00000000000000000000000000000000")
+        mock_delete_change_set.assert_not_called()
 
     @patch('sceptre.stack.uuid1')
     @patch("sceptre.stack.Stack.execute_change_set")
+    @patch("sceptre.stack.Stack.delete_change_set")
+    @patch("sceptre.stack.Stack.describe_change_set")
     @patch("sceptre.stack.Stack.wait_for_cs_completion")
     @patch("sceptre.stack.Stack.create_change_set")
     def test_launch_using_change_set_with_name(
             self, mock_create_change_set, mock_wait_for_cs_completion,
+            mock_describe_change_set, mock_delete_change_set,
             mock_execute_change_set, mock_uuid
     ):
         self.stack._template = Mock(spec=Template)
         self.stack._template.requires_change_set = True
+        mock_describe_change_set.return_value = {'Status': 'SUCCESS'}
 
         change_set_name = UUID(int=1)
 
@@ -340,6 +349,62 @@ class TestStack(object):
         mock_create_change_set.assert_called_once_with(change_set_name)
         mock_wait_for_cs_completion.assert_called_once_with(change_set_name)
         mock_execute_change_set.assert_called_once_with(change_set_name)
+        mock_delete_change_set.assert_not_called()
+
+    @patch('sceptre.stack.uuid1')
+    @patch("sceptre.stack.Stack.execute_change_set")
+    @patch("sceptre.stack.Stack.delete_change_set")
+    @patch("sceptre.stack.Stack.describe_change_set")
+    @patch("sceptre.stack.Stack.wait_for_cs_completion")
+    @patch("sceptre.stack.Stack.create_change_set")
+    def test_launch_using_change_set_with_name_and_failed_change_set(
+            self, mock_create_change_set, mock_wait_for_cs_completion,
+            mock_describe_change_set, mock_delete_change_set,
+            mock_execute_change_set, mock_uuid
+    ):
+        self.stack._template = Mock(spec=Template)
+        self.stack._template.requires_change_set = True
+        mock_describe_change_set.return_value = {
+            'Status': 'FAILED', 'StatusReason': 'Invalid Template'
+        }
+
+        change_set_name = UUID(int=1)
+
+        self.stack.launch_using_change_set(change_set_name)
+
+        mock_uuid.asset_not_called()
+        mock_create_change_set.assert_called_once_with(change_set_name)
+        mock_wait_for_cs_completion.assert_called_once_with(change_set_name)
+        mock_execute_change_set.assert_called_once_with(change_set_name)
+        mock_delete_change_set.assert_not_called()
+
+    @patch('sceptre.stack.uuid1')
+    @patch("sceptre.stack.Stack.execute_change_set")
+    @patch("sceptre.stack.Stack.delete_change_set")
+    @patch("sceptre.stack.Stack.describe_change_set")
+    @patch("sceptre.stack.Stack.wait_for_cs_completion")
+    @patch("sceptre.stack.Stack.create_change_set")
+    def test_launch_using_change_set_with_name_and_no_changes(
+            self, mock_create_change_set, mock_wait_for_cs_completion,
+            mock_describe_change_set, mock_delete_change_set,
+            mock_execute_change_set, mock_uuid
+    ):
+        self.stack._template = Mock(spec=Template)
+        self.stack._template.requires_change_set = True
+        mock_describe_change_set.return_value = {
+            'Status': 'FAILED',
+            'StatusReason': 'No updates are to be performed.'
+        }
+
+        change_set_name = UUID(int=1)
+
+        self.stack.launch_using_change_set(change_set_name)
+
+        mock_uuid.asset_not_called()
+        mock_create_change_set.assert_called_once_with(change_set_name)
+        mock_wait_for_cs_completion.assert_called_once_with(change_set_name)
+        mock_execute_change_set.assert_not_called()
+        mock_delete_change_set.assert_called_once_with(change_set_name)
 
     @patch("sceptre.stack.Stack.create")
     @patch("sceptre.stack.Stack.get_status")
