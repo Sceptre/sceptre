@@ -26,13 +26,10 @@ def step_impl(context, message):
     else:
         raise Exception("Step has incorrect message")
 
-<<<<<<< HEAD
-=======
 
 @then('no exception is raised')
 def step_impl(context):
     assert (context.error is None)
->>>>>>> 4f71919... fixup linting
 
 
 @then('a "{exception_type}" is raised')
