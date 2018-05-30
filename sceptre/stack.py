@@ -55,7 +55,8 @@ class Stack(object):
         self, name, project_code, template_path, region, iam_role=None,
         parameters=None, sceptre_user_data=None, hooks=None, s3_details=None,
         dependencies=None, role_arn=None, protected=False, tags=None,
-        external_name=None, notifications=None, on_failure=None, stack_timeout=0
+        external_name=None, notifications=None, on_failure=None,
+        stack_timeout=0
     ):
         self.logger = logging.getLogger(__name__)
 
