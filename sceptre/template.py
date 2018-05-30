@@ -15,6 +15,7 @@ import threading
 
 import botocore
 import jinja2
+
 from .exceptions import UnsupportedTemplateFileTypeError
 from .exceptions import TemplateSceptreHandlerError
 
