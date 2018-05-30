@@ -53,9 +53,9 @@ class Stack(object):
 
     def __init__(
         self, name, project_code, template_path, region, iam_role=None,
-        profile=None, parameters=None, sceptre_user_data=None, hooks=None,
-        s3_details=None, dependencies=None, role_arn=None, protected=False,
-        tags=None, external_name=None, notifications=None, on_failure=None
+        parameters=None, sceptre_user_data=None, hooks=None, s3_details=None,
+        dependencies=None, role_arn=None, protected=False, tags=None,
+        external_name=None, notifications=None, on_failure=None
     ):
         self.logger = logging.getLogger(__name__)
 
@@ -65,11 +65,7 @@ class Stack(object):
         self.external_name = external_name or \
             get_external_stack_name(self.project_code, self.name)
 
-        self.connection_manager = ConnectionManager(
-            region,
-            iam_role=iam_role,
-            profile=profile
-        )
+        self.connection_manager = ConnectionManager(region, iam_role)
 
         self.template_path = template_path
         self.s3_details = s3_details
@@ -91,8 +87,7 @@ class Stack(object):
             "sceptre.stack.Stack("
             "name='{name}', project_code='{project_code}', "
             "template_path='{template_path}', region='{region}', "
-            "iam_role='{iam_role}', profile='{profile}', "
-            "parameters='{parameters}', "
+            "iam_role='{iam_role}', parameters='{parameters}', "
             "sceptre_user_data='{sceptre_user_data}', "
             "hooks='{hooks}', s3_details='{s3_details}', "
             "dependencies='{dependencies}', role_arn='{role_arn}', "
@@ -104,7 +99,6 @@ class Stack(object):
                 template_path=self.template_path,
                 region=self.connection_manager.region,
                 iam_role=self.connection_manager.iam_role,
-                profile=self.connection_manager.profile,
                 parameters=self.parameters,
                 sceptre_user_data=self.sceptre_user_data,
                 hooks=self.hooks, s3_details=self.s3_details,
