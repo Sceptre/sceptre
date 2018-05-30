@@ -146,8 +146,6 @@ workflows:
           filters:
             tags:
               only: /.*/
-            branches:
-              ignore: /^pull\/.*/
       - deploy-docs:
           requires:
             - lint-and-unit-tests
