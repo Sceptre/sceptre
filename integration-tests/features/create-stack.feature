@@ -29,3 +29,10 @@ Feature: Create stack
     and the template for stack "8/B" is "invalid_template.json"
     When the user creates stack "8/B"
     Then stack "8/B" exists in "CREATE_FAILED" state
+
+  Scenario: create new stack that is rolled back after timeout
+    Given stack "8/C" does not exist
+    and the template for stack "8/C" is "valid_template_wait_300.json"
+    and the stack_timeout for stack "8/C" is "1"
+    When the user creates stack "8/C"
+    Then stack "8/C" exists in "ROLLBACK_COMPLETE" state
