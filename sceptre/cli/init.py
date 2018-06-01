@@ -6,7 +6,7 @@ import yaml
 
 from sceptre.config_reader import ENVIRONMENT_CONFIG_ATTRIBUTES
 from sceptre.cli.helpers import catch_exceptions
-from sceptre.exceptions import ProjectAlreadyExistsError
+from sceptre.exceptions import ProjectAlreadyExistsError, TemplateAlreadyExistsError
 
 
 @click.group(name="init")
@@ -73,6 +73,46 @@ def init_project(ctx, project_name):
 
     config_path = os.path.join(cwd, project_name, "config")
     _create_config_file(config_path, config_path, defaults)
+
+
+@init_group.command("template")
+@catch_exceptions
+@click.argument('template_filename')
+@click.option('--env', '-e', multiple=True)
+@click.pass_context
+def init_template(ctx, template_filename, env):
+    """
+    Initialises a new template.
+
+    Creates TEMPLATE_FILENAME file in templates/ and optionally
+    adds an appropriate config for multiple environments.
+    """
+    cwd = os.getcwd()
+
+    template_folder = os.path.join(cwd, "templates")
+    config_folder = os.path.join(cwd, "config")
+
+    template_path = os.path.join(template_folder, template_filename)
+    if os.path.isfile(template_path):
+        print('Template \"{0}\" already exists.'.format(template_filename))
+    else:
+        # create template file
+        with open(template_path, 'w') as f:
+            print('Created template: \"{0}\"'.format(template_filename))
+
+    # create stack config in each specified environment
+    for e in env:
+        env_folder = os.path.join(config_folder, e)
+
+        # Check if environment folder does not exist
+        if not os.path.isdir(env_folder):
+            print('Environment \"{0}\" does not exist.'.format(e))
+            continue
+
+        config_filename = os.path.join(env_folder, template_filename)
+        with open(config_filename, 'w') as f:
+            f.write('template_path: templates/{0}'.format(template_filename))
+            print('Created config file in environment \"{0}\" for \"{1}\"'.format(e, template_filename))
 
 
 def _create_new_environment(config_dir, new_path):

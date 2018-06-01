@@ -15,6 +15,13 @@ class ProjectAlreadyExistsError(SceptreException):
     pass
 
 
+class TemplateAlreadyExistsError(SceptreException):
+    """
+    Error raised when Sceptre project already exists.
+    """
+    pass
+
+
 class InvalidSceptreDirectoryError(SceptreException):
     """
     Error raised if a sceptre directory is invalid.
