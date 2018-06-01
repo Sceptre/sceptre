@@ -211,7 +211,8 @@ class TestConfigReader(object):
                 tags={},
                 external_name=None,
                 notifications=None,
-                on_failure=None
+                on_failure=None,
+                stack_timeout=0
         )
         assert stack == sentinel.stack
 

@@ -1,10 +1,25 @@
 from behave import *
 import time
+import os
+import yaml
 from botocore.exceptions import ClientError
 from helpers import read_template_file, get_cloudformation_stack_name
 from helpers import retry_boto_call
 
 from sceptre.config_reader import ConfigReader
+
+
+def set_stack_timeout(context, stack_name, stack_timeout):
+    config_path = os.path.join(
+        context.sceptre_dir, "config", stack_name + ".yaml"
+    )
+    with open(config_path) as config_file:
+        stack_config = yaml.safe_load(config_file)
+
+    stack_config["stack_timeout"] = int(stack_timeout)
+
+    with open(config_path, 'w') as config_file:
+        yaml.safe_dump(stack_config, config_file, default_flow_style=False)
 
 
 @given('stack "{stack_name}" does not exist')
@@ -57,6 +72,11 @@ def step_impl(context, stack_name, template_name):
 
     status = get_stack_status(context, full_name)
     assert (status == "CREATE_COMPLETE")
+
+
+@given('the stack_timeout for stack "{stack_name}" is "{stack_timeout}"')
+def step_impl(context, stack_name, stack_timeout):
+    set_stack_timeout(context, stack_name, stack_timeout)
 
 
 @when('the user creates stack "{stack_name}"')
