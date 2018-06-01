@@ -59,7 +59,7 @@ jobs:
           paths:
             - .tox
   integration-tests:
-    parallelism: 4
+    parallelism: 2
     docker:
       - image: cloudreach/sceptre-circleci:0.2
         environment:
