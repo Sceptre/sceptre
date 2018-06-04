@@ -18,6 +18,10 @@ class TestConnectionManager(object):
         self.profile = None
         self.region = "eu-west-1"
 
+        ConnectionManager._boto_sessions = {}
+        ConnectionManager._stack_keys = {}
+        ConnectionManager._clients = {}
+
         self.connection_manager = ConnectionManager(
             region=self.region,
             stack_name=self.stack_name,
@@ -40,6 +44,7 @@ class TestConnectionManager(object):
             stack_name="stack",
             profile="profile"
         )
+
         assert connection_manager.stack_name == "stack"
         assert connection_manager.profile == "profile"
         assert connection_manager.region == self.region

@@ -67,7 +67,7 @@ class Stack(object):
             get_external_stack_name(self.project_code, self.name)
 
         self.connection_manager = ConnectionManager(
-            region, profile, external_name
+            region, profile, self.external_name
         )
 
         self.profile = profile
