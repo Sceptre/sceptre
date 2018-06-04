@@ -98,6 +98,12 @@ def catch_exceptions(func):
             return func(*args, **kwargs)
         except (SceptreException, BotoCoreError, ClientError, Boto3Error,
                 TemplateError) as error:
+
+            if hasattr(error, "error_message"):
+                error = "{0}('{1}')".format(
+                    error.__class__.__name__, error.error_message
+                )
+
             write(error)
             sys.exit(1)
 
@@ -272,14 +278,11 @@ def delete_stack(ctx, environment, stack):
         if response != StackStatus.COMPLETE:
             exit(1)
     except KeyError:
-        raise StackConfigurationDoesNotExistError
-    except StackConfigurationDoesNotExistError:
-        write(
+        raise StackConfigurationDoesNotExistError(
             "Could not find a stack configuration with the name {0}".format(
                 stack
             )
         )
-        exit(1)
 
 
 @cli.command(name="update-stack")

@@ -146,7 +146,8 @@ class StackConfigurationDoesNotExistError(SceptreException):
     """
     Error raised when a stack configuration does not exist.
     """
-    pass
+    def __init__(self, error_message):
+        self.error_message = error_message
 
 
 class BotoSessionNotConfiguredError(SceptreException):
