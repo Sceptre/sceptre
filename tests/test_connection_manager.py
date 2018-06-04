@@ -169,6 +169,21 @@ class TestConnectionManager(object):
         return_value = self.connection_manager.call(service, command, {})
         assert return_value['ResponseMetadata']['HTTPStatusCode'] == 200
 
+    @mock_s3
+    def test_call_with_valid_service_and_stack_name_call(self):
+        service = 's3'
+        command = 'list_buckets'
+
+        connection_manager = ConnectionManager(
+            region=self.region,
+            stack_name='stack'
+        )
+
+        return_value = connection_manager.call(
+            service, command, {}, stack_name='stack'
+        )
+        assert return_value['ResponseMetadata']['HTTPStatusCode'] == 200
+
 
 class TestRetry():
 
