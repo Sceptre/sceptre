@@ -200,7 +200,7 @@ class TestConfigReader(object):
                     self.test_sceptre_directory, "path/to/template"
                 ),
                 region="region_region",
-                iam_role="account_iam_role",
+                profile="account_profile",
                 parameters={"param1": "val1"},
                 sceptre_user_data={},
                 hooks={},
