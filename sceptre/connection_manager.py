@@ -65,8 +65,8 @@ class ConnectionManager(object):
 
     :param profile: The aws credential profile that should be used.
     :type profile: str
-    :param iam_role: The iam_role that should be assumed in the account.
-    :type iam_role: str
+    :param stack_name: The cloudformation stack name for this connection.
+    :type stack_name: str
     :param region: The region to use.
     :type region: str
     """
@@ -82,6 +82,7 @@ class ConnectionManager(object):
 
         self.region = region
         self.profile = profile
+        self.stack_name = stack_name
 
         if stack_name:
             self._stack_keys[stack_name] = (region, profile)
@@ -89,8 +90,8 @@ class ConnectionManager(object):
     def __repr__(self):
         return (
             "sceptre.connection_manager.ConnectionManager(region='{0}', "
-            "iam_role='{1}', profile='{2}')".format(
-                self.region, self.profile
+            "profile='{1}', stack_name='{2}')".format(
+                self.region, self.profile, self.stack_name
             )
         )
 
@@ -98,11 +99,10 @@ class ConnectionManager(object):
         """
         Returns a boto session in the target account.
 
-        If an ``iam_role`` is specified in ConnectionManager's initialiser,
-        then STS is used to assume the specified IAM role in the account and
-        uses temporary credentials to create the boto session. If ``iam_role``
-        is not specified, the default AWS credentials are used to create the
-        boto session.
+        If a ``profile`` is specified in ConnectionManager's initialiser,
+        then the profile is used to generate temporary credentials to create
+        the boto session. If ``profile`` is not specified then the default
+        profile is assumed to create the boto session.
 
         :returns: The Boto3 session.
         :rtype: boto3.session.Session
