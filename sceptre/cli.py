@@ -302,14 +302,11 @@ def update_stack(ctx, environment, stack):
         if response != StackStatus.COMPLETE:
             exit(1)
     except KeyError:
-        raise StackConfigurationDoesNotExistError
-    except StackConfigurationDoesNotExistError:
-        write(
+        raise StackConfigurationDoesNotExistError(
             "Could not find a stack configuration with the name {0}".format(
                 stack
             )
         )
-        exit(1)
 
 
 @cli.command(name="launch-stack")
@@ -329,14 +326,11 @@ def launch_stack(ctx, environment, stack):
         if response != StackStatus.COMPLETE:
             exit(1)
     except KeyError:
-        raise StackConfigurationDoesNotExistError
-    except StackConfigurationDoesNotExistError:
-        write(
+        raise StackConfigurationDoesNotExistError(
             "Could not find a stack configuration with the name {0}".format(
                 stack
             )
         )
-        exit(1)
 
 
 @cli.command(name="launch-env")

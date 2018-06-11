@@ -166,8 +166,17 @@ class TestCli(object):
 
     @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli.get_env")
+    def test_delete_stack(self, mock_get_env, mock_getcwd):
+        mock_getcwd.return_value = sentinel.cwd
+        self.runner.invoke(cli, ["delete-stack", "dev", "vpc"])
+        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
+        mock_get_env.return_value.stacks["vpc"].delete\
+            .assert_called_with()
+
+    @patch("sceptre.cli.os.getcwd")
+    @patch("sceptre.cli.get_env")
     @patch("sceptre.cli.click.echo")
-    def test_delete_stack(self, mock_echo, mock_get_env, mock_getcwd):
+    def test_delete_stack_with_invalid_config(self, mock_echo, mock_get_env, mock_getcwd):
         mock_getcwd.return_value = sentinel.cwd
         mock_get_env().stacks.__getitem__.side_effect = KeyError
 
@@ -191,12 +200,44 @@ class TestCli(object):
 
     @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli.get_env")
+    @patch("sceptre.cli.click.echo")
+    def test_update_stack_with_invalid_config(self, mock_echo, mock_get_env, mock_getcwd):
+        mock_getcwd.return_value = sentinel.cwd
+        mock_get_env().stacks.__getitem__.side_effect = KeyError
+
+        result = self.runner.invoke(cli, ["update-stack", "dev", "vpc"])
+        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
+
+        mock_echo.assert_called_with(
+            "StackConfigurationDoesNotExistError('Could not "
+            "find a stack configuration with the name vpc')"
+        )
+        assert result.exit_code == 1
+
+    @patch("sceptre.cli.os.getcwd")
+    @patch("sceptre.cli.get_env")
     def test_launch_stack(self, mock_get_env, mock_getcwd):
         mock_getcwd.return_value = sentinel.cwd
         self.runner.invoke(cli, ["launch-stack", "dev", "vpc"])
         mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
         mock_get_env.return_value.stacks["vpc"].launch\
             .assert_called_with()
+
+    @patch("sceptre.cli.os.getcwd")
+    @patch("sceptre.cli.get_env")
+    @patch("sceptre.cli.click.echo")
+    def test_launch_stack_with_invalid_config(self, mock_echo, mock_get_env, mock_getcwd):
+        mock_getcwd.return_value = sentinel.cwd
+        mock_get_env().stacks.__getitem__.side_effect = KeyError
+
+        result = self.runner.invoke(cli, ["launch-stack", "dev", "vpc"])
+        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
+
+        mock_echo.assert_called_with(
+            "StackConfigurationDoesNotExistError('Could not "
+            "find a stack configuration with the name vpc')"
+        )
+        assert result.exit_code == 1
 
     @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli.get_env")

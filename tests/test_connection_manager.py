@@ -161,6 +161,18 @@ class TestConnectionManager(object):
         assert boto_session_1 == boto_session_2
 
     @patch("sceptre.connection_manager.boto3.session.Session.get_credentials")
+    def test_get_client_with_invalid_session(
+        self, mock_get_credentials
+    ):
+        service = "s3"
+
+        # self.connection_manager.boto_session = None
+        client = self.connection_manager._get_client(service)
+
+        expected_client = Session().client(service)
+        assert str(type(client)) == str(type(expected_client))
+    
+    @patch("sceptre.connection_manager.boto3.session.Session.get_credentials")
     def test_get_client_with_no_pre_existing_clients(
         self, mock_get_credentials
     ):
