@@ -43,14 +43,13 @@ class StackOutputBase(Resolver):
                     stack_name, output_key
                 )
             )
-            exit(1)
-        except StackDoesNotHaveOutputsError:
-            self.logger.error(
-                "The Stack '{0}' does not have any outputs.".format(
-                    stack_name
-                )
-            )
-            exit(1)
+        # except StackDoesNotHaveOutputsError:
+        #     self.logger.error(
+        #         "The Stack '{0}' does not have any outputs.".format(
+        #             stack_name
+        #         )
+        #     )
+            # exit(1)
 
     def _get_stack_outputs(self, stack_name):
         """

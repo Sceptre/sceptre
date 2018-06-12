@@ -7,7 +7,7 @@ from sceptre.config import Config
 from sceptre.resolvers.stack_output import \
     StackOutput, StackOutputExternal, StackOutputBase
 from sceptre.exceptions import DependencyStackMissingOutputError
-from sceptre.exceptions import StackDoesNotExistError
+from sceptre.exceptions import StackDoesNotExistError, StackDoesNotHaveOutputsError
 from botocore.exceptions import ClientError
 
 
@@ -129,6 +129,58 @@ class TestStackOutputBaseResolver(object):
         )
 
         assert response == "value"
+
+    @patch(
+        "sceptre.resolvers.stack_output.StackOutputBase._get_stack_outputs"
+    )
+    def test_get_stack_outputs_no_outputs(self, mock_get_stack_outputs):
+        mock_connection_manager = Mock()
+        mock_connection_manager.call.return_value = {
+            "Stacks": [{"Outputs":[]}]
+        }
+
+        self.mock_base_stack_output_resolver.connection_manager = \
+            mock_connection_manager
+
+        mock_get_stack_outputs.side_effect = StackDoesNotHaveOutputsError
+
+        with pytest.raises(StackDoesNotHaveOutputsError):
+            self.mock_base_stack_output_resolver._get_stack_outputs(
+                "SomeStackThatDoesntExist"
+            )
+
+    def test_get_stack_outputs_non_existent_stack(self):
+        mock_connection_manager = Mock()
+        mock_connection_manager.call.return_value = {
+            "Stack": []
+        }
+
+        self.mock_base_stack_output_resolver.connection_manager = \
+            mock_connection_manager
+
+        with pytest.raises(StackDoesNotHaveOutputsError):
+            self.mock_base_stack_output_resolver._get_stack_outputs(
+                "SomeStackThatDoesntExist"
+            )
+
+    @patch(
+        "sceptre.resolvers.stack_output.StackOutputBase._get_stack_outputs"
+    )
+    def test_get_output_value_with_no_outputs(self, mock_get_stack_outputs):
+        mock_connection_manager = Mock()
+        mock_connection_manager.call.return_value = {
+            "Stacks": [{"SomeOtherKey"}]
+        }
+
+        self.mock_base_stack_output_resolver.connection_manager = \
+            mock_connection_manager
+
+        mock_get_stack_outputs.side_effect = StackDoesNotHaveOutputsError
+
+        with pytest.raises(StackDoesNotHaveOutputsError):
+            self.mock_base_stack_output_resolver._get_output_value(
+                sentinel.stack_name, "something"
+            )
 
     @patch(
         "sceptre.resolvers.stack_output.StackOutputBase._get_stack_outputs"
