@@ -101,6 +101,7 @@ class MockStackOutputBase(StackOutputBase):
     to allow testing on StackOutputBaseResolver, which is not otherwise
     instantiable.
     """
+
     def __init__(self, *args, **kwargs):
         super(MockStackOutputBase, self).__init__(*args, **kwargs)
 
@@ -136,7 +137,7 @@ class TestStackOutputBaseResolver(object):
     def test_get_stack_outputs_no_outputs(self, mock_get_stack_outputs):
         mock_connection_manager = Mock()
         mock_connection_manager.call.return_value = {
-            "Stacks": [{"Outputs":[]}]
+            "Stacks": [{"Outputs": []}]
         }
 
         self.mock_base_stack_output_resolver.connection_manager = \
