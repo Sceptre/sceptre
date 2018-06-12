@@ -122,11 +122,11 @@ Get Started
 
    - Login to CircleCi using your Github Account.
    - Click `Add Projects`, you will be presented with a list of projects from your GitHub Account.
-   - On your sceptre fork press the `Set Up Project`.
-   - You can ignore the setup steps, we already have a CircleCi config file in Sceptre. Click the "Start Building".
-   - Modify the project settings under `Builds -> Sceptre` and the settings cog on the right hand side.
+   - On your sceptre fork press the `Set Up Project` button.
+   - You can ignore the setup steps, we already have a CircleCi config file in Sceptre. Click "Start Building".
+   - Modify the `Project Settings`, which can be found by navigating: `Builds -> Sceptre` and selecting the `Settings` icon, on the right hand side of the page.
    - Once in the `Project Settings` section under `Permissions` select `AWS Permissions`.
-   - Add a `Access Key ID` and `Secret Access Key` from an AWS user from your AWS account. The user will require "Full" permissions for `CloudFormation` and `S3` and Write permissions for `STS` (AssumeRole).
+   - Add your `Access Key ID` and `Secret Access Key` that is associated with an IAM User from your AWS account. The IAM User will require "Full" permissions for `CloudFormation` and `S3` and Write permissions for `STS` (AssumeRole).
 
    Once you have set up CircleCi any time you commit to a branch in your fork all tests will be run, including integration tests.
 
