@@ -7,7 +7,8 @@ from sceptre.config import Config
 from sceptre.resolvers.stack_output import \
     StackOutput, StackOutputExternal, StackOutputBase
 from sceptre.exceptions import DependencyStackMissingOutputError
-from sceptre.exceptions import StackDoesNotExistError, StackDoesNotHaveOutputsError
+from sceptre.exceptions import StackDoesNotExistError, \
+    StackDoesNotHaveOutputsError
 from botocore.exceptions import ClientError
 
 

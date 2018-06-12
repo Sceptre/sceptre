@@ -176,7 +176,9 @@ class TestCli(object):
     @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli.get_env")
     @patch("sceptre.cli.click.echo")
-    def test_delete_stack_with_invalid_config(self, mock_echo, mock_get_env, mock_getcwd):
+    def test_delete_stack_with_invalid_config(
+        self, mock_echo, mock_get_env, mock_getcwd
+    ):
         mock_getcwd.return_value = sentinel.cwd
         mock_get_env().stacks.__getitem__.side_effect = KeyError
 
@@ -201,7 +203,9 @@ class TestCli(object):
     @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli.get_env")
     @patch("sceptre.cli.click.echo")
-    def test_update_stack_with_invalid_config(self, mock_echo, mock_get_env, mock_getcwd):
+    def test_update_stack_with_invalid_config(
+        self, mock_echo, mock_get_env, mock_getcwd
+    ):
         mock_getcwd.return_value = sentinel.cwd
         mock_get_env().stacks.__getitem__.side_effect = KeyError
 
@@ -226,7 +230,9 @@ class TestCli(object):
     @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli.get_env")
     @patch("sceptre.cli.click.echo")
-    def test_launch_stack_with_invalid_config(self, mock_echo, mock_get_env, mock_getcwd):
+    def test_launch_stack_with_invalid_config(
+        self, mock_echo, mock_get_env, mock_getcwd
+    ):
         mock_getcwd.return_value = sentinel.cwd
         mock_get_env().stacks.__getitem__.side_effect = KeyError
 

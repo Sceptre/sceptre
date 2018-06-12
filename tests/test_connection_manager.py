@@ -12,7 +12,8 @@ from boto3.session import Session
 from botocore.exceptions import ClientError, UnknownServiceError
 
 from sceptre.connection_manager import ConnectionManager, _retry_boto_call
-from sceptre.exceptions import RetryLimitExceededError, BotoSessionNotConfiguredError
+from sceptre.exceptions import RetryLimitExceededError
+from sceptre.exceptions import BotoSessionNotConfiguredError
 
 
 class TestConnectionManager(object):
@@ -191,7 +192,7 @@ class TestConnectionManager(object):
             self.connection_manager.boto_session
 
     @patch("sceptre.connection_manager.boto3.session.Session")
-    def test_boto_session_raise_with_exisiting_client_and_no_credentials(self, mock_Session):
+    def test_boto_session_raise_with_exisiting_client(self, mock_Session):
         service = "cloudformation"
         self.connection_manager._iam_role = None
         mock_Session.return_value.get_credentials.return_value = None
