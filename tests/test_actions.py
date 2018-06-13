@@ -726,12 +726,7 @@ class TestStackActions(object):
             "key2": None,
             "key3": None
         }
-        formatted_parameters = self.actions._format_parameters(parameters)
-        sorted_formatted_parameters = sorted(
-            formatted_parameters,
-            key=lambda x: x["ParameterKey"]
-        )
-        assert sorted_formatted_parameters == []
+        assert self.actions._format_parameters(parameters) == []
 
     def test_format_parameters_with_none_and_string_values(self):
         parameters = {
@@ -749,6 +744,38 @@ class TestStackActions(object):
             {"ParameterKey": "key3", "ParameterValue": "value3"}
         ]
 
+    def test_format_parameters_with_number_values(self):
+        parameters = {
+            "key1": 0.0,
+            "key2": 2.349520,
+            "key3": 2173540618439890,
+        }
+        formatted_parameters = self.actions._format_parameters(parameters)
+        sorted_formatted_parameters = sorted(
+            formatted_parameters,
+            key=lambda x: x["ParameterKey"]
+        )
+        assert sorted_formatted_parameters == [
+            {"ParameterKey": "key1", "ParameterValue": "0.0"},
+            {"ParameterKey": "key2", "ParameterValue": "2.34952"},
+            {"ParameterKey": "key3", "ParameterValue": "2173540618439890"}
+        ]
+
+    def test_format_parameters_with_boolean_values(self):
+        parameters = {
+            "key1": True,
+            "key2": False
+        }
+        formatted_parameters = self.actions._format_parameters(parameters)
+        sorted_formatted_parameters = sorted(
+            formatted_parameters,
+            key=lambda x: x["ParameterKey"]
+        )
+        assert sorted_formatted_parameters == [
+            {"ParameterKey": "key1", "ParameterValue": "true"},
+            {"ParameterKey": "key2", "ParameterValue": "false"}
+        ]
+
     def test_format_parameters_with_list_values(self):
         parameters = {
             "key1": ["value1", "value2", "value3"],
@@ -764,6 +791,23 @@ class TestStackActions(object):
             {"ParameterKey": "key1", "ParameterValue": "value1,value2,value3"},
             {"ParameterKey": "key2", "ParameterValue": "value4,value5,value6"},
             {"ParameterKey": "key3", "ParameterValue": "value7,value8,value9"}
+        ]
+
+    def test_format_parameters_with_list_values_containing_mixed_values(self):
+        parameters = {
+            "key1": ["value1", 2.3, True],
+            "key2": ["value4", 5123.58, False],
+            "key3": ["value7", 0, "value9"]
+        }
+        formatted_parameters = self.actions._format_parameters(parameters)
+        sorted_formatted_parameters = sorted(
+            formatted_parameters,
+            key=lambda x: x["ParameterKey"]
+        )
+        assert sorted_formatted_parameters == [
+            {"ParameterKey": "key1", "ParameterValue": "value1,2.3,true"},
+            {"ParameterKey": "key2", "ParameterValue": "value4,5123.58,false"},
+            {"ParameterKey": "key3", "ParameterValue": "value7,0,value9"}
         ]
 
     def test_format_parameters_with_none_and_list_values(self):

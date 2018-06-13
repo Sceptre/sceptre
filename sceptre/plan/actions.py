@@ -639,14 +639,27 @@ class StackActions(object):
         for name, value in parameters.items():
             if value is None:
                 continue
-            if isinstance(value, list):
-                value = ",".join(value)
             formatted_parameters.append({
                 "ParameterKey": name,
-                "ParameterValue": value
+                "ParameterValue": self._format_value(value)
             })
 
         return formatted_parameters
+
+    def _format_value(self, value):
+        """
+        Converts CloudFormation value to the format used by Boto3.
+        """
+        if isinstance(value, list):
+            # recurse
+            new_list = [self._format_value(item) for item in value]
+            return ",".join(new_list)
+        if value is True:
+            return "true"
+        elif value is False:
+            return "false"
+        else:
+            return str(value)
 
     def _get_role_arn(self):
         """
