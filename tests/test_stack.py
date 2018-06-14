@@ -319,6 +319,7 @@ class TestStack(object):
         )
 
 
+
     @patch("sceptre.stack.Stack._wait_for_completion")
     def test_cancel_update_sends_correct_request(
             self, mock_wait_for_completion
@@ -330,6 +331,20 @@ class TestStack(object):
             kwargs={"StackName": sentinel.external_name}
         )
         mock_wait_for_completion.assert_called_once_with()
+
+    @patch("sceptre.stack.Stack.get_status")
+    @patch("sceptre.stack.Stack.launch_using_change_set")
+    def test_update_does_not_call_launch_using_change_set_when_non_existent(
+            self, mock_launch_using_change_set, mock_get_status
+    ):
+        self.stack._template = Mock(spec=Template)
+        self.stack._template.requires_change_set = True
+        mock_get_status.side_effect = StackDoesNotExistError()
+
+        return_value = self.stack.update()
+
+        mock_launch_using_change_set.assert_not_called()
+        assert(return_value == "PENDING")
 
     @patch('sceptre.stack.uuid1')
     @patch("sceptre.stack.Stack.execute_change_set")
