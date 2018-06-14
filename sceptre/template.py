@@ -321,3 +321,30 @@ class Template(object):
         template = env.get_template(filename)
         body = template.render(**jinja_vars)
         return body
+
+
+    @property
+    def template_summary(self):
+        """
+        The template summary
+
+        :returns: The template summary of the CloudFormation template.
+        :rtype: dict
+        """
+        if self._template_summary is None:
+            self._template_summary = self.connection_manager.call(
+                service="cloudformation",
+                command="get_template_summary",
+                kwargs=self.get_boto_call_parameter()
+            )
+        return self._template_summary
+
+    @property
+    def requires_change_set(self):
+        """
+        Requires change set
+
+        :returns: whether the tempalte requires changes via change sets
+        :rtype: bool
+        """
+        return "DeclaredTransforms" in self.template_summary

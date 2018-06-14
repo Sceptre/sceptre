@@ -337,12 +337,13 @@ class Stack(object):
         self.create_change_set(change_set_name)
         self.wait_for_cs_completion(change_set_name)
         cs_status = self.describe_change_set(change_set_name)
-        if cs_status['Status'] == 'FAILED' and \
-                cs_status['StatusReason'] == 'No updates are to be performed.':
-            self.logger.info("%s - No updates to perform - deleting %s",
-                             self.name,
-                             change_set_name
-                             )
+        if cs_status["Status"] == "FAILED" and \
+                cs_status["StatusReason"] == "No updates are to be performed.":
+            self.logger.info(
+                "%s - No updates to perform - deleting %s",
+                self.name,
+                change_set_name
+            )
             return self.delete_change_set(change_set_name)
         else:
             return self.execute_change_set(change_set_name)
