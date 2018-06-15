@@ -175,11 +175,12 @@ class ConnectionManager(object):
         :returns: The response from the Boto3 call.
         :rtype: dict
         """
-        if stack_name:
+        if stack_name and stack_name in self._stack_keys:
             region, profile = self._stack_keys[stack_name]
         else:
             profile = profile or self.profile
             region = region or self.region
+            self._stack_keys[stack_name] = (region, profile)
 
         if kwargs is None:  # pragma: no cover
             kwargs = {}
