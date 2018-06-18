@@ -1,26 +1,91 @@
 .. Sceptre documentation master file, created by
-   sphinx-quickstart on Sun Jun 17 17:07:39 2018.
+   sphinx-quickstart on Sun Jun  3 11:32:20 2018.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Sceptre's documentation!
-===================================
+Sceptre
+=======
 
+Sceptre is a tool to drive Cloudformation. Sceptre manages the creating,
+updating and deletion of stacks, and provides meta commands to allow
+users to get information about their stacks. Sceptre is unopinionated,
+enterprise ready and designed to be run as part of CI/CD pipelines.
+Sceptre is accessible as a CLI tool, or as a Python module.
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Original docs:
-   :glob:
+Motivation
+----------
 
-   original-docs/*
+CloudFormation lacks a robust tool to deploy and manage stacks. The AWS
+CLI and Boto3 both provide some functionality, but neither offer the
+chaining of one stack’s outputs to another’s parameters or easy support
+for working with role assumes or in multiple accounts, all of which are
+common tasks when deploying infrastructure.
+
+Sceptre was developed to produce a single tool which can be used to
+deploy any and all CloudFormation. It is intended to replace boilerplate
+scripts currently used.
+
+Overview
+--------
+
+Sceptre is used by defining CloudFormation, Jinja2 or Python templates,
+and corresponding YAML config files. The config files include which
+account and region to use, and the parameters to be supplied to the
+templates.
+
+For a tutorial on using Sceptre, see `Get Started`_, or find out more
+information about Sceptre below.
+
+Code
+----
+
+Sceptre’s source code can be found on `Github`_.
+
+Bugs and feature requests should be raised via our `Issues`_ page.
+
+This documentation acts as an in-depth reference for all of Sceptre's features.
+
+Beginners should consider reading our [getting started guide]({{ site.url }}{{ site.baseurl }}/docs/get_started.html), which provides a walk-through tutorial.
+
+.. _Get Started: docs/get_started.html
+.. _Github: https://github.com/cloudreach/sceptre/
+.. _Issues: https://github.com/cloudreach/sceptre/issues
 
 
 .. toctree::
    :maxdepth: 3
-   :caption: API:
+   :caption: Introduction
+
+   docs/install.rst
+   docs/get_started.rst
+   docs/terminology.rst
+   docs/architecture.rst
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Documentation
+
+   docs/cli.rst
+   docs/environment_config.rst
+   docs/stack_config.rst
+   docs/templates.rst
+   docs/hooks.rst
+   docs/resolvers.rst
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Support
+
+   docs/faq.rst
+
+
+.. toctree::
+   :maxdepth: 3
+   :caption: API
    :glob:
 
    api/modules
+
 
 Indices and tables
 ==================
