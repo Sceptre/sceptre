@@ -365,11 +365,24 @@ class TestEnvironment(object):
             "name": StackStatus.PENDING
         }
 
+    def test_get_empty_launch_dependencies(self):
+        mock_stack = Mock()
+        mock_stack.name = "dev/mock_stack"
+        mock_stack.dependencies = []
+
+        self.environment.stacks = {"mock_stack": mock_stack}
+
+        response = self.environment._get_launch_dependencies("dev")
+
+        assert response == {
+            "dev/mock_stack": []
+        }
+
     def test_get_launch_dependencies(self):
         mock_stack = Mock()
         mock_stack.name = "dev/mock_stack"
         mock_stack.dependencies = [
-            "dev/vpc",
+            "vpc",
             "dev/subnets",
             "prod/sg"
         ]
