@@ -18,7 +18,8 @@ PyYaml==3.12
 readme-renderer==17.2
 setuptools==37.0.0
 six==1.11.0
-Sphinx==1.6.5
+Sphinx>=1.6.5
+sphinx_rtd_theme>=0.4.0
 tox==2.9.1
 troposphere>=2.0.0,<2.1.0
 watchdog==0.8.3
