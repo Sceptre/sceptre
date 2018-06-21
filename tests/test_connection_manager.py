@@ -71,12 +71,12 @@ class TestConnectionManager(object):
         self.connection_manager.profile = None
 
         boto_session = self.connection_manager._get_session(
-            self.connection_manager.profile
+            self.connection_manager.profile, self.region
         )
 
         assert boto_session.isinstance(mock_Session)
         mock_Session.assert_called_once_with(
-            profile_name=None
+            profile_name=None, region_name="eu-west-1"
         )
 
     @patch("sceptre.connection_manager.boto3.session.Session")
@@ -85,12 +85,12 @@ class TestConnectionManager(object):
         self.connection_manager.profile = "profile"
 
         boto_session = self.connection_manager._get_session(
-            self.connection_manager.profile
+            self.connection_manager.profile, self.region
         )
 
         assert boto_session.isinstance(mock_Session)
         mock_Session.assert_called_once_with(
-            profile_name="profile"
+            profile_name="profile", region_name="eu-west-1"
         )
 
     @patch("sceptre.connection_manager.boto3.session.Session")
@@ -111,8 +111,9 @@ class TestConnectionManager(object):
         service = "s3"
         region = "eu-west-1"
         profile = None
+        stack = self.stack_name
 
-        client = self.connection_manager._get_client(service, region, profile)
+        client = self.connection_manager._get_client(service, region, profile, stack)
         expected_client = Session().client(service)
         assert str(type(client)) == str(type(expected_client))
 
@@ -121,21 +122,23 @@ class TestConnectionManager(object):
         service = "invalid_type"
         region = "eu-west-1"
         profile = None
+        stack = self.stack_name
 
         with pytest.raises(UnknownServiceError):
-            self.connection_manager._get_client(service, region, profile)
+            self.connection_manager._get_client(service, region, profile, stack)
 
     @patch("sceptre.connection_manager.boto3.session.Session.get_credentials")
     def test_get_client_with_exisiting_client(self, mock_get_credentials):
         service = "cloudformation"
         region = "eu-west-1"
         profile = None
+        stack = self.stack_name
 
         client_1 = self.connection_manager._get_client(
-            service, region, profile
+            service, region, profile, stack
         )
         client_2 = self.connection_manager._get_client(
-            service, region, profile
+            service, region, profile, stack
         )
         assert client_1 == client_2
 
@@ -146,13 +149,14 @@ class TestConnectionManager(object):
         service = "cloudformation"
         region = "eu-west-1"
         profile = None
+        stack = self.stack_name
 
         self.connection_manager.profile = None
         client_1 = self.connection_manager._get_client(
-            service, region, profile
+            service, region, profile, stack
         )
         client_2 = self.connection_manager._get_client(
-            service, region, profile
+            service, region, profile, stack
         )
         assert client_1 == client_2
 
