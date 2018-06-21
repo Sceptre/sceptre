@@ -75,7 +75,6 @@ class ConnectionManager(object):
     _client_lock = threading.Lock()
     _boto_sessions = {}
     _clients = {}
-    _stack_keys = {}
 
     def __init__(self, region, profile=None, stack_name=None):
         self.logger = logging.getLogger(__name__)
@@ -83,9 +82,6 @@ class ConnectionManager(object):
         self.region = region
         self.profile = profile
         self.stack_name = stack_name
-
-        if stack_name:
-            self._stack_keys[stack_name] = (region, profile)
 
     def __repr__(self):
         return (
@@ -95,7 +91,7 @@ class ConnectionManager(object):
             )
         )
 
-    def _get_session(self, profile):
+    def _get_session(self, profile, region):
         """
         Returns a boto session in the target account.
 
@@ -110,12 +106,15 @@ class ConnectionManager(object):
         """
         with self._session_lock:
             self.logger.debug("Getting Boto3 session")
+            key = (region, profile)
 
-            if self._boto_sessions.get(profile) is None:
+            if self._boto_sessions.get(key) is None:
                 self.logger.debug("No Boto3 session found, creating one...")
                 self.logger.debug("Using cli credentials...")
-                session = boto3.session.Session(profile_name=profile)
-                self._boto_sessions[profile] = session
+
+                # Region takes precedence when both profile and region are specified
+                session = boto3.session.Session(profile_name=profile, region_name=region)
+                self._boto_sessions[key] = session
 
                 self.logger.debug(
                     "Using credential set from %s: %s",
@@ -133,9 +132,9 @@ class ConnectionManager(object):
 
                 self.logger.debug("Boto3 session created")
 
-            return self._boto_sessions[profile]
+            return self._boto_sessions[key]
 
-    def _get_client(self, service, region, profile):
+    def _get_client(self, service, region, profile, stack_name):
         """
         Returns the Boto3 client associated with <service>.
 
@@ -148,18 +147,17 @@ class ConnectionManager(object):
         :rtype: boto3.client.Client
         """
         with self._client_lock:
-            key = (service, region, profile)
+            key = (service, region, profile, stack_name)
             if self._clients.get(key) is None:
                 self.logger.debug(
                     "No %s client found, creating one...", service
                 )
-                self._clients[key] = self._get_session(profile).client(service)
+                self._clients[key] = self._get_session(profile, region).client(service)
             return self._clients[key]
 
     @_retry_boto_call
     def call(
-        self, service, command, kwargs=None, profile=None, region=None,
-        stack_name=None
+        self, service, command, kwargs=None, profile=None, region=None, stack_name=None
     ):
         """
         Makes a threadsafe Boto3 client call.
@@ -175,14 +173,11 @@ class ConnectionManager(object):
         :returns: The response from the Boto3 call.
         :rtype: dict
         """
-        if stack_name and stack_name in self._stack_keys:
-            region, profile = self._stack_keys[stack_name]
-        else:
-            profile = profile or self.profile
+        if region is None and profile is None:
             region = region or self.region
-            self._stack_keys[stack_name] = (region, profile)
+            profile = profile or self.profile
 
         if kwargs is None:  # pragma: no cover
             kwargs = {}
-        client = self._get_client(service, region, profile)
+        client = self._get_client(service, region, profile, stack_name)
         return getattr(client, command)(**kwargs)

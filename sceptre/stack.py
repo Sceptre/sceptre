@@ -152,6 +152,7 @@ class Stack(object):
                 for k, v in self.tags.items()
             ]
         }
+
         if self.on_failure:
             create_stack_kwargs.update({"OnFailure": self.on_failure})
         create_stack_kwargs.update(self.template.get_boto_call_parameter())

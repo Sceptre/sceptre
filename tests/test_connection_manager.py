@@ -19,7 +19,6 @@ class TestConnectionManager(object):
         self.region = "eu-west-1"
 
         ConnectionManager._boto_sessions = {}
-        ConnectionManager._stack_keys = {}
         ConnectionManager._clients = {}
 
         self.connection_manager = ConnectionManager(
@@ -35,7 +34,6 @@ class TestConnectionManager(object):
         assert connection_manager.profile is None
         assert connection_manager.region == sentinel.region
         assert connection_manager._boto_sessions == {}
-        assert connection_manager._stack_keys == {}
         assert connection_manager._clients == {}
 
     def test_connection_manager_initialised_with_all_parameters(self):
@@ -49,9 +47,6 @@ class TestConnectionManager(object):
         assert connection_manager.profile == "profile"
         assert connection_manager.region == self.region
         assert connection_manager._boto_sessions == {}
-        assert connection_manager._stack_keys == {
-            "stack": (self.region, "profile")
-        }
         assert connection_manager._clients == {}
 
     def test_repr(self):
@@ -167,21 +162,6 @@ class TestConnectionManager(object):
         command = 'list_buckets'
 
         return_value = self.connection_manager.call(service, command, {})
-        assert return_value['ResponseMetadata']['HTTPStatusCode'] == 200
-
-    @mock_s3
-    def test_call_with_valid_service_and_stack_name_call(self):
-        service = 's3'
-        command = 'list_buckets'
-
-        connection_manager = ConnectionManager(
-            region=self.region,
-            stack_name='stack'
-        )
-
-        return_value = connection_manager.call(
-            service, command, {}, stack_name='stack'
-        )
         assert return_value['ResponseMetadata']['HTTPStatusCode'] == 200
 
 

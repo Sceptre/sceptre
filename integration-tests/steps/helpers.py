@@ -1,6 +1,7 @@
 from behave import *
 import os
 import time
+import re
 
 import jinja2.exceptions
 
@@ -48,6 +49,30 @@ def step_impl(context, exception_type):
         assert isinstance(context.error, jinja2.exceptions.UndefinedError)
     else:
         raise Exception("Step has incorrect message")
+
+
+@given('environment "{environment}" has AWS config "{config}" set')
+def step_impl(context, environment, config):
+    config_path = os.path.join(
+        context.sceptre_dir, "config", environment, config
+    )
+
+    os.environ['AWS_CONFIG_FILE'] = config_path
+
+
+@given('stack "{stack_name}" has its project code resolved')
+def step_impl(context, stack_name):
+    config_path = os.path.join(
+        context.sceptre_dir, "config", stack_name + ".yaml"
+    )
+
+    with open(config_path, "r") as file:
+        file_data = file.read()
+
+    file_data = file_data.replace("{project_code}", context.project_code)
+
+    with open(config_path, "w") as file:
+        file.write(file_data)
 
 
 def read_template_file(context, template_name):

@@ -96,7 +96,7 @@ class TestStackOutputExternalResolver(object):
         mock_get_output_value.return_value = "output_value"
         stack_output_external_resolver.resolve()
         mock_get_output_value.assert_called_once_with(
-            "another/account-vpc", "VpcId"
+            "another/account-vpc", "VpcId", None
         )
         assert stack.dependencies == []
 
