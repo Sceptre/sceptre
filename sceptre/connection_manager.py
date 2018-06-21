@@ -11,8 +11,9 @@ import functools
 import logging
 import threading
 import time
-
 import boto3
+
+from os import environ
 from botocore.exceptions import ClientError
 
 from .helpers import mask_key
@@ -112,10 +113,15 @@ class ConnectionManager(object):
                 self.logger.debug("No Boto3 session found, creating one...")
                 self.logger.debug("Using cli credentials...")
 
-                # Region takes precedence
-                session = boto3.session.Session(
-                    profile_name=profile, region_name=region
-                )
+                # Credentials from env take priority over profile
+                config = {
+                  "profile_name": profile,
+                  "region_name": region,
+                  "aws_access_key_id": environ.get("AWS_ACCESS_KEY_ID"),
+                  "aws_secret_access_key": environ.get("AWS_SECRET_ACCESS_KEY")
+                }
+
+                session = boto3.session.Session(**config)
                 self._boto_sessions[key] = session
 
                 self.logger.debug(
