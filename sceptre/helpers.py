@@ -5,8 +5,8 @@ import glob
 import imp
 import inspect
 import os
-import re
 import sys
+import re
 
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed

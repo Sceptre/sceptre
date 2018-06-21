@@ -162,4 +162,6 @@ class StackOutputExternal(StackOutputBase):
             profile = arguments[1]
 
         dependency_stack_name, output_key = stack_argument.split("::")
-        return self._get_output_value(dependency_stack_name, output_key, profile)
+        return self._get_output_value(
+            dependency_stack_name, output_key, profile
+        )

@@ -1,7 +1,6 @@
 from behave import *
 import os
 import time
-import re
 
 import jinja2.exceptions
 

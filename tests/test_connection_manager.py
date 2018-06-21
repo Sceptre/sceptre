@@ -113,7 +113,9 @@ class TestConnectionManager(object):
         profile = None
         stack = self.stack_name
 
-        client = self.connection_manager._get_client(service, region, profile, stack)
+        client = self.connection_manager._get_client(
+            service, region, profile, stack
+        )
         expected_client = Session().client(service)
         assert str(type(client)) == str(type(expected_client))
 
@@ -125,7 +127,9 @@ class TestConnectionManager(object):
         stack = self.stack_name
 
         with pytest.raises(UnknownServiceError):
-            self.connection_manager._get_client(service, region, profile, stack)
+            self.connection_manager._get_client(
+                service, region, profile, stack
+            )
 
     @patch("sceptre.connection_manager.boto3.session.Session.get_credentials")
     def test_get_client_with_exisiting_client(self, mock_get_credentials):

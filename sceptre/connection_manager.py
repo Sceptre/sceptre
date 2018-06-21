@@ -91,7 +91,7 @@ class ConnectionManager(object):
             )
         )
 
-    def _get_session(self, profile, region):
+    def _get_session(self, profile, region=None):
         """
         Returns a boto session in the target account.
 
@@ -112,8 +112,10 @@ class ConnectionManager(object):
                 self.logger.debug("No Boto3 session found, creating one...")
                 self.logger.debug("Using cli credentials...")
 
-                # Region takes precedence when both profile and region are specified
-                session = boto3.session.Session(profile_name=profile, region_name=region)
+                # Region takes precedence
+                session = boto3.session.Session(
+                    profile_name=profile, region_name=region
+                )
                 self._boto_sessions[key] = session
 
                 self.logger.debug(
@@ -152,12 +154,15 @@ class ConnectionManager(object):
                 self.logger.debug(
                     "No %s client found, creating one...", service
                 )
-                self._clients[key] = self._get_session(profile, region).client(service)
+                self._clients[key] = self._get_session(
+                    profile, region
+                ).client(service)
             return self._clients[key]
 
     @_retry_boto_call
     def call(
-        self, service, command, kwargs=None, profile=None, region=None, stack_name=None
+        self, service, command, kwargs=None, profile=None, region=None,
+        stack_name=None
     ):
         """
         Makes a threadsafe Boto3 client call.
