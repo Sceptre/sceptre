@@ -148,7 +148,7 @@ class ConnectionManager(object):
         :rtype: boto3.client.Client
         """
         with self._client_lock:
-            key = (service, region)
+            key = (service, region, profile)
             if self._clients.get(key) is None:
                 self.logger.debug(
                     "No %s client found, creating one...", service
