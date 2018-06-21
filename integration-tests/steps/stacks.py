@@ -2,6 +2,7 @@ from behave import *
 import time
 import os
 import yaml
+import boto3
 from contextlib import contextmanager
 from botocore.exceptions import ClientError
 from helpers import read_template_file, get_cloudformation_stack_name
@@ -160,7 +161,8 @@ def step_impl(context, stack_name):
 def step_impl(context, stack_name, region_name, desired_status):
     with region(region_name):
         full_name = get_cloudformation_stack_name(context, stack_name)
-        status = get_stack_status(context, full_name)
+        status = get_stack_status(context, full_name, region_name)
+
         assert (status == desired_status)
 
 
@@ -195,9 +197,14 @@ def step_impl(context, stack_name):
     assert formatted_response == context.output
 
 
-def get_stack_status(context, stack_name):
+def get_stack_status(context, stack_name, region_name=None):
+    if region_name is not None:
+        Stack = boto3.resource('cloudformation', region_name=region_name).Stack
+    else:
+        Stack = context.cloudformation.Stack
+
     try:
-        stack = retry_boto_call(context.cloudformation.Stack, stack_name)
+        stack = retry_boto_call(Stack, stack_name)
         retry_boto_call(stack.load)
         return stack.stack_status
     except ClientError as e:

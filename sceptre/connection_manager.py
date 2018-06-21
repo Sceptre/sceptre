@@ -76,6 +76,7 @@ class ConnectionManager(object):
     _client_lock = threading.Lock()
     _boto_sessions = {}
     _clients = {}
+    _stack_keys = {}
 
     def __init__(self, region, profile=None, stack_name=None):
         self.logger = logging.getLogger(__name__)
@@ -83,6 +84,9 @@ class ConnectionManager(object):
         self.region = region
         self.profile = profile
         self.stack_name = stack_name
+
+        if stack_name:
+            self._stack_keys[stack_name] = (region, profile)
 
     def __repr__(self):
         return (
@@ -185,8 +189,11 @@ class ConnectionManager(object):
         :rtype: dict
         """
         if region is None and profile is None:
-            region = region or self.region
-            profile = profile or self.profile
+            if stack_name and stack_name in self._stack_keys:
+                region, profile = self._stack_keys[stack_name]
+            else:
+                region = self.region
+                profile = self.profile
 
         if kwargs is None:  # pragma: no cover
             kwargs = {}

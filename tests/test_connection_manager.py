@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from mock import Mock, patch, sentinel
+from mock import Mock, patch, sentinel, ANY
 from moto import mock_s3
 
 from boto3.session import Session
@@ -20,6 +20,7 @@ class TestConnectionManager(object):
 
         ConnectionManager._boto_sessions = {}
         ConnectionManager._clients = {}
+        ConnectionManager._stack_keys = {}
 
         self.connection_manager = ConnectionManager(
             region=self.region,
@@ -35,6 +36,7 @@ class TestConnectionManager(object):
         assert connection_manager.region == sentinel.region
         assert connection_manager._boto_sessions == {}
         assert connection_manager._clients == {}
+        assert connection_manager._stack_keys == {}
 
     def test_connection_manager_initialised_with_all_parameters(self):
         connection_manager = ConnectionManager(
@@ -48,6 +50,9 @@ class TestConnectionManager(object):
         assert connection_manager.region == self.region
         assert connection_manager._boto_sessions == {}
         assert connection_manager._clients == {}
+        assert connection_manager._stack_keys == {
+            "stack": (self.region, "profile")
+        }
 
     def test_repr(self):
         self.connection_manager.stack_name = "stack"
@@ -76,7 +81,10 @@ class TestConnectionManager(object):
 
         assert boto_session.isinstance(mock_Session)
         mock_Session.assert_called_once_with(
-            profile_name=None, region_name="eu-west-1"
+            profile_name=None,
+            region_name="eu-west-1",
+            aws_access_key_id=ANY,
+            aws_secret_access_key=ANY
         )
 
     @patch("sceptre.connection_manager.boto3.session.Session")
@@ -90,7 +98,10 @@ class TestConnectionManager(object):
 
         assert boto_session.isinstance(mock_Session)
         mock_Session.assert_called_once_with(
-            profile_name="profile", region_name="eu-west-1"
+            profile_name="profile",
+            region_name="eu-west-1",
+            aws_access_key_id=ANY,
+            aws_secret_access_key=ANY
         )
 
     @patch("sceptre.connection_manager.boto3.session.Session")
@@ -170,6 +181,21 @@ class TestConnectionManager(object):
         command = 'list_buckets'
 
         return_value = self.connection_manager.call(service, command, {})
+        assert return_value['ResponseMetadata']['HTTPStatusCode'] == 200
+
+    @mock_s3
+    def test_call_with_valid_service_and_stack_name_call(self):
+        service = 's3'
+        command = 'list_buckets'
+
+        connection_manager = ConnectionManager(
+            region=self.region,
+            stack_name='stack'
+        )
+
+        return_value = connection_manager.call(
+            service, command, {}, stack_name='stack'
+        )
         assert return_value['ResponseMetadata']['HTTPStatusCode'] == 200
 
 
