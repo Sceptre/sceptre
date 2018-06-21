@@ -70,12 +70,6 @@ class Stack(object):
             region, profile, self.external_name
         )
 
-        self.profile = profile
-        self.hooks = hooks or {}
-        self.parameters = parameters or {}
-        self.sceptre_user_data = sceptre_user_data or {}
-        self.notifications = notifications or []
-
         self.template_path = template_path
         self.s3_details = s3_details
         self._template = None
@@ -86,6 +80,12 @@ class Stack(object):
         self.dependencies = dependencies or []
         self.tags = tags or {}
         self.stack_timeout = stack_timeout
+
+        self.profile = profile
+        self.hooks = hooks or {}
+        self.parameters = parameters or {}
+        self.sceptre_user_data = sceptre_user_data or {}
+        self.notifications = notifications or []
 
     def __repr__(self):
         return (
