@@ -43,13 +43,6 @@ class StackOutputBase(Resolver):
                     stack_name, output_key
                 )
             )
-        # except StackDoesNotHaveOutputsError:
-        #     self.logger.error(
-        #         "The Stack '{0}' does not have any outputs.".format(
-        #             stack_name
-        #         )
-        #     )
-            # exit(1)
 
     def _get_stack_outputs(self, stack_name):
         """
@@ -60,7 +53,7 @@ class StackOutputBase(Resolver):
         :type stack_name: str
         :returns: A formatted version of the stack outputs.
         :rtype: dict
-        :raises: sceptre.stack.DependencyStackNotLaunchedException
+        :raises: sceptre.stack.StackDoesNotHaveOutputsError
         """
         self.logger.debug("Collecting outputs from '{0}'...".format(
             stack_name

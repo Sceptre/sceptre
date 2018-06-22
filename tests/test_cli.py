@@ -11,7 +11,6 @@ import pytest
 import sceptre.cli
 from sceptre.cli import cli
 from sceptre.exceptions import SceptreException
-
 from sceptre.stack_status import StackStatus
 from sceptre.stack_status import StackChangeSetStatus
 from botocore.exceptions import ClientError
