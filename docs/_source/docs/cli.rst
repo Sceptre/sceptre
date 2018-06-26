@@ -6,63 +6,10 @@ format:
 
 .. code:: shell
 
-    $ sceptre [GLOBAL_OPTIONS] COMMAND [ARGS] [COMMAND_OPTIONS]
+    $ sceptre
 
 Running sceptre without a subcommand will display help, showing a list
 of the available commands.
-
-Global Options
---------------
-
--  ``--debug``: Turn on debug logging.
--  ``--dir``: Specify the sceptre directory with an absolute or relative
-   path.
--  ``--no-colour``: Disable coloured output.
--  ``--output``: Specify the output format. Available formats:
-   ``[yaml, json]``.
--  ``--var``: Overwrite an arbitrary config item. For more information,
-   see the section on :ref:`Templating <Templating>`.
--  ``--var-file``: Overwrite arbitrary config item(s) with data from a
-   variables file. For more information, see the section on :ref:`Templating <Templating>`.
-
-Commands
---------
-
-The available commands are:
-
-.. code:: shell
-
-    $ sceptre continue-update-rollback
-    $ sceptre create-change-set
-    $ sceptre create-stack
-    $ sceptre delete-change-set
-    $ sceptre delete-env
-    $ sceptre delete-stack
-    $ sceptre describe-change-set
-    $ sceptre describe-env
-    $ sceptre describe-env-resources
-    $ sceptre describe-stack-outputs
-    $ sceptre describe-stack-resources
-    $ sceptre diff
-    $ sceptre execute-change-set
-    $ sceptre generate-template
-    $ sceptre get-stack-policy
-    $ sceptre init
-    $ sceptre launch-env
-    $ sceptre launch-stack
-    $ sceptre list-change-sets
-    $ sceptre lock-stack
-    $ sceptre set-stack-policy
-    $ sceptre unlock-stack
-    $ sceptre update-stack
-    $ sceptre update-stack-cs
-    $ sceptre validate-template
-
-Command Options
----------------
-
-Command options differ depending on the command, and can be found by
-running:
 
 .. code:: shell
 
@@ -84,3 +31,11 @@ environment variable:
 
     $ env | grep SCEPTRE
     SCEPTRE_<output_name>=<output_value>
+
+
+Commands
+--------
+
+.. click:: sceptre.cli:cli
+  :prog: sceptre
+  :show-nested:

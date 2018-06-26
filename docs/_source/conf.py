@@ -22,7 +22,6 @@ import sys
 # Get the project root dir, which is the parent dir of this
 project_path = os.path.join(os.path.dirname(__file__), '..' + os.path.sep + '..')
 sys.path.insert(0, os.path.abspath(project_path))
-
 # -- Project information -----------------------------------------------------
 
 project = 'Sceptre'
@@ -51,6 +50,7 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',
     'sphinx.ext.githubpages',
+    'sphinx_click.ext',
 ]
 
 # Add any paths that contain templates here, relative to this directory.

@@ -33,7 +33,7 @@ and corresponding YAML config files. The config files include which
 account and region to use, and the parameters to be supplied to the
 templates.
 
-For a tutorial on using Sceptre, see `Get Started`_, or find out more
+For a tutorial on using Sceptre, see :doc:`docs/get_started`, or find out more
 information about Sceptre below.
 
 Code
@@ -45,9 +45,8 @@ Bugs and feature requests should be raised via our `Issues`_ page.
 
 This documentation acts as an in-depth reference for all of Sceptre's features.
 
-Beginners should consider reading our [getting started guide]({{ site.url }}{{ site.baseurl }}/docs/get_started.html), which provides a walk-through tutorial.
+Beginners should consider reading our :doc:`docs/get_started` ..., which provides a walk-through tutorial.
 
-.. _Get Started: docs/get_started.html
 .. _Github: https://github.com/cloudreach/sceptre/
 .. _Issues: https://github.com/cloudreach/sceptre/issues
 
@@ -85,7 +84,6 @@ Beginners should consider reading our [getting started guide]({{ site.url }}{{ s
    :glob:
 
    api/modules
-
 
 Indices and tables
 ==================
