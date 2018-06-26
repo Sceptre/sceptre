@@ -1,6 +1,6 @@
 import click
 
-from sceptre.cli.helpers import catch_exceptions, get_stack_or_group
+from sceptre.cli.helpers import catch_exceptions, get_stack_or_stack_group
 
 
 @click.command(name="set-policy")
@@ -18,7 +18,7 @@ def set_policy_command(ctx, path, policy_file, built_in):
 
     Sets a specific stack policy for either a file or using a built-in policy.
     """
-    stack, _ = get_stack_or_group(ctx, path)
+    stack, _ = get_stack_or_stack_group(ctx, path)
 
     if built_in == 'deny-all':
         stack.lock()

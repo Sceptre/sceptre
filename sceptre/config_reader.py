@@ -219,13 +219,13 @@ class ConfigReader(object):
         """
         abs_directory_path = path.join(self.config_folder, directory_path)
         if path.isfile(path.join(abs_directory_path, basename)):
-            env = jinja2.Environment(
+            stack_group = jinja2.Environment(
                 loader=jinja2.FileSystemLoader(abs_directory_path),
                 undefined=jinja2.StrictUndefined
             )
-            template = env.get_template(basename)
+            template = stack_group.get_template(basename)
             rendered_template = template.render(
-                stack_group_variable=environ,
+                environment_variable=environ,
                 stack_group_path=directory_path.split("/"),
                 **self.templating_vars
             )

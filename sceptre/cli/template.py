@@ -1,7 +1,11 @@
 import click
 import webbrowser
 
-from sceptre.cli.helpers import catch_exceptions, get_stack_or_group, write
+from sceptre.cli.helpers import (
+          catch_exceptions,
+          get_stack_or_stack_group,
+          write
+        )
 
 
 @click.command(name="validate")
@@ -14,7 +18,7 @@ def validate_command(ctx, path):
 
     Validates the template used for stack in PATH.
     """
-    stack, _ = get_stack_or_group(ctx, path)
+    stack, _ = get_stack_or_stack_group(ctx, path)
     response = stack.template.validate()
     if response['ResponseMetadata']['HTTPStatusCode'] == 200:
         del response['ResponseMetadata']
@@ -32,7 +36,7 @@ def generate_command(ctx, path):
 
     Prints the template used for stack in PATH.
     """
-    stack, _ = get_stack_or_group(ctx, path)
+    stack, _ = get_stack_or_stack_group(ctx, path)
     write(stack.template.body)
 
 
@@ -47,7 +51,7 @@ def estimate_cost_command(ctx, path):
     resources in the stack. This command will also attempt to open a web
     browser with the returned URI.
     """
-    stack, _ = get_stack_or_env(ctx, path)
+    stack, _ = get_stack_or_stack_group(ctx, path)
     response = stack.template.estimate_cost()
 
     if response['ResponseMetadata']['HTTPStatusCode'] == 200:

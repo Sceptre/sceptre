@@ -75,12 +75,12 @@ class TestConfigReader(object):
         with self.runner.isolated_filesystem():
             sceptre_dir = os.path.abspath('./example')
             config_dir = os.path.join(sceptre_dir, "config")
-            group_dir = os.path.join(config_dir, "A")
+            stack_group_dir = os.path.join(config_dir, "A")
 
-            os.makedirs(group_dir)
+            os.makedirs(stack_group_dir)
 
             config = {"config": "config"}
-            with open(os.path.join(group_dir, "stack.yaml"), 'w') as\
+            with open(os.path.join(stack_group_dir, "stack.yaml"), 'w') as\
                     config_file:
                 yaml.safe_dump(
                     config, stream=config_file, default_flow_style=False
@@ -128,7 +128,7 @@ class TestConfigReader(object):
         config_reader.templating_vars["stack_group_config"] = {
             "region": "stack_group_region"
         }
-        os.environ["TEST_ENV_VAR"] = "stack_group_variable_value"
+        os.environ["TEST_ENV_VAR"] = "environment_variable_value"
         config = config_reader.read(
             "account/stack-group/region/security_groups.yaml"
         )
@@ -138,7 +138,7 @@ class TestConfigReader(object):
             "stack_group_path": "account/stack-group/region",
             "parameters": {
                 "param1": "user_variable_value",
-                "param2": "stack_group_variable_value",
+                "param2": "environment_variable_value",
                 "param3": "account",
                 "param4": "stack-group",
                 "param5": "region",

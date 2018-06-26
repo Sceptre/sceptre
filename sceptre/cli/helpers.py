@@ -89,7 +89,7 @@ def write(var, output_format="str", no_colour=True):
     click.echo(stream)
 
 
-def get_stack_or_group(ctx, path):
+def get_stack_or_stack_group(ctx, path):
     """
     Parses the path to generate relevant Stack Group and Stack object.
 
@@ -99,7 +99,7 @@ def get_stack_or_group(ctx, path):
     :type path: str
     """
     stack = None
-    group = None
+    stack_group = None
 
     config_reader = ConfigReader(
         ctx.obj["sceptre_dir"], ctx.obj["user_variables"]
@@ -108,9 +108,9 @@ def get_stack_or_group(ctx, path):
     if os.path.splitext(path)[1]:
         stack = config_reader.construct_stack(path)
     else:
-        group = config_reader.construct_stack_group(path)
+        stack_group = config_reader.construct_stack_group(path)
 
-    return (stack, group)
+    return (stack, stack_group)
 
 
 def get_stack(ctx, path):

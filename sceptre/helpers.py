@@ -31,7 +31,7 @@ def recurse_into_sub_stack_groups(func):
     """
     Two types of StackGroups exist, non-leaf and leaf. Non-leaf
     stack_groups contain sub-stack_groups, while leaf
-    stack_groups contain stacks. If acommand is executed by a leaf
+    stack_groups contain stacks. If a command is executed by a leaf
     stack_group, it should execute that command on the stacks it
     contains. If a command is executed by a non-leaf stack_group, it
     should invoke that command on each of its sub-stack_groups. Recurse

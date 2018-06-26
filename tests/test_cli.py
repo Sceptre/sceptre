@@ -17,7 +17,7 @@ from sceptre.stack_group import StackGroup
 from sceptre.stack_status import StackStatus, StackChangeSetStatus
 from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
 from sceptre.cli.helpers import CustomJsonEncoder, catch_exceptions
-from sceptre.cli.helpers import get_stack_or_group
+from sceptre.cli.helpers import get_stack_or_stack_group
 from botocore.exceptions import ClientError
 from sceptre.exceptions import SceptreException
 
@@ -341,7 +341,7 @@ class TestCli(object):
             ("launch", False, False, 1)
         ]
     )
-    def test_group_commands(self, command, success, yes_flag, exit_code):
+    def test_stack_group_commands(self, command, success, yes_flag, exit_code):
         status = StackStatus.COMPLETE if success else StackStatus.FAILED
         response = {"stack": status}
 
@@ -638,9 +638,9 @@ class TestCli(object):
             config_dir = os.path.join(sceptre_dir, "config")
             os.makedirs(config_dir)
 
-            group_dir = os.path.join(sceptre_dir, "config", stack_group)
-            for group_path, config in config_structure.items():
-                path = os.path.join(config_dir, group_path)
+            stack_group_dir = os.path.join(sceptre_dir, "config", stack_group)
+            for stack_group_path, config in config_structure.items():
+                path = os.path.join(config_dir, stack_group_path)
                 try:
                     os.makedirs(path)
                 except OSError as e:
@@ -663,7 +663,7 @@ class TestCli(object):
             )
 
             if result:
-                with open(os.path.join(group_dir, "config.yaml"))\
+                with open(os.path.join(stack_group_dir, "config.yaml"))\
                   as config_file:
                     config = yaml.load(config_file)
                 assert config == result
@@ -678,9 +678,9 @@ class TestCli(object):
         with self.runner.isolated_filesystem():
             sceptre_dir = os.path.abspath('./example')
             config_dir = os.path.join(sceptre_dir, "config")
-            group_dir = os.path.join(config_dir, "A")
+            stack_group_dir = os.path.join(config_dir, "A")
 
-            os.makedirs(group_dir)
+            os.makedirs(stack_group_dir)
             os.chdir(sceptre_dir)
 
             cmd_result = self.runner.invoke(
@@ -691,7 +691,8 @@ class TestCli(object):
                 "StackGroup path exists. "
                 "Do you want initialise config.yaml?"
             )
-            with open(os.path.join(group_dir, "config.yaml")) as config_file:
+            with open(os.path.join(
+                  stack_group_dir, "config.yaml")) as config_file:
                 config = yaml.load(config_file)
             assert config == {"project_code": "", "region": ""}
 
@@ -702,9 +703,9 @@ class TestCli(object):
         with self.runner.isolated_filesystem():
             sceptre_dir = os.path.abspath('./example')
             config_dir = os.path.join(sceptre_dir, "config")
-            group_dir = os.path.join(config_dir, "A")
+            stack_group_dir = os.path.join(config_dir, "A")
 
-            os.makedirs(group_dir)
+            os.makedirs(stack_group_dir)
             os.chdir(sceptre_dir)
 
             patcher_mkdir = patch("sceptre.cli.init.os.mkdir")
@@ -774,38 +775,40 @@ class TestCli(object):
         response = encoder.encode(datetime.datetime(2016, 5, 3))
         assert response == '"2016-05-03 00:00:00"'
 
-    def test_get_stack_or_group_with_stack(self):
+    def test_get_stack_or_stack_group_with_stack(self):
         ctx = MagicMock(obj={
             "sceptre_dir": sentinel.sceptre_dir,
             "user_variables": sentinel.user_variables
         })
-        stack, group = get_stack_or_group(ctx, "stack.yaml")
+        stack, stack_group = get_stack_or_stack_group(ctx, "stack.yaml")
         self.mock_ConfigReader.assert_called_once_with(
             sentinel.sceptre_dir, sentinel.user_variables
         )
         assert isinstance(stack, Stack)
-        assert group is None
+        assert stack_group is None
 
-    def test_get_stack_or_group_with_nested_stack(self):
+    def test_get_stack_or_stack_group_with_nested_stack(self):
         ctx = MagicMock(obj={
             "sceptre_dir": sentinel.sceptre_dir,
             "user_variables": sentinel.user_variables
         })
-        stack, group = get_stack_or_group(ctx, "stack-group/dir/stack.yaml")
+        stack, stack_group = get_stack_or_stack_group(
+                ctx, "stack-group/dir/stack.yaml"
+        )
         self.mock_ConfigReader.assert_called_once_with(
             sentinel.sceptre_dir, sentinel.user_variables
         )
         assert isinstance(stack, Stack)
-        assert group is None
+        assert stack_group is None
 
-    def test_get_stack_or_group_with_group(self):
+    def test_get_stack_or_stack_group_with_group(self):
         ctx = MagicMock(obj={
             "sceptre_dir": sentinel.sceptre_dir,
             "user_variables": sentinel.user_variables
         })
-        stack, group = get_stack_or_group(ctx, "stack-group/dir")
+        stack, stack_group = get_stack_or_stack_group(ctx, "stack-group/dir")
         self.mock_ConfigReader.assert_called_once_with(
             sentinel.sceptre_dir, sentinel.user_variables
         )
-        assert isinstance(group, StackGroup)
+        assert isinstance(stack_group, StackGroup)
         assert stack is None

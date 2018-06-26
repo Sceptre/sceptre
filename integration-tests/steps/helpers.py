@@ -50,10 +50,10 @@ def step_impl(context, exception_type):
         raise Exception("Step has incorrect message")
 
 
-@given('environment "{environment}" has AWS config "{config}" set')
-def step_impl(context, environment, config):
+@given('stack_group "{stack_group}" has AWS config "{config}" set')
+def step_impl(context, stack_group, config):
     config_path = os.path.join(
-        context.sceptre_dir, "config", environment, config
+        context.sceptre_dir, "config", stack_group, config
     )
 
     os.environ['AWS_CONFIG_FILE'] = config_path

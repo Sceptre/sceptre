@@ -43,26 +43,26 @@ def step_impl(context, stack_group_name, status):
 
 @when('the user launches stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
-    group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
-    group.launch()
+    stack_group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
+    stack_group.launch()
 
 
 @when('the user deletes stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
-    group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
-    group.delete()
+    stack_group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
+    stack_group.delete()
 
 
 @when('the user describes stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
-    group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
-    context.response = group.describe()
+    stack_group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
+    context.response = stack_group.describe()
 
 
 @when('the user describes resources in stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
-    group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
-    context.response = group.describe_resources()
+    stack_group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
+    context.response = stack_group.describe_resources()
 
 
 @then('all the stacks in stack_group "{stack_group_name}" are in "{status}"')
@@ -169,8 +169,8 @@ def get_stack_names(context, stack_group_name):
             filename = os.path.splitext(filepath)[0]
             if not filename == "config":
                 prefix = stack_group_name
-                group = root[path.find(prefix):]
-                stack_names.append(os.path.join(group, filename))
+                stack_group = root[path.find(prefix):]
+                stack_names.append(os.path.join(stack_group, filename))
     return stack_names
 
 
