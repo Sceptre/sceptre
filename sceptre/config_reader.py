@@ -34,7 +34,6 @@ ENVIRONMENT_CONFIG_ATTRIBUTES = ConfigAttributes(
         "region"
     },
     {
-        "iam_role",
         "template_bucket_name",
         "template_key_prefix",
         "require_version"
@@ -46,6 +45,7 @@ STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
         "template_path"
     },
     {
+        "profile",
         "dependencies",
         "hooks",
         "parameters",
@@ -325,7 +325,7 @@ class ConfigReader(object):
                 project_code=config["project_code"],
                 template_path=abs_template_path,
                 region=config["region"],
-                iam_role=config.get("iam_role"),
+                profile=config.get("profile"),
                 parameters=config.get("parameters", {}),
                 sceptre_user_data=config.get("sceptre_user_data", {}),
                 hooks=config.get("hooks", {}),

@@ -11,10 +11,9 @@ import functools
 import logging
 import threading
 import time
-from datetime import datetime
-from dateutil import tz
-
 import boto3
+
+from os import environ
 from botocore.exceptions import ClientError
 
 from .helpers import mask_key
@@ -67,44 +66,44 @@ class ConnectionManager(object):
 
     :param profile: The aws credential profile that should be used.
     :type profile: str
-    :param iam_role: The iam_role that should be assumed in the account.
-    :type iam_role: str
+    :param stack_name: The cloudformation stack name for this connection.
+    :type stack_name: str
     :param region: The region to use.
     :type region: str
     """
 
     _session_lock = threading.Lock()
     _client_lock = threading.Lock()
+    _boto_sessions = {}
+    _clients = {}
+    _stack_keys = {}
 
-    def __init__(self, region, iam_role=None, profile=None):
+    def __init__(self, region, profile=None, stack_name=None):
         self.logger = logging.getLogger(__name__)
 
         self.region = region
-        self.iam_role = iam_role
         self.profile = profile
-        self._boto_session = None
-        self._boto_session_expiration = None
+        self.stack_name = stack_name
 
-        self.clients = {}
+        if stack_name:
+            self._stack_keys[stack_name] = (region, profile)
 
     def __repr__(self):
         return (
             "sceptre.connection_manager.ConnectionManager(region='{0}', "
-            "iam_role='{1}', profile='{2}')".format(
-                self.region, self.iam_role, self.profile
+            "profile='{1}', stack_name='{2}')".format(
+                self.region, self.profile, self.stack_name
             )
         )
 
-    @property
-    def boto_session(self):
+    def _get_session(self, profile, region=None):
         """
         Returns a boto session in the target account.
 
-        If an ``iam_role`` is specified in ConnectionManager's initialiser,
-        then STS is used to assume the specified IAM role in the account and
-        uses temporary credentials to create the boto session. If ``iam_role``
-        is not specified, the default AWS credentials are used to create the
-        boto session.
+        If a ``profile`` is specified in ConnectionManager's initialiser,
+        then the profile is used to generate temporary credentials to create
+        the boto session. If ``profile`` is not specified then the default
+        profile is assumed to create the boto session.
 
         :returns: The Boto3 session.
         :rtype: boto3.session.Session
@@ -112,68 +111,42 @@ class ConnectionManager(object):
         """
         with self._session_lock:
             self.logger.debug("Getting Boto3 session")
+            key = (region, profile)
 
-            self._clear_session_cache_if_expired()
-
-            if self._boto_session is None:
+            if self._boto_sessions.get(key) is None:
                 self.logger.debug("No Boto3 session found, creating one...")
-                if self.iam_role:
-                    self.logger.debug("Assuming role '%s'...", self.iam_role)
-                    sts_session = boto3.session.Session(
-                        profile_name=self.profile,
-                        region_name=self.region
-                    )
-                    sts_client = sts_session.client("sts")
-                    sts_response = sts_client.assume_role(
-                        RoleArn=self.iam_role,
-                        RoleSessionName="{0}-session".format(
-                            self.iam_role.split("/")[-1]
-                        )
-                    )
-                    credentials = sts_response["Credentials"]
-                    self._boto_session = boto3.session.Session(
-                        aws_access_key_id=credentials["AccessKeyId"],
-                        aws_secret_access_key=credentials["SecretAccessKey"],
-                        aws_session_token=credentials["SessionToken"],
-                        region_name=self.region
-                    )
-                    self._boto_session_expiration = credentials["Expiration"]
-                    self.logger.debug(
-                        "Using temporary credential set: %s",
-                        {
-                            "AccessKeyId": mask_key(
-                                credentials["AccessKeyId"]
-                            ),
-                            "SecretAccessKey": mask_key(
-                                credentials["SecretAccessKey"]
-                            )
-                        }
-                    )
-                else:
-                    self.logger.debug("Using cli credentials...")
-                    self._boto_session = boto3.session.Session(
-                        profile_name=self.profile,
-                        region_name=self.region
-                    )
-                    self.logger.debug(
-                        "Using credential set from %s: %s",
-                        self._boto_session.get_credentials().method,
-                        {
-                            "AccessKeyId": mask_key(
-                                self._boto_session.get_credentials().access_key
-                            ),
-                            "SecretAccessKey": mask_key(
-                                self._boto_session.get_credentials().secret_key
-                            ),
-                            "Region": self._boto_session.region_name
-                        }
-                    )
+                self.logger.debug("Using cli credentials...")
+
+                # Credentials from env take priority over profile
+                config = {
+                  "profile_name": profile,
+                  "region_name": region,
+                  "aws_access_key_id": environ.get("AWS_ACCESS_KEY_ID"),
+                  "aws_secret_access_key": environ.get("AWS_SECRET_ACCESS_KEY")
+                }
+
+                session = boto3.session.Session(**config)
+                self._boto_sessions[key] = session
+
+                self.logger.debug(
+                    "Using credential set from %s: %s",
+                    session.get_credentials().method,
+                    {
+                        "AccessKeyId": mask_key(
+                            session.get_credentials().access_key
+                        ),
+                        "SecretAccessKey": mask_key(
+                            session.get_credentials().secret_key
+                        ),
+                        "Region": session.region_name
+                    }
+                )
 
                 self.logger.debug("Boto3 session created")
 
-            return self._boto_session
+            return self._boto_sessions[key]
 
-    def _get_client(self, service):
+    def _get_client(self, service, region, profile, stack_name):
         """
         Returns the Boto3 client associated with <service>.
 
@@ -186,28 +159,21 @@ class ConnectionManager(object):
         :rtype: boto3.client.Client
         """
         with self._client_lock:
-            self._clear_session_cache_if_expired()
-
-            if self.clients.get(service) is None:
+            key = (service, region, profile, stack_name)
+            if self._clients.get(key) is None:
                 self.logger.debug(
                     "No %s client found, creating one...", service
                 )
-                self.clients[service] = self.boto_session.client(service)
-            return self.clients[service]
-
-    def _clear_session_cache_if_expired(self):
-        """
-        Removes boto_session and all clients if the existing session has
-        expired.
-        """
-        if self.iam_role and self._boto_session_expiration:
-            if datetime.now(tz.tzutc()) >= self._boto_session_expiration:
-                self.logger.debug("Boto session has expired")
-                self.clients = {}
-                self._boto_session = None
+                self._clients[key] = self._get_session(
+                    profile, region
+                ).client(service)
+            return self._clients[key]
 
     @_retry_boto_call
-    def call(self, service, command, kwargs=None):
+    def call(
+        self, service, command, kwargs=None, profile=None, region=None,
+        stack_name=None
+    ):
         """
         Makes a threadsafe Boto3 client call.
 
@@ -222,7 +188,14 @@ class ConnectionManager(object):
         :returns: The response from the Boto3 call.
         :rtype: dict
         """
+        if region is None and profile is None:
+            if stack_name and stack_name in self._stack_keys:
+                region, profile = self._stack_keys[stack_name]
+            else:
+                region = self.region
+                profile = self.profile
+
         if kwargs is None:  # pragma: no cover
             kwargs = {}
-        client = self._get_client(service)
+        client = self._get_client(service, region, profile, stack_name)
         return getattr(client, command)(**kwargs)

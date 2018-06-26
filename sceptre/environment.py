@@ -71,6 +71,7 @@ class Environment(object):
         self._build(
             "launch", threading_events, stack_statuses, launch_dependencies
         )
+
         return stack_statuses
 
     def delete(self):

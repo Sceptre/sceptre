@@ -4,6 +4,7 @@ import abc
 import six
 import logging
 import os
+import shlex
 
 from botocore.exceptions import ClientError
 
@@ -22,7 +23,7 @@ class StackOutputBase(Resolver):
         self.logger = logging.getLogger(__name__)
         super(StackOutputBase, self).__init__(*args, **kwargs)
 
-    def _get_output_value(self, stack_name, output_key):
+    def _get_output_value(self, stack_name, output_key, profile=None):
         """
         Tries to get the stack output named by ``output_key``
 
@@ -34,7 +35,7 @@ class StackOutputBase(Resolver):
         :rtype: str
         :raises: sceptre.exceptions.DependencyStackMissingOutputError
         """
-        outputs = self._get_stack_outputs(stack_name)
+        outputs = self._get_stack_outputs(stack_name, profile)
 
         try:
             return outputs[output_key]
@@ -45,7 +46,7 @@ class StackOutputBase(Resolver):
                 )
             )
 
-    def _get_stack_outputs(self, stack_name):
+    def _get_stack_outputs(self, stack_name, profile=None):
         """
         Communicates with AWS Cloudformation to fetch outputs from a specific
         stack.
@@ -60,11 +61,14 @@ class StackOutputBase(Resolver):
             stack_name
         ))
         connection_manager = self.stack.connection_manager
+
         try:
             response = connection_manager.call(
                 service="cloudformation",
                 command="describe_stacks",
-                kwargs={"StackName": stack_name}
+                kwargs={"StackName": stack_name},
+                profile=profile,
+                stack_name=stack_name
             )
         except ClientError as e:
             if "does not exist" in e.response["Error"]["Message"]:
@@ -149,5 +153,15 @@ class StackOutputExternal(StackOutputBase):
         self.logger.debug(
             "Resolving external stack output: {0}".format(self.argument)
         )
-        dependency_stack_name, output_key = self.argument.split("::")
-        return self._get_output_value(dependency_stack_name, output_key)
+
+        profile = None
+        arguments = shlex.split(self.argument)
+
+        stack_argument = arguments[0]
+        if len(arguments) > 1:
+            profile = arguments[1]
+
+        dependency_stack_name, output_key = stack_argument.split("::")
+        return self._get_output_value(
+            dependency_stack_name, output_key, profile
+        )

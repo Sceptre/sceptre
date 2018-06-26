@@ -52,10 +52,10 @@ class Stack(object):
     hooks = HookProperty("hooks")
 
     def __init__(
-        self, name, project_code, template_path, region, iam_role=None,
-        parameters=None, sceptre_user_data=None, hooks=None, s3_details=None,
+        self, name, project_code, template_path, region, parameters=None,
+        sceptre_user_data=None, hooks=None, s3_details=None,
         dependencies=None, role_arn=None, protected=False, tags=None,
-        external_name=None, notifications=None, on_failure=None,
+        external_name=None, notifications=None, on_failure=None, profile=None,
         stack_timeout=0
     ):
         self.logger = logging.getLogger(__name__)
@@ -66,7 +66,9 @@ class Stack(object):
         self.external_name = external_name or \
             get_external_stack_name(self.project_code, self.name)
 
-        self.connection_manager = ConnectionManager(region, iam_role)
+        self.connection_manager = ConnectionManager(
+            region, profile, self.external_name
+        )
 
         self.template_path = template_path
         self.s3_details = s3_details
@@ -79,6 +81,7 @@ class Stack(object):
         self.tags = tags or {}
         self.stack_timeout = stack_timeout
 
+        self.profile = profile
         self.hooks = hooks or {}
         self.parameters = parameters or {}
         self.sceptre_user_data = sceptre_user_data or {}
@@ -89,7 +92,7 @@ class Stack(object):
             "sceptre.stack.Stack("
             "name='{name}', project_code='{project_code}', "
             "template_path='{template_path}', region='{region}', "
-            "iam_role='{iam_role}', parameters='{parameters}', "
+            "profile='{profile}', parameters='{parameters}', "
             "sceptre_user_data='{sceptre_user_data}', "
             "hooks='{hooks}', s3_details='{s3_details}', "
             "dependencies='{dependencies}', role_arn='{role_arn}', "
@@ -101,8 +104,7 @@ class Stack(object):
                 name=self.name, project_code=self.project_code,
                 template_path=self.template_path,
                 region=self.connection_manager.region,
-                iam_role=self.connection_manager.iam_role,
-                parameters=self.parameters,
+                profile=self.profile, parameters=self.parameters,
                 sceptre_user_data=self.sceptre_user_data,
                 hooks=self.hooks, s3_details=self.s3_details,
                 dependencies=self.dependencies, role_arn=self.role_arn,
@@ -150,6 +152,7 @@ class Stack(object):
                 for k, v in self.tags.items()
             ]
         }
+
         if self.on_failure:
             create_stack_kwargs.update({"OnFailure": self.on_failure})
         create_stack_kwargs.update(self.template.get_boto_call_parameter())
