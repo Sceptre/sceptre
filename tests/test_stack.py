@@ -705,15 +705,17 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             kwargs={"Template": sentinel.template}
         )
 
+    @patch("sceptre.stack.Stack.get_status")
     @patch("sceptre.stack.Stack._format_parameters")
     @patch("sceptre.stack.Stack._get_template_details")
     def test_create_change_set_sends_correct_request(
-        self, mock_get_template_details, mock_format_params
+        self, mock_get_template_details, mock_format_params, mock_get_status
     ):
         mock_format_params.return_value = sentinel.parameters
         mock_get_template_details.return_value = {
             "Template": sentinel.template
         }
+        mock_get_status.return_value = "CREATED"
         self.stack.environment_config = {
             "template_bucket_name": sentinel.template_bucket_name,
             "template_key_prefix": sentinel.template_key_prefix
@@ -742,15 +744,17 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             }
         )
 
+    @patch("sceptre.stack.Stack.get_status")
     @patch("sceptre.stack.Stack._format_parameters")
     @patch("sceptre.stack.Stack._get_template_details")
     def test_create_change_set_sends_correct_request_no_notifications(
-            self, mock_get_template_details, mock_format_params
+        self, mock_get_template_details, mock_format_params, mock_get_status
     ):
         mock_format_params.return_value = sentinel.parameters
         mock_get_template_details.return_value = {
             "Template": sentinel.template
         }
+        mock_get_status.return_value = "CREATED"
         self.stack.environment_config = {
             "template_bucket_name": sentinel.template_bucket_name,
             "template_key_prefix": sentinel.template_key_prefix
@@ -779,15 +783,25 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         )
 
     @patch("sceptre.stack.Stack.get_status")
-    def test_create_change_set_sends_correct_request_for_nonexistent_stack(
-        self, mock_get_status
+    @patch("sceptre.stack.Stack._format_parameters")
+    @patch("sceptre.stack.Stack._get_template_details")
+    def test_create_change_set_sends_correct_request_for_non_existant_stack(
+        self, mock_get_template_details, mock_format_params, mock_get_status
     ):
-        self.get_status = mock_get_status
-        mock_get_status.side_effect = StackDoesNotExistError()
-
-        self.stack._template.get_boto_call_parameter.return_value = {
+        mock_format_params.return_value = sentinel.parameters
+        mock_get_template_details.return_value = {
             "Template": sentinel.template
         }
+        mock_get_status.side_effect = StackDoesNotExistError()
+        self.stack.environment_config = {
+            "template_bucket_name": sentinel.template_bucket_name,
+            "template_key_prefix": sentinel.template_key_prefix
+        }
+        self.stack._config = {
+            "stack_tags": {"tag1": "val1"}
+        }
+        self.stack.config["role_arn"] = sentinel.role_arn
+        self.stack.config["notifications"] = [sentinel.notification]
 
         self.stack.create_change_set(sentinel.change_set_name)
         self.stack.connection_manager.call.assert_called_with(
@@ -796,10 +810,7 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
             kwargs={
                 "StackName": sentinel.external_name,
                 "Template": sentinel.template,
-                "Parameters": [{
-                    "ParameterKey": "key1",
-                    "ParameterValue": "val1"
-                }],
+                "Parameters": sentinel.parameters,
                 "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
                 "ChangeSetName": sentinel.change_set_name,
                 "RoleARN": sentinel.role_arn,
