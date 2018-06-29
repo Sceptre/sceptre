@@ -133,24 +133,6 @@ parameters:
     Tag: !project_variables /my_config_file.yaml
 ```
 
-### kms
-
-Fetches the value stored in AWS KMS.
-
-Syntax:
-
-```yaml
-parameter|sceptre_user_data:
-    <name>: !kms CIPHERTEXT
-```
-
-Example:
-
-```
-parameters:
-    database_password: !kms AQICAHhZyEsV0yflwE0mpKvPz7/O/zc1epgIurV43wXF/qF6MwFQYwZq7TrvtQ2...
-```
-
 ## Custom Resolvers
 
 Users can define their own resolvers which are used by Sceptre to resolve the value of a parameter before it is passed to the CloudFormation template.

@@ -34,9 +34,7 @@ class TestHelpers(object):
             "StackOutput"
         assert classes["project_variables"].__name__ == \
             "ProjectVariables"
-        assert classes["kms"].__name__ == \
-            "KMS"
-        assert len(classes) == 6
+        assert len(classes) == 5
 
     def test_camel_to_snake_case(self):
         snake_case_string = camel_to_snake_case("Bash")
