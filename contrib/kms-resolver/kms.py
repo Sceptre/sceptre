@@ -6,11 +6,6 @@ class KMS(Resolver):
     """
     Resolver for KMS. Resolves data stored in KMS from a Ciphertext.
 
-    Encrypt data and get a Ciphertext:
-    > aws kms --key-id <Kms Key Id> --plaintext <data> \
-    >   --output text --query CiphertextBlob \
-    >   AQICAHhZyEsV0yflwE0mpKvPz7/O/zc1epgIurV43wXF/qF6MwFQYwZq7TrvtQ2....
-
     :param argument: The Ciphertext from KMS.
     :type argument: str
 
