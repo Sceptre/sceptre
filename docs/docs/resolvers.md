@@ -133,24 +133,6 @@ parameters:
     Tag: !project_variables /my_config_file.yaml
 ```
 
-### ssm
-
-Fetches the value stored in the AWS SSM parameter store.
-
-Syntax:
-
-```yaml
-parameter|sceptre_user_data:
-    <name>: !ssm /prefix/param
-```
-
-Example:
-
-```
-parameters:
-    database_password: !ssm /dev/DbPassword
-```
-
 ## Custom Resolvers
 
 Users can define their own resolvers which are used by Sceptre to resolve the value of a parameter before it is passed to the CloudFormation template.
