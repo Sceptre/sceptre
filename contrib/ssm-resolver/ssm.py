@@ -5,10 +5,6 @@ class SSM(Resolver):
     """
     Resolver for SSM. Resolves the value stored in the parameter store.
 
-    Add a value to the SSM parameter store:
-    > aws ssm put-parameter --name <parameter prefix>/<parameter name> \
-    >   --value <parameter value> --key-id <kms key id> --type "SecureString"
-
     :param argument: The SSM parameter
     :type argument: str
 
