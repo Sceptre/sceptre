@@ -21,6 +21,13 @@ class EnvironmentPathNotFoundError(SceptreException):
     pass
 
 
+class NonLeafEnvironmentError(SceptreException):
+    """
+    Error raised if a directory does not exist
+    """
+    pass
+
+
 class InvalidEnvironmentPathError(SceptreException):
     """
     Error raised if the environment path string is invalid

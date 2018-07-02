@@ -29,6 +29,7 @@ from .environment import Environment
 from .exceptions import SceptreException
 from .exceptions import ProjectAlreadyExistsError
 from .exceptions import StackConfigurationDoesNotExistError
+from .exceptions import NonLeafEnvironmentError
 from .stack_status import StackStatus, StackChangeSetStatus
 from .stack_status_colourer import StackStatusColourer
 from . import __version__
@@ -321,9 +322,13 @@ def launch_stack(ctx, environment, stack):
     """
     try:
         env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-        response = env.stacks[stack].launch()
-
-        if response != StackStatus.COMPLETE:
+        if env.is_leaf:
+            response = env.stacks[stack].launch()
+        elif env.is_leaf is False:
+            raise NonLeafEnvironmentError(
+                "Error in environment: '{0}'. Stacks must be in an "
+                "environment with no sub-environments".format(env.path))
+        elif response != StackStatus.COMPLETE:
             exit(1)
     except KeyError:
         raise StackConfigurationDoesNotExistError(
