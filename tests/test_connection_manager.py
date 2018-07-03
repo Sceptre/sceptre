@@ -13,6 +13,7 @@ from botocore.exceptions import ClientError, UnknownServiceError
 
 from sceptre.connection_manager import ConnectionManager, _retry_boto_call
 from sceptre.exceptions import RetryLimitExceededError
+from sceptre.exceptions import BotoSessionNotConfiguredError
 
 
 class TestConnectionManager(object):
@@ -159,6 +160,45 @@ class TestConnectionManager(object):
         boto_session_1 = self.connection_manager.boto_session
         boto_session_2 = self.connection_manager.boto_session
         assert boto_session_1 == boto_session_2
+
+    @patch("sceptre.connection_manager.boto3.session.Session.get_credentials")
+    def test_get_client_with_invalid_session(
+        self, mock_get_credentials
+    ):
+        service = "s3"
+
+        # self.connection_manager.boto_session = None
+        client = self.connection_manager._get_client(service)
+
+        expected_client = Session().client(service)
+        assert str(type(client)) == str(type(expected_client))
+
+    @patch("sceptre.connection_manager.boto3.session.Session")
+    def test_boto_session_raise_on_no_credentials(self, mock_Session):
+        self.connection_manager._boto_session = None
+        self.connection_manager.iam_role = "non-default"
+
+        mock_Session.return_value.get_credentials.return_value = None
+        with pytest.raises(BotoSessionNotConfiguredError):
+            self.connection_manager.boto_session
+
+    @patch("sceptre.connection_manager.boto3.session.Session")
+    def test_boto_session_raise_on_no_session(self, mock_Session):
+        self.connection_manager._boto_session = None
+        self.connection_manager.iam_role = None
+
+        mock_Session.return_value.get_credentials.return_value = None
+        with pytest.raises(BotoSessionNotConfiguredError):
+            self.connection_manager.boto_session
+
+    @patch("sceptre.connection_manager.boto3.session.Session")
+    def test_boto_session_raise_with_exisiting_client(self, mock_Session):
+        service = "cloudformation"
+        self.connection_manager._iam_role = None
+        mock_Session.return_value.get_credentials.return_value = None
+
+        with pytest.raises(SystemExit):
+            self.connection_manager._get_client(service)
 
     @patch("sceptre.connection_manager.boto3.session.Session.get_credentials")
     def test_get_client_with_no_pre_existing_clients(
