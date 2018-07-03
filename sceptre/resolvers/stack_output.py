@@ -8,6 +8,7 @@ from botocore.exceptions import ClientError
 from sceptre.resolvers import Resolver
 from sceptre.exceptions import DependencyStackMissingOutputError
 from sceptre.exceptions import StackDoesNotExistError
+from sceptre.exceptions import StackDoesNotHaveOutputsError
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -32,9 +33,9 @@ class StackOutputBase(Resolver):
         :rtype: str
         :raises: sceptre.exceptions.DependencyStackMissingOutputError
         """
-        outputs = self._get_stack_outputs(stack_name)
-
         try:
+            outputs = self._get_stack_outputs(stack_name)
+
             return outputs[output_key]
         except KeyError:
             raise DependencyStackMissingOutputError(
@@ -52,7 +53,7 @@ class StackOutputBase(Resolver):
         :type stack_name: str
         :returns: A formatted version of the stack outputs.
         :rtype: dict
-        :raises: sceptre.stack.DependencyStackNotLaunchedException
+        :raises: sceptre.stack.StackDoesNotHaveOutputsError
         """
         self.logger.debug("Collecting outputs from '{0}'...".format(
             stack_name
@@ -63,22 +64,24 @@ class StackOutputBase(Resolver):
                 command="describe_stacks",
                 kwargs={"StackName": stack_name}
             )
+
+            outputs = response["Stacks"][0]['Outputs']
+            self.logger.debug("Outputs: {0}".format(outputs))
+
+            formatted_outputs = dict(
+                (output["OutputKey"], output["OutputValue"])
+                for output in outputs
+            )
+
+            return formatted_outputs
+
         except ClientError as e:
             if "does not exist" in e.response["Error"]["Message"]:
                 raise StackDoesNotExistError(e.response["Error"]["Message"])
             else:
                 raise e
-        else:
-            outputs = response["Stacks"][0]["Outputs"]
-
-        self.logger.debug("Outputs: {0}".format(outputs))
-
-        formatted_outputs = dict(
-            (output["OutputKey"], output["OutputValue"])
-            for output in outputs
-        )
-
-        return formatted_outputs
+        except KeyError:
+            raise StackDoesNotHaveOutputsError
 
 
 class StackOutput(StackOutputBase):
