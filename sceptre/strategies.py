@@ -1,8 +1,8 @@
 def list_join(a, b):
     if a and not isinstance(a, list):
-        raise TypeError(f'{a} is not a list')
+        raise TypeError('{} is not a list'.format(a))
     if b and not isinstance(b, list):
-        raise TypeError(f'{b} is not a list')
+        raise TypeError('{} is not a list'.format(b))
 
     if a is None:
         return b
@@ -15,9 +15,9 @@ def list_join(a, b):
 
 def dict_merge(a, b):
     if a and not isinstance(a, dict):
-        raise TypeError(f'{a} is not a dict')
+        raise TypeError('{} is not a list'.format(a))
     if b and not isinstance(b, dict):
-        raise TypeError(f'{b} is not a dict')
+        raise TypeError('{} is not a list'.format(b))
 
     if a is None:
         return b
