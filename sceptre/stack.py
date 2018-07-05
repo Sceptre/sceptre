@@ -180,6 +180,20 @@ class Stack(object):
             )
         return self._external_name
 
+    @property
+    def stack_tags(self):
+        """
+        Returns the tags for this stack, rendering them if they use resolvers
+        :returns: The stack's tags
+        :rtype: list
+        """
+        out = []
+        for key, value in self.config.get("stack_tags", {}).items():
+            if hasattr(value, 'resolve'):
+                value = value.resolve()
+            out.append({"Key": str(key), "Value": str(value)})
+        return out
+
     @add_stack_hooks
     def create(self):
         """
@@ -195,10 +209,7 @@ class Stack(object):
             "Parameters": self._format_parameters(self.parameters),
             "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
             "NotificationARNs": self.config.get("notifications", []),
-            "Tags": [
-                {"Key": str(k), "Value": str(v)}
-                for k, v in self.config.get("stack_tags", {}).items()
-            ]
+            "Tags": self.stack_tags
         }
         if "on_failure" in self.config:
             create_stack_kwargs.update({
@@ -234,10 +245,7 @@ class Stack(object):
             "Parameters": self._format_parameters(self.parameters),
             "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
             "NotificationARNs": self.config.get("notifications", []),
-            "Tags": [
-                {"Key": str(k), "Value": str(v)}
-                for k, v in self.config.get("stack_tags", {}).items()
-            ]
+            "Tags": self.stack_tags
         }
         update_stack_kwargs.update(self._get_template_details())
         update_stack_kwargs.update(self._get_role_arn())
@@ -527,10 +535,7 @@ class Stack(object):
             "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
             "ChangeSetName": change_set_name,
             "NotificationARNs": self.config.get("notifications", []),
-            "Tags": [
-                {"Key": str(k), "Value": str(v)}
-                for k, v in self.config.get("stack_tags", {}).items()
-            ]
+            "Tags": self.stack_tags
         }
         create_change_set_kwargs.update(self._get_template_details())
         create_change_set_kwargs.update(self._get_role_arn())
