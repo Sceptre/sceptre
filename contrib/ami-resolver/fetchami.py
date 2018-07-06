@@ -20,7 +20,9 @@ class FetchAMI(Resolver):
     def newest_image(list_of_images):
         """
         Sorts the AMIs in descending order and returns the latest one
-        """
+        :returns: AMI ID from AWS CLI.
+        :rtype: str 
+	"""
 
         latest = None
 
