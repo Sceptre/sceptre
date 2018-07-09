@@ -22,7 +22,7 @@ class FetchAMI(Resolver):
         Sorts the AMIs in descending order and returns the latest one
         :returns: AMI ID from AWS CLI.
         :rtype: str 
-	"""
+        """
 
         latest = None
 
