@@ -7,7 +7,7 @@ from dateutil import parser
 class FetchAMI(Resolver):
 
     """
-    Resolver for AMI.
+    Resolver for fetching AMIs from AWS.
     Fetches the correct AMI ID based on the type of AMI requested.
     :param argument: Type of AMI required.
     :type argument: str
