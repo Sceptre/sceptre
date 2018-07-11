@@ -1,8 +1,3 @@
-.. Sceptre documentation master file, created by
-   sphinx-quickstart on Sun Jun  3 11:32:20 2018.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Sceptre
 =======
 
@@ -33,19 +28,14 @@ and corresponding YAML config files. The config files include which
 account and region to use, and the parameters to be supplied to the
 templates.
 
-For a tutorial on using Sceptre, see :doc:`docs/get_started`, or find out more
-information about Sceptre below.
+For a tutorial on using Sceptre, see :doc:`docs/get_started`. The full
+documentation is linked below.
 
 Code
 ----
 
-Sceptre’s source code can be found on `Github`_.
-
-Bugs and feature requests should be raised via our `Issues`_ page.
-
-This documentation acts as an in-depth reference for all of Sceptre's features.
-
-Beginners should consider reading our :doc:`docs/get_started` ..., which provides a walk-through tutorial.
+- Sceptre’s source code can be found on `Github`_.
+- Bugs and feature requests should be raised via our `Issues`_ page.
 
 .. _Github: https://github.com/cloudreach/sceptre/
 .. _Issues: https://github.com/cloudreach/sceptre/issues
@@ -58,7 +48,6 @@ Beginners should consider reading our :doc:`docs/get_started` ..., which provide
    docs/install.rst
    docs/get_started.rst
    docs/terminology.rst
-   docs/architecture.rst
 
 .. toctree::
    :maxdepth: 3
@@ -70,6 +59,7 @@ Beginners should consider reading our :doc:`docs/get_started` ..., which provide
    docs/templates.rst
    docs/hooks.rst
    docs/resolvers.rst
+   docs/architecture.rst
 
 .. toctree::
    :maxdepth: 3

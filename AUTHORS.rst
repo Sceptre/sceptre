@@ -25,3 +25,5 @@ Contributors
 * Matthew Taylor `@matalo33 <https://github.com/matalo33>`_
 * Yvonne Beumer `@pinkeee <https://github.com/pinkieee>`_
 * Max Eskenazi <max@eskenazi.net>
+* Jan Gazda `@1oglop1 <https://github.com/1oglop1>`_
+* Neel Radhakrishnan `@rdkr <https://github.com/rdkr>`_

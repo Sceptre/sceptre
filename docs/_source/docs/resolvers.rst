@@ -187,7 +187,7 @@ setup.py
     setup(
         name='custom_resolver',
         entry_points={
-            'sceptre.hooks': [
+            'sceptre.resolvers': [
                 'custom_resolver = custom_resolver:CustomResolver',
             ],
         }

@@ -75,42 +75,14 @@ coverage: coverage-ci
 	$(BROWSER) htmlcov/index.html
 
 docs:
-	rm -f docs/sceptre.rst
-	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ sceptre
-	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
 
-docs-latest:
-	$(MAKE) -C docs build-latest
-
-docs-build-tag:
-	$(MAKE) -C docs build-tag
-
-docs-build-dev:
-	$(MAKE) -C docs build-dev
-
-docs-build-commit:
-	$(MAKE) -C docs build-commit
-
-docs-serve-latest:
-	$(MAKE) -C docs serve-latest
-
-docs-serve-tag:
-	$(MAKE) -C docs serve-tag
-
-docs-serve-dev:
-	$(MAKE) -C docs serve-dev
-
-docs-serve-commit: docs-commit
-	$(MAKE) -C docs serve-commit
-
-docs-install:
-	$(MAKE) -C docs install
+docs-html:
+	$(MAKE) -C docs html
 
 docs-clean:
-	$(MAKE) -C docs clean
+	rm -r docs/_build
 
 dist: clean
 	python setup.py check -r -s
