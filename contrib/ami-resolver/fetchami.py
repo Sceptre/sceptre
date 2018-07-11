@@ -45,8 +45,10 @@ class FetchAMI(Resolver):
         """
 
         region = self.environment_config['region']
+        profile = self.environment_config['profile']
         ami_type = self.argument
 
+        boto3.setup_default_session(profile_name=profile)
         client = boto3.client('ec2', region_name=region)
 
         filters = [{
