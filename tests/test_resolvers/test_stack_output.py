@@ -173,6 +173,16 @@ class TestStackOutputBaseResolver(object):
             "key_2": "value_2"
         }
 
+    def test_get_stack_outputs_with_valid_stack_without_outputs(self):
+        self.stack.connection_manager.call.return_value = {
+            "Stacks": [{}]
+        }
+
+        response = self.base_stack_output_resolver._get_stack_outputs(
+            sentinel.stack_name
+        )
+        assert response == {}
+
     def test_get_stack_outputs_with_unlaunched_stack(self):
         self.stack.connection_manager.call.side_effect = ClientError(
             {

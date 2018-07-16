@@ -76,7 +76,7 @@ class StackOutputBase(Resolver):
             else:
                 raise e
         else:
-            outputs = response["Stacks"][0]["Outputs"]
+            outputs = response["Stacks"][0].get("Outputs", {})
 
         self.logger.debug("Outputs: {0}".format(outputs))
 
