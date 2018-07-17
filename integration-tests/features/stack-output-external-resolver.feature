@@ -1,7 +1,7 @@
 Feature: Stack output external resolver
 
   Scenario: launch a stack referencing the external output of an existing stack
-    Given environment "9" has AWS config "aws-config" set
+    Given stack_group "9" has AWS config "aws-config" set
     and stack "9/A" exists using "dependencies/independent_template.json"
     and stack "9/B" does not exist
     and stack "9/B" has its project code resolved
