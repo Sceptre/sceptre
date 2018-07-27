@@ -365,11 +365,25 @@ class TestEnvironment(object):
             "name": StackStatus.PENDING
         }
 
+    def test_get_empty_launch_dependencies(self):
+        mock_stack = Mock()
+        mock_stack.name = "dev/mock_stack"
+        mock_stack.dependencies = []
+
+        self.environment.stacks = {"mock_stack": mock_stack}
+
+        response = self.environment._get_launch_dependencies("dev")
+
+        assert response == {
+            "dev/mock_stack": []
+        }
+
     def test_get_launch_dependencies(self):
         mock_stack = Mock()
         mock_stack.name = "dev/mock_stack"
         mock_stack.dependencies = [
-            "dev/vpc",
+            "vpc",
+            "devsubnets",
             "dev/subnets",
             "prod/sg"
         ]
@@ -381,7 +395,7 @@ class TestEnvironment(object):
         # Note that "prod/sg" is filtered out, because it's not under the
         # top level environment path "dev".
         assert response == {
-            "dev/mock_stack": ["dev/vpc", "dev/subnets"]
+            "dev/mock_stack": ["dev/vpc", "dev/devsubnets", "dev/subnets"]
         }
 
     @patch("sceptre.environment.Environment._get_launch_dependencies")
