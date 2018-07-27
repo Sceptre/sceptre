@@ -383,6 +383,7 @@ class TestEnvironment(object):
         mock_stack.name = "dev/mock_stack"
         mock_stack.dependencies = [
             "vpc",
+            "devsubnets",
             "dev/subnets",
             "prod/sg"
         ]
@@ -394,7 +395,7 @@ class TestEnvironment(object):
         # Note that "prod/sg" is filtered out, because it's not under the
         # top level environment path "dev".
         assert response == {
-            "dev/mock_stack": ["dev/vpc", "dev/subnets"]
+            "dev/mock_stack": ["dev/vpc", "dev/devsubnets", "dev/subnets"]
         }
 
     @patch("sceptre.environment.Environment._get_launch_dependencies")

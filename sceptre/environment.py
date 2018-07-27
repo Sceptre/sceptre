@@ -308,7 +308,7 @@ class Environment(object):
         for stack_name, dependencies in all_dependencies.items():
             stack_dependencies = []
             for dependency in dependencies:
-                if dependency.startswith(top_level_environment_path):
+                if dependency.startswith(top_level_environment_path + '/'):
                     stack_dependencies.append(dependency)
                 # If there is no slash in path, head will be empty.
                 elif os.path.split(dependency)[0] == '':
