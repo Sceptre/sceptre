@@ -122,7 +122,10 @@ class ConnectionManager(object):
                   "profile_name": profile,
                   "region_name": region,
                   "aws_access_key_id": environ.get("AWS_ACCESS_KEY_ID"),
-                  "aws_secret_access_key": environ.get("AWS_SECRET_ACCESS_KEY")
+                  "aws_secret_access_key": environ.get(
+                    "AWS_SECRET_ACCESS_KEY"
+                  ),
+                  "aws_session_token": environ.get("AWS_SESSION_TOKEN")
                 }
 
                 session = boto3.session.Session(**config)
