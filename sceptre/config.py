@@ -190,6 +190,12 @@ class Config(dict):
 
         config = get_config(path)
 
+        # Get dependencies from config and extend them with self dependencies
+        if "dependencies" in config:
+            dependencies = config.get("dependencies")
+            dependencies.extend(self.get("dependencies"))
+            config.update({"dependencies": dependencies})
+
         self.update(config)
 
         self._check_version()
