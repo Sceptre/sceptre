@@ -159,7 +159,9 @@ class TestConfigReader(object):
             "name",
             {
                 "template_bucket_name": "bucket-name",
-                "template_key_prefix": "prefix"
+                "template_key_prefix": "prefix",
+                "region": "eu-west-1"
+
             },
             {
                  "bucket_name": "bucket-name",
@@ -171,12 +173,24 @@ class TestConfigReader(object):
             "name",
             {
                 "template_bucket_name": "bucket-name",
+                "region": "eu-west-1"
             },
             {
                  "bucket_name": "bucket-name",
                  "bucket_key": "name/2012-01-01-00-00-00-000000Z.json",
                  "bucket_region": "eu-west-1",
             }
+        ),
+        (
+             "name",
+             {
+                 "template_bucket_name": "bucket-name",
+             },
+             {
+                 "bucket_name": "bucket-name",
+                 "bucket_key": "name/2012-01-01-00-00-00-000000Z.json",
+                 "bucket_region": None,
+             }
         ),
         (
             "name", {}, None
