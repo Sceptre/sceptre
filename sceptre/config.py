@@ -28,7 +28,7 @@ from . import strategies
 ConfigAttributes = collections.namedtuple("Attributes", "required optional")
 
 CONFIG_MERGE_STRATEGIES = {
-    'dependencies': strategies.child_wins,
+    'dependencies': strategies.list_join,
     'hooks': strategies.child_wins,
     'parameters': strategies.child_wins,
     'protect': strategies.child_wins,
