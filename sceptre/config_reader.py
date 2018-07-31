@@ -291,10 +291,15 @@ class ConfigReader(object):
                 prefix = config["template_key_prefix"]
                 template_key = "/".join([prefix.strip("/"), template_key])
 
+            if "region" in config:
+                bucket_region = config["region"]
+
             s3_details = {
                  "bucket_name": config["template_bucket_name"],
-                 "bucket_key": template_key
+                 "bucket_key": template_key,
+                 "bucket_region": bucket_region
             }
+
         return s3_details
 
     def _construct_stack(self, rel_path, stack_group_config=None):
