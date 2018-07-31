@@ -96,7 +96,7 @@ class TestStackOutputExternalResolver(object):
         mock_get_output_value.return_value = "output_value"
         stack_output_external_resolver.resolve()
         mock_get_output_value.assert_called_once_with(
-            "another/account-vpc", "VpcId"
+            "another/account-vpc", "VpcId", None
         )
         assert stack.dependencies == []
 
@@ -172,6 +172,16 @@ class TestStackOutputBaseResolver(object):
             "key_1": "value_1",
             "key_2": "value_2"
         }
+
+    def test_get_stack_outputs_with_valid_stack_without_outputs(self):
+        self.stack.connection_manager.call.return_value = {
+            "Stacks": [{}]
+        }
+
+        response = self.base_stack_output_resolver._get_stack_outputs(
+            sentinel.stack_name
+        )
+        assert response == {}
 
     def test_get_stack_outputs_with_unlaunched_stack(self):
         self.stack.connection_manager.call.side_effect = ClientError(

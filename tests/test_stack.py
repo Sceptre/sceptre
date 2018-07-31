@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from mock import patch, sentinel, MagicMock, Mock
+from mock import patch, sentinel, MagicMock, Mock, call
 
 import datetime
 from dateutil.tz import tzutc
@@ -29,14 +29,14 @@ class TestStack(object):
         self.stack = Stack(
             name=sentinel.stack_name, project_code=sentinel.project_code,
             template_path=sentinel.template_path, region=sentinel.region,
-            iam_role=sentinel.iam_role, profile=sentinel.profile,
-            parameters={"key1": "val1"},
+            profile=sentinel.profile, parameters={"key1": "val1"},
             sceptre_user_data=sentinel.sceptre_user_data, hooks={},
             s3_details=None, dependencies=sentinel.dependencies,
             role_arn=sentinel.role_arn, protected=False,
             tags={"tag1": "val1"}, external_name=sentinel.external_name,
             notifications=[sentinel.notification],
-            on_failure=sentinel.on_failure
+            on_failure=sentinel.on_failure,
+            stack_timeout=sentinel.stack_timeout
         )
         self.stack._template = MagicMock(spec=Template)
 
@@ -50,7 +50,7 @@ class TestStack(object):
             external_name=sentinel.external_name
         )
         self.mock_ConnectionManager.assert_called_with(
-            sentinel.region, iam_role=None, profile=None
+            sentinel.region, None, sentinel.external_name
         )
         assert stack.name == sentinel.stack_name
         assert stack.project_code == sentinel.project_code
@@ -70,8 +70,7 @@ class TestStack(object):
 
     def test_repr(self):
         self.stack.connection_manager.region = sentinel.region
-        self.stack.connection_manager.iam_role = None
-        self.stack.connection_manager.profile = None
+        self.stack.connection_manager.profile = sentinel.profile
 
         assert self.stack.__repr__() == \
             "sceptre.stack.Stack(" \
@@ -79,8 +78,7 @@ class TestStack(object):
             "project_code='sentinel.project_code', " \
             "template_path='sentinel.template_path', " \
             "region='sentinel.region', " \
-            "iam_role='None', profile='None', " \
-            "parameters='{'key1': 'val1'}', " \
+            "profile='sentinel.profile', parameters='{'key1': 'val1'}', " \
             "sceptre_user_data='sentinel.sceptre_user_data', " \
             "hooks='{}', s3_details='None', " \
             "dependencies='sentinel.dependencies', "\
@@ -88,7 +86,8 @@ class TestStack(object):
             "protected='False', tags='{'tag1': 'val1'}', " \
             "external_name='sentinel.external_name', " \
             "notifications='[sentinel.notification]', " \
-            "on_failure='sentinel.on_failure'" \
+            "on_failure='sentinel.on_failure', " \
+            "stack_timeout='sentinel.stack_timeout'" \
             ")"
 
     @patch("sceptre.stack.Template")
@@ -120,13 +119,18 @@ class TestStack(object):
         assert stack.external_name == "external_name"
 
     @patch("sceptre.stack.Stack._wait_for_completion")
-    def test_create_sends_correct_request(self, mock_wait_for_completion):
+    @patch("sceptre.stack.Stack._get_stack_timeout")
+    def test_create_sends_correct_request(
+            self, mock_get_stack_timeout, mock_wait_for_completion
+    ):
         self.stack._template.get_boto_call_parameter.return_value = {
             "Template": sentinel.template
         }
+        mock_get_stack_timeout.return_value = {
+            "TimeoutInMinutes": sentinel.timeout
+        }
 
         self.stack.create()
-
         self.stack.connection_manager.call.assert_called_with(
             service="cloudformation",
             command="create_stack",
@@ -143,7 +147,8 @@ class TestStack(object):
                 "Tags": [
                     {"Key": "tag1", "Value": "val1"}
                 ],
-                "OnFailure": sentinel.on_failure
+                "OnFailure": sentinel.on_failure,
+                "TimeoutInMinutes": sentinel.timeout
             }
         )
         mock_wait_for_completion.assert_called_once_with()
@@ -175,19 +180,21 @@ class TestStack(object):
                 "Tags": [
                     {"Key": "tag1", "Value": "val1"}
                 ],
-                "OnFailure": sentinel.on_failure
+                "OnFailure": sentinel.on_failure,
+                "TimeoutInMinutes": sentinel.stack_timeout
             }
         )
         mock_wait_for_completion.assert_called_once_with()
 
     @patch("sceptre.stack.Stack._wait_for_completion")
-    def test_create_sends_correct_request_with_no_failure(
+    def test_create_sends_correct_request_with_no_failure_no_timeout(
         self, mock_wait_for_completion
     ):
         self.stack._template.get_boto_call_parameter.return_value = {
             "Template": sentinel.template
         }
         self.stack.on_failure = None
+        self.stack.stack_timeout = 0
 
         self.stack.create()
 
@@ -237,7 +244,46 @@ class TestStack(object):
                 ]
             }
         )
-        mock_wait_for_completion.assert_called_once_with()
+        mock_wait_for_completion.assert_called_once_with(
+            sentinel.stack_timeout
+        )
+
+    @patch("sceptre.stack.Stack._wait_for_completion")
+    def test_update_cancels_after_timeout(self, mock_wait_for_completion):
+        self.stack._template = Mock(spec=Template)
+        self.stack._template.get_boto_call_parameter.return_value = {
+            "Template": sentinel.template
+        }
+        mock_wait_for_completion.return_value = StackStatus.IN_PROGRESS
+
+        self.stack.update()
+        calls = [
+            call(
+                service="cloudformation",
+                command="update_stack",
+                kwargs={
+                    "StackName": sentinel.external_name,
+                    "Template": sentinel.template,
+                    "Parameters": [{
+                        "ParameterKey": "key1",
+                        "ParameterValue": "val1"
+                    }],
+                    "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                    "RoleARN": sentinel.role_arn,
+                    "NotificationARNs": [sentinel.notification],
+                    "Tags": [
+                        {"Key": "tag1", "Value": "val1"}
+                    ]
+                }),
+            call(
+                service="cloudformation",
+                command="cancel_update_stack",
+                kwargs={"StackName": sentinel.external_name})
+        ]
+        self.stack.connection_manager.call.assert_has_calls(calls)
+        mock_wait_for_completion.assert_has_calls(
+            [call(sentinel.stack_timeout), call()]
+        )
 
     @patch("sceptre.stack.Stack._wait_for_completion")
     def test_update_sends_correct_request_no_notification(
@@ -267,6 +313,20 @@ class TestStack(object):
                     {"Key": "tag1", "Value": "val1"}
                 ]
             }
+        )
+        mock_wait_for_completion.assert_called_once_with(
+            sentinel.stack_timeout
+        )
+
+    @patch("sceptre.stack.Stack._wait_for_completion")
+    def test_cancel_update_sends_correct_request(
+            self, mock_wait_for_completion
+    ):
+        self.stack.cancel_stack_update()
+        self.stack.connection_manager.call.assert_called_once_with(
+            service="cloudformation",
+            command="cancel_update_stack",
+            kwargs={"StackName": sentinel.external_name}
         )
         mock_wait_for_completion.assert_called_once_with()
 

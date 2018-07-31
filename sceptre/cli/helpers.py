@@ -46,12 +46,12 @@ def catch_exceptions(func):
 
 
 def confirmation(
-    command, ignore, environment=None, stack=None, change_set=None
+    command, ignore, stack_group=None, stack=None, change_set=None
 ):
     if not ignore:
         msg = "Do you want to {} ".format(command)
-        if environment:
-            msg = msg + "environment '{0}'?".format(environment)
+        if stack_group:
+            msg = msg + "stack_group '{0}'?".format(stack_group)
         elif change_set and stack:
             msg = msg + "change set '{0}' for stack '{1}'".format(
                 change_set, stack
@@ -89,17 +89,17 @@ def write(var, output_format="str", no_colour=True):
     click.echo(stream)
 
 
-def get_stack_or_env(ctx, path):
+def get_stack_or_stack_group(ctx, path):
     """
-    Parses the path to generate relevant Environment and Stack object.
+    Parses the path to generate relevant Stack Group and Stack object.
 
     :param ctx: Cli context.
     :type ctx: click.Context
-    :param path: Path to either stack config or environment folder.
+    :param path: Path to either stack config or stack_group folder.
     :type path: str
     """
     stack = None
-    env = None
+    stack_group = None
 
     config_reader = ConfigReader(
         ctx.obj["sceptre_dir"], ctx.obj["user_variables"]
@@ -108,9 +108,23 @@ def get_stack_or_env(ctx, path):
     if os.path.splitext(path)[1]:
         stack = config_reader.construct_stack(path)
     else:
-        env = config_reader.construct_environment(path)
+        stack_group = config_reader.construct_stack_group(path)
 
-    return (stack, env)
+    return (stack, stack_group)
+
+
+def get_stack(ctx, path):
+    """
+    Parses the path to generate relevant StackGroup and Stack object.
+
+    :param ctx: Cli context.
+    :type ctx: click.Context
+    :param path: Path to either stack config or stack_group folder.
+    :type path: str
+    """
+    return ConfigReader(
+        ctx.obj["sceptre_dir"], ctx.obj["options"]
+    ).construct_stack(path)
 
 
 def setup_logging(debug, no_colour):

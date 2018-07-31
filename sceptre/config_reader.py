@@ -3,8 +3,8 @@
 """
 sceptre.config
 
-This module implements a Config class, which stores a stack or environment's
-configuration.
+This module implements a Config class, which stores a stack or
+stack_group's configuration.
 """
 
 from glob import glob
@@ -22,19 +22,18 @@ from packaging.version import Version
 
 from . import __version__
 from .exceptions import InvalidSceptreDirectoryError, ConfigFileNotFoundError
-from .exceptions import EnvironmentNotFoundError, VersionIncompatibleError
-from .environment import Environment
+from .exceptions import StackGroupNotFoundError, VersionIncompatibleError
+from .stack_group import StackGroup
 from .stack import Stack
 
 ConfigAttributes = collections.namedtuple("Attributes", "required optional")
 
-ENVIRONMENT_CONFIG_ATTRIBUTES = ConfigAttributes(
+STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
     {
         "project_code",
         "region"
     },
     {
-        "iam_role",
         "template_bucket_name",
         "template_key_prefix",
         "require_version"
@@ -46,6 +45,7 @@ STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
         "template_path"
     },
     {
+        "profile",
         "dependencies",
         "hooks",
         "parameters",
@@ -53,7 +53,8 @@ STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
         "sceptre_user_data",
         "stack_name",
         "stack_tags",
-        "role_arn"
+        "role_arn",
+        "stack_timeout"
     }
 )
 
@@ -61,8 +62,9 @@ STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
 class ConfigReader(object):
     """
     Respresents a Sceptre project folder. Reads in yaml configuration files and
-    produces Stack or Environment objects. Responsible for loading Resolvers
-    and Hook classes and adding them as constructors to the PyYAML parser.
+    produces Stack or StackGroup objects. Responsible for loading
+    Resolvers and Hook classes and adding them as constructors to the PyYAML
+    parser.
 
     :param sceptre_dir: The absolute path to the Sceptre directory.
     :type sceptre_dir: str
@@ -154,7 +156,7 @@ class ConfigReader(object):
         # Adding properties from class
         config = {
             "sceptre_dir": self.sceptre_dir,
-            "environment_path": directory_path
+            "stack_group_path": directory_path
         }
 
         # Adding defaults from base config.
@@ -178,7 +180,7 @@ class ConfigReader(object):
         """
         Traverses the directory_path, from top to bottom, reading in all
         relevant config files. If config items appear in files lower down the
-        environment tree, they overwrite items from further up.
+        stack_group tree, they overwrite items from further up.
 
         :param directory_path: Relative directory path to config to read.
         :type directory_path: str
@@ -206,7 +208,7 @@ class ConfigReader(object):
         """
         Traverses the directory_path, from top to bottom, reading in all
         relevant config files. If config items appear in files lower down the
-        environment tree, they overwrite items from further up.
+        stack_group tree, they overwrite items from further up.
 
         :param directory_path: Relative directory path to config to read.
         :type directory_path: str
@@ -217,14 +219,14 @@ class ConfigReader(object):
         """
         abs_directory_path = path.join(self.config_folder, directory_path)
         if path.isfile(path.join(abs_directory_path, basename)):
-            env = jinja2.Environment(
+            stack_group = jinja2.Environment(
                 loader=jinja2.FileSystemLoader(abs_directory_path),
                 undefined=jinja2.StrictUndefined
             )
-            template = env.get_template(basename)
+            template = stack_group.get_template(basename)
             rendered_template = template.render(
                 environment_variable=environ,
-                environment_path=directory_path.split("/"),
+                stack_group_path=directory_path.split("/"),
                 **self.templating_vars
             )
 
@@ -295,7 +297,7 @@ class ConfigReader(object):
             }
         return s3_details
 
-    def _construct_stack(self, rel_path, environment_config=None):
+    def _construct_stack(self, rel_path, stack_group_config=None):
         """
         Construct a Stack object from a config path and a base config.
 
@@ -308,8 +310,9 @@ class ConfigReader(object):
         """
         directory, filename = path.split(rel_path)
         if filename != "config.yaml":
-            self.templating_vars["environment_config"] = environment_config
-            config = self.read(rel_path, environment_config)
+            self.templating_vars["stack_group_config"] =\
+              stack_group_config
+            config = self.read(rel_path, stack_group_config)
             stack_name = path.splitext(rel_path)[0]
             abs_template_path = path.join(
                 self.sceptre_dir, config["template_path"]
@@ -324,8 +327,7 @@ class ConfigReader(object):
                 project_code=config["project_code"],
                 template_path=abs_template_path,
                 region=config["region"],
-                iam_role=config.get("iam_role"),
-                profile=config.get("profile", ""),
+                profile=config.get("profile"),
                 parameters=config.get("parameters", {}),
                 sceptre_user_data=config.get("sceptre_user_data", {}),
                 hooks=config.get("hooks", {}),
@@ -336,16 +338,17 @@ class ConfigReader(object):
                 tags=config.get("stack_tags", {}),
                 external_name=config.get("stack_name"),
                 notifications=config.get("notifications"),
-                on_failure=config.get("on_failure")
+                on_failure=config.get("on_failure"),
+                stack_timeout=config.get("stack_timeout", 0)
             )
 
-            del self.templating_vars["environment_config"]
+            del self.templating_vars["stack_group_config"]
             return stack
 
     def construct_stack(self, rel_path):
         """
-        Construct a Stack object from a config path with the environment config
-        as the base config.
+        Construct a Stack object from a config path with the stack_group
+        config as the base config.
 
         :param rel_path: A relative stack config path from the config folder.
         :type rel_path: str
@@ -355,23 +358,28 @@ class ConfigReader(object):
                 "Config file not found for '{}'".format(rel_path)
             )
         directory = path.split(rel_path)[0]
-        environment_config = self.read(path.join(directory, "config.yaml"))
-        return self._construct_stack(rel_path, environment_config)
+        stack_group_config = self.read(
+            path.join(directory, "config.yaml")
+          )
+        return self._construct_stack(rel_path, stack_group_config)
 
-    def construct_environment(self, rel_path):
+    def construct_stack_group(self, rel_path):
         """
-        Construct an Environment object from a environment path with all
-        associated sub-environments and stack objects.
+        Construct a StackGroup object from a stack_group path
+        with all associated sub-stack_groups and stack objects.
 
-        :param rel_path: A relative environment path from the config folder.
+        :param rel_path: A relative stack_group path from the config
+        folder.
         :type rel_path: str
         """
         if not path.isdir(path.join(self.config_folder, rel_path)):
-            raise EnvironmentNotFoundError(
-                "Environment not found for '{}'".format(rel_path)
+            raise StackGroupNotFoundError(
+                "StackGroup not found for '{}'".format(rel_path)
             )
-        environment_config = self.read(path.join(rel_path, "config.yaml"))
-        environment = Environment(rel_path)
+        stack_group_config = self.read(
+            path.join(rel_path, "config.yaml")
+          )
+        stack_group = StackGroup(rel_path)
 
         items = glob(
             path.join(self.sceptre_dir, "config", rel_path, "*")
@@ -388,13 +396,13 @@ class ConfigReader(object):
 
         for abs_path, rel_path in paths.items():
             if not is_leaf and path.isdir(abs_path):
-                environment.sub_environments.append(
-                    self.construct_environment(rel_path)
+                stack_group.sub_stack_groups.append(
+                    self.construct_stack_group(rel_path)
                 )
             elif is_leaf and path.isfile(abs_path):
                 stack = self._construct_stack(
-                    rel_path, copy.deepcopy(environment_config)
+                    rel_path, copy.deepcopy(stack_group_config)
                 )
-                environment.stacks.append(stack)
+                stack_group.stacks.append(stack)
 
-        return environment
+        return stack_group

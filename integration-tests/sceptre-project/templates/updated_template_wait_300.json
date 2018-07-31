@@ -1,0 +1,20 @@
+{
+  "Resources": {
+    "WaitConditionHandle": {
+      "Type": "AWS::CloudFormation::WaitConditionHandle",
+      "Properties": {}
+    },
+    "AnotherWaitConditionHandle": {
+      "Type": "AWS::CloudFormation::WaitConditionHandle",
+      "Properties": {}
+    },
+    "AnotherWaitCondition" : {
+     "Type" : "AWS::CloudFormation::WaitCondition",
+     "Properties" : {
+         "Count" : 1,
+         "Handle" : { "Ref" : "AnotherWaitConditionHandle" },
+         "Timeout" : "300"
+       }
+    }
+  }
+}
