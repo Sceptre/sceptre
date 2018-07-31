@@ -1,6 +1,6 @@
 import click
 
-from sceptre.cli.helpers import catch_exceptions, get_stack_or_env
+from sceptre.cli.helpers import catch_exceptions, get_stack_or_stack_group
 from sceptre.cli.helpers import confirmation
 from sceptre.stack_status import StackStatus
 
@@ -22,7 +22,7 @@ def delete_command(ctx, path, change_set_name, yes):
     """
     action = "delete"
 
-    stack, env = get_stack_or_env(ctx, path)
+    stack, stack_group = get_stack_or_stack_group(ctx, path)
 
     if stack:
         if change_set_name:
@@ -33,9 +33,9 @@ def delete_command(ctx, path, change_set_name, yes):
             response = stack.delete()
             if response != StackStatus.COMPLETE:
                 exit(1)
-    elif env:
-        confirmation(action, yes, environment=path)
-        response = env.delete()
+    elif stack_group:
+        confirmation(action, yes, stack_group=path)
+        response = stack_group.delete()
         if not all(
             status == StackStatus.COMPLETE for status in response.values()
         ):

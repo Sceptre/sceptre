@@ -88,7 +88,7 @@ Get Started
 
     $ git checkout -b <branch-name>
 
-5. When you're done making changes, check that your changes pass linting, unit tests and have sufficient coverage:
+5. When you're done making changes, check that your changes pass linting, unit tests and have sufficient coverage and integration tests pass:
 
    Check linting:
 
@@ -114,6 +114,36 @@ Get Started
 
    If you use pyenv to manage Python versions, try `pip install tox-pyenv` to make tox and pyenv play nicely.
 
+   Run integration tests:
+
+   If you haven't setup your local environment or personal CircleCI account to run integration tests then follow these steps:
+
+   To run on CircleCi (please do this before submitting your PR so we can see that your tests are passing):
+
+   - Login to CircleCi using your Github Account.
+   - Click `Add Projects`, you will be presented with a list of projects from your GitHub Account.
+   - On your sceptre fork press the `Set Up Project` button.
+   - You can ignore the setup steps, we already have a CircleCi config file in Sceptre. Click "Start Building".
+   - Modify the `Project Settings`, which can be found by navigating: `Builds -> Sceptre` and selecting the `Settings` icon, on the right hand side of the page.
+   - Once in the `Project Settings` section under `Permissions` select `AWS Permissions`.
+   - Add your `Access Key ID` and `Secret Access Key` that is associated with an IAM User from your AWS account. The IAM User will require "Full" permissions for `CloudFormation` and `S3` and Write permissions for `STS` (AssumeRole).
+
+   Once you have set up CircleCi any time you commit to a branch in your fork all tests will be run, including integration tests.
+
+   You can also (optionally) run the integration tests locally, which is quicker during development.
+
+   To run integration tests locally `pip install behave` in your sceptre virtualenv and run:
+
+   .. code-block:: shell
+      $ behave integration-tests
+
+   or to run a specific tests:
+
+   .. code-block:: shell
+      $ behave-integration-tests -n "scenario-name"
+
+   Note: you will need to make sure you have installed and configured `awscli` to work with an AWS account that you have access to. You can use the same user that you use for CircleCi.
+
 6. Make sure the changes comply with the pull request guidelines in the section on `Contributing Code`_.
 
 7. Commit and push your changes.
@@ -125,6 +155,7 @@ Get Started
    e.g. ``[Resolves #123] Fix description of resolver syntax in documentation``
 
 8. Submit a pull request through the GitHub website.
+
 
 
 Credits

@@ -1,0 +1,9 @@
+template_path: path/to/template
+parameters:
+  param1: !stack_group_variable example
+  param2:
+    param3: !stack_group_variable example
+    param4: !stack_group_variable example
+  param5:
+    - param6: !stack_group_variable example
+    - param7: !stack_group_variable example
