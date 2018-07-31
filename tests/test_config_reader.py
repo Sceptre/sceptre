@@ -163,7 +163,8 @@ class TestConfigReader(object):
             },
             {
                  "bucket_name": "bucket-name",
-                 "bucket_key": "prefix/name/2012-01-01-00-00-00-000000Z.json"
+                 "bucket_key": "prefix/name/2012-01-01-00-00-00-000000Z.json",
+                 "bucket_region": "eu-west-1",
             }
         ),
         (
@@ -173,7 +174,8 @@ class TestConfigReader(object):
             },
             {
                  "bucket_name": "bucket-name",
-                 "bucket_key": "name/2012-01-01-00-00-00-000000Z.json"
+                 "bucket_key": "name/2012-01-01-00-00-00-000000Z.json",
+                 "bucket_region": "eu-west-1",
             }
         ),
         (
