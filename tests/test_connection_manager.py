@@ -84,7 +84,8 @@ class TestConnectionManager(object):
             profile_name=None,
             region_name="eu-west-1",
             aws_access_key_id=ANY,
-            aws_secret_access_key=ANY
+            aws_secret_access_key=ANY,
+            aws_session_token=ANY
         )
 
     @patch("sceptre.connection_manager.boto3.session.Session")
@@ -101,7 +102,8 @@ class TestConnectionManager(object):
             profile_name="profile",
             region_name="eu-west-1",
             aws_access_key_id=ANY,
-            aws_secret_access_key=ANY
+            aws_secret_access_key=ANY,
+            aws_session_token=ANY
         )
 
     @patch("sceptre.connection_manager.boto3.session.Session")
