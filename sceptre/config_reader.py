@@ -291,8 +291,7 @@ class ConfigReader(object):
                 prefix = config["template_key_prefix"]
                 template_key = "/".join([prefix.strip("/"), template_key])
 
-            if "region" in config:
-                bucket_region = config["region"]
+            bucket_region = config.get("region", None)
 
             s3_details = {
                  "bucket_name": config["template_bucket_name"],
