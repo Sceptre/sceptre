@@ -59,7 +59,8 @@ class TestTemplate(object):
         mock_bucket_exists.return_value = True
         self.template.s3_details = {
             "bucket_name": "bucket-name",
-            "bucket_key": "bucket-key"
+            "bucket_key": "bucket-key",
+            "bucket_region": "eu-west-1"
         }
 
         self.template.upload_to_s3()
@@ -80,7 +81,8 @@ class TestTemplate(object):
         # behaviour when head_bucket successfully executes.
         self.template.s3_details = {
             "bucket_name": "bucket-name",
-            "bucket_key": "bucket-key"
+            "bucket_key": "bucket-key",
+            "bucket_region": "eu-west-1"
         }
 
         assert self.template._bucket_exists() is True
@@ -89,7 +91,8 @@ class TestTemplate(object):
         self.template.connection_manager.region = "eu-west-1"
         self.template.s3_details = {
             "bucket_name": "bucket-name",
-            "bucket_key": "bucket-key"
+            "bucket_key": "bucket-key",
+            "bucket_region": "eu-west-1"
         }
 
         self.template.connection_manager.call.side_effect = ClientError(
@@ -111,7 +114,8 @@ class TestTemplate(object):
         # Not Found ClientError only for the first call.
         self.template.s3_details = {
             "bucket_name": "bucket-name",
-            "bucket_key": "bucket-key"
+            "bucket_key": "bucket-key",
+            "bucket_region": "eu-west-1"
         }
 
         self.template.connection_manager.call.side_effect = [
@@ -137,7 +141,8 @@ class TestTemplate(object):
         self.template.connection_manager.region = "us-east-1"
         self.template.s3_details = {
             "bucket_name": "bucket-name",
-            "bucket_key": "bucket-key"
+            "bucket_key": "bucket-key",
+            "bucket_region": "us-east-1"
         }
 
         self.template._create_bucket()
@@ -154,7 +159,8 @@ class TestTemplate(object):
         mock_upload_to_s3.return_value = sentinel.template_url
         self.template.s3_details = {
             "bucket_name": sentinel.bucket_name,
-            "bucket_key": sentinel.bucket_key
+            "bucket_key": sentinel.bucket_key,
+            "bucket_region": sentinel.bucket_region
         }
 
         boto_parameter = self.template.get_boto_call_parameter()
