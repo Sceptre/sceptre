@@ -23,8 +23,21 @@ from .exceptions import VersionIncompatibleError
 from .hooks import Hook
 from .resolvers import Resolver
 from .helpers import get_subclasses
+from . import strategies
 
 ConfigAttributes = collections.namedtuple("Attributes", "required optional")
+
+CONFIG_MERGE_STRATEGIES = {
+    'dependencies': strategies.list_join,
+    'hooks': strategies.child_wins,
+    'parameters': strategies.child_wins,
+    'protect': strategies.child_wins,
+    'sceptre_user_data': strategies.child_wins,
+    'stack_name': strategies.child_wins,
+    'stack_tags': strategies.child_wins,
+    'role_arn': strategies.child_wins,
+    'template_path': strategies.child_wins
+}
 
 ENVIRONMENT_CONFIG_ATTRIBUTES = ConfigAttributes(
     {
@@ -146,9 +159,11 @@ class Config(dict):
 
         Traverses the environment path, from top to bottom, reading in all
         relevant config files. If config items appear in files lower down the
-        environment tree, they overwrite items from further up. Jinja2 is used
-        to template in variables from user_variables, environment variables,
-        and the segments of the environment path.
+        environment tree, they overwrite items from further up, depending on
+        the config merge strategy used.
+
+        Jinja2 is used to template in variables from user_variables,
+        environment variables, and the segments of the environment path.
 
         :param user_variables: A dict of key value pairs to be supplied to \
         the config file via Jinja2 templating.
@@ -185,10 +200,22 @@ class Config(dict):
                     if yaml_data is not None:
                         config = yaml_data
                 cascaded_config = get_config(os.path.dirname(path))
+                for config_key, strategy in CONFIG_MERGE_STRATEGIES.items():
+                    value = strategy(
+                        cascaded_config.get(config_key), config.get(config_key)
+                    )
+                    if value:
+                        cascaded_config[config_key] = value
+                        config.pop(config_key)
                 cascaded_config.update(config)
                 return cascaded_config
 
         config = get_config(path)
+
+        config['dependencies'] = strategies.list_join(
+            self.get("dependencies"),
+            config.get("dependencies")
+        )
 
         self.update(config)
 
