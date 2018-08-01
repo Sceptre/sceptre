@@ -234,8 +234,8 @@ class Stack(object):
         """
         Launches the stack.
 
-        If the stack status is create_complete or rollback_complete, the
-        stack is deleted. Launch thena tries to create or update the stack,
+        If the stack status is create_failed or rollback_complete, the
+        stack is deleted. Launch then tries to create or update the stack,
         depending if it already exists. If there are no updates to be
         performed, launch exits gracefully.
 
