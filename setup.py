@@ -45,7 +45,8 @@ setup(
     packages=[
         "sceptre",
         "sceptre/resolvers",
-        "sceptre/hooks"
+        "sceptre/hooks",
+        "contrib"
     ],
     package_dir={
         "sceptre": "sceptre"
