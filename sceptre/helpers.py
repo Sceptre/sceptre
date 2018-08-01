@@ -5,8 +5,8 @@ import glob
 import imp
 import inspect
 import os
-import re
 import sys
+import re
 
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
@@ -27,31 +27,35 @@ def camel_to_snake_case(string):
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 
-def recurse_into_sub_environments(func):
+def recurse_into_sub_stack_groups(func):
     """
-    Two types of Environments exist, non-leaf and leaf. Non-leaf environments
-    contain sub-environments, while leaf environments contain stacks. If a
-    command is executed by a leaf environment, it should execute that command
-    on the stacks it contains. If a command is executed by a non-leaf
-    environment, it should invoke that command on each of its sub-environments.
-    recurse is a decorator used by sceptre.environment.Environment to do this.
-    The function passed, ``func``, must return a dictionary.
+    Two types of StackGroups exist, non-leaf and leaf. Non-leaf
+    stack_groups contain sub-stack_groups, while leaf
+    stack_groups contain stacks. If a command is executed by a leaf
+    stack_group, it should execute that command on the stacks it
+    contains. If a command is executed by a non-leaf stack_group, it
+    should invoke that command on each of its sub-stack_groups. Recurse
+    is a decorator used by sceptre.stack_group.StackGroup to do
+    this. The function passed, ``func``, must return a dictionary.
     """
     @wraps(func)
     def decorated(self, *args, **kwargs):
         function_name = func.__name__
         responses = {}
-        num_environments = len(self.sub_environments)
+        num_stack_groups = len(self.sub_stack_groups)
 
-        # As commands carried out by sub-environments may be blocking,
+        # As commands carried out by sub-stack_groups may be blocking,
         # execute them on separate threads.
-        if num_environments:
-            with ThreadPoolExecutor(max_workers=num_environments) as executor:
+        if num_stack_groups:
+            with ThreadPoolExecutor(max_workers=num_stack_groups)\
+              as thread_stack_group:
                 futures = [
-                    executor.submit(
-                        getattr(environment, function_name), *args, **kwargs
+                    thread_stack_group.submit(
+                        getattr(stack_group, function_name),
+                        *args,
+                        **kwargs
                     )
-                    for environment in self.sub_environments
+                    for stack_group in self.sub_stack_groups
                 ]
                 for future in as_completed(futures):
                     response = future.result()
@@ -83,7 +87,7 @@ def resolve_stack_name(source_stack_name, destination_stack_path):
     Returns a stack's full name.
 
     A dependancy stack's name can be provided as either a full stack name, or
-    as the file base name of a stack from the same environment.
+    as the file base name of a stack from the same stack_group.
     resolve_stack_name calculates the dependency's stack's full name from this.
 
     :param source_stack_name: The name of the stack with the parameter to be \

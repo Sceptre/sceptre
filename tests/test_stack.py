@@ -29,7 +29,7 @@ class TestStack(object):
         self.stack = Stack(
             name=sentinel.stack_name, project_code=sentinel.project_code,
             template_path=sentinel.template_path, region=sentinel.region,
-            iam_role=sentinel.iam_role, parameters={"key1": "val1"},
+            profile=sentinel.profile, parameters={"key1": "val1"},
             sceptre_user_data=sentinel.sceptre_user_data, hooks={},
             s3_details=None, dependencies=sentinel.dependencies,
             role_arn=sentinel.role_arn, protected=False,
@@ -50,7 +50,7 @@ class TestStack(object):
             external_name=sentinel.external_name
         )
         self.mock_ConnectionManager.assert_called_with(
-            sentinel.region, None
+            sentinel.region, None, sentinel.external_name
         )
         assert stack.name == sentinel.stack_name
         assert stack.project_code == sentinel.project_code
@@ -70,7 +70,7 @@ class TestStack(object):
 
     def test_repr(self):
         self.stack.connection_manager.region = sentinel.region
-        self.stack.connection_manager.iam_role = None
+        self.stack.connection_manager.profile = sentinel.profile
 
         assert self.stack.__repr__() == \
             "sceptre.stack.Stack(" \
@@ -78,7 +78,7 @@ class TestStack(object):
             "project_code='sentinel.project_code', " \
             "template_path='sentinel.template_path', " \
             "region='sentinel.region', " \
-            "iam_role='None', parameters='{'key1': 'val1'}', " \
+            "profile='sentinel.profile', parameters='{'key1': 'val1'}', " \
             "sceptre_user_data='sentinel.sceptre_user_data', " \
             "hooks='{}', s3_details='None', " \
             "dependencies='sentinel.dependencies', "\

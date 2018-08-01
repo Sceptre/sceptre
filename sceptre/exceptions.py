@@ -22,9 +22,9 @@ class InvalidSceptreDirectoryError(SceptreException):
     pass
 
 
-class InvalidEnvironmentPathError(SceptreException):
+class InvalidStackGroupPathError(SceptreException):
     """
-    Error raised if the environment path string is invalid
+    Error raised if the stack_group path string is invalid
     """
     pass
 
@@ -154,8 +154,8 @@ class ConfigFileNotFoundError(SceptreException):
     pass
 
 
-class EnvironmentNotFoundError(SceptreException):
+class StackGroupNotFoundError(SceptreException):
     """
-    Error raised when a environment does not exist.
+    Error raised when a stack_group does not exist.
     """
     pass
