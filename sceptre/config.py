@@ -159,9 +159,11 @@ class Config(dict):
 
         Traverses the environment path, from top to bottom, reading in all
         relevant config files. If config items appear in files lower down the
-        environment tree, they overwrite items from further up. Jinja2 is used
-        to template in variables from user_variables, environment variables,
-        and the segments of the environment path.
+        environment tree, they overwrite items from further up, depending on
+        the config merge strategy used.
+
+        Jinja2 is used to template in variables from user_variables,
+        environment variables, and the segments of the environment path.
 
         :param user_variables: A dict of key value pairs to be supplied to \
         the config file via Jinja2 templating.
@@ -209,6 +211,11 @@ class Config(dict):
                 return cascaded_config
 
         config = get_config(path)
+
+        config['dependencies'] = strategies.list_join(
+            self.get("dependencies"),
+            config.get("dependencies")
+        )
 
         self.update(config)
 
