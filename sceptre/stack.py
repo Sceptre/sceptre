@@ -570,8 +570,8 @@ class Stack(object):
         # If the call successfully completes, AWS CloudFormation
         # successfully deleted the change set.
         self.logger.info(
-            "%s - Successfully deleted change set '%s'",
-            self.name, change_set_name
+                "%s - Successfully deleted change set: '%s', if it existed.",
+                self.name, change_set_name
         )
 
     def describe_change_set(self, change_set_name):
