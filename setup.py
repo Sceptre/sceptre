@@ -12,8 +12,8 @@ with open("HISTORY.rst") as history_file:
 
 install_requirements = [
     "boto3>=1.3,<2.0",
-    "click==6.6",
-    "PyYaml==3.12",
+    "click==6.7",
+    "PyYaml==3.13",
     "Jinja2>=2.8,<3",
     "packaging==16.8",
     "colorama==0.3.7",
