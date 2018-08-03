@@ -2,6 +2,38 @@
 History
 =======
 
+1.4.0 (2018.08.02)
+------------------
+
+* Update Click and PyYaml dependency versions
+* Improve delete-change-set output message
+* Add stack configuration merging strategies
+* Add AMI Resolver to contrib/
+* Fix launch environment dependency path
+* Add error message for non-leaf environments
+* Add KMS resolver to contrib
+* SSM resolver to contrib
+* Improve error handling in CLI and StackOutput
+* Amend linting for integration tests and docs
+* Decrease the number of circleci parallel runs
+* Update Jinja dependency version to <=2.8
+* Add ".template" as allowed file extensions for templates
+* Add bash-completion script to contrib
+* Add a contrib directory for non-core community contributions
+* Update docs Makefile
+* Add HTML title header and icon to docs
+
+1.3.4 (2018-02-19)
+------------------
+
+* Fixed CircleCi PyPi Deployment 
+* Update Boto3 requirements
+
+1.3.3 (2018-02-19)
+------------------
+
+* Released in Error. Contained breaking changes from v2. Fixed in 1.3.4. 
+
 1.3.2 (2017.11.28)
 ------------------
 
