@@ -18,5 +18,4 @@ Feature: Create change set
     Given stack "1/A" does not exist
     and the template for stack "1/A" is "valid_template.json"
     When the user creates change set "A" for stack "1/A"
-    Then a "ClientError" is raised
-    and the user is told "stack does not exist"
+    Then stack "1/A" has change set "A" in "CREATE_COMPLETE" state

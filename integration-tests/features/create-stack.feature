@@ -6,6 +6,12 @@ Feature: Create stack
     When the user creates stack "1/A"
     Then stack "1/A" exists in "CREATE_COMPLETE" state
 
+  Scenario: create new stack with a change set
+    Given stack "1/A" does not exist
+    and the template for stack "1/A" is "valid_template_with_transform.yaml"
+    When the user creates stack "1/A"
+    Then stack "1/A" exists in "CREATE_COMPLETE" state
+
   Scenario: create a stack that already exists
     Given stack "1/A" exists in "CREATE_COMPLETE" state
     and the template for stack "1/A" is "valid_template.json"
