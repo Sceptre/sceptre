@@ -12,11 +12,11 @@ from sceptre.exceptions import InvalidSceptreDirectoryError
 
 from freezegun import freeze_time
 from click.testing import CliRunner
-from sceptre.config_reader import ConfigReader
+from sceptre.config.reader import ConfigReader
 
 
 class TestConfigReader(object):
-    @patch("sceptre.config_reader.ConfigReader._check_valid_sceptre_dir")
+    @patch("sceptre.config.reader.ConfigReader._check_valid_sceptre_dir")
     def setup_method(self, test_method, mock_check_valid_sceptre_dir):
         self.runner = CliRunner()
         self.test_sceptre_directory = os.path.join(
@@ -185,8 +185,8 @@ class TestConfigReader(object):
         details = ConfigReader._collect_s3_details(stack_name, config)
         assert details == expected
 
-    @patch("sceptre.config_reader.ConfigReader._collect_s3_details")
-    @patch("sceptre.config_reader.Stack")
+    @patch("sceptre.config.reader.ConfigReader._collect_s3_details")
+    @patch("sceptre.config.reader.Stack")
     def test_construct_stack_with_valid_config(
         self, mock_Stack, mock_collect_s3_details
     ):

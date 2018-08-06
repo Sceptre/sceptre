@@ -11,7 +11,7 @@ import pytest
 import click
 
 from sceptre.cli import cli
-from sceptre.config_reader import ConfigReader
+from sceptre.config.reader import ConfigReader
 from sceptre.stack import Stack
 from sceptre.stack_group import StackGroup
 from sceptre.stack_status import StackStatus, StackChangeSetStatus

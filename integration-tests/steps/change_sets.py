@@ -1,7 +1,7 @@
 from behave import *
 import time
 
-from sceptre.config_reader import ConfigReader
+from sceptre.config.reader import ConfigReader
 from botocore.exceptions import ClientError
 from helpers import read_template_file, get_cloudformation_stack_name
 from helpers import retry_boto_call

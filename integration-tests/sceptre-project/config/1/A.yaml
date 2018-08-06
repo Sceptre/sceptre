@@ -1,1 +1,2 @@
-template_path: templates/valid_template.json
+stack_timeout: 1
+template_path: templates/malformed_template.json

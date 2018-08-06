@@ -20,11 +20,15 @@ import jinja2
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
-from . import __version__
-from .exceptions import InvalidSceptreDirectoryError, ConfigFileNotFoundError
-from .exceptions import StackGroupNotFoundError, VersionIncompatibleError
-from .stack_group import StackGroup
-from .stack import Stack
+from sceptre import __version__
+from sceptre.exceptions import (
+        InvalidSceptreDirectoryError,
+        ConfigFileNotFoundError)
+from sceptre.exceptions import (
+        StackGroupNotFoundError,
+        VersionIncompatibleError)
+from sceptre.stack_group import StackGroup
+from sceptre.stack import Stack
 
 ConfigAttributes = collections.namedtuple("Attributes", "required optional")
 

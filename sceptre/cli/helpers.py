@@ -7,7 +7,7 @@ from json import JSONEncoder
 import click
 import yaml
 
-from sceptre.config_reader import ConfigReader
+from sceptre.config.reader import ConfigReader
 
 from boto3.exceptions import Boto3Error
 from botocore.exceptions import BotoCoreError, ClientError
