@@ -152,6 +152,7 @@ class ConfigReader(object):
         self.logger.debug("Reading in '%s' files...", rel_path)
         directory_path, filename = path.split(rel_path)
         abs_path = path.join(self.config_folder, rel_path)
+        self.stack_group_path = directory_path
 
         # Adding properties from class
         config = {
@@ -226,7 +227,7 @@ class ConfigReader(object):
             template = stack_group.get_template(basename)
             rendered_template = template.render(
                 environment_variable=environ,
-                stack_group_path=directory_path.split("/"),
+                stack_group_path=self.stack_group_path.split("/"),
                 **self.templating_vars
             )
 
