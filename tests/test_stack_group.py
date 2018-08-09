@@ -282,7 +282,8 @@ class TestStackGroup(object):
         mock_stack.name = "dev/mock_stack"
 
         mock_stack.dependencies = [
-            "dev/vpc",
+            "vpc",
+            "devsubnets",
             "dev/subnets",
             "prod/sg"
         ]
@@ -294,7 +295,20 @@ class TestStackGroup(object):
         # Note that "prod/sg" is filtered out, because it's not under the
         # top level stack_group path "dev".
         assert response == {
-            "dev/mock_stack": ["dev/vpc", "dev/subnets"]
+            "dev/mock_stack": ["dev/vpc", "dev/devsubnets", "dev/subnets"]
+        }
+
+    def test_get_empty_launch_dependencies(self):
+        mock_stack = MagicMock(spec=Stack)
+        mock_stack.name = "dev/mock_stack"
+        mock_stack.dependencies = []
+
+        self.stack_group.stacks = [mock_stack]
+
+        response = self.stack_group._get_launch_dependencies("dev")
+
+        assert response == {
+            "dev/mock_stack": []
         }
 
     @patch("sceptre.stack_group.StackGroup._get_launch_dependencies")
