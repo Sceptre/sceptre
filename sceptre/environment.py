@@ -10,7 +10,7 @@ represent a logical grouping of stacks as an environment.
 
 import logging
 import threading
-
+import os
 import botocore
 
 from concurrent.futures import ThreadPoolExecutor, wait
@@ -282,7 +282,7 @@ class Environment(object):
         self.logger.debug("Checking for circular dependencies...")
 
         if self.stacks:
-            top_level_path = self.path + '/'  \
+            top_level_path = os.path.join(self.path, '')  \
                 if self.path and self.path != '.' \
                 else ''
             encountered_stacks = {}
