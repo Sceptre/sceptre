@@ -338,7 +338,8 @@ class Environment(object):
         :raises: sceptre.workplan.CircularDependenciesException
         """
         self.logger.debug("Checking for circular dependencies...")
-        top_level_path = self.path if self.path and self.path != '.' else ''
+        top_level_path = os.path.join(self.path, '') \
+            if self.path and self.path != '.' else ''
         if self.is_leaf:
             encountered_stacks = {}
             for stack in self.stacks.values():
