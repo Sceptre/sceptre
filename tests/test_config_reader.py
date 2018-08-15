@@ -208,7 +208,7 @@ class TestConfigReader(object):
                 sceptre_user_data={},
                 hooks={},
                 s3_details=sentinel.s3_details,
-                dependencies=[],
+                dependencies=["child/level", "top/level"],
                 role_arn=None,
                 protected=False,
                 tags={},

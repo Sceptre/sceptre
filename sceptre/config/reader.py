@@ -29,8 +29,21 @@ from sceptre.exceptions import (
         VersionIncompatibleError)
 from sceptre.stack_group import StackGroup
 from sceptre.stack import Stack
+from . import strategies
 
 ConfigAttributes = collections.namedtuple("Attributes", "required optional")
+
+CONFIG_MERGE_STRATEGIES = {
+    'dependencies': strategies.list_join,
+    'hooks': strategies.child_wins,
+    'parameters': strategies.child_wins,
+    'protect': strategies.child_wins,
+    'sceptre_user_data': strategies.child_wins,
+    'stack_name': strategies.child_wins,
+    'stack_tags': strategies.child_wins,
+    'role_arn': strategies.child_wins,
+    'template_path': strategies.child_wins
+}
 
 STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
     {
@@ -167,14 +180,23 @@ class ConfigReader(object):
         if base_config:
             config.update(base_config)
 
-        # Check is file exists, but ignore config.yaml as can be inherited.
+        # Check if file exists, but ignore config.yaml as can be inherited.
         if not path.isfile(abs_path) and not filename.endswith("config.yaml"):
             raise ConfigFileNotFoundError(
                 "Config file \"{0}\" not found.".format(rel_path)
             )
 
         # Parse and read in the config files.
-        config.update(self._recursive_read(directory_path, filename))
+        this_config = self._recursive_read(directory_path, filename)
+
+        if "dependencies" in config or "dependencies" in this_config:
+            this_config['dependencies'] = strategies.list_join(
+                this_config.get("dependencies"),
+                config.get("dependencies")
+            )
+        config.update(this_config)
+
+        print("recursive read config: " + str(config))
         self._check_version(config)
 
         self.logger.debug("Config: %s", config)
@@ -204,23 +226,32 @@ class ConfigReader(object):
 
         # Read config file and overwrite inherited properties
         child_config = self._read(directory_path, filename) or {}
+
+        for config_key, strategy in CONFIG_MERGE_STRATEGIES.items():
+            value = strategy(
+                config.get(config_key), child_config.get(config_key)
+            )
+
+            if value:
+                child_config[config_key] = value
+
         config.update(child_config)
 
         return config
 
     def _read(self, directory_path, basename):
         """
-        Traverses the directory_path, from top to bottom, reading in all
-        relevant config files. If config items appear in files lower down the
-        stack_group tree, they overwrite items from further up.
+        Reads a configuration file, loads the config file as a template
+        and returns config loaded from the file.
 
         :param directory_path: Relative directory path to config to read.
         :type directory_path: str
-        :param filename: Base config to provide defaults.
-        :type filename: dict
-        :returns: Representation of inherited config.
+        :param basename: The filename of the config file
+        :type filename: str
+        :returns: rendered template of config file.
         :rtype: dict
         """
+        config = {}
         abs_directory_path = path.join(self.config_folder, directory_path)
         if path.isfile(path.join(abs_directory_path, basename)):
             stack_group = jinja2.Environment(
@@ -235,6 +266,7 @@ class ConfigReader(object):
             )
 
             config = yaml.safe_load(rendered_template)
+
             return config
 
     @staticmethod
