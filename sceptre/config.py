@@ -204,9 +204,10 @@ class Config(dict):
                     value = strategy(
                         cascaded_config.get(config_key), config.get(config_key)
                     )
-                    if value:
+                    if value and config_key in config:
                         cascaded_config[config_key] = value
                         config.pop(config_key)
+
                 cascaded_config.update(config)
                 return cascaded_config
 
