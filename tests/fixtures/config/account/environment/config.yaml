@@ -1,1 +1,3 @@
 template_bucket_name: environment_template_bucket_name
+dependencies:
+  - top/level

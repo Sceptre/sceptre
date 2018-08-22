@@ -112,7 +112,7 @@ class TestConfig(object):
             "project_code": "account_project_code",
             "iam_role": "account_iam_role",
             "require_version": ">=0a",
-            'dependencies': []
+            'dependencies': ['top/level', 'child/level']
         }
 
     def test_read_with_templated_config_file(self):
