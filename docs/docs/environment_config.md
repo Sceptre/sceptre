@@ -192,6 +192,17 @@ Any templated value can be supplied with a default value with the syntax:
 ```
 
 
+### Display resolved environment config
+
+You can use the `generate-env-config` COMMAND to have Sceptre resolve all cascaded configurations and templated variables and print the final Environment configuration as YAML to stdout.
+
+This can be useful for debugging or inspection if you need to test how templating and/or cascading changes the final Environment configuration.
+
+```shell
+sceptre --var-file=prod.yaml --var region=us-east-1 generate-env-config path/to/environment
+```
+
+
 ## Examples
 
 ```yaml

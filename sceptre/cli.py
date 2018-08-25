@@ -617,6 +617,50 @@ def get_stack_policy(ctx, environment, stack):
     write(response.get('StackPolicyBody', {}))
 
 
+@cli.command(name="generate-env-config")
+@environment_options
+@click.pass_context
+@catch_exceptions
+def generate_env_config(ctx, environment):
+    """
+    Displays the ENVIRONMENT Configuration used.
+
+    Prints the ENVIRONMENT configuration as yaml after resolving all cascading
+    and templated configurations.
+    """
+    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
+    write(dict(env._get_config()), 'yaml')
+
+
+@cli.command(name="generate-stack-config")
+@stack_options
+@click.pass_context
+@catch_exceptions
+def generate_stack_config(ctx, environment, stack):
+    """
+    Displays the Stack Configuration used.
+
+    Prints the Stack configuration as yaml after resolving all
+    templated variables.
+
+    NOTE: The yaml output does NOT include any `parameters`, `hooks` or
+    `sceptre_user_data` configurations
+    """
+    env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
+    stack = env.stacks[stack]
+    stack_config = dict(stack.config)
+    if 'parameters' in stack_config:
+        del stack_config['parameters']
+        stack_config['parameters'] = stack.parameters
+    if 'sceptre_user_data' in stack_config:
+        del stack_config['sceptre_user_data']
+        stack_config['sceptre_user_data'] = stack.sceptre_user_data
+    if 'hooks' in stack_config:
+        del stack_config['hooks']
+
+    write(stack_config, 'yaml')
+
+
 @cli.group(name="init")
 def init():
     """
