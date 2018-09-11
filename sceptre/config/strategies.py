@@ -23,7 +23,8 @@ def dict_merge(a, b):
         return b
 
     if b is not None:
-        return a.update(b)
+        a.update(b)
+        return a
 
     return a
 
