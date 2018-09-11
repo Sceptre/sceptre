@@ -2,8 +2,14 @@
 History
 =======
 
-1.4.1 (2018.08.02)
+1.4.2 (2018.09.11)
 ------------------
+
+* Fix Config dict merge strategy returning None
+
+1.4.1 (2018.08.22)
+------------------
+
 * Fix KeyError when merging configs
 
 1.4.0 (2018.08.02)
