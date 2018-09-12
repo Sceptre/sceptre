@@ -5,10 +5,10 @@ from mock import patch, sentinel, Mock, MagicMock
 
 from botocore.exceptions import ClientError
 
-from sceptre.exceptions import CircularDependenciesError
 from sceptre.exceptions import StackDoesNotExistError
 
 from sceptre.stack_group import StackGroup
+from sceptre.config.graph import StackDependencyGraph
 from sceptre.stack import Stack
 from sceptre.stack_status import StackStatus
 
@@ -46,14 +46,12 @@ class TestStackGroup(object):
             ("sceptre.stack_group.StackGroup(""path='path', options='{}')")
 
     @patch("sceptre.stack_group.StackGroup._build")
-    @patch("sceptre.stack_group.StackGroup._check_for_circular_dependencies")
     @patch("sceptre.stack_group.StackGroup._get_launch_dependencies")
     @patch("sceptre.stack_group.StackGroup._get_initial_statuses")
     @patch("sceptre.stack_group.StackGroup._get_threading_events")
     def test_launch_calls_build_with_correct_args(
             self, mock_get_threading_events, mock_get_initial_statuses,
-            mock_get_launch_dependencies, mock_check_for_circular_dependencies,
-            mock_build
+            mock_get_launch_dependencies, mock_build
     ):
         mock_get_threading_events.return_value = sentinel.threading_events
         mock_get_initial_statuses.return_value = sentinel.stack_statuses
@@ -62,7 +60,6 @@ class TestStackGroup(object):
 
         self.stack_group.launch()
 
-        mock_check_for_circular_dependencies.assert_called_once_with()
         mock_build.assert_called_once_with(
             "launch", sentinel.threading_events,
             sentinel.stack_statuses, sentinel.dependencies
@@ -74,14 +71,12 @@ class TestStackGroup(object):
         assert response == {}
 
     @patch("sceptre.stack_group.StackGroup._build")
-    @patch("sceptre.stack_group.StackGroup._check_for_circular_dependencies")
     @patch("sceptre.stack_group.StackGroup._get_delete_dependencies")
     @patch("sceptre.stack_group.StackGroup._get_initial_statuses")
     @patch("sceptre.stack_group.StackGroup._get_threading_events")
     def test_delete_calls_build_with_correct_args(
             self, mock_get_threading_events, mock_get_initial_statuses,
-            mock_get_delete_dependencies, mock_check_for_circular_dependencies,
-            mock_build
+            mock_get_delete_dependencies, mock_build
     ):
         mock_get_threading_events.return_value = sentinel.threading_events
         mock_get_initial_statuses.return_value = sentinel.stack_statuses
@@ -89,7 +84,6 @@ class TestStackGroup(object):
 
         self.stack_group.delete()
 
-        mock_check_for_circular_dependencies.assert_called_once_with()
         mock_build.assert_called_once_with(
             "delete", sentinel.threading_events,
             sentinel.stack_statuses, sentinel.dependencies
@@ -193,7 +187,9 @@ class TestStackGroup(object):
             "stack_1": StackStatus.FAILED,
             "stack_2": StackStatus.PENDING
         }
-        dependencies = {"stack_1": [], "stack_2": ["stack_1"]}
+        dependencies = StackDependencyGraph({
+            "stack_1": [], "stack_2": ["stack_1"]}
+            )
 
         mock_stack_2 = Mock()
         mock_stack_2.name = "stack_2"
@@ -213,7 +209,7 @@ class TestStackGroup(object):
     def test_manage_stack_build_with_sucessful_command(self):
         threading_events = {"stack": Mock()}
         stack_statuses = {"stack": StackStatus.PENDING}
-        dependencies = {"stack": []}
+        dependencies = StackDependencyGraph({"stack": []})
 
         mock_stack = Mock()
         mock_stack.name = "stack"
@@ -234,7 +230,7 @@ class TestStackGroup(object):
     def test_manage_stack_build_with_unsucessful_command(self):
         threading_events = {"stack": Mock()}
         stack_statuses = {"stack": StackStatus.PENDING}
-        dependencies = {"stack": []}
+        dependencies = StackDependencyGraph({"stack": []})
 
         mock_stack = Mock()
         mock_stack.name = "stack"
@@ -282,21 +278,26 @@ class TestStackGroup(object):
         mock_stack.name = "dev/mock_stack"
 
         mock_stack.dependencies = [
-            "vpc",
-            "devsubnets",
+            "dev/vpc",
             "dev/subnets",
-            "prod/sg"
+            "prod/sg",
         ]
 
-        self.stack_group.stacks = [mock_stack]
-
-        response = self.stack_group._get_launch_dependencies("dev")
-
-        # Note that "prod/sg" is filtered out, because it's not under the
-        # top level stack_group path "dev".
-        assert response == {
-            "dev/mock_stack": ["dev/vpc", "dev/devsubnets", "dev/subnets"]
+        expected_response = {
+            "dev/mock_stack": ["dev/vpc", "dev/subnets", "prod/sg"],
+            "dev/vpc": [],
+            "dev/subnets": [],
+            "prod/sg": []
         }
+
+        self.stack_group.stacks = [mock_stack]
+        response = self.stack_group._get_launch_dependencies()
+
+        def dict_equality(response, expected):
+            return set(response.as_dict()) == set(expected) and len(
+                response.as_dict()) == len(expected)
+
+        assert dict_equality(response, expected_response)
 
     def test_get_empty_launch_dependencies(self):
         mock_stack = MagicMock(spec=Stack)
@@ -305,222 +306,23 @@ class TestStackGroup(object):
 
         self.stack_group.stacks = [mock_stack]
 
-        response = self.stack_group._get_launch_dependencies("dev")
+        response = self.stack_group._get_launch_dependencies()
 
-        assert response == {
+        assert response.as_dict() == {
             "dev/mock_stack": []
         }
 
     @patch("sceptre.stack_group.StackGroup._get_launch_dependencies")
     def test_get_delete_dependencies(self, mock_get_launch_dependencies):
-        mock_get_launch_dependencies.return_value = {
+        mock_get_launch_dependencies.return_value = StackDependencyGraph({
             "dev/mock_stack_1": [],
             "dev/mock_stack_2": [],
             "dev/mock_stack_3": ["dev/mock_stack_1", "dev/mock_stack_2"],
-        }
+        })
 
         dependencies = self.stack_group._get_delete_dependencies()
-        assert dependencies == {
+        assert dependencies.as_dict() == {
             "dev/mock_stack_1": ["dev/mock_stack_3"],
             "dev/mock_stack_2": ["dev/mock_stack_3"],
             "dev/mock_stack_3": [],
         }
-
-    def test_check_for_circular_dependencies_with_circular_dependencies(self):
-        stack1 = MagicMock(Spec=Stack)
-        stack2 = MagicMock(Spec=Stack)
-        stack1.dependencies = ["stack2"]
-        stack1.name = "stack1"
-        stack2.dependencies = ["stack1"]
-        stack2.name = "stack2"
-        stacks = [stack1, stack2]
-        self.stack_group.stacks = stacks
-        with pytest.raises(CircularDependenciesError) as ex:
-            self.stack_group._check_for_circular_dependencies()
-        assert all(x in str(ex) for x in ['stack2', 'stack1'])
-
-    def test_circular_dependencies_with_3_circular_dependencies(self):
-        stack1 = MagicMock(Spec=Stack)
-        stack2 = MagicMock(Spec=Stack)
-        stack3 = MagicMock(Spec=Stack)
-        stack1.dependencies = ["stack2"]
-        stack1.name = "stack1"
-        stack2.dependencies = ["stack3"]
-        stack2.name = "stack2"
-        stack3.dependencies = ["stack1"]
-        stack3.name = "stack3"
-        stacks = [stack1, stack2, stack3]
-        self.stack_group.stacks = stacks
-        with pytest.raises(CircularDependenciesError) as ex:
-            self.stack_group._check_for_circular_dependencies()
-        assert all(x in str(ex) for x in ['stack3', 'stack2', 'stack1'])
-
-    def test_no_circular_dependencies_throws_no_error(self):
-        stack1 = MagicMock(Spec=Stack)
-        stack2 = MagicMock(Spec=Stack)
-        stack1.dependencies = ["stack2"]
-        stack1.name = "stack1"
-        stack2.dependencies = []
-        stack2.name = "stack2"
-        stacks = [stack1, stack2]
-
-        self.stack_group.stacks = stacks
-        # Check this runs without throwing an exception
-        self.stack_group._check_for_circular_dependencies()
-
-    def test_no_circular_dependencies_with_nested_stacks(self):
-        stack1 = MagicMock(Spec=Stack)
-        stack2 = MagicMock(Spec=Stack)
-        stack1.dependencies = ["group1/stack2"]
-        stack1.name = "stack1"
-        stack2.dependencies = []
-        stack2.name = "group1/stack2"
-        stacks = [stack1, stack2]
-
-        self.stack_group.stacks = stacks
-        # Check this runs without throwing an exception
-        self.stack_group._check_for_circular_dependencies()
-
-    def test_DAG_diamond_throws_no_circ_dependencies_error(self):
-        """
-        Ensures
-            o
-           / \
-          o   o
-           \ /
-            o
-        throws no circular dependency error
-        """
-        stack1 = MagicMock(Spec=Stack)
-        stack2 = MagicMock(Spec=Stack)
-        stack3 = MagicMock(Spec=Stack)
-        stack4 = MagicMock(Spec=Stack)
-        stack1.dependencies = ["stack2", "stack3"]
-        stack1.name = "stack1"
-        stack2.dependencies = ["stack4"]
-        stack2.name = "stack2"
-        stack3.dependencies = ["stack4"]
-        stack3.name = "stack3"
-        stack4.dependencies = []
-        stack4.name = "stack4"
-        stacks = [stack1, stack2, stack3, stack4]
-
-        self.stack_group.stacks = stacks
-        self.stack_group._check_for_circular_dependencies()
-
-    def test_modified_DAG_diamond_throws_no_circ_dependencies_error(self):
-        """
-        Ensures
-            o
-           / \
-          o   o
-           \ / \
-            o   o
-        throws no circular dependency error
-        """
-        stack1 = MagicMock(Spec=Stack)
-        stack2 = MagicMock(Spec=Stack)
-        stack3 = MagicMock(Spec=Stack)
-        stack4 = MagicMock(Spec=Stack)
-        stack5 = MagicMock(Spec=Stack)
-        stack1.dependencies = ["stack2", "stack3"]
-        stack1.name = "stack1"
-        stack2.dependencies = ["stack4"]
-        stack2.name = "stack2"
-        stack3.dependencies = ["stack4", "stack5"]
-        stack3.name = "stack3"
-        stack4.dependencies = []
-        stack4.name = "stack4"
-        stack5.dependencies = []
-        stack5.name = "stack5"
-        stacks = [stack1, stack2, stack3, stack4, stack5]
-
-        self.stack_group.stacks = stacks
-        self.stack_group._check_for_circular_dependencies()
-
-    def test_DAG_diamond_with_triangle_throws_no_circ_dependencies_error(self):
-        """
-        Ensures
-            o
-           / \
-          o   o
-           \ / \
-            o ->o
-        throws no circular dependency error
-        """
-        stack1 = MagicMock(Spec=Stack)
-        stack2 = MagicMock(Spec=Stack)
-        stack3 = MagicMock(Spec=Stack)
-        stack4 = MagicMock(Spec=Stack)
-        stack5 = MagicMock(Spec=Stack)
-        stack1.dependencies = ["stack2", "stack3"]
-        stack1.name = "stack1"
-        stack2.dependencies = ["stack4"]
-        stack2.name = "stack2"
-        stack3.dependencies = ["stack4", "stack5"]
-        stack3.name = "stack3"
-        stack4.dependencies = ["stack5"]
-        stack4.name = "stack4"
-        stack5.dependencies = []
-        stack5.name = "stack5"
-        stacks = [stack1, stack2, stack3, stack4, stack5]
-
-        self.stack_group.stacks = stacks
-        self.stack_group._check_for_circular_dependencies()
-
-    def test_4_cycle_throws_circ_dependencies_error(self):
-        """
-        Ensures
-            o - o
-            |   |
-            o - o
-        throws circular dependency error
-        """
-        stack1 = MagicMock(Spec=Stack)
-        stack2 = MagicMock(Spec=Stack)
-        stack3 = MagicMock(Spec=Stack)
-        stack4 = MagicMock(Spec=Stack)
-        stack1.dependencies = ["stack4"]
-        stack1.name = "stack1"
-        stack2.dependencies = ["stack1"]
-        stack2.name = "stack2"
-        stack3.dependencies = ["stack2"]
-        stack3.name = "stack3"
-        stack4.dependencies = ["stack3"]
-        stack4.name = "stack4"
-        stacks = [stack1, stack2, stack3, stack4]
-
-        self.stack_group.stacks = stacks
-        with pytest.raises(CircularDependenciesError) as ex:
-            self.stack_group._check_for_circular_dependencies()
-        assert all(x in str(ex) for x in ['stack4', 'stack3', 'stack2',
-                                          'stack1'])
-
-    def test_modified_3_cycle_throws_circ_dependencies_error(self):
-        """
-        Ensures
-            o   o
-             \ / \
-              o - o
-              (right triangle is a 3 cycle)
-        throws circular dependency error
-        """
-        stack1 = MagicMock(Spec=Stack)
-        stack2 = MagicMock(Spec=Stack)
-        stack3 = MagicMock(Spec=Stack)
-        stack4 = MagicMock(Spec=Stack)
-        stack1.dependencies = ["stack2"]
-        stack1.name = "stack1"
-        stack2.dependencies = ["stack3"]
-        stack2.name = "stack2"
-        stack3.dependencies = ["stack4"]
-        stack3.name = "stack3"
-        stack4.dependencies = ["stack2"]
-        stack4.name = "stack4"
-        stacks = [stack1, stack2, stack3, stack4]
-
-        self.stack_group.stacks = stacks
-        with pytest.raises(CircularDependenciesError) as ex:
-            self.stack_group._check_for_circular_dependencies()
-        assert (all(x in str(ex) for x in ['stack4', 'stack3', 'stack2']) and
-                'stack1' not in str(ex))

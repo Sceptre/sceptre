@@ -196,7 +196,6 @@ class ConfigReader(object):
             )
         config.update(this_config)
 
-        print("recursive read config: " + str(config))
         self._check_version(config)
 
         self.logger.debug("Config: %s", config)

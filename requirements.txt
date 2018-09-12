@@ -10,6 +10,7 @@ freezegun==0.3.9
 Jinja2>=2.8,<3
 mock>=2.0.0,<2.1.0
 moto==0.4.31
+networkx==2.1
 packaging==16.8
 pygments==2.2.0
 pytest-runner>=3.0.0,<3.1.0

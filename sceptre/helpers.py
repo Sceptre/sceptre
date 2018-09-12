@@ -11,7 +11,7 @@ import re
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
 
-from .exceptions import CircularDependenciesError
+from .config.graph import StackDependencyGraph
 
 
 def camel_to_snake_case(string):
@@ -27,7 +27,11 @@ def camel_to_snake_case(string):
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 
-def recurse_into_sub_stack_groups(func):
+def recurse_sub_stack_groups_with_graph(func):
+    return recurse_into_sub_stack_groups(func, StackDependencyGraph)
+
+
+def recurse_into_sub_stack_groups(func, factory=dict):
     """
     Two types of StackGroups exist, non-leaf and leaf. Non-leaf
     stack_groups contain sub-stack_groups, while leaf
@@ -41,14 +45,14 @@ def recurse_into_sub_stack_groups(func):
     @wraps(func)
     def decorated(self, *args, **kwargs):
         function_name = func.__name__
-        responses = {}
+        responses = factory()
         num_stack_groups = len(self.sub_stack_groups)
-
+        print("sub stack groups: " + str(num_stack_groups))
         # As commands carried out by sub-stack_groups may be blocking,
         # execute them on separate threads.
         if num_stack_groups:
             with ThreadPoolExecutor(max_workers=num_stack_groups)\
-              as thread_stack_group:
+                    as thread_stack_group:
                 futures = [
                     thread_stack_group.submit(
                         getattr(stack_group, function_name),
@@ -86,7 +90,7 @@ def resolve_stack_name(source_stack_name, destination_stack_path):
     """
     Returns a stack's full name.
 
-    A dependancy stack's name can be provided as either a full stack name, or
+    A dependency stack's name can be provided as either a full stack name, or
     as the file base name of a stack from the same stack_group.
     resolve_stack_name calculates the dependency's stack's full name from this.
 
@@ -181,40 +185,9 @@ def get_subclasses(class_type, directory=None):
             if inspect.isclass(attr) \
                 and issubclass(attr, class_type) \
                     and not inspect.isabstract(attr):
-                        classes[camel_to_snake_case(attr.__name__)] = attr
+                classes[camel_to_snake_case(attr.__name__)] = attr
 
     return classes
-
-
-def _detect_cycles(node, encountered_nodes, available_nodes, path):
-    """
-    Use Depth-first search to detect cycles.
-
-    :returns: A dictionary containing all of the nodes encountered
-    during the depth first search.
-    """
-    for dependency_name in node.dependencies:
-        dependency = available_nodes[dependency_name]
-        status = encountered_nodes.get(dependency)
-        if status == "ENCOUNTERED":
-            # Reformat path to only include the cycle
-            path.append(dependency_name)
-            cycle = path[path.index(dependency_name):]
-            raise CircularDependenciesError(
-                "Found circular dependency involving "
-                "{0}".format(cycle)
-            )
-        elif status is None:
-            encountered_nodes[dependency] = "ENCOUNTERED"
-            path.append(dependency_name)
-            _detect_cycles(
-                dependency,
-                encountered_nodes,
-                available_nodes,
-                path
-            )
-            encountered_nodes[dependency] = "DONE"
-    return encountered_nodes
 
 
 def _call_func_on_values(func, attr, cls):
