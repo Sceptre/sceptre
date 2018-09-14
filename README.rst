@@ -83,11 +83,16 @@ Sceptre provides environment-level commands. This one deletes the whole ``dev`` 
 Usage
 -----
 
-Sceptre can be used from the CLI, or imported as a Python package.
+Sceptre can be used directly from the command-line, via Docker, or imported as a Python package.
 
-CLI::
+Command-line
+^^^^^^^^^^^^
+.. code-block:: text
 
+  $ sceptre
   Usage: sceptre [OPTIONS] COMMAND [ARGS]...
+
+    Implements sceptre's CLI.
 
   Options:
   --version             Show the version and exit.
@@ -126,8 +131,21 @@ CLI::
   validate-template         Validate the template.
 
 
-Python:
+Docker
+^^^^^^
 
+Running Sceptre via Docker is useful in situations where you can't expect (or don't want) to install Python and the required libraries.
+::
+.. code-block:: text
+
+  $ docker run cloudreach/sceptre
+  Usage: sceptre [OPTIONS] COMMAND [ARGS]...
+
+For more information, see the `Docker image documentation <https://hub.docker.com/r/cloudreach/sceptre/>`_
+
+
+Python
+^^^^^^
 .. code-block:: python
 
   from sceptre.environment import Environment
@@ -136,7 +154,7 @@ Python:
   stack = env.stacks["stack_name"]
   stack.create()
 
-A full API description of the sceptre package can be found in the `Documentation <https://sceptre.cloudreach.com/latest/docs/index.html>`__.
+A full API description of the sceptre package can be found in the `Documentation <https://sceptre.cloudreach.com/latest/docs/index.html>`_.
 
 
 Install
