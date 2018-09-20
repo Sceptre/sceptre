@@ -220,3 +220,22 @@ class TestConfig(object):
         new_node = self.config.resolve_node_tag(mock_loader, mock_node)
 
         assert new_node.tag == 'new_tag'
+
+    def test_passes_arguments_to_resolvers(self):
+        sceptre_dir = os.path.join(os.getcwd(), "tests", "fixtures")
+        environment_path = os.path.join("account", "environment", "region")
+
+        config = Config.with_yaml_constructors(
+            sceptre_dir=sceptre_dir,
+            environment_path=environment_path,
+            base_file_name="nested_stack_output",
+            environment_config=sentinel.environment_config,
+            connection_manager=sentinel.connection_manager
+        )
+
+        config.read()
+        assert config['dependencies'] == [
+            'account/environment/region/dependent_stack_1',
+            'account/environment/region/dependent_stack_2'
+        ]
+        assert type(config['parameters'][0]['param1']).__name__ == 'Join'

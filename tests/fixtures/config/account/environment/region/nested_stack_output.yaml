@@ -1,0 +1,5 @@
+template_path: path/to/template
+parameters:
+  - param1: !join
+      - !stack_output dependent_stack_1::output
+      - !stack_output dependent_stack_2::output
