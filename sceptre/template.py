@@ -8,6 +8,7 @@ and implements methods for uploading it to S3.
 """
 
 from datetime import datetime
+import glob
 import imp
 import logging
 import os
@@ -37,7 +38,6 @@ class Template(object):
 
     def __init__(self, path, sceptre_user_data):
         self.logger = logging.getLogger(__name__)
-
         self.path = path
         self.sceptre_user_data = sceptre_user_data
         self.name = os.path.basename(path).split(".")[0]
@@ -97,7 +97,7 @@ class Template(object):
         # NB: this is a horrible hack...
         relpath = os.path.relpath(self.path, os.getcwd()).split(os.path.sep)
         relpaths_to_add = [
-            os.path.sep.join(relpath[:i+1])
+            os.path.sep.join(relpath[:i + 1])
             for i in range(len(relpath[:-1]))
         ]
         # Add any directory between the current working directory and where
@@ -270,8 +270,7 @@ class Template(object):
                 }
             )
 
-    @staticmethod
-    def _render_jinja_template(template_dir, filename, jinja_vars):
+    def _render_jinja_template(self, template_dir, filename, jinja_vars):
         """
         Renders a jinja template.
 
@@ -291,8 +290,50 @@ class Template(object):
         logger.debug("%s Rendering CloudFormation template", filename)
         env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(template_dir),
-            undefined=jinja2.StrictUndefined
+            undefined=jinja2.StrictUndefined,
         )
+        env.filters.update(self.jinja_filters)
         template = env.get_template(filename)
         body = template.render(**jinja_vars)
         return body
+
+    @property
+    def jinja_filters(self):
+        """
+        Returns cached jinja filters if already computed, or loads/caches
+        the filters from python files if this is the first time.
+
+        This (optional) feature relies on the environment variable
+        ${SCEPTRE_JINJA_FILTER_ROOT} because we don't have easy access
+        from here to CLI parsing info or global configuration info.
+        """
+        # give back cached jinja filters if available
+        if hasattr(self, '_jinja_filters'):
+            return self._jinja_filters
+        # load jinja filters if not already cached
+        env_var_name = 'SCEPTRE_JINJA_FILTER_ROOT'
+        if env_var_name not in os.environ:
+            msg = '${} is not set, no extra jinja filters will be loaded'
+            self.logger.debug(msg.format(env_var_name))
+        else:
+            filter_dir = os.environ[env_var_name]
+            if not os.path.exists(filter_dir):
+                err = '${} is set, but directory does not exist!'
+                raise ValueError(err.format(env_var_name))
+            else:
+                msg = 'loading jinja filters from: {}'
+                self.logger.debug(msg.format(filter_dir))
+                self._jinja_filters = {}
+                for fpath in glob.glob(os.path.join(filter_dir, '*.py')):
+                    self.logger.debug('  loading filter: {}'.format(fpath))
+                    mod = imp.load_source('dynamic_jinja_filters', fpath)
+                    for name in dir(mod):
+                        # ignore anything like private methods
+                        if name.startswith('_'):
+                            continue
+                        else:
+                            fxn = getattr(mod, name)
+                            # ignore things that aren't callables
+                            if callable(fxn):
+                                self._jinja_filters[name] = fxn
+                return self._jinja_filters
