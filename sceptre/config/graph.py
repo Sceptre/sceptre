@@ -16,13 +16,16 @@ class StackDependencyGraph(object):
     A Directed Graph representing the relationship between Stack config
     dependencies. Responsible for initalizing the graph object based on
     a given inital stack config path.
-
-    :param inital_config_path: The inital stack config you want to generate
-    the graph from
-    :type inital_config_path: str
     """
 
     def __init__(self, dependency_map=None):
+        """
+        Graph that is based on a given `dependency_map`.
+
+        :param dependency_map: A dict containing a list of the dependencies for
+        a given stack
+        :type dict: dict
+        """
         self.logger = logging.getLogger(__name__)
         self.graph = nx.DiGraph()
         if dependency_map is None:
