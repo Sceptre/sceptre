@@ -190,10 +190,11 @@ class ConfigReader(object):
         this_config = self._recursive_read(directory_path, filename)
 
         if "dependencies" in config or "dependencies" in this_config:
-            this_config['dependencies'] = strategies.list_join(
-                this_config.get("dependencies"),
-                config.get("dependencies")
-            )
+            this_config['dependencies'] = \
+                CONFIG_MERGE_STRATEGIES['dependencies'](
+                    this_config.get("dependencies"),
+                    config.get("dependencies")
+                )
         config.update(this_config)
 
         self._check_version(config)
