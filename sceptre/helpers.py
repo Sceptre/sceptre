@@ -47,7 +47,6 @@ def recurse_into_sub_stack_groups(func, factory=dict):
         function_name = func.__name__
         responses = factory()
         num_stack_groups = len(self.sub_stack_groups)
-        print("sub stack groups: " + str(num_stack_groups))
         # As commands carried out by sub-stack_groups may be blocking,
         # execute them on separate threads.
         if num_stack_groups:
