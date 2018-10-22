@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 
-from functools import wraps
+import fnmatch
 import glob
 import imp
 import inspect
-import os
 import sys
 import re
+import yaml
+import jinja2
+from functools import wraps
+from os import path, walk, environ
 
 from copy import copy
 from concurrent.futures import ThreadPoolExecutor
@@ -45,6 +48,8 @@ def recurse_into_sub_stack_groups(func, factory=dict):
     """
     @wraps(func)
     def decorated(self, *args, **kwargs):
+        import ipdb
+        ipdb.set_trace()
         function_name = func.__name__
         responses = factory()
         nkwargs = copy(kwargs)
@@ -113,6 +118,157 @@ def resolve_stack_name(source_stack_name, destination_stack_path):
         return "/".join([source_stack_base_name, destination_stack_path])
 
 
+def generate_dependencies(stack_or_stack_group):
+    """
+    Generates a full map of dependencies given either a Stack or StackGroup as
+    a parameter. This includes dependencies that are external to the given
+    Stack.
+
+    :param stack_or_stack_group: A Stack or StackGroup
+    :type stack_or_stack_group: str
+    :returns: A map of every dependency required for the given Stack or
+    StackGroup
+    :rtype: dict
+    """
+    final_deps = {}
+    abs_project_path = path.split(path.abspath(stack_or_stack_group))[0]
+    templating_vars = {}
+    sceptre_dir = get_sceptre_dir(abs_project_path)
+
+    def recurse_deps(stack_or_stack_group):
+        stack_or_stack_group = stack_or_stack_group
+
+        if path.isdir(path.join(sceptre_dir, stack_or_stack_group)):
+            root = path.join(sceptre_dir, stack_or_stack_group)
+        else:
+            root = path.split(stack_or_stack_group)[0]
+
+        for directory_name, sub_directories, files in walk(root):
+            for filename in fnmatch.filter(files, '*.yaml'):
+                if not filename.startswith("config"):
+                    def get_dependencies(config_path):
+                        abs_directory_path = path.abspath(directory_name)
+                        if path.isfile(path.join(abs_directory_path, filename)):
+                            stack_group = jinja2.Environment(
+                                loader=jinja2.FileSystemLoader(
+                                    abs_directory_path),
+                                undefined=jinja2.StrictUndefined
+                            )
+
+                            template = stack_group.get_template(filename)
+                            rendered_template = template.render(
+                                environment_variable=environ,
+                                stack_group_path=config_path,
+                                **templating_vars
+                            )
+
+                            config = yaml.safe_load(rendered_template)
+                            return config.get("dependencies", [])
+
+                    dependencies = get_dependencies(directory_name)
+                    final_deps.update({
+                        # trim extension
+                        get_stack_group_name(directory_name) + '/' + filename[:-5]: dependencies
+                    })
+                    for d in dependencies:
+                        recurse_deps(path.split(d)[0])
+
+    recurse_deps(stack_or_stack_group)
+    return final_deps
+
+
+def generate_stack_groups(stack_or_stack_group):
+    """
+    Generates a full list of stack groups given either a Stack or StackGroup as
+    a parameter. This includes dependencies that are external to the given
+    Stack.
+
+    :param stack_or_stack_group: A Stack or StackGroup
+    :type stack_or_stack_group: str
+    :returns: A list of every stack group for the given Stack or StackGroup
+    :rtype: list
+    """
+    stack_groups = {}
+    abs_project_path = path.split(path.abspath(stack_or_stack_group))[0]
+    templating_vars = {}
+    sceptre_dir = get_sceptre_dir(abs_project_path)
+
+    def recurse_deps(stack_or_stack_group):
+        stack_or_stack_group = stack_or_stack_group
+
+        if path.isdir(path.join(sceptre_dir, stack_or_stack_group)):
+            root = path.join(sceptre_dir, stack_or_stack_group)
+        else:
+            root = path.split(stack_or_stack_group)[0]
+
+        for directory_name, sub_directories, files in walk(root):
+            for filename in fnmatch.filter(files, '*.yaml'):
+                if not filename.startswith("config"):
+                    def get_dependencies(config_path):
+                        abs_directory_path = path.abspath(directory_name)
+                        if path.isfile(path.join(abs_directory_path, filename)):
+                            stack_group = jinja2.Environment(
+                                loader=jinja2.FileSystemLoader(
+                                    abs_directory_path),
+                                undefined=jinja2.StrictUndefined
+                            )
+
+                            template = stack_group.get_template(filename)
+                            rendered_template = template.render(
+                                environment_variable=environ,
+                                stack_group_path=config_path,
+                                **templating_vars
+                            )
+
+                            config = yaml.safe_load(rendered_template)
+                            return config.get("dependencies", [])
+
+                    dependencies = get_dependencies(directory_name)
+                    stack_groups.update({
+                        get_stack_group_name(directory_name): dependencies
+                    })
+                    for d in dependencies:
+                        recurse_deps(path.split(d)[0])
+
+    recurse_deps(stack_or_stack_group)
+    return stack_groups
+
+
+def read_config(config_path, templating_vars):
+    if path.isfile(config_path):
+        stack_group = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(config_path),
+            undefined=jinja2.StrictUndefined
+        )
+
+        template = stack_group.get_template(path.split(config_path)[1])
+        rendered_template = template.render(
+            environment_variable=environ,
+            stack_group_path=config_path,
+            **templating_vars
+        )
+
+        config = yaml.safe_load(rendered_template)
+        return config
+
+
+def get_sceptre_dir(abs_path):
+    for dir_name, sub_dir, files in walk(abs_path, topdown=False):
+        if path.join(abs_path, dir_name).endswith('config'):
+            return path.abspath(dir_name)
+
+
+def get_stack_group_name(abs_path):
+    temp_path = abs_path
+    final_path = ""
+
+    while path.split(temp_path)[1] != 'config':
+        final_path = path.join(path.split(temp_path)[1], final_path)
+        temp_path = path.split(temp_path)[0]
+
+    return final_path[:-1]  # remove trailing slash
+
+
 def get_external_stack_name(project_code, stack_name):
     """
     Returns the name given to a stack in CloudFormation.
@@ -165,7 +321,7 @@ def get_subclasses(class_type, directory=None):
     :rtype: dict
     """
     try:
-        glob_expression = os.path.join(directory, "*.py")
+        glob_expression = path.join(directory, "*.py")
     except (AttributeError, TypeError):
         raise TypeError("'directory' object should be a string")
 
@@ -175,7 +331,7 @@ def get_subclasses(class_type, directory=None):
 
     modules = [
         imp.load_source(
-            os.path.basename(module_path).split(".")[0], module_path
+            path.basename(module_path).split(".")[0], module_path
         )
         for module_path in module_paths
         if "__init__" not in module_path

@@ -23,10 +23,9 @@ from packaging.version import Version
 from sceptre import __version__
 from sceptre.exceptions import (
         InvalidSceptreDirectoryError,
-        ConfigFileNotFoundError)
-from sceptre.exceptions import (
         StackGroupNotFoundError,
-        VersionIncompatibleError)
+        VersionIncompatibleError,
+        ConfigFileNotFoundError)
 from sceptre.stack_group import StackGroup
 from sceptre.stack import Stack
 from . import strategies
@@ -428,13 +427,10 @@ class ConfigReader(object):
         }
 
         is_leaf = not any([path.isdir(abs_path) for abs_path in paths.keys()])
-
+        import ipdb
+        ipdb.set_trace()
         for abs_path, rel_path in paths.items():
-            if not is_leaf and path.isdir(abs_path):
-                stack_group.sub_stack_groups.append(
-                    self.construct_stack_group(rel_path)
-                )
-            elif is_leaf and path.isfile(abs_path):
+            if is_leaf and path.isfile(abs_path):
                 stack = self._construct_stack(
                     rel_path, copy.deepcopy(stack_group_config)
                 )

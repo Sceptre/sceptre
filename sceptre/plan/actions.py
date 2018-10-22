@@ -10,6 +10,7 @@ This module implements the actions a Stack or Stack Group can take.
 import logging
 import time
 import threading
+import traceback
 
 from os import path
 from datetime import datetime, timedelta
@@ -22,6 +23,8 @@ from sceptre.config.graph import StackDependencyGraph
 from sceptre.connection_manager import ConnectionManager
 from sceptre.helpers import recurse_into_sub_stack_groups
 from sceptre.helpers import recurse_sub_stack_groups_with_graph
+from sceptre.helpers import generate_dependencies
+from sceptre.helpers import generate_stack_groups
 from sceptre.hooks import add_stack_hooks
 from sceptre.stack_status import StackStatus
 from sceptre.stack_status import StackChangeSetStatus
@@ -45,10 +48,11 @@ class StackGroupActions(object):
 
         :returns: dict
         """
-        self.logger.debug("Launching stack_group '%s'", self.stack_group.path)
+        self.logger.debug("Launching stack_group '%s'", self.path)
         launch_dependencies = self._get_launch_dependencies()
         threading_events = self._get_threading_events()
         stack_statuses = self._get_initial_statuses()
+        self.sub_stack_groups = self._get_sub_stack_groups()
         self._build(
             "launch", threading_events, stack_statuses, launch_dependencies
         )
@@ -61,7 +65,7 @@ class StackGroupActions(object):
 
         :returns: dict
         """
-        self.logger.debug("Deleting stack_group '%s'", self.stack_group.path)
+        self.logger.debug("Deleting stack_group '%s'", self.path)
         threading_events = self._get_threading_events()
         stack_statuses = self._get_initial_statuses()
         delete_dependencies = self._get_delete_dependencies()
@@ -80,9 +84,9 @@ class StackGroupActions(object):
         :rtype: dict
         """
         response = {}
-        for stack in stack_group.stacks:
+        for stack in self.stacks:
             try:
-                status = StackActions(stack).get_status()
+                status = stack.get_status()
             except StackDoesNotExistError:
                 status = "PENDING"
             response.update({stack.name: status})
@@ -98,9 +102,9 @@ class StackGroupActions(object):
         :rtype: dict
         """
         response = {}
-        for stack in self.stack_group.stacks:
+        for stack in self.stacks:
             try:
-                resources = StackActions(stack).describe_resources()
+                resources = stack.describe_resources()
                 response.update({stack.name: resources})
             except(botocore.exceptions.ClientError) as exp:
                 if exp.response["Error"]["Message"].endswith("does not exist"):
@@ -126,21 +130,21 @@ class StackGroupActions(object):
         :param command: The stack command to run. Can be (launch | delete).
         :type command: str
         """
-        if stack_group.stacks:
-            with ThreadPoolExecutor(max_workers=len(stack_group.stacks))\
+        if self.stacks:
+            with ThreadPoolExecutor(max_workers=len(self.stacks))\
                     as stack_group:
                 futures = [
                     stack_group.submit(
                         self._manage_stack_build, stack,
                         command, threading_events, stack_statuses,
-                        dependencies
+                        dependencies.longest_path()
                     )
-                    for stack in stack_group.stacks
+                    for stack in self.stacks
                 ]
                 wait(futures)
         else:
             self.logger.info(
-                "No stacks found for stack_group: '%s'", self.stack_group.path
+                "No stacks found for stack_group: '%s'", self.path
             )
 
     def _manage_stack_build(
@@ -162,32 +166,37 @@ class StackGroupActions(object):
         :type events: dict
         :param command: The stack command to run. Can be either "launch" or \
         "delete".
-     :type command: str
+        :type command: str
         """
-        for dependency in dependencies.as_dict()[stack.name]:
-            if dependency in threading_events:
-                threading_events[dependency].wait()
-                if stack_statuses[dependency] != StackStatus.COMPLETE:
-                    self.logger.debug(
-                        "%s, which %s depends is not complete. Marking "
-                        "%s as failed.", dependency, stack.name, dependency
-                    )
+        import ipdb
+        ipdb.set_trace()
+        try:
+            for dependency in dependencies:
+                if dependency in threading_events:
+                    threading_events[dependency].wait()
+                    if stack_statuses[dependency] != StackStatus.COMPLETE:
+                        self.logger.debug(
+                            "%s, which %s depends is not complete. Marking "
+                            "%s as failed.", dependency, stack, dependency
+                        )
+                        stack_statuses[stack.name] = StackStatus.FAILED
+
+            if stack_statuses[stack.name] != StackStatus.FAILED:
+                try:
+                    status = getattr(stack, command)()
+                    stack_statuses[stack.name] = status
+                except Exception:
                     stack_statuses[stack.name] = StackStatus.FAILED
+                    self.logger.exception(
+                        "Stack %s failed to %s", stack.name, command
+                    )
 
-        if stack_statuses[stack.name] != StackStatus.FAILED:
-            try:
-                status = getattr(stack, command)()
-                stack_statuses[stack.name] = status
-            except Exception:
-                stack_statuses[stack.name] = StackStatus.FAILED
-                self.logger.exception(
-                    "Stack %s failed to %s", stack.name, command
-                )
+            threading_events[stack.name].set()
+        except Exception as e:
+            print(e)
+            traceback.print_exc()
 
-        threading_events[stack.name].set()
-
-    @recurse_into_sub_stack_groups
-    def _get_threading_events(self, stack_group):
+    def _get_threading_events(self):
         """
         Returns a threading.Event() for each stack in every sub-stack.
 
@@ -195,15 +204,22 @@ class StackGroupActions(object):
             stack's name.
         :rtype: dict
         """
+        import ipdb
+        ipdb.set_trace()
+        dependencies = self._get_launch_dependencies().as_dict().keys()
+        stacks = []
+        for keys in dependencies:
+            for values in dependencies:
+                stacks.append(values)
+
         events = {
-            stack.name: threading.Event()
-            for stack in stack_group.stacks
+            stack: threading.Event()
+            for stack in stacks
         }
         self.logger.debug(events)
         return events
 
-    @recurse_into_sub_stack_groups
-    def _get_initial_statuses(self, stack_group):
+    def _get_initial_statuses(self):
         """
         Returns a "pending" sceptre.stack_status.StackStatus for each stack
         in every sub-stack.
@@ -212,13 +228,18 @@ class StackGroupActions(object):
             stack's name.
         :rtype: dict
         """
+        dependencies = self._get_launch_dependencies().as_dict().keys()
+        stacks = []
+        for keys in dependencies:
+            for values in dependencies:
+                stacks.append(values)
+
         return {
-            stack.name: StackStatus.PENDING
-            for stack in stack_group.stacks
+            stack: StackStatus.PENDING
+            for stack in stacks
         }
 
-    @recurse_sub_stack_groups_with_graph
-    def _get_launch_dependencies(self, stack_group):
+    def _get_launch_dependencies(self):
         """
         Returns a StackDependencyGraph of each stack's launch dependencies.
 
@@ -226,11 +247,10 @@ class StackGroupActions(object):
             while launching, keyed by that stack's name.
         :rtype: StackDependencyGraph
         """
-        all_dependencies = {
-            stack.name: stack.dependencies
-            for stack in stack_group.stacks
-        }
-        return StackDependencyGraph(all_dependencies)
+        dependencies = generate_dependencies(self.path)
+        graph = StackDependencyGraph(dependencies)
+        graph.write()
+        return graph
 
     def _get_delete_dependencies(self):
         """
@@ -241,6 +261,11 @@ class StackGroupActions(object):
         :rtype: dict
         """
         return self._get_launch_dependencies().reverse_graph()
+
+    def _get_sub_stack_groups(self):
+        stack_groups = generate_stack_groups(self.path)
+        print(stack_groups)
+        return stack_groups
 
 
 class StackActions(object):

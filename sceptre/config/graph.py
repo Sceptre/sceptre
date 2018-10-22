@@ -36,6 +36,24 @@ class StackDependencyGraph(object):
     def __repr__(self):
         return str(nx.convert.to_dict_of_lists(self.graph))
 
+    def __iter__(self):
+        return self.graph.__iter__()
+
+    def write(self):
+        nx.drawing.nx_pydot.write_dot(
+                self.graph,
+                './out.dot'
+            )
+
+        print(list(reversed(
+                nx.algorithms.dag.dag_longest_path(self.graph)
+              )))
+
+        print(self.as_dict())
+
+    def longest_path(self):
+        return list(reversed(nx.algorithms.dag.dag_longest_path(self.graph)))
+
     def _generate_graph(self):
         """
         Generates the graph for the initalized StackDependencyGraph object
@@ -82,7 +100,7 @@ class StackDependencyGraph(object):
 
     def as_dict(self):
         d = nx.convert.to_dict_of_lists(self.graph)
-        for key in d.copy():
-            if ".yaml" in key:
-                d.pop(key)
+        # for key in d.copy():
+        #    if ".yaml" in key:
+        #        d.pop(key)
         return d
