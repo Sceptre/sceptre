@@ -4,7 +4,7 @@ import errno
 import click
 import yaml
 
-from sceptre.config_reader import STACK_GROUP_CONFIG_ATTRIBUTES
+from sceptre.config.reader import STACK_GROUP_CONFIG_ATTRIBUTES
 from sceptre.cli.helpers import catch_exceptions
 from sceptre.exceptions import ProjectAlreadyExistsError
 

@@ -2,7 +2,7 @@ from behave import *
 import json
 
 from botocore.exceptions import ClientError
-from sceptre.config_reader import ConfigReader
+from sceptre.config.reader import ConfigReader
 from helpers import get_cloudformation_stack_name, retry_boto_call
 
 

@@ -4,7 +4,7 @@ import imp
 import yaml
 
 from botocore.exceptions import ClientError
-from sceptre.config_reader import ConfigReader
+from sceptre.config.reader import ConfigReader
 
 
 def set_template_path(context, stack_name, template_name):
