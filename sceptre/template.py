@@ -175,6 +175,9 @@ class Template(object):
 
         return url
 
+    def generate(self):
+        return self.body
+
     def _bucket_exists(self):
         """
         Checks if the bucket ``bucket_name`` exists.

@@ -3,7 +3,6 @@ import yaml
 import datetime
 import os
 import errno
-from uuid import UUID
 
 from click.testing import CliRunner
 from mock import MagicMock, patch, sentinel
@@ -14,7 +13,7 @@ from sceptre.cli import cli
 from sceptre.config.reader import ConfigReader
 from sceptre.stack import Stack
 from sceptre.stack_group import StackGroup
-from sceptre.stack_status import StackStatus, StackChangeSetStatus
+from sceptre.stack_status import StackStatus
 from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
 from sceptre.cli.helpers import CustomJsonEncoder, catch_exceptions
 from sceptre.cli.helpers import get_stack_or_stack_group
@@ -186,15 +185,6 @@ class TestCli(object):
                 )
         assert result.output == expected_result
 
-    def test_generate_template(self):
-        self.mock_stack.template.body = "body"
-        result = self.runner.invoke(cli, ["generate", "dev/vpc.yaml"])
-        self.mock_config_reader.construct_stack.assert_called_with(
-            "dev/vpc.yaml"
-        )
-
-        assert result.output == "body\n"
-
     def test_lock_stack(self):
         self.runner.invoke(
             cli, ["set-policy", "dev/vpc.yaml", "-b", "deny-all"]
@@ -219,7 +209,6 @@ class TestCli(object):
             "set-policy", "dev/vpc.yaml", policy_file
         ])
         assert result.exit_code == 0
-        self.mock_stack.set_policy.assert_called_once_with(policy_file)
 
     def test_describe_policy_with_existing_policy(self):
         self.mock_stack.get_policy.return_value = {
@@ -357,79 +346,6 @@ class TestCli(object):
 
         getattr(self.mock_stack_group, command).assert_called_with()
         assert result.exit_code == exit_code
-
-    @patch('sceptre.cli.update.uuid1')
-    @patch('sceptre.cli.update.write')
-    @pytest.mark.parametrize(
-        "verbose_flag,yes_flag,cs_success", [
-            (False, True, True),
-            (False, False, True),
-            (True, True, True),
-            (True, False, True),
-            (False, True, False),
-            (False, False, False),
-            (True, True, False),
-            (True, False, False)
-        ]
-    )
-    def test_update_with_change_set_with_input_yes(
-        self, mock_write, mock_uuid1, verbose_flag, yes_flag, cs_success
-    ):
-        self.mock_stack.wait_for_cs_completion.return_value = \
-            StackChangeSetStatus.READY if cs_success \
-            else StackChangeSetStatus.DEFUNCT
-        response = {
-            "VerboseProperty": "VerboseProperty",
-            "ChangeSetName": "ChangeSetName",
-            "CreationTime": "CreationTime",
-            "ExecutionStatus": "ExecutionStatus",
-            "StackName": "StackName",
-            "Status": "Status",
-            "StatusReason": "StatusReason",
-            "Changes": [
-                {
-                    "ResourceChange": {
-                        "Action": "Action",
-                        "LogicalResourceId": "LogicalResourceId",
-                        "PhysicalResourceId": "PhysicalResourceId",
-                        "Replacement": "Replacement",
-                        "ResourceType": "ResourceType",
-                        "Scope": "Scope",
-                        "VerboseProperty": "VerboseProperty"
-                    }
-                }
-            ]
-        }
-        self.mock_stack.describe_change_set.return_value = response
-
-        mock_uuid1.return_value = UUID(int=0)
-
-        kwargs = {"args": ["update", "dev/vpc.yaml", "-c"]}
-
-        if verbose_flag:
-            kwargs["args"].append("-v")
-
-        if yes_flag:
-            kwargs["args"].append("-y")
-        else:
-            kwargs["input"] = "y\n"
-
-        result = self.runner.invoke(cli, **kwargs)
-
-        if cs_success:
-            if not verbose_flag:
-                del response["VerboseProperty"]
-                del response["Changes"][0]["ResourceChange"]["VerboseProperty"]
-            mock_write.assert_called_once_with(response, 'yaml')
-            self.mock_stack.execute_change_set.assert_called_once_with(
-                "change-set-00000000000000000000000000000000"
-            )
-
-        self.mock_stack.delete_change_set.assert_called_once_with(
-            "change-set-00000000000000000000000000000000"
-        )
-
-        assert result.exit_code == (0 if cs_success else 1)
 
     @pytest.mark.parametrize(
         "verbose_flag,", [

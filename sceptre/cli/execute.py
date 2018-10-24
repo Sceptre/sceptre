@@ -2,6 +2,7 @@ import click
 
 from sceptre.cli.helpers import catch_exceptions, confirmation
 from sceptre.cli.helpers import get_stack_or_stack_group
+from sceptre.plan.plan import SceptrePlan
 
 
 @click.command(name="execute")
@@ -19,4 +20,6 @@ def execute_command(ctx, path, change_set_name, yes):
     """
     stack, _ = get_stack_or_stack_group(ctx, path)
     confirmation("execute", yes, change_set=change_set_name, stack=path)
-    stack.execute_change_set(change_set_name)
+    action = 'execute_change_set'
+    plan = SceptrePlan(path, action, stack)
+    plan.execute(change_set_name)

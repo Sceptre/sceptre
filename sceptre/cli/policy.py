@@ -1,6 +1,7 @@
 import click
 
 from sceptre.cli.helpers import catch_exceptions, get_stack_or_stack_group
+from sceptre.plan.plan import SceptrePlan
 
 
 @click.command(name="set-policy")
@@ -21,8 +22,14 @@ def set_policy_command(ctx, path, policy_file, built_in):
     stack, _ = get_stack_or_stack_group(ctx, path)
 
     if built_in == 'deny-all':
-        stack.lock()
+        action = 'lock'
+        plan = SceptrePlan(path, action, stack)
+        plan.execute()
     elif built_in == 'allow-all':
-        stack.unlock()
+        action = 'unlock'
+        plan = SceptrePlan(path, action, stack)
+        plan.execute()
     else:
-        stack.set_policy(policy_file)
+        action = 'set_policy'
+        plan = SceptrePlan(path, action, stack)
+        plan.execute(policy_file)

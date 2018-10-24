@@ -3,6 +3,7 @@ import click
 from sceptre.cli.helpers import catch_exceptions, get_stack_or_stack_group
 from sceptre.cli.helpers import confirmation
 from sceptre.stack_status import StackStatus
+from sceptre.plan.plan import SceptrePlan
 
 
 @click.command(name="launch")
@@ -21,15 +22,16 @@ def launch_command(ctx, path, yes):
     action = "launch"
 
     stack, stack_group = get_stack_or_stack_group(ctx, path)
-
     if stack:
         confirmation(action, yes, stack=path)
-        response = stack.launch()
+        plan = SceptrePlan(path, action, stack)
+        response = plan.execute()
         if response != StackStatus.COMPLETE:
             exit(1)
     elif stack_group:
         confirmation(action, yes, stack_group=path)
-        response = stack_group.launch()
+        plan = SceptrePlan(path, action, stack_group)
+        response = plan.execute()
         if not all(
             status == StackStatus.COMPLETE for status in response.values()
         ):

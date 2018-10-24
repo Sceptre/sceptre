@@ -5,6 +5,7 @@ from sceptre.cli.helpers import (
      get_stack_or_stack_group,
      write
     )
+from sceptre.plan.plan import SceptrePlan
 
 
 @click.command(name="status")
@@ -24,7 +25,11 @@ def status_command(ctx, path):
     stack, stack_group = get_stack_or_stack_group(ctx, path)
 
     if stack:
-        write(stack.get_status(), no_colour=no_colour)
+        command = 'get_status'
+        plan = SceptrePlan(path, command, stack)
+        write(plan.execute(), no_colour=no_colour)
     elif stack_group:
-        write(stack_group.describe(), output_format=output_format,
+        command = 'describe'
+        plan = SceptrePlan(path, command, stack_group)
+        write(plan.execute(), output_format=output_format,
               no_colour=no_colour)

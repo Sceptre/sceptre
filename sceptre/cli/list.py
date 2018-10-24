@@ -5,6 +5,7 @@ from sceptre.cli.helpers import (
           get_stack_or_stack_group,
           write
         )
+from sceptre.plan.plan import SceptrePlan
 
 
 @click.group(name="list")
@@ -27,11 +28,14 @@ def list_resources(ctx, path):
     """
     stack, stack_group = get_stack_or_stack_group(ctx, path)
     output_format = ctx.obj["output_format"]
+    action = 'describe_resources'
 
     if stack:
-        write(stack.describe_resources(), output_format)
+        plan = SceptrePlan(path, action, stack)
+        write(plan.execute(), output_format)
     elif stack_group:
-        write(stack_group.describe_resources(), output_format)
+        plan = SceptrePlan(path, action, stack_group)
+        write(plan.execute(), output_format)
 
 
 @list_group.command(name="outputs")
@@ -48,7 +52,9 @@ def list_outputs(ctx, path, export):
 
     """
     stack, _ = get_stack_or_stack_group(ctx, path)
-    response = stack.describe_outputs()
+    action = 'describe_outputs'
+    plan = SceptrePlan(path, action, stack)
+    response = plan.execute()
 
     if export == "envvar":
         write("\n".join(
@@ -73,7 +79,10 @@ def list_change_sets(ctx, path):
 
     """
     stack, _ = get_stack_or_stack_group(ctx, path)
-    response = stack.list_change_sets()
+    action = 'list_change_sets'
+    plan = SceptrePlan(path, action, stack)
+    response = plan.execute()
+
     if response['ResponseMetadata']['HTTPStatusCode'] == 200:
         del response['ResponseMetadata']
     write(response, ctx.obj["output_format"])
