@@ -13,4 +13,4 @@ class SceptrePlanExecutor(object):
         pass
 
     def execute(self, plan, *args):
-            return getattr(plan.subject, plan.command)(*args)
+            return getattr(plan.actions, plan.command)(*args)
