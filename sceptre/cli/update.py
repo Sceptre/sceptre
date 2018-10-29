@@ -33,7 +33,7 @@ def update_command(ctx, path, change_set, verbose, yes):
 
     stack, _ = get_stack_or_stack_group(ctx, path)
     if change_set:
-        action = 'create_chage_set'
+        action = 'create_change_set'
         change_set_name = "-".join(["change-set", uuid1().hex])
         plan = SceptrePlan(path, action, stack)
         plan.execute(change_set_name)
