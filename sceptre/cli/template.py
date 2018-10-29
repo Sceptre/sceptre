@@ -1,6 +1,7 @@
 import click
 import webbrowser
 
+from sceptre.context import SceptreContext
 from sceptre.cli.helpers import (
           catch_exceptions,
           get_stack_or_stack_group,
@@ -20,8 +21,15 @@ def validate_command(ctx, path):
     Validates the template used for stack in PATH.
     """
     stack, _ = get_stack_or_stack_group(ctx, path)
+    context = SceptreContext(
+                command_path=path,
+                project_path=ctx.obj.get("project_path", None),
+                user_variables=ctx.obj.get("user_variables", {}),
+                options=ctx.obj.get("options", {})
+            )
+
     action = 'validate'
-    plan = SceptrePlan(path, action, stack.template)
+    plan = SceptrePlan(context, action, stack.template)
     response = plan.execute()
     if response['ResponseMetadata']['HTTPStatusCode'] == 200:
         del response['ResponseMetadata']
@@ -39,9 +47,16 @@ def generate_command(ctx, path):
 
     Prints the template used for stack in PATH.
     """
+    context = SceptreContext(
+                command_path=path,
+                project_path=ctx.obj.get("project_path", None),
+                user_variables=ctx.obj.get("user_variables", {}),
+                options=ctx.obj.get("options", {})
+            )
+
     stack, _ = get_stack_or_stack_group(ctx, path)
     action = 'generate'
-    plan = SceptrePlan(path, action, stack.template)
+    plan = SceptrePlan(context, action, stack.template)
     write(plan.execute())
 
 
@@ -56,9 +71,17 @@ def estimate_cost_command(ctx, path):
     resources in the stack. This command will also attempt to open a web
     browser with the returned URI.
     """
-    stack, _ = get_stack_or_stack_group(ctx, path)
     action = 'estimate_cost'
-    plan = SceptrePlan(path, action, stack.template)
+    context = SceptreContext(
+                command_path=path,
+                project_path=ctx.obj.get("project_path", None),
+                user_variables=ctx.obj.get("user_variables", {}),
+                options=ctx.obj.get("options", {}),
+                output_format=ctx.obj.get("output_format", None)
+            )
+
+    stack, _ = get_stack_or_stack_group(context, path)
+    plan = SceptrePlan(context, action, stack.template)
     response = plan.execute()
 
     if response['ResponseMetadata']['HTTPStatusCode'] == 200:

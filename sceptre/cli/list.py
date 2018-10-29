@@ -1,5 +1,6 @@
 import click
 
+from sceptre.context import SceptreContext
 from sceptre.cli.helpers import (
           catch_exceptions,
           get_stack_or_stack_group,
@@ -26,15 +27,22 @@ def list_resources(ctx, path):
     List resources for stack or stack_group.
 
     """
+    context = SceptreContext(
+                path=path,
+                project_path=ctx.obj.get("project_path", None),
+                user_variables=ctx.obj.get("user_variables", {}),
+                options=ctx.obj.get("options", {})
+            )
+
     stack, stack_group = get_stack_or_stack_group(ctx, path)
     output_format = ctx.obj["output_format"]
     action = 'describe_resources'
 
     if stack:
-        plan = SceptrePlan(path, action, stack)
+        plan = SceptrePlan(context, action, stack)
         write(plan.execute(), output_format)
     elif stack_group:
-        plan = SceptrePlan(path, action, stack_group)
+        plan = SceptrePlan(context, action, stack_group)
         write(plan.execute(), output_format)
 
 
@@ -51,9 +59,16 @@ def list_outputs(ctx, path, export):
     List outputs for stack.
 
     """
+    context = SceptreContext(
+                path=path,
+                project_path=ctx.obj.get("project_path", None),
+                user_variables=ctx.obj.get("user_variables", {}),
+                options=ctx.obj.get("options", {})
+            )
+
     stack, _ = get_stack_or_stack_group(ctx, path)
     action = 'describe_outputs'
-    plan = SceptrePlan(path, action, stack)
+    plan = SceptrePlan(context, action, stack)
     response = plan.execute()
 
     if export == "envvar":
@@ -78,9 +93,16 @@ def list_change_sets(ctx, path):
     List change sets for stack.
 
     """
+    context = SceptreContext(
+                path=path,
+                project_path=ctx.obj.get("project_path", None),
+                user_variables=ctx.obj.get("user_variables", {}),
+                options=ctx.obj.get("options", {})
+            )
+
     stack, _ = get_stack_or_stack_group(ctx, path)
     action = 'list_change_sets'
-    plan = SceptrePlan(path, action, stack)
+    plan = SceptrePlan(context, action, stack)
     response = plan.execute()
 
     if response['ResponseMetadata']['HTTPStatusCode'] == 200:

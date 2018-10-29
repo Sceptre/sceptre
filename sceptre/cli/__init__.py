@@ -60,7 +60,7 @@ def cli(
         "user_variables": {},
         "output_format": output,
         "no_colour": no_colour,
-        "sceptre_dir": directory if directory else os.getcwd()
+        "project_path": directory if directory else os.getcwd()
     }
     if var_file:
         for fh in var_file:

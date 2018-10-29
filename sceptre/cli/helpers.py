@@ -102,7 +102,7 @@ def get_stack_or_stack_group(ctx, path):
     stack_group = None
 
     config_reader = ConfigReader(
-        ctx.obj["sceptre_dir"], ctx.obj["user_variables"]
+        ctx.obj["project_path"], ctx.obj["user_variables"]
     )
 
     if os.path.splitext(path)[1]:
@@ -123,7 +123,7 @@ def get_stack(ctx, path):
     :type path: str
     """
     return ConfigReader(
-        ctx.obj["sceptre_dir"], ctx.obj["options"]
+        ctx.obj["project_path"], ctx.obj["options"]
     ).construct_stack(path)
 
 

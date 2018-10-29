@@ -1,5 +1,6 @@
 import click
 
+from sceptre.context import SceptreContext
 from sceptre.cli.helpers import catch_exceptions, get_stack_or_stack_group
 from sceptre.cli.helpers import confirmation
 from sceptre.stack_status import StackStatus
@@ -19,18 +20,25 @@ def launch_command(ctx, path, yes):
 
     Launch a stack or stack_group for a given config PATH.
     """
+    context = SceptreContext(
+                command_path=path,
+                project_path=ctx.obj.get("project_path", None),
+                user_variables=ctx.obj.get("user_variables", {}),
+                options=ctx.obj.get("options", {})
+            )
+
     action = "launch"
 
     stack, stack_group = get_stack_or_stack_group(ctx, path)
     if stack:
         confirmation(action, yes, stack=path)
-        plan = SceptrePlan(path, action, stack)
+        plan = SceptrePlan(context, action, stack)
         response = plan.execute()
         if response != StackStatus.COMPLETE:
             exit(1)
     elif stack_group:
         confirmation(action, yes, stack_group=path)
-        plan = SceptrePlan(path, action, stack_group)
+        plan = SceptrePlan(context, action, stack_group)
         response = plan.execute()
         if not all(
             status == StackStatus.COMPLETE for status in response.values()
