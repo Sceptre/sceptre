@@ -29,7 +29,7 @@ def status_command(ctx, path):
                 output_format=ctx.obj.get("output_format", None)
             )
 
-    stack, stack_group = get_stack_or_stack_group(ctx, path)
+    stack, stack_group = get_stack_or_stack_group(context, path)
 
     if stack:
         command = 'get_status'

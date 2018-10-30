@@ -20,21 +20,23 @@ def validate_command(ctx, path):
 
     Validates the template used for stack in PATH.
     """
-    stack, _ = get_stack_or_stack_group(ctx, path)
     context = SceptreContext(
                 command_path=path,
                 project_path=ctx.obj.get("project_path", None),
                 user_variables=ctx.obj.get("user_variables", {}),
-                options=ctx.obj.get("options", {})
+                options=ctx.obj.get("options", {}),
+                output_format=ctx.obj.get("output_format", None)
             )
 
+    stack, _ = get_stack_or_stack_group(context, path)
     action = 'validate'
     plan = SceptrePlan(context, action, stack.template)
     response = plan.execute()
+
     if response['ResponseMetadata']['HTTPStatusCode'] == 200:
         del response['ResponseMetadata']
         click.echo("Template is valid. Template details:\n")
-    write(response, ctx.obj["output_format"])
+    write(response, context.output_format)
 
 
 @click.command(name="generate")
@@ -54,7 +56,7 @@ def generate_command(ctx, path):
                 options=ctx.obj.get("options", {})
             )
 
-    stack, _ = get_stack_or_stack_group(ctx, path)
+    stack, _ = get_stack_or_stack_group(context, path)
     action = 'generate'
     plan = SceptrePlan(context, action, stack.template)
     write(plan.execute())

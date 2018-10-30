@@ -31,19 +31,19 @@ def list_resources(ctx, path):
                 path=path,
                 project_path=ctx.obj.get("project_path", None),
                 user_variables=ctx.obj.get("user_variables", {}),
-                options=ctx.obj.get("options", {})
+                options=ctx.obj.get("options", {}),
+                output_format=ctx.obj["output_format"]
             )
 
-    stack, stack_group = get_stack_or_stack_group(ctx, path)
-    output_format = ctx.obj["output_format"]
+    stack, stack_group = get_stack_or_stack_group(context, path)
     action = 'describe_resources'
 
     if stack:
         plan = SceptrePlan(context, action, stack)
-        write(plan.execute(), output_format)
+        write(plan.execute(), context.output_format)
     elif stack_group:
         plan = SceptrePlan(context, action, stack_group)
-        write(plan.execute(), output_format)
+        write(plan.execute(), context.output_format)
 
 
 @list_group.command(name="outputs")
@@ -66,7 +66,7 @@ def list_outputs(ctx, path, export):
                 options=ctx.obj.get("options", {})
             )
 
-    stack, _ = get_stack_or_stack_group(ctx, path)
+    stack, _ = get_stack_or_stack_group(context, path)
     action = 'describe_outputs'
     plan = SceptrePlan(context, action, stack)
     response = plan.execute()
@@ -81,7 +81,7 @@ def list_outputs(ctx, path, export):
             ]
         ))
     else:
-        write(response, ctx.obj["output_format"])
+        write(response, context.output_format)
 
 
 @list_group.command(name="change-sets")
@@ -100,11 +100,11 @@ def list_change_sets(ctx, path):
                 options=ctx.obj.get("options", {})
             )
 
-    stack, _ = get_stack_or_stack_group(ctx, path)
+    stack, _ = get_stack_or_stack_group(context, path)
     action = 'list_change_sets'
     plan = SceptrePlan(context, action, stack)
     response = plan.execute()
 
     if response['ResponseMetadata']['HTTPStatusCode'] == 200:
         del response['ResponseMetadata']
-    write(response, ctx.obj["output_format"])
+    write(response, context.output_format)

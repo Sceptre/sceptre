@@ -22,8 +22,6 @@ def delete_command(ctx, path, change_set_name, yes):
     Deletes a stack for a given config PATH. Or if CHANGE_SET_NAME is specified
     deletes a change set for stack in PATH.
     """
-    import ipdb
-    ipdb.set_trace()
     context = SceptreContext(
                 command_path=path,
                 project_path=ctx.obj.get("project_path", None),
@@ -33,7 +31,7 @@ def delete_command(ctx, path, change_set_name, yes):
 
     action = "delete"
 
-    stack, stack_group = get_stack_or_stack_group(ctx, path)
+    stack, stack_group = get_stack_or_stack_group(context, path)
 
     if stack:
         if change_set_name:

@@ -89,12 +89,12 @@ def write(var, output_format="str", no_colour=True):
     click.echo(stream)
 
 
-def get_stack_or_stack_group(ctx, path):
+def get_stack_or_stack_group(context, path):
     """
     Parses the path to generate relevant Stack Group and Stack object.
 
-    :param ctx: Cli context.
-    :type ctx: click.Context
+    :param context: Cli context.
+    :type context: click.Context
     :param path: Path to either stack config or stack_group folder.
     :type path: str
     """
@@ -102,7 +102,7 @@ def get_stack_or_stack_group(ctx, path):
     stack_group = None
 
     config_reader = ConfigReader(
-        ctx.obj["project_path"], ctx.obj["user_variables"]
+        context.project_path, context.user_variables
     )
 
     if os.path.splitext(path)[1]:
@@ -113,17 +113,17 @@ def get_stack_or_stack_group(ctx, path):
     return (stack, stack_group)
 
 
-def get_stack(ctx, path):
+def get_stack(context, path):
     """
     Parses the path to generate relevant StackGroup and Stack object.
 
-    :param ctx: Cli context.
-    :type ctx: click.Context
+    :param context: Cli context.
+    :type context: click.Context
     :param path: Path to either stack config or stack_group folder.
     :type path: str
     """
     return ConfigReader(
-        ctx.obj["project_path"], ctx.obj["options"]
+        context.project_path, context.options
     ).construct_stack(path)
 
 

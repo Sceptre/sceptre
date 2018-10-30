@@ -39,13 +39,13 @@ def describe_change_set(ctx, path, change_set_name, verbose):
                 options=ctx.obj.get("options", {})
             )
 
-    stack, _ = get_stack_or_stack_group(ctx, path)
+    stack, _ = get_stack_or_stack_group(context, path)
     action = 'describe_change_set'
     plan = SceptrePlan(context, action, stack)
     description = plan.execute(change_set_name)
     if not verbose:
         description = simplify_change_set_description(description)
-    write(description, ctx.obj["output_format"])
+    write(description, context.obj["output_format"])
 
 
 @describe_group.command(name="policy")
@@ -64,7 +64,7 @@ def describe_policy(ctx, path):
                 options=ctx.obj.get("options", {})
             )
 
-    stack, _ = get_stack_or_stack_group(ctx, path)
+    stack, _ = get_stack_or_stack_group(context, path)
     action = 'get_policy'
     plan = SceptrePlan(context, action, stack)
     response = plan.execute()

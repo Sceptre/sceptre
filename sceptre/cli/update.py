@@ -35,10 +35,11 @@ def update_command(ctx, path, change_set, verbose, yes):
                 command_path=path,
                 project_path=ctx.obj.get("project_path", None),
                 user_variables=ctx.obj.get("user_variables", {}),
-                options=ctx.obj.get("options", {})
+                options=ctx.obj.get("options", {}),
+                output_format=ctx.obj.get("output_format", None)
             )
 
-    stack, _ = get_stack_or_stack_group(ctx, path)
+    stack, _ = get_stack_or_stack_group(context, path)
     if change_set:
         action = 'create_change_set'
         change_set_name = "-".join(["change-set", uuid1().hex])
@@ -58,7 +59,7 @@ def update_command(ctx, path, change_set, verbose, yes):
             description = plan.execute(change_set_name)
             if not verbose:
                 description = simplify_change_set_description(description)
-            write(description, ctx.obj["output_format"])
+            write(description, context.output_format)
 
             # Execute change set if happy with changes
             if yes or click.confirm("Proceed with stack update?"):

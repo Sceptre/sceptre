@@ -31,7 +31,7 @@ def create_command(ctx, path, change_set_name, yes):
 
     action = "create"
 
-    stack, _ = get_stack_or_stack_group(ctx, path)
+    stack, _ = get_stack_or_stack_group(context, path)
     if change_set_name:
         confirmation(action, yes, change_set=change_set_name, stack=path)
         command = 'create_change_set'
