@@ -4,6 +4,7 @@ import errno
 import click
 import yaml
 
+from sceptre.context import SceptreContext
 from sceptre.config.reader import STACK_GROUP_CONFIG_ATTRIBUTES
 from sceptre.cli.helpers import catch_exceptions
 from sceptre.exceptions import ProjectAlreadyExistsError
@@ -29,12 +30,12 @@ def init_stack_group(ctx, stack_group):
     Creates STACK_GROUP folder in the project and a config.yaml with any
     required properties.
     """
-    cwd = ctx.obj["project_path"]
-    for item in os.listdir(cwd):
+    context = SceptreContext(project_path=ctx.obj["project_path"])
+
+    for item in os.listdir(context.project_path):
         # If already a config folder create a sub stack_group
-        if os.path.isdir(item) and item == "config":
-            config_dir = os.path.join(os.getcwd(), "config")
-            _create_new_stack_group(config_dir, stack_group)
+        if os.path.isdir(item) and item == context.config_path:
+            _create_new_stack_group(context, stack_group)
 
 
 @init_group.command("project")
@@ -48,9 +49,9 @@ def init_project(ctx, project_name):
     Creates PROJECT_NAME project folder and a config.yaml with any
     required properties.
     """
-    cwd = os.getcwd()
-    sceptre_folders = {"config", "templates"}
-    project_folder = os.path.join(cwd, project_name)
+    context = SceptreContext(project_path=ctx.obj["project_path"])
+    sceptre_folders = {context.config_path, context.templates_path}
+    project_folder = os.path.join(context.project_path, project_name)
     try:
         os.mkdir(project_folder)
     except OSError as e:
@@ -71,11 +72,12 @@ def init_project(ctx, project_name):
         "region": os.environ.get("AWS_DEFAULT_REGION", "")
     }
 
-    config_path = os.path.join(cwd, project_name, "config")
-    _create_config_file(config_path, config_path, defaults)
+    config_path = os.path.join(context.project_path, project_name,
+                               context.config_path)
+    _create_config_file(context, config_path, defaults)
 
 
-def _create_new_stack_group(config_dir, new_path):
+def _create_new_stack_group(context, new_path):
     """
     Creates the subfolder for the stack_group specified by `path`
     starting from the `config_dir`. Even if folder path already exists,
@@ -87,12 +89,13 @@ def _create_new_stack_group(config_dir, new_path):
     :type path: str
     """
     # Create full path to stack_group
-    folder_path = os.path.join(config_dir, new_path)
-    init_config_msg = 'Do you want initialise config.yaml?'
+    full_config_path = os.path.join(context.project_path, context.config_path,
+                                    new_path)
+    init_config_msg = 'Do you want initialise {}'.format(context.config_file)
 
     # Make folders for the stack_group
     try:
-        os.makedirs(folder_path)
+        os.makedirs(full_config_path)
     except OSError as e:
         # Check if stack_group folder already exists
         if e.errno == errno.EEXIST:
@@ -102,10 +105,10 @@ def _create_new_stack_group(config_dir, new_path):
             raise
 
     if click.confirm(init_config_msg):
-        _create_config_file(config_dir, folder_path)
+        _create_config_file(context, full_config_path)
 
 
-def _get_nested_config(config_dir, path):
+def _get_nested_config(context, path):
     """
     Collects nested config from between `config_dir` and `path`. Config at
     lower level as greater precedence.
@@ -117,17 +120,18 @@ def _get_nested_config(config_dir, path):
     :returns: The nested config.
     :rtype: dict
     """
+    full_config_path = os.path.join(context.project_path, context.config_path)
     config = {}
-    for root, _, files in os.walk(config_dir):
+    for root, _, files in os.walk(full_config_path):
         # Check that folder is within the final stack_group path
-        if path.startswith(root) and "config.yaml" in files:
-            config_path = os.path.join(root, "config.yaml")
+        if path.startswith(root) and context.config_file in files:
+            config_path = os.path.join(root, context.config_file)
             with open(config_path) as config_file:
                 config.update(yaml.safe_load(config_file))
     return config
 
 
-def _create_config_file(config_dir, path, defaults={}):
+def _create_config_file(context, path, defaults={}):
     """
     Creates a `config.yaml` file in the given path. The user is asked for
     values for requried properties. Defaults are suggested with values in
@@ -144,7 +148,7 @@ def _create_config_file(config_dir, path, defaults={}):
     :type defaults: dict
     """
     config = dict.fromkeys(STACK_GROUP_CONFIG_ATTRIBUTES.required, "")
-    parent_config = _get_nested_config(config_dir, path)
+    parent_config = _get_nested_config(context, path)
 
     # Add standard defaults
     config.update(defaults)
@@ -162,11 +166,12 @@ def _create_config_file(config_dir, path, defaults={}):
     config = {k: v for k, v in config.items() if parent_config.get(k) != v}
 
     # Write config.yaml if config not empty
-    filepath = os.path.join(path, "config.yaml")
+    filepath = os.path.join(path, context.config_file)
     if config:
         with open(filepath, 'w') as config_file:
             yaml.safe_dump(
                 config, stream=config_file, default_flow_style=False
             )
     else:
-        click.echo("No config.yaml file needed - covered by parent config.")
+        click.echo("No {} file needed - covered by parent config.".format(
+            context.config_file))
