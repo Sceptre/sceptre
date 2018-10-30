@@ -83,18 +83,18 @@ class ConfigReader(object):
     Resolvers and Hook classes and adding them as constructors to the PyYAML
     parser.
 
-    :param sceptre_dir: The absolute path to the Sceptre directory.
-    :type sceptre_dir: str
+    :param project_path: The absolute path to the Sceptre directory.
+    :type project_path: str
     """
 
-    def __init__(self, sceptre_dir, variables=None):
+    def __init__(self, project_path, variables=None):
         self.logger = logging.getLogger(__name__)
 
-        self.sceptre_dir = sceptre_dir
+        self.project_path = project_path
 
         # Check is valid sceptre project folder
-        self.config_folder = path.join(self.sceptre_dir, "config")
-        self._check_valid_sceptre_dir(self.config_folder)
+        self.config_folder = path.join(self.project_path, "config")
+        self._check_valid_project_path(self.config_folder)
 
         # Add Resolver and Hook classes to PyYAML loader
         self._add_yaml_constructors(
@@ -172,7 +172,7 @@ class ConfigReader(object):
 
         # Adding properties from class
         config = {
-            "sceptre_dir": self.sceptre_dir,
+            "project_path": self.project_path,
             "stack_group_path": directory_path
         }
 
@@ -270,7 +270,7 @@ class ConfigReader(object):
             return config
 
     @staticmethod
-    def _check_valid_sceptre_dir(config_path):
+    def _check_valid_project_path(config_path):
         """
         Raises an InvalidSceptreDirectoryError if ``path`` is not a directory.
 
@@ -351,7 +351,7 @@ class ConfigReader(object):
             config = self.read(rel_path, stack_group_config)
             stack_name = path.splitext(rel_path)[0]
             abs_template_path = path.join(
-                self.sceptre_dir, config["template_path"]
+                self.project_path, config["template_path"]
             )
 
             s3_details = self._collect_s3_details(
@@ -418,12 +418,12 @@ class ConfigReader(object):
         stack_group = StackGroup(rel_path)
 
         items = glob(
-            path.join(self.sceptre_dir, "config", rel_path, "*")
+            path.join(self.project_path, "config", rel_path, "*")
         )
 
         paths = {
             item: path.relpath(
-                item, path.join(self.sceptre_dir, "config")
+                item, path.join(self.project_path, "config")
             )
             for item in items if not item.endswith("config.yaml")
         }
