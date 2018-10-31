@@ -6,6 +6,7 @@ from sceptre.cli.helpers import (
           get_stack_or_stack_group,
           write
         )
+from sceptre.plan.plan import SceptrePlan
 
 
 @click.command(name="validate")
@@ -19,7 +20,9 @@ def validate_command(ctx, path):
     Validates the template used for stack in PATH.
     """
     stack, _ = get_stack_or_stack_group(ctx, path)
-    response = stack.template.validate()
+    action = 'validate'
+    plan = SceptrePlan(path, action, stack.template)
+    response = plan.execute()
     if response['ResponseMetadata']['HTTPStatusCode'] == 200:
         del response['ResponseMetadata']
         click.echo("Template is valid. Template details:\n")
@@ -37,7 +40,9 @@ def generate_command(ctx, path):
     Prints the template used for stack in PATH.
     """
     stack, _ = get_stack_or_stack_group(ctx, path)
-    write(stack.template.body)
+    action = 'generate'
+    plan = SceptrePlan(path, action, stack.template)
+    write(plan.execute())
 
 
 @click.command(name="estimate-cost")
@@ -52,7 +57,9 @@ def estimate_cost_command(ctx, path):
     browser with the returned URI.
     """
     stack, _ = get_stack_or_stack_group(ctx, path)
-    response = stack.template.estimate_cost()
+    action = 'estimate_cost'
+    plan = SceptrePlan(path, action, stack.template)
+    response = plan.execute()
 
     if response['ResponseMetadata']['HTTPStatusCode'] == 200:
         del response['ResponseMetadata']

@@ -3,9 +3,10 @@ import click
 from sceptre.cli.helpers import (
             catch_exceptions,
             get_stack_or_stack_group,
+            simplify_change_set_description,
             write
-          )
-from sceptre.cli.helpers import simplify_change_set_description
+            )
+from sceptre.plan.plan import SceptrePlan
 
 
 @click.group(name="describe")
@@ -31,7 +32,9 @@ def describe_change_set(ctx, path, change_set_name, verbose):
 
     """
     stack, _ = get_stack_or_stack_group(ctx, path)
-    description = stack.describe_change_set(change_set_name)
+    action = 'describe_change_set'
+    plan = SceptrePlan(path, action, stack)
+    description = plan.execute(change_set_name)
     if not verbose:
         description = simplify_change_set_description(description)
     write(description, ctx.obj["output_format"])
@@ -47,5 +50,7 @@ def describe_policy(ctx, path):
 
     """
     stack, _ = get_stack_or_stack_group(ctx, path)
-    response = stack.get_policy()
+    action = 'get_policy'
+    plan = SceptrePlan(path, action, stack)
+    response = plan.execute()
     write(response.get('StackPolicyBody', {}))
