@@ -26,7 +26,7 @@ def execute_command(ctx, path, change_set_name, yes):
                 options=ctx.obj.get("options", {})
             )
 
-    stack, _ = get_stack_or_stack_group(context, path)
+    stack, _ = get_stack_or_stack_group(context)
     confirmation("execute", yes, change_set=change_set_name, stack=path)
     action = 'execute_change_set'
     plan = SceptrePlan(context, action, stack)

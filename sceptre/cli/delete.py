@@ -31,7 +31,7 @@ def delete_command(ctx, path, change_set_name, yes):
 
     action = "delete"
 
-    stack, stack_group = get_stack_or_stack_group(context, path)
+    stack, stack_group = get_stack_or_stack_group(context)
 
     if stack:
         if change_set_name:

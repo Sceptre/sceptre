@@ -39,7 +39,7 @@ def update_command(ctx, path, change_set, verbose, yes):
                 output_format=ctx.obj.get("output_format", None)
             )
 
-    stack, _ = get_stack_or_stack_group(context, path)
+    stack, _ = get_stack_or_stack_group(context)
     if change_set:
         action = 'create_change_set'
         change_set_name = "-".join(["change-set", uuid1().hex])

@@ -35,7 +35,7 @@ def list_resources(ctx, path):
                 output_format=ctx.obj["output_format"]
             )
 
-    stack, stack_group = get_stack_or_stack_group(context, path)
+    stack, stack_group = get_stack_or_stack_group(context)
     action = 'describe_resources'
 
     if stack:
@@ -66,7 +66,7 @@ def list_outputs(ctx, path, export):
                 options=ctx.obj.get("options", {})
             )
 
-    stack, _ = get_stack_or_stack_group(context, path)
+    stack, _ = get_stack_or_stack_group(context)
     action = 'describe_outputs'
     plan = SceptrePlan(context, action, stack)
     response = plan.execute()
@@ -100,7 +100,7 @@ def list_change_sets(ctx, path):
                 options=ctx.obj.get("options", {})
             )
 
-    stack, _ = get_stack_or_stack_group(context, path)
+    stack, _ = get_stack_or_stack_group(context)
     action = 'list_change_sets'
     plan = SceptrePlan(context, action, stack)
     response = plan.execute()

@@ -29,7 +29,7 @@ def launch_command(ctx, path, yes):
 
     action = "launch"
 
-    stack, stack_group = get_stack_or_stack_group(context, path)
+    stack, stack_group = get_stack_or_stack_group(context)
     if stack:
         confirmation(action, yes, stack=path)
         plan = SceptrePlan(context, action, stack)

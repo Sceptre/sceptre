@@ -27,7 +27,7 @@ def set_policy_command(ctx, path, policy_file, built_in):
                 options=ctx.obj.get("options", {})
             )
 
-    stack, _ = get_stack_or_stack_group(context, path)
+    stack, _ = get_stack_or_stack_group(context)
 
     if built_in == 'deny-all':
         action = 'lock'

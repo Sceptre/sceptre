@@ -89,7 +89,7 @@ def write(var, output_format="str", no_colour=True):
     click.echo(stream)
 
 
-def get_stack_or_stack_group(context, path):
+def get_stack_or_stack_group(context):
     """
     Parses the path to generate relevant Stack Group and Stack object.
 
@@ -105,10 +105,10 @@ def get_stack_or_stack_group(context, path):
         context.project_path, context.user_variables
     )
 
-    if os.path.splitext(path)[1]:
-        stack = config_reader.construct_stack(path)
+    if os.path.splitext(context.command_path)[1]:
+        stack = config_reader.construct_stack(context.command)
     else:
-        stack_group = config_reader.construct_stack_group(path)
+        stack_group = config_reader.construct_stack_group(context.command_path)
 
     return (stack, stack_group)
 

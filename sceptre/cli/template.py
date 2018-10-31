@@ -28,7 +28,7 @@ def validate_command(ctx, path):
                 output_format=ctx.obj.get("output_format", None)
             )
 
-    stack, _ = get_stack_or_stack_group(context, path)
+    stack, _ = get_stack_or_stack_group(context)
     action = 'validate'
     plan = SceptrePlan(context, action, stack.template)
     response = plan.execute()
@@ -56,7 +56,7 @@ def generate_command(ctx, path):
                 options=ctx.obj.get("options", {})
             )
 
-    stack, _ = get_stack_or_stack_group(context, path)
+    stack, _ = get_stack_or_stack_group(context)
     action = 'generate'
     plan = SceptrePlan(context, action, stack.template)
     write(plan.execute())
@@ -82,7 +82,7 @@ def estimate_cost_command(ctx, path):
                 output_format=ctx.obj.get("output_format", None)
             )
 
-    stack, _ = get_stack_or_stack_group(context, path)
+    stack, _ = get_stack_or_stack_group(context)
     plan = SceptrePlan(context, action, stack.template)
     response = plan.execute()
 
