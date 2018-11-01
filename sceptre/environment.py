@@ -22,8 +22,12 @@ from .exceptions import StackDoesNotExistError
 from .config import Config
 from .connection_manager import ConnectionManager
 from .exceptions import InvalidEnvironmentPathError
-from .helpers import recurse_into_sub_environments, get_name_tuple
+from .helpers import recurse_into_sub_environments
+from .helpers import get_name_tuple
+from .helpers import skip_duplicates
+from .helpers import to_dict_of_sets
 from .helpers import _detect_cycles
+from .helpers import walk_environments
 from .stack import Stack
 from .stack_status import StackStatus
 
@@ -70,6 +74,84 @@ class Environment(object):
                 self.sceptre_dir, self.path, self._options
             )
         )
+
+    @classmethod
+    def from_stack_dependencies(
+            Class, sceptre_dir, environment_path,
+            relative_stack_names, options=None
+    ):
+        base_env = Class(sceptre_dir, environment_path, options)
+
+        base_env._check_for_circular_dependencies()
+        launch_dependencies = base_env._get_launch_dependencies(base_env.path)
+
+        stack_paths = [
+            '/'.join([base_env.path, stack_name])
+            for stack_name in relative_stack_names
+        ]
+
+        needed_stacks = {
+            dependency
+            for stack_path in stack_paths
+            for dependency in base_env._get_deep_dependency_names(
+                stack_path, launch_dependencies
+            )
+        }
+
+        base_env._filter_stacks(needed_stacks)
+
+        return base_env
+
+    def _filter_stacks(self, stack_paths):
+        """
+            Ensures that this environment and its children only contain
+            the stacks in stack_paths.
+
+            :param stack_paths: an iterable of stack paths, like
+                dev/stack_a
+                dev/child/stack_b
+            :type stack_paths: iterable
+        """
+        stacks_by_environment = to_dict_of_sets(
+            # splits to (environment_name, stack_name)
+            stack_path.rsplit('/', 1) for stack_path in stack_paths
+        )
+
+        def stack_needed(stack_name, env):
+            if stack_name in stacks_by_environment[env.path]:
+                return True
+            else:
+                self.logger.debug(
+                    "Removing stack %s from %s",
+                    (stack_name, env.path)
+                )
+                return False
+
+        def environment_needed(child_env, env):
+            if not child_env.is_leaf:
+                return True
+            elif child_env.path in stacks_by_environment:
+                return True
+            else:
+                self.logger.debug(
+                    "Removing env %s from %s",
+                    (child_env.path, env.path)
+                )
+                return False
+
+        for env in walk_environments(self):
+            if env.is_leaf:
+                env.stacks = {
+                    stack_name: stack
+                    for stack_name, stack in env.stacks.items()
+                    if stack_needed(stack_name, env)
+                }
+            else:
+                env.environments = {
+                    child_name: child_env
+                    for child_name, child_env in env.environments.items()
+                    if environment_needed(child_env, env)
+                }
 
     @staticmethod
     def _validate_path(path):
@@ -358,6 +440,32 @@ class Environment(object):
                     )
                     encountered_stacks[stack] = "DONE"
         self.logger.debug("No circular dependencies found")
+
+    @staticmethod
+    def _get_deep_dependency_names(stack_name, launch_dependencies):
+        """
+            Gets the stack names of stack dependencies in launch order.
+
+            Will recurse forever if launch_dependencies contains a circular
+            dependency, so make sure _check_for_circular_dependencies was
+            already called.
+
+            :returns: a list of stack names, which are depth-first
+            walked dependencies of stack_name (so each stack is
+            preceeded by all of its dependencies)
+            :rtype: list
+        """
+
+        def walk_dependencies(stack_name):
+            stack_deps = launch_dependencies[stack_name]
+
+            for dep_name in stack_deps:
+                # yield from walk_dependencies(dep_name) - py3
+                for sub_dep in walk_dependencies(dep_name):
+                    yield sub_dep
+            yield stack_name
+
+        return list(skip_duplicates(walk_dependencies(stack_name)))
 
     def _get_config(self):
         """

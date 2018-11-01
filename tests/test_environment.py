@@ -398,6 +398,162 @@ class TestEnvironment(object):
             "dev/mock_stack": ["dev/vpc", "dev/devsubnets", "dev/subnets"]
         }
 
+    def test_get_deep_dependencies(self):
+        launch_dependencies = {
+            'dev/irrelevant_stack': ['dev/stack'],
+            'dev/stack': ['dev/dep_a', 'dev/dep_b'],
+            'dev/dep_a': ['dev/dep_d'],
+            'dev/dep_b': ['dev/dep_c'],
+            'dev/dep_c': ['dev/dep_d'],
+            'dev/dep_d': []
+        }
+
+        dep_list = Environment._get_deep_dependency_names(
+            'dev/stack', launch_dependencies
+        )
+
+        assert dep_list == [
+            'dev/dep_d',
+            'dev/dep_a',
+            'dev/dep_c',
+            'dev/dep_b',
+            'dev/stack'
+        ]
+
+    def test_get_deep_dependencies_with_loop(self):
+        launch_dependencies = {
+            'dev/stack': ['dev/dep_a', 'dev/dep_b'],
+            'dev/dep_a': ['dev/dep_d'],
+            'dev/dep_b': ['dev/dep_c'],
+            'dev/dep_c': ['dev/dep_a'],
+            'dev/dep_d': []
+        }
+
+        dep_list = Environment._get_deep_dependency_names(
+            'dev/stack', launch_dependencies
+        )
+
+        assert dep_list == [
+            'dev/dep_d',
+            'dev/dep_a',
+            'dev/dep_c',
+            'dev/dep_b',
+            'dev/stack'
+        ]
+
+    def test_launch_and_deep_work_together_with_cross_env_dependencies(self):
+        def mock_stack(name, dependencies):
+            s = MagicMock(Spec=Stack)
+            s.name = name
+            s.dependencies = dependencies
+            return (name, s)
+
+        stacks = dict([
+            mock_stack('root/stack_a', []),
+            mock_stack('root/leaf/stack_b', ['root/stack_a']),
+            mock_stack('root/leaf/stack_c', ['root/leaf/stack_d']),
+            mock_stack('root/leaf/stack_d', ['root/leaf/stack_b']),
+        ])
+
+        self.environment.path = 'root/leaf'
+        self.environment.stacks = {
+            "stack_b": stacks['root/leaf/stack_b'],
+            "stack_c": stacks['root/leaf/stack_c'],
+            "stack_d": stacks['root/leaf/stack_d']
+        }
+
+        launch_dependencies = self.environment._get_launch_dependencies(
+            'root/leaf'
+        )
+        dep_list = Environment._get_deep_dependency_names(
+            'root/leaf/stack_c', launch_dependencies
+        )
+
+        assert dep_list == [
+            'root/leaf/stack_b',
+            'root/leaf/stack_d',
+            'root/leaf/stack_c'
+        ]
+
+    def test_filter_stacks(self):
+        def mock_env(path, environments=None, stacks=None):
+            e = MagicMock(Spec=Environment)
+            e.path = path
+            if environments is not None:
+                e.is_leaf = False
+                e.environments = environments
+            elif stacks is not None:
+                e.is_leaf = True
+                e.stacks = stacks
+            else:
+                raise Exception('bad mock config')
+            return (path, e)
+
+        def mock_stack(path):
+            s = MagicMock(Spec=Stack)
+            s.name = path
+            return (path.rsplit('/')[-1], s)
+
+        self.environment.path = 'parent'
+        self.environment._is_leaf = False
+        self.environment.environments = dict([
+            mock_env(
+                'parent/child_a',
+                stacks=dict([
+                    mock_stack('parent/child_a/stack_a_a'),
+                    mock_stack('parent/child_a/stack_a_b'),
+                ])
+            ),
+
+            mock_env(
+                'parent/child_b',
+                environments=dict([
+                    mock_env(
+                        'parent/child_b/child_b_a',
+                        stacks=dict([
+                            mock_stack('parent/child_b_a/stack_b_a_a'),
+                            mock_stack('parent/child_b_a/stack_b_a_b')
+                        ])
+                    ),
+                    mock_env(
+                        'parent/child_b/child_b_b',
+                        stacks=dict([
+                            mock_stack('parent/child_b_b/stack_b_b_a'),
+                            mock_stack('parent/child_b_b/stack_b_b_b')
+                        ])
+                    )
+                ])
+            )
+        ])
+
+        self.environment._filter_stacks([
+            'parent/child_b/child_b_b/stack_b_b_a',
+            'parent/child_a/stack_a_a'
+        ])
+
+        def keysof(d):
+            return set(d.keys())
+
+        assert keysof(self.environment.environments) == {
+            'parent/child_a',
+            'parent/child_b'
+        }
+
+        child_a = self.environment.environments['parent/child_a']
+        assert keysof(child_a.stacks) == {
+            'stack_a_a'
+        }
+
+        child_b = self.environment.environments['parent/child_b']
+        assert keysof(child_b.environments) == {
+            'parent/child_b/child_b_b'
+        }
+
+        child_b_b = child_b.environments['parent/child_b/child_b_b']
+        assert keysof(child_b_b.stacks) == {
+            'stack_b_b_a'
+        }
+
     @patch("sceptre.environment.Environment._get_launch_dependencies")
     def test_get_delete_dependencies(self, mock_get_launch_dependencies):
         mock_get_launch_dependencies.return_value = {

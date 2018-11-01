@@ -338,6 +338,34 @@ def launch_stack(ctx, environment, stack):
         )
 
 
+def _launch_env(env):
+    """
+    Launches an environment, exiting if unsuccessful.
+    :param env: The Environment to launch
+    :type env: Environment
+    """
+    response = env.launch()
+    if not all(status == StackStatus.COMPLETE for status in response.values()):
+        exit(1)
+
+
+@cli.command(name="launch-stacks-with-dependencies")
+@environment_options
+@click.argument('stacks', metavar='[STACK]...', nargs=-1)
+@click.pass_context
+@catch_exceptions
+def launch_stack_with_deps(ctx, environment, stacks):
+    """
+    Creates or updates one or more stacks and their dependencies.
+
+    Creates or updates ENVIRONMENT/STACK and all their dependencies.
+    """
+    env = Environment.from_stack_dependencies(
+        ctx.obj["sceptre_dir"], environment, stacks, ctx.obj["options"]
+    )
+    _launch_env(env)
+
+
 @cli.command(name="launch-env")
 @environment_options
 @click.pass_context
@@ -349,9 +377,7 @@ def launch_env(ctx, environment):
     Creates or updates all the stacks in ENVIRONMENT.
     """
     env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
-    response = env.launch()
-    if not all(status == StackStatus.COMPLETE for status in response.values()):
-        exit(1)
+    _launch_env(env)
 
 
 @cli.command(name="delete-env")

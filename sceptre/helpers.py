@@ -7,6 +7,7 @@ import inspect
 import os
 import re
 import sys
+from collections import defaultdict
 
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
@@ -211,3 +212,48 @@ def _detect_cycles(node, encountered_nodes, available_nodes, path):
             )
             encountered_nodes[dependency] = "DONE"
     return encountered_nodes
+
+
+def skip_duplicates(iterable):
+    """
+        Yields from an iterable, yielding duplicated items only once.
+    """
+    seen = set()
+    for item in iterable:
+        if item not in seen:
+            yield item
+            seen.add(item)
+
+
+def to_dict_of_sets(iterable):
+    """
+        Given an iterable of key, value tuples like
+            [(green, grass), (red, fire), (green, tree)]
+        Returns a dict of sets grouped by the keys, like
+            {
+                green: {grass, tree},
+                red: {fire}
+            }
+
+        Somewhat like itertools.groupby() but without the requirement
+        of ordered k,v pairs.
+    """
+    groups = defaultdict(set)
+    for k, v in iterable:
+        groups[k].add(v)
+    return dict(groups)
+
+
+def walk_environments(env):
+    """
+        Yields an iterable of an env and its children.
+    """
+    yield env
+
+    if env.is_leaf:
+        return
+
+    for subenv in env.environments.values():
+        # yield from walk_environments(subenv) - py3
+        for child in walk_environments(subenv):
+            yield child
