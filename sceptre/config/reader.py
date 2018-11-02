@@ -87,24 +87,19 @@ class ConfigReader(object):
     :type project_path: str
     """
 
-    def __init__(self, project_path, variables=None):
+    def __init__(self, context):
         self.logger = logging.getLogger(__name__)
-
-        self.project_path = project_path
-
+        self.context = context
+        self.full_config_path = self.context.full_config_path()
         # Check is valid sceptre project folder
-        self.config_folder = path.join(self.project_path, "config")
-        self._check_valid_project_path(self.config_folder)
+        self._check_valid_project_path(self.full_config_path)
 
         # Add Resolver and Hook classes to PyYAML loader
         self._add_yaml_constructors(
             ["sceptre.hooks", "sceptre.resolvers"]
         )
 
-        if not variables:
-            variables = {}
-
-        self.templating_vars = {"var": variables}
+        self.templating_vars = {"var": context.user_variables}
 
     def _add_yaml_constructors(self, entry_point_groups):
         """
@@ -168,11 +163,11 @@ class ConfigReader(object):
         """
         self.logger.debug("Reading in '%s' files...", rel_path)
         directory_path, filename = path.split(rel_path)
-        abs_path = path.join(self.config_folder, rel_path)
+        abs_path = path.join(self.full_config_path, rel_path)
 
         # Adding properties from class
         config = {
-            "project_path": self.project_path,
+            "project_path": self.context.project_path,
             "stack_group_path": directory_path
         }
 
@@ -181,7 +176,8 @@ class ConfigReader(object):
             config.update(base_config)
 
         # Check if file exists, but ignore config.yaml as can be inherited.
-        if not path.isfile(abs_path) and not filename.endswith("config.yaml"):
+        if not path.isfile(abs_path)\
+                and not filename.endswith(self.context.config_file):
             raise ConfigFileNotFoundError(
                 "Config file \"{0}\" not found.".format(rel_path)
             )
@@ -252,7 +248,8 @@ class ConfigReader(object):
         :rtype: dict
         """
         config = {}
-        abs_directory_path = path.join(self.config_folder, directory_path)
+        abs_directory_path = path.join(
+                self.full_config_path, directory_path)
         if path.isfile(path.join(abs_directory_path, basename)):
             stack_group = jinja2.Environment(
                 loader=jinja2.FileSystemLoader(abs_directory_path),
@@ -345,13 +342,13 @@ class ConfigReader(object):
         :rtype: sceptre.stack.Stack
         """
         directory, filename = path.split(rel_path)
-        if filename != "config.yaml":
+        if filename != self.context.config_file:
             self.templating_vars["stack_group_config"] =\
               stack_group_config
             config = self.read(rel_path, stack_group_config)
             stack_name = path.splitext(rel_path)[0]
             abs_template_path = path.join(
-                self.project_path, config["template_path"]
+                self.context.project_path, config["template_path"]
             )
 
             s3_details = self._collect_s3_details(
@@ -389,13 +386,13 @@ class ConfigReader(object):
         :param rel_path: A relative stack config path from the config folder.
         :type rel_path: str
         """
-        if not path.isfile(path.join(self.config_folder, rel_path)):
+        if not path.isfile(path.join(self.full_config_path, rel_path)):
             raise ConfigFileNotFoundError(
                 "Config file not found for '{}'".format(rel_path)
             )
         directory = path.split(rel_path)[0]
         stack_group_config = self.read(
-            path.join(directory, "config.yaml")
+            path.join(directory, self.context.config_file)
           )
         return self._construct_stack(rel_path, stack_group_config)
 
@@ -408,24 +405,24 @@ class ConfigReader(object):
         folder.
         :type rel_path: str
         """
-        if not path.isdir(path.join(self.config_folder, rel_path)):
+        if not path.isdir(path.join(self.full_config_path, rel_path)):
             raise StackGroupNotFoundError(
                 "StackGroup not found for '{}'".format(rel_path)
             )
         stack_group_config = self.read(
-            path.join(rel_path, "config.yaml")
+            path.join(rel_path, self.context.config_file)
           )
         stack_group = StackGroup(rel_path)
 
         items = glob(
-            path.join(self.project_path, "config", rel_path, "*")
+            path.join(self.full_config_path, rel_path, "*")
         )
 
         paths = {
             item: path.relpath(
-                item, path.join(self.project_path, "config")
+                item, path.join(self.full_config_path)
             )
-            for item in items if not item.endswith("config.yaml")
+            for item in items if not item.endswith(self.context.config_file)
         }
 
         is_leaf = not any([path.isdir(abs_path) for abs_path in paths.keys()])

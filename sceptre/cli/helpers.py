@@ -102,9 +102,7 @@ def get_stack_or_stack_group(context):
     stack = None
     stack_group = None
 
-    config_reader = ConfigReader(
-        context.project_path, context.user_variables
-    )
+    config_reader = ConfigReader(context)
 
     if os.path.splitext(context.command_path)[1]:
         stack = config_reader.construct_stack(context.command_path)
