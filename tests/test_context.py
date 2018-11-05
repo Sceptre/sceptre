@@ -1,4 +1,3 @@
-import pytest
 from os import path
 from mock import sentinel
 from sceptre.context import SceptreContext
@@ -23,17 +22,6 @@ class TestSceptreContext(object):
 
         sentinel.project_path = "project_path/to/sceptre"
         assert self.context.project_path == sentinel.project_path
-
-    def test_context_without_path(self):
-        with pytest.raises(ValueError):
-            SceptreContext(
-                project_path=None,
-                command_path=sentinel.command_path,
-                user_variables=sentinel.user_variables,
-                options=sentinel.options,
-                output_format=sentinel.output_format,
-                no_color=sentinel.no_color
-            )
 
     def test_full_config_path_returns_correct_path(self):
         context = SceptreContext(
