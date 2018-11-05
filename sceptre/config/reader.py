@@ -98,8 +98,10 @@ class ConfigReader(object):
         self._add_yaml_constructors(
             ["sceptre.hooks", "sceptre.resolvers"]
         )
+        if not self.context.user_variables:
+            self.context.user_variables = {}
 
-        self.templating_vars = {"var": context.user_variables}
+        self.templating_vars = {"var": self.context.user_variables}
 
     def _add_yaml_constructors(self, entry_point_groups):
         """
@@ -420,7 +422,7 @@ class ConfigReader(object):
 
         paths = {
             item: path.relpath(
-                item, path.join(self.full_config_path)
+                item, self.full_config_path
             )
             for item in items if not item.endswith(self.context.config_file)
         }

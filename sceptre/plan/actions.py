@@ -7,27 +7,241 @@ This module implements the actions a Stack or Stack Group can take.
 
 """
 
-from datetime import datetime, timedelta
 import logging
-import os
 import time
+import threading
 
-from dateutil.tz import tzutc
+from os import path
+from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor, wait
+
 import botocore
+from dateutil.tz import tzutc
 
+from sceptre.config.graph import StackDependencyGraph
 from sceptre.connection_manager import ConnectionManager
+from sceptre.helpers import recurse_into_sub_stack_groups
+from sceptre.helpers import recurse_sub_stack_groups_with_graph
+from sceptre.hooks import HookProperty
+from sceptre.hooks import add_stack_hooks
 from sceptre.stack_status import StackStatus
 from sceptre.stack_status import StackChangeSetStatus
 from sceptre.template import Template
-
-from sceptre.hooks import HookProperty
-from sceptre.hooks import add_stack_hooks
 
 from sceptre.exceptions import CannotUpdateFailedStackError
 from sceptre.exceptions import UnknownStackStatusError
 from sceptre.exceptions import UnknownStackChangeSetStatusError
 from sceptre.exceptions import StackDoesNotExistError
 from sceptre.exceptions import ProtectedStackError
+
+
+class StackGroupActions(object):
+
+    def __init__(self, stack_group):
+        self.logger = logging.getLogger(__name__)
+        self.stack_group = stack_group
+
+    def launch(self):
+        """
+        Creates or updates all stacks in the stack_group.
+
+        :returns: dict
+        """
+        self.logger.debug("Launching stack_group '%s'", self.stack_group.path)
+        launch_dependencies = self._get_launch_dependencies()
+        threading_events = self._get_threading_events()
+        stack_statuses = self._get_initial_statuses()
+        self._build(
+            "launch", threading_events, stack_statuses, launch_dependencies
+        )
+
+        return stack_statuses
+
+    def delete(self):
+        """
+        Deletes all stacks in the stack_group.
+
+        :returns: dict
+        """
+        self.logger.debug("Deleting stack_group '%s'", self.stack_group.path)
+        threading_events = self._get_threading_events()
+        stack_statuses = self._get_initial_statuses()
+        delete_dependencies = self._get_delete_dependencies()
+
+        self._build(
+            "delete", threading_events, stack_statuses, delete_dependencies
+        )
+        return stack_statuses
+
+    @recurse_into_sub_stack_groups
+    def describe(self):
+        """
+        Returns each stack's status.
+
+        :returns: The stack status of each stack, keyed by the stack's name.
+        :rtype: dict
+        """
+        response = {}
+        for stack in self.stack_group.stacks:
+            try:
+                status = StackActions(stack).get_status()
+            except StackDoesNotExistError:
+                status = "PENDING"
+            response.update({stack.name: status})
+        return response
+
+    @recurse_into_sub_stack_groups
+    def describe_resources(self):
+        """
+        Describes the resources of each stack in the stack_group.
+
+        :returns: A description of each stack's resources, keyed by the stack's
+            name.
+        :rtype: dict
+        """
+        response = {}
+        for stack in self.stack_group.stacks:
+            try:
+                resources = StackActions(stack).describe_resources()
+                response.update({stack.name: resources})
+            except(botocore.exceptions.ClientError) as exp:
+                if exp.response["Error"]["Message"].endswith("does not exist"):
+                    pass
+                else:
+                    raise
+        return response
+
+    @recurse_sub_stack_groups_with_graph
+    def _build(self, command, threading_events, stack_statuses, dependencies):
+        """
+        Launches or deletes all stacks in the stack_group.
+
+        Whether the stack is launched or delete depends on the value of
+        <command>. It does this by calling stack.<command>() for
+        each stack in the stack_group. Stack.<command>() is blocking,
+        because it waits for the stack to be built, so each command is run on a
+        separate thread. As some stacks need to be built before others,
+        depending on their depedencies, threading.Events() are used to notify
+        the other stacks when a particular stack is done building.
+
+        :param command: The stack command to run. Can be (launch | delete).
+        :type command: str
+        """
+        if self.stack_group.stacks:
+            with ThreadPoolExecutor(max_workers=len(self.stack_group.stacks))\
+                    as stack_group:
+                futures = [
+                    stack_group.submit(
+                        self._manage_stack_build, stack,
+                        command, threading_events, stack_statuses,
+                        dependencies
+                    )
+                    for stack in self.stack_group.stacks
+                ]
+                wait(futures)
+        else:
+            self.logger.info(
+                "No stacks found for stack_group: '%s'", self.stack_group.path
+            )
+
+    def _manage_stack_build(
+            self, stack, command, threading_events,
+            stack_statuses, dependencies
+    ):
+        """
+        Manages the launch or deletion of a stack.
+
+        Waits for any stacks that ``stack`` depends on to complete, runs
+        ``stack.command()``, and then marks ``stack`` as complete. If a
+        dependency stack has failed, ``stack`` is marked as failed.
+
+        :param stack: The stack to build.
+        :type: sceptre.Stack
+        :param threading_events: A dict of threading.Events, keyed by stack \
+        names, which is used to notify other stacks when a particular stack \
+        has been built.
+        :type events: dict
+        :param command: The stack command to run. Can be either "launch" or \
+        "delete".
+        :type command: str
+        """
+        for dependency in dependencies.as_dict()[stack.name]:
+            if dependency in threading_events:
+                threading_events[dependency].wait()
+                if stack_statuses[dependency] != StackStatus.COMPLETE:
+                    self.logger.debug(
+                        "%s, which %s depends is not complete. Marking "
+                        "%s as failed.", dependency, stack.name, dependency
+                    )
+                    stack_statuses[stack.name] = StackStatus.FAILED
+
+        if stack_statuses[stack.name] != StackStatus.FAILED:
+            try:
+                status = getattr(stack, command)()
+                stack_statuses[stack.name] = status
+            except Exception:
+                stack_statuses[stack.name] = StackStatus.FAILED
+                self.logger.exception(
+                    "Stack %s failed to %s", stack.name, command
+                )
+
+        threading_events[stack.name].set()
+
+    @recurse_into_sub_stack_groups
+    def _get_threading_events(self):
+        """
+        Returns a threading.Event() for each stack in every sub-stack.
+
+        :returns: A threading.Event object for each stack, keyed by the
+            stack's name.
+        :rtype: dict
+        """
+        events = {
+            stack.name: threading.Event()
+            for stack in self.stack_group.stacks
+        }
+        self.logger.debug(events)
+        return events
+
+    @recurse_into_sub_stack_groups
+    def _get_initial_statuses(self):
+        """
+        Returns a "pending" sceptre.stack_status.StackStatus for each stack
+        in every sub-stack.
+
+        :returns: A "pending" stack status for each stack, keyed by the
+            stack's name.
+        :rtype: dict
+        """
+        return {
+            stack.name: StackStatus.PENDING
+            for stack in self.stack_group.stacks
+        }
+
+    @recurse_sub_stack_groups_with_graph
+    def _get_launch_dependencies(self):
+        """
+        Returns a StackDependencyGraph of each stack's launch dependencies.
+
+        :returns: A list of the stacks that a particular stack depends on
+            while launching, keyed by that stack's name.
+        :rtype: StackDependencyGraph
+        """
+        all_dependencies = {
+            stack.name: stack.dependencies
+            for stack in self.stack_group.stacks
+        }
+        return StackDependencyGraph(all_dependencies)
+
+    def _get_delete_dependencies(self):
+        """
+        Returns a dict of each stack's delete dependencies.
+
+        :returns: A list of the stacks that a particular stack depends on
+            while deleting, keyed by that stack's name.
+        :rtype: dict
+        """
+        return self._get_launch_dependencies().reverse_graph()
 
 
 class StackActions(object):
@@ -265,8 +479,10 @@ class StackActions(object):
         """
         Locks the stack by applying a deny all updates stack policy.
         """
-        policy_path = os.path.join(
-            os.path.dirname(__file__),
+        policy_path = path.join(
+            # need to get to the base install path. __file__ will take us into
+            # sceptre/actions so need to walk up the path.
+            path.abspath(path.join(__file__, "../..")),
             "stack_policies/lock.json"
         )
         self.set_policy(policy_path)
@@ -276,8 +492,10 @@ class StackActions(object):
         """
         Unlocks the stack by applying an allow all updates stack policy.
         """
-        policy_path = os.path.join(
-            os.path.dirname(__file__),
+        policy_path = path.join(
+            # need to get to the base install path. __file__ will take us into
+            # sceptre/actions so need to walk up the path.
+            path.abspath(path.join(__file__, "../..")),
             "stack_policies/unlock.json"
         )
         self.set_policy(policy_path)
@@ -768,3 +986,174 @@ class StackActions(object):
             return StackChangeSetStatus.DEFUNCT
         else:  # pragma: no cover
             raise Exception("This else should not be reachable.")
+
+class TemplateActions(object):
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+
+        self.path = path
+        self.connection_manager = connection_manager
+
+    def upload_to_s3(self):
+        """
+        Uploads the template to ``bucket_name`` and returns its URL.
+
+        The template is uploaded with the ``bucket_key``.
+
+        :returns: The URL of the template object in S3.
+        :rtype: str
+        :raises: botocore.exceptions.ClientError
+
+        """
+        self.logger.debug("%s - Uploading template to S3...", self.name)
+
+        with self._boto_s3_lock:
+            if not self._bucket_exists():
+                self._create_bucket()
+
+        # Remove any leading or trailing slashes the user may have added.
+        bucket_name = self.s3_details["bucket_name"]
+        bucket_key = self.s3_details["bucket_key"]
+
+        self.logger.debug(
+            "%s - Uploading template to: 's3://%s/%s'",
+            self.name, bucket_name, bucket_key
+        )
+        self.connection_manager.call(
+            service="s3",
+            command="put_object",
+            kwargs={
+                "Bucket": bucket_name,
+                "Key": bucket_key,
+                "Body": self.body,
+                "ServerSideEncryption": "AES256"
+            }
+        )
+
+        url = "https://{0}.s3.amazonaws.com/{1}".format(
+            bucket_name, bucket_key
+        )
+
+        self.logger.debug("%s - Template URL: '%s'", self.name, url)
+
+        return url
+
+    def _bucket_exists(self):
+        """
+        Checks if the bucket ``bucket_name`` exists.
+
+        :returns: Boolean whether the bucket exists
+        :rtype: bool
+        :raises: botocore.exception.ClientError
+
+        """
+        bucket_name = self.s3_details["bucket_name"]
+        self.logger.debug(
+            "%s - Attempting to find template bucket '%s'",
+            self.name, bucket_name
+        )
+        try:
+            self.connection_manager.call(
+                service="s3",
+                command="head_bucket",
+                kwargs={"Bucket": bucket_name}
+            )
+        except botocore.exceptions.ClientError as exp:
+            if exp.response["Error"]["Message"] == "Not Found":
+                self.logger.debug(
+                    "%s - %s bucket not found.", self.name, bucket_name
+                )
+                return False
+            else:
+                raise
+        self.logger.debug(
+            "%s - Found template bucket '%s'", self.name, bucket_name
+        )
+        return True
+
+    def _create_bucket(self):
+        """
+        Create the s3 bucket ``bucket_name``.
+
+        :raises: botocore.exception.ClientError
+
+        """
+        bucket_name = self.s3_details["bucket_name"]
+
+        self.logger.debug(
+            "%s - Creating new bucket '%s'", self.name, bucket_name
+        )
+
+        if self.connection_manager.region == "us-east-1":
+            self.connection_manager.call(
+                service="s3",
+                command="create_bucket",
+                kwargs={"Bucket": bucket_name}
+            )
+        else:
+            self.connection_manager.call(
+                service="s3",
+                command="create_bucket",
+                kwargs={
+                    "Bucket": bucket_name,
+                    "CreateBucketConfiguration": {
+                        "LocationConstraint": self.connection_manager.region
+                    }
+                }
+            )
+
+    def get_boto_call_parameter(self):
+        """
+        Returns the CloudFormation template location.
+
+        Uploads the template to S3 and returns the object's URL, or returns
+        the template itself.
+
+        :returns: The boto call parameter for the template.
+        :rtype: dict
+        """
+        if self.s3_details:
+            url = self.upload_to_s3()
+            return {"TemplateURL": url}
+        else:
+            return {"TemplateBody": self.body}
+
+    def validate(self):
+        """
+        Validates the stack's CloudFormation template.
+
+        Raises an error if the template is invalid.
+
+        :returns: Information about the template.
+        :rtype: dict
+        :raises: botocore.exceptions.ClientError
+        """
+        self.logger.debug("%s - Validating template", self.name)
+        response = self.connection_manager.call(
+            service="cloudformation",
+            command="validate_template",
+            kwargs=self.get_boto_call_parameter()
+        )
+        self.logger.debug(
+            "%s - Validate template response: %s", self.name, response
+        )
+        return response
+
+    def estimate_cost(self):
+        """
+        Estimates a stack's cost.
+
+        :returns: An estimate of the stack's cost.
+        :rtype: dict
+        :raises: botocore.exceptions.ClientError
+        """
+        self.logger.debug("%s - Estimating template cost", self.name)
+        response = self.connection_manager.call(
+            service="cloudformation",
+            command="estimate_template_cost",
+            kwargs=self.get_boto_call_parameter()
+        )
+        self.logger.debug(
+            "%s - Estimate stack cost response: %s", self.name, response
+        )
+        return response

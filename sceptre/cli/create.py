@@ -2,9 +2,8 @@ import click
 
 from sceptre.context import SceptreContext
 from sceptre.cli.helpers import catch_exceptions, confirmation
-from sceptre.cli.helpers import get_stack_or_stack_group
-from sceptre.stack_status import StackStatus
 from sceptre.plan.plan import SceptrePlan
+from sceptre.cli.helpers import stack_status_exit_code
 
 
 @click.command(name="create")
@@ -30,16 +29,13 @@ def create_command(ctx, path, change_set_name, yes):
             )
 
     action = "create"
+    plan = SceptrePlan(context)
 
-    stack, _ = get_stack_or_stack_group(context)
-    if change_set_name:
+  # TODO this isn't going to work with sub-stack-group-stacks
+    if any(change_set_name for change_set_name in plan.stack_group.stacks):
         confirmation(action, yes, change_set=change_set_name, stack=path)
-        command = 'create_change_set'
-        plan = SceptrePlan(context, command, stack)
-        plan.execute(change_set_name)
+        plan.create_change_set(change_set_name)
     else:
         confirmation(action, yes, stack=path)
-        plan = SceptrePlan(context, action, stack)
-        response = plan.execute()
-        if response != StackStatus.COMPLETE:
-            exit(1)
+        plan.create()
+        exit(stack_status_exit_code(plan))

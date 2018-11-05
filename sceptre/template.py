@@ -175,9 +175,6 @@ class Template(object):
 
         return url
 
-    def generate(self):
-        return self.body
-
     def _bucket_exists(self):
         """
         Checks if the bucket ``bucket_name`` exists.
@@ -257,46 +254,6 @@ class Template(object):
             return {"TemplateURL": url}
         else:
             return {"TemplateBody": self.body}
-
-    def validate(self):
-        """
-        Validates the stack's CloudFormation template.
-
-        Raises an error if the template is invalid.
-
-        :returns: Information about the template.
-        :rtype: dict
-        :raises: botocore.exceptions.ClientError
-        """
-        self.logger.debug("%s - Validating template", self.name)
-        response = self.connection_manager.call(
-            service="cloudformation",
-            command="validate_template",
-            kwargs=self.get_boto_call_parameter()
-        )
-        self.logger.debug(
-            "%s - Validate template response: %s", self.name, response
-        )
-        return response
-
-    def estimate_cost(self):
-        """
-        Estimates a stack's cost.
-
-        :returns: An estimate of the stack's cost.
-        :rtype: dict
-        :raises: botocore.exceptions.ClientError
-        """
-        self.logger.debug("%s - Estimating template cost", self.name)
-        response = self.connection_manager.call(
-            service="cloudformation",
-            command="estimate_template_cost",
-            kwargs=self.get_boto_call_parameter()
-        )
-        self.logger.debug(
-            "%s - Estimate stack cost response: %s", self.name, response
-        )
-        return response
 
     @staticmethod
     def _render_jinja_template(template_dir, filename, jinja_vars):

@@ -80,7 +80,7 @@ class Stack(object):
             ")".format(
                 name=self.name, project_code=self.project_code,
                 template_path=self.template_path,
-                region=self.connection_manager.region,
+                region=self.region,
                 profile=self.profile, parameters=self.parameters,
                 sceptre_user_data=self.sceptre_user_data,
                 hooks=self.hooks, s3_details=self.s3_details,
