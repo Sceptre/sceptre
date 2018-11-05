@@ -106,7 +106,7 @@ def get_stack_or_stack_group(context):
     )
 
     if os.path.splitext(context.command_path)[1]:
-        stack = config_reader.construct_stack(context.command)
+        stack = config_reader.construct_stack(context.command_path)
     else:
         stack_group = config_reader.construct_stack_group(context.command_path)
 
