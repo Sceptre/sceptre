@@ -4,9 +4,9 @@ import click
 
 from sceptre.context import SceptreContext
 from sceptre.cli.helpers import catch_exceptions, confirmation
-from sceptre.cli.helpers import write
+from sceptre.cli.helpers import write, stack_status_exit_code
 from sceptre.cli.helpers import simplify_change_set_description
-from sceptre.stack_status import StackStatus, StackChangeSetStatus
+from sceptre.stack_status import StackChangeSetStatus
 from sceptre.plan.plan import SceptrePlan
 
 
@@ -41,7 +41,7 @@ def update_command(ctx, path, change_set, verbose, yes):
 
     plan = SceptrePlan(context)
 
-    if any(change_set for change_set in plan.stack_group.stacks):
+    if change_set:
         change_set_name = "-".join(["change-set", uuid1().hex])
         plan.create_change_set(change_set_name)
         try:
@@ -66,6 +66,5 @@ def update_command(ctx, path, change_set, verbose, yes):
             plan.delete_change_set(change_set_name)
     else:
         confirmation("update", yes, stack=path)
-        response = plan.update()
-        if response != StackStatus.COMPLETE:
-            exit(1)
+        plan.update()
+        exit(stack_status_exit_code(plan))

@@ -6,6 +6,7 @@ import pytest
 import yaml
 import errno
 
+from sceptre.context import SceptreContext
 from sceptre.exceptions import VersionIncompatibleError
 from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.exceptions import InvalidSceptreDirectoryError
@@ -19,17 +20,21 @@ class TestConfigReader(object):
     @patch("sceptre.config.reader.ConfigReader._check_valid_project_path")
     def setup_method(self, test_method, mock_check_valid_project_path):
         self.runner = CliRunner()
-        self.test_project_pathectory = os.path.join(
+        self.test_project_path = os.path.join(
             os.getcwd(), "tests", "fixtures"
+        )
+        self.context = SceptreContext(
+            project_path=self.test_project_path,
+            command_path="A"
         )
 
     def test_config_reader_correctly_initialised(self):
-        config_reader = ConfigReader(self.test_project_pathectory)
-        assert config_reader.project_path == self.test_project_pathectory
+        config_reader = ConfigReader(self.context)
+        assert config_reader.context == self.context
 
     def test_config_reader_with_invalid_path(self):
         with pytest.raises(InvalidSceptreDirectoryError):
-            ConfigReader("/path/does/not/exist")
+            ConfigReader(SceptreContext("/path/does/not/exist", "example"))
 
     @pytest.mark.parametrize("filepaths,target", [
         (
@@ -62,8 +67,8 @@ class TestConfigReader(object):
                     yaml.safe_dump(
                         config, stream=config_file, default_flow_style=False
                     )
-
-            config = ConfigReader(project_path).read(target)
+            self.context.project_path = project_path
+            config = ConfigReader(self.context).read(target)
 
             assert config == {
                 "project_path": project_path,
@@ -89,8 +94,8 @@ class TestConfigReader(object):
             base_config = {
                 "base_config": "base_config"
             }
-
-            config = ConfigReader(project_path).read(
+            self.context.project_path = project_path
+            config = ConfigReader(self.context).read(
                 "A/stack.yaml", base_config
             )
 
@@ -106,35 +111,34 @@ class TestConfigReader(object):
             project_path = os.path.abspath('./example')
             config_dir = os.path.join(project_path, "config")
             os.makedirs(config_dir)
-
+            self.context.project_path = project_path
             with pytest.raises(ConfigFileNotFoundError):
-                ConfigReader(project_path).read("stack.yaml")
+                ConfigReader(self.context).read("stack.yaml")
 
     def test_read_with_empty_config_file(self):
-        config_reader = ConfigReader(self.test_project_pathectory)
+        config_reader = ConfigReader(self.context)
         config = config_reader.read(
-          "account/stack-group/region/subnets.yaml"
+            "account/stack-group/region/subnets.yaml"
         )
         assert config == {
-            "project_path": self.test_project_pathectory,
+            "project_path": self.test_project_path,
             "stack_group_path": "account/stack-group/region"
         }
 
     def test_read_with_templated_config_file(self):
-        config_reader = ConfigReader(
-            self.test_project_pathectory,
-            {"user_variable": "user_variable_value"}
-        )
+        self.context.user_variables = {"user_variable": "user_variable_value"}
+        config_reader = ConfigReader(self.context)
         config_reader.templating_vars["stack_group_config"] = {
             "region": "stack_group_region"
         }
+
         os.environ["TEST_ENV_VAR"] = "environment_variable_value"
         config = config_reader.read(
             "account/stack-group/region/security_groups.yaml"
         )
-        # self.config.read({"user_variable": "user_variable_value"})
+
         assert config == {
-            'project_path': config_reader.project_path,
+            'project_path': self.context.project_path,
             "stack_group_path": "account/stack-group/region",
             "parameters": {
                 "param1": "user_variable_value",
@@ -151,7 +155,7 @@ class TestConfigReader(object):
             'require_version': '<0'
         }
         with pytest.raises(VersionIncompatibleError):
-            ConfigReader(self.test_project_pathectory)._check_version(config)
+            ConfigReader(self.context)._check_version(config)
 
     @freeze_time("2012-01-01")
     @pytest.mark.parametrize("stack_name,config,expected", [
@@ -162,8 +166,8 @@ class TestConfigReader(object):
                 "template_key_prefix": "prefix"
             },
             {
-                 "bucket_name": "bucket-name",
-                 "bucket_key": "prefix/name/2012-01-01-00-00-00-000000Z.json"
+                "bucket_name": "bucket-name",
+                "bucket_key": "prefix/name/2012-01-01-00-00-00-000000Z.json"
             }
         ),
         (
@@ -172,8 +176,8 @@ class TestConfigReader(object):
                 "template_bucket_name": "bucket-name",
             },
             {
-                 "bucket_name": "bucket-name",
-                 "bucket_key": "name/2012-01-01-00-00-00-000000Z.json"
+                "bucket_name": "bucket-name",
+                "bucket_key": "name/2012-01-01-00-00-00-000000Z.json"
             }
         ),
         (
@@ -192,30 +196,29 @@ class TestConfigReader(object):
     ):
         mock_Stack.return_value = sentinel.stack
         mock_collect_s3_details.return_value = sentinel.s3_details
-        config_reader = ConfigReader(self.test_project_pathectory)
-        stack = config_reader.construct_stack(
+        stack = ConfigReader(self.context).construct_stack(
             "account/stack-group/region/vpc.yaml"
         )
         mock_Stack.assert_called_with(
-                name="account/stack-group/region/vpc",
-                project_code="account_project_code",
-                template_path=os.path.join(
-                    self.test_project_pathectory, "path/to/template"
-                ),
-                region="region_region",
-                profile="account_profile",
-                parameters={"param1": "val1"},
-                sceptre_user_data={},
-                hooks={},
-                s3_details=sentinel.s3_details,
-                dependencies=["child/level", "top/level"],
-                role_arn=None,
-                protected=False,
-                tags={},
-                external_name=None,
-                notifications=None,
-                on_failure=None,
-                stack_timeout=0
+            name="account/stack-group/region/vpc",
+            project_code="account_project_code",
+            template_path=os.path.join(
+                self.test_project_path, "path/to/template"
+            ),
+            region="region_region",
+            profile="account_profile",
+            parameters={"param1": "val1"},
+            sceptre_user_data={},
+            hooks={},
+            s3_details=sentinel.s3_details,
+            dependencies=["child/level", "top/level"],
+            role_arn=None,
+            protected=False,
+            tags={},
+            external_name=None,
+            notifications=None,
+            on_failure=None,
+            stack_timeout=0
         )
         assert stack == sentinel.stack
 
@@ -262,18 +265,18 @@ class TestConfigReader(object):
                         "stacks": [],
                         "stack_groups": {
                             "A/A": {
-                              "stacks": ["A/A/1", "A/A/2"],
-                              "stack_groups": {}
+                                "stacks": ["A/A/1", "A/A/2"],
+                                "stack_groups": {}
                             },
                         }
                     }
                 },
                 {
                     "A/A": {
-                      "stacks": ["A/A/1", "A/A/2"], "stack_groups": {}
+                        "stacks": ["A/A/1", "A/A/2"], "stack_groups": {}
                     }
                 }
-                ]
+            ]
         ),
         (
             ["A/A/1.yaml", "A/B/1.yaml"], ["A", "A/A", "A/B"], [
@@ -282,10 +285,10 @@ class TestConfigReader(object):
                         "stacks": [],
                         "stack_groups": {
                             "A/A": {
-                              "stacks": ["A/A/1"], "stack_groups": {}
+                                "stacks": ["A/A/1"], "stack_groups": {}
                             },
                             "A/B": {
-                              "stacks": ["A/B/1"], "stack_groups": {}
+                                "stacks": ["A/B/1"], "stack_groups": {}
                             }
                         }
                     }
@@ -328,8 +331,8 @@ class TestConfigReader(object):
                     yaml.safe_dump(
                         config, stream=config_file, default_flow_style=False
                     )
-
-            config_reader = ConfigReader(project_path)
+            self.context.project_path = project_path
+            config_reader = ConfigReader(self.context)
 
             def check_stack_group(stack_group, details):
                 assert sorted(details["stacks"]) == sorted([
@@ -337,13 +340,13 @@ class TestConfigReader(object):
                 ])
                 for sub_group in stack_group.sub_stack_groups:
                     sub_group_details =\
-                      details["stack_groups"][sub_group.path]
+                        details["stack_groups"][sub_group.path]
                     check_stack_group(sub_group, sub_group_details)
 
             for i, target in enumerate(targets):
                 stack_group =\
-                  config_reader.construct_stack_group(target)
+                    config_reader.construct_stack_group(target)
                 expected = results[i]
                 check_stack_group(
-                  stack_group, expected[stack_group.path]
+                    stack_group, expected[stack_group.path]
                 )

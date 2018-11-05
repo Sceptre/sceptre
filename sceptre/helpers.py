@@ -8,6 +8,7 @@ import os
 import sys
 import re
 
+from copy import copy
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
 
@@ -46,20 +47,23 @@ def recurse_into_sub_stack_groups(func, factory=dict):
     def decorated(self, *args, **kwargs):
         function_name = func.__name__
         responses = factory()
-        num_stack_groups = len(self.stack_group.sub_stack_groups)
+        nkwargs = copy(kwargs)
+
+        stack_group = kwargs.get('stack_group', self.stack_group)
+        kwargs.update({'stack_group': stack_group})
+        num_stack_groups = len(stack_group.sub_stack_groups)
         # As commands carried out by sub-stack_groups may be blocking,
         # execute them on separate threads.
         if num_stack_groups:
             with ThreadPoolExecutor(max_workers=num_stack_groups)\
                     as thread_stack_group:
-                futures = [
-                    thread_stack_group.submit(
-                        getattr(stack_group, function_name),
-                        *args,
-                        **kwargs
-                    )
-                    for stack_group in self.stack_group.sub_stack_groups
-                ]
+                futures = []
+                for stack_group in stack_group.sub_stack_groups:
+                    nkwargs.update({'stack_group': stack_group})
+
+                    futures.append(thread_stack_group.submit(
+                        getattr(self, function_name), *args, **nkwargs
+                    ))
                 for future in as_completed(futures):
                     response = future.result()
                     if response:

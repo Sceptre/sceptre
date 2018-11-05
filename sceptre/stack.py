@@ -10,8 +10,11 @@ with a particular stack.
 
 import logging
 
-from .helpers import get_external_stack_name
-from .resolvers import ResolvableProperty
+from sceptre.connection_manager import ConnectionManager
+from sceptre.template import Template
+from sceptre.helpers import get_external_stack_name
+from sceptre.hooks import HookProperty
+from sceptre.resolvers import ResolvableProperty
 
 
 class Stack(object):
@@ -30,6 +33,7 @@ class Stack(object):
     parameters = ResolvableProperty("parameters")
     sceptre_user_data = ResolvableProperty("sceptre_user_data")
     notifications = ResolvableProperty("notifications")
+    hooks = HookProperty("hooks")
 
     def __init__(
         self, name, project_code, template_path, region, parameters=None,
@@ -91,3 +95,23 @@ class Stack(object):
                 stack_timeout=self.stack_timeout
             )
         )
+
+    @property
+    def template(self):
+        """
+        Returns the CloudFormation template used to create the stack.
+
+        :returns: The stack's template.
+        :rtype: str
+        """
+        self.connection_manager = ConnectionManager(
+            self.region, self.profile, self.external_name
+        )
+        if self._template is None:
+            self._template = Template(
+                path=self.template_path,
+                sceptre_user_data=self.sceptre_user_data,
+                s3_details=self.s3_details,
+                connection_manager=self.connection_manager
+            )
+        return self._template

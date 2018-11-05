@@ -3,9 +3,9 @@ import webbrowser
 
 from sceptre.context import SceptreContext
 from sceptre.cli.helpers import (
-          catch_exceptions,
-          write
-        )
+    catch_exceptions,
+    write
+)
 from sceptre.plan.plan import SceptrePlan
 
 
@@ -20,18 +20,18 @@ def validate_command(ctx, path):
     Validates the template used for stack in PATH.
     """
     context = SceptreContext(
-                command_path=path,
-                project_path=ctx.obj.get("project_path"),
-                user_variables=ctx.obj.get("user_variables"),
-                options=ctx.obj.get("options"),
-                output_format=ctx.obj.get("output_format")
-            )
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options"),
+        output_format=ctx.obj.get("output_format")
+    )
 
     plan = SceptrePlan(context)
     plan.validate()
 
     if plan.responses[0]['ResponseMetadata']['HTTPStatusCode'] == 200:
-        del plan.response['ResponseMetadata']
+        del plan.responses[0]['ResponseMetadata']
         click.echo("Template is valid. Template details:\n")
     write(plan.responses[0], context.output_format)
 
@@ -47,11 +47,11 @@ def generate_command(ctx, path):
     Prints the template used for stack in PATH.
     """
     context = SceptreContext(
-                command_path=path,
-                project_path=ctx.obj.get("project_path"),
-                user_variables=ctx.obj.get("user_variables"),
-                options=ctx.obj.get("options")
-            )
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options")
+    )
 
     plan = SceptrePlan(context)
     plan.generate()
@@ -70,12 +70,12 @@ def estimate_cost_command(ctx, path):
     browser with the returned URI.
     """
     context = SceptreContext(
-                command_path=path,
-                project_path=ctx.obj.get("project_path"),
-                user_variables=ctx.obj.get("user_variables"),
-                options=ctx.obj.get("options"),
-                output_format=ctx.obj.get("output_format")
-            )
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options"),
+        output_format=ctx.obj.get("output_format")
+    )
 
     plan = SceptrePlan(context)
     plan.estimate_cost()

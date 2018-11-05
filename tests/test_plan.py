@@ -1,16 +1,17 @@
 import pytest
-from mock import Mock, patch, sentinel
+from mock import MagicMock, patch, sentinel
 
+from sceptre.context import SceptreContext
 from sceptre.stack import Stack
+from sceptre.config.reader import ConfigReader
 from sceptre.stack_group import StackGroup
 from sceptre.plan.plan import SceptrePlan
-from sceptre.plan.type import PlanType
 
 
 class TestSceptrePlan(object):
 
     def setup_method(self, test_method):
-        self.patcher_SceptrePlanner = patch("sceptre.plan.plan.SceptrePlanner")
+        self.patcher_SceptrePlan = patch("sceptre.plan.plan.SceptrePlan")
         self.stack = Stack(
             name=sentinel.stack_name, project_code=sentinel.project_code,
             template_path=sentinel.template_path, region=sentinel.region,
@@ -23,44 +24,37 @@ class TestSceptrePlan(object):
             on_failure=sentinel.on_failure,
             stack_timeout=sentinel.stack_timeout
         )
-
-        self.stack_group = StackGroup(
-            path="path",
-            options=sentinel.options
-        )
+        self.mock_context = MagicMock(spec=SceptreContext)
+        self.mock_config_reader = MagicMock(spec=ConfigReader)
+        self.mock_stack_group = MagicMock(spec=StackGroup)
+        self.mock_context.project_path = sentinel.project_path
+        self.mock_context.command_path = sentinel.command_path
+        self.mock_context.config_file = sentinel.config_file
+        self.mock_context.full_config_path.return_value =\
+            sentinel.full_config_path
+        self.mock_context.user_variables = {}
+        self.mock_context.options = {}
+        self.mock_context.no_colour = True
+        self.mock_config_reader.context = self.mock_context
 
     def test_planner_executes_without_params(self):
-        plan = SceptrePlan('test/path', 'test-command', self.stack_group)
-        plan.execute = Mock(name="execute")
-        plan.execute.return_value = sentinel.success
-
-        result = plan.execute()
-        plan.execute.assert_called_once_with()
+        plan = MagicMock(spec=SceptrePlan)
+        plan.context = self.mock_context
+        plan.launch.return_value = sentinel.success
+        result = plan.launch()
+        plan.launch.assert_called_once_with()
         assert result == sentinel.success
 
     def test_planner_executes_with_params(self):
-        plan = SceptrePlan('test/path', 'test-command', self.stack_group)
-        plan.execute = Mock(name='execute')
-        plan.execute.return_value = sentinel.success
-
-        result = plan.execute('test-attribute')
-        plan.execute.assert_called_once_with('test-attribute')
+        plan = MagicMock(spec=SceptrePlan)
+        plan.context = self.mock_context
+        plan.launch.return_value = sentinel.success
+        result = plan.launch('test-attribute')
+        plan.launch.assert_called_once_with('test-attribute')
         assert result == sentinel.success
-
-    def test_stack_group_type_is_set(self):
-        plan = SceptrePlan('test/path', 'test-command', self.stack_group)
-        assert plan.plan_type == PlanType.STACK_GROUP
-
-    def test_stack_type_is_set(self):
-        plan = SceptrePlan('test/path', 'test-command', self.stack)
-        assert plan.plan_type == PlanType.STACK
 
     def test_command_not_found_error_raised(self):
         with pytest.raises(AttributeError):
-            plan = SceptrePlan('test/path', 'test-command', self.stack)
-            plan.execute()
-
-    def test_command_not_callable_error_raised(self):
-        with pytest.raises(TypeError):
-            plan = SceptrePlan('test/path', 'name', self.stack)
-            plan.execute()
+            plan = MagicMock(spec=SceptrePlan)
+            plan.context = self.mock_context
+            plan.invalid_command()

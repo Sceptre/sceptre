@@ -21,7 +21,7 @@ class TestHooksFunctions(object):
         mock_hook_after = MagicMock(spec=Hook)
         mock_object = MagicMock()
 
-        mock_object.hooks = {
+        mock_object.stack.hooks = {
             'before_mock_function': [mock_hook_before],
             'after_mock_function': [mock_hook_after]
         }

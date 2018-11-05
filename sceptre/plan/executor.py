@@ -7,6 +7,7 @@ executing the command specified in a SceptrePlan.
 """
 
 from sceptre.plan.actions import StackActions
+from botocore.exceptions import ClientError
 
 
 class SceptrePlanExecutor(object):
@@ -17,11 +18,31 @@ class SceptrePlanExecutor(object):
     def execute(self, plan, *args):
         if plan.stack_group.stacks:
             for stack in plan.stack_group.stacks:
-                response = getattr(StackActions(stack), plan.command)(*args)
+                try:
+                    response = getattr(
+                        StackActions(stack), plan.command
+                    )(*args)
+                except(ClientError) as exp:
+                    not_exists = exp.response.get("Error", {}).get("Message")
+                    if not_exists and not_exists.endswith("does not exist"):
+                        continue
+                    else:
+                        raise
                 plan.responses.append(response)
         elif plan.stack_group.sub_stack_groups:
             for sub_stack_group in plan.stack_group.sub_stack_groups:
                 for stack in sub_stack_group.stacks:
-                    response = getattr(
-                            StackActions(stack), plan.command)(*args)
-                    plan.responses.append(response)
+                    try:
+                        response = getattr(
+                                StackActions(stack), plan.command)(*args)
+                    except(ClientError) as exp:
+                        not_exists = exp.response.get(
+                            "Error", {}
+                        ).get("Message")
+                        if not_exists and not_exists.endswith(
+                            "does not exist"
+                        ):
+                            continue
+                        else:
+                            raise
+                        plan.responses.append(response)
