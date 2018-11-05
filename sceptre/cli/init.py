@@ -89,8 +89,7 @@ def _create_new_stack_group(context, new_path):
     :type path: str
     """
     # Create full path to stack_group
-    full_config_path = os.path.join(context.project_path, context.config_path,
-                                    new_path)
+    full_config_path = os.path.join(context.full_config_path, new_path)
     init_config_msg = 'Do you want initialise {}'.format(context.config_file)
 
     # Make folders for the stack_group
@@ -120,7 +119,7 @@ def _get_nested_config(context, path):
     :returns: The nested config.
     :rtype: dict
     """
-    full_config_path = os.path.join(context.project_path, context.config_path)
+    full_config_path = context.full_config_path
     config = {}
     for root, _, files in os.walk(full_config_path):
         # Check that folder is within the final stack_group path
