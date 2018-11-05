@@ -1,9 +1,9 @@
 import click
 
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import catch_exceptions, get_stack_or_stack_group
+from sceptre.cli.helpers import catch_exceptions
 from sceptre.cli.helpers import confirmation
-from sceptre.stack_status import StackStatus
+from sceptre.cli.helpers import stack_status_exit_code
 from sceptre.plan.plan import SceptrePlan
 
 
@@ -29,27 +29,22 @@ def delete_command(ctx, path, change_set_name, yes):
                 options=ctx.obj.get("options")
             )
 
-    action = "delete"
+    plan = SceptrePlan(context)
 
-    stack, stack_group = get_stack_or_stack_group(context)
-
-    if stack:
+    if len(plan.stack_group.stacks) == 1:
         if change_set_name:
-            confirmation(action, yes, change_set=change_set_name, stack=path)
-            command = 'delete_change_set'
-            plan = SceptrePlan(context, command, stack)
-            plan.execute(change_set_name)
+            confirmation(
+                plan.delete_change_set.__name__,
+                yes,
+                change_set=change_set_name,
+                stack=path
+            )
+            plan.delete_change_set()
         else:
-            confirmation(action, yes, stack=path)
-            plan = SceptrePlan(context, action, stack)
-            response = plan.execute()
-            if response != StackStatus.COMPLETE:
-                exit(1)
-    elif stack_group:
-        confirmation(action, yes, stack_group=path)
-        plan = SceptrePlan(context, action, stack_group)
-        response = plan.execute()
-        if not all(
-            status == StackStatus.COMPLETE for status in response.values()
-        ):
-            exit(1)
+            confirmation(plan.delete.__name__, yes, stack=path)
+            plan.delete()
+            exit(stack_status_exit_code(plan))
+    elif plan.stack_group:
+        confirmation(plan.delete.__name__, yes, stack_group=path)
+        plan.delete()
+        exit(stack_status_exit_code(plan))

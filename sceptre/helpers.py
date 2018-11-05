@@ -46,7 +46,7 @@ def recurse_into_sub_stack_groups(func, factory=dict):
     def decorated(self, *args, **kwargs):
         function_name = func.__name__
         responses = factory()
-        num_stack_groups = len(self.sub_stack_groups)
+        num_stack_groups = len(self.stack_group.sub_stack_groups)
         # As commands carried out by sub-stack_groups may be blocking,
         # execute them on separate threads.
         if num_stack_groups:
@@ -58,7 +58,7 @@ def recurse_into_sub_stack_groups(func, factory=dict):
                         *args,
                         **kwargs
                     )
-                    for stack_group in self.sub_stack_groups
+                    for stack_group in self.stack_group.sub_stack_groups
                 ]
                 for future in as_completed(futures):
                     response = future.result()

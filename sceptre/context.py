@@ -5,7 +5,7 @@ class SceptreContext(object):
 
     def __init__(self, project_path, command_path,
                  user_variables=None, options=None, output_format=None,
-                 no_colour=None):
+                 no_colour=False):
         # project_path: absolute path to the base sceptre project folder
         # e.g. absolute_path/to/sceptre_directory
         self.project_path = project_path

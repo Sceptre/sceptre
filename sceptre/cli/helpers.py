@@ -1,5 +1,4 @@
 import logging
-import os
 import sys
 from functools import wraps
 from json import JSONEncoder
@@ -7,13 +6,12 @@ from json import JSONEncoder
 import click
 import yaml
 
-from sceptre.config.reader import ConfigReader
-
 from boto3.exceptions import Boto3Error
 from botocore.exceptions import BotoCoreError, ClientError
 from jinja2.exceptions import TemplateError
 
 from sceptre.exceptions import SceptreException
+from sceptre.stack_status import StackStatus
 from sceptre.stack_status_colourer import StackStatusColourer
 
 
@@ -82,7 +80,6 @@ def write(var, output_format="str", no_colour=True):
         stream = yaml.safe_dump(var, default_flow_style=False)
     if output_format == "str":
         stream = var
-
     if not no_colour:
         stack_status_colourer = StackStatusColourer()
         stream = stack_status_colourer.colour(stream)
@@ -90,40 +87,13 @@ def write(var, output_format="str", no_colour=True):
     click.echo(stream)
 
 
-def get_stack_or_stack_group(context):
-    """
-    Parses the path to generate relevant Stack Group and Stack object.
-
-    :param context: Cli context.
-    :type context: click.Context
-    :param path: Path to either stack config or stack_group folder.
-    :type path: str
-    """
-    stack = None
-    stack_group = None
-
-    config_reader = ConfigReader(context)
-
-    if os.path.splitext(context.command_path)[1]:
-        stack = config_reader.construct_stack(context.command_path)
+def stack_status_exit_code(plan):
+    if not all(
+            status == StackStatus.COMPLETE
+            for status in plan.responses):
+        return 1
     else:
-        stack_group = config_reader.construct_stack_group(context.command_path)
-
-    return (stack, stack_group)
-
-
-def get_stack(context, path):
-    """
-    Parses the path to generate relevant StackGroup and Stack object.
-
-    :param context: Cli context.
-    :type context: click.Context
-    :param path: Path to either stack config or stack_group folder.
-    :type path: str
-    """
-    return ConfigReader(
-        context.project_path, context.options
-    ).construct_stack(path)
+        return 0
 
 
 def setup_logging(debug, no_colour):
