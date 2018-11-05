@@ -20,7 +20,7 @@ def execute_command(ctx, path, change_set_name, yes):
 
     """
     context = SceptreContext(
-                path=path,
+                command_path=path,
                 project_path=ctx.obj.get("project_path", None),
                 user_variables=ctx.obj.get("user_variables", {}),
                 options=ctx.obj.get("options", {})

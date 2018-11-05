@@ -28,7 +28,7 @@ def list_resources(ctx, path):
 
     """
     context = SceptreContext(
-                path=path,
+                command_path=path,
                 project_path=ctx.obj.get("project_path", None),
                 user_variables=ctx.obj.get("user_variables", {}),
                 options=ctx.obj.get("options", {}),
@@ -60,7 +60,7 @@ def list_outputs(ctx, path, export):
 
     """
     context = SceptreContext(
-                path=path,
+                command_path=path,
                 project_path=ctx.obj.get("project_path", None),
                 user_variables=ctx.obj.get("user_variables", {}),
                 options=ctx.obj.get("options", {})
@@ -94,7 +94,7 @@ def list_change_sets(ctx, path):
 
     """
     context = SceptreContext(
-                path=path,
+                command_path=path,
                 project_path=ctx.obj.get("project_path", None),
                 user_variables=ctx.obj.get("user_variables", {}),
                 options=ctx.obj.get("options", {})

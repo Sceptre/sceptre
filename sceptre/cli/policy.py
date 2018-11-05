@@ -21,7 +21,7 @@ def set_policy_command(ctx, path, policy_file, built_in):
     Sets a specific stack policy for either a file or using a built-in policy.
     """
     context = SceptreContext(
-                path=path,
+                command_path=path,
                 project_path=ctx.obj.get("project_path", None),
                 user_variables=ctx.obj.get("user_variables", {}),
                 options=ctx.obj.get("options", {})
