@@ -22,11 +22,9 @@ from sceptre.config.graph import StackDependencyGraph
 from sceptre.connection_manager import ConnectionManager
 from sceptre.helpers import recurse_into_sub_stack_groups
 from sceptre.helpers import recurse_sub_stack_groups_with_graph
-from sceptre.hooks import HookProperty
 from sceptre.hooks import add_stack_hooks
 from sceptre.stack_status import StackStatus
 from sceptre.stack_status import StackChangeSetStatus
-from sceptre.template import Template
 
 from sceptre.exceptions import CannotUpdateFailedStackError
 from sceptre.exceptions import UnknownStackStatusError
@@ -163,7 +161,7 @@ class StackGroupActions(object):
         :type events: dict
         :param command: The stack command to run. Can be either "launch" or \
         "delete".
-        :type command: str
+     :type command: str
         """
         for dependency in dependencies.as_dict()[stack.name]:
             if dependency in threading_events:
@@ -252,33 +250,14 @@ class StackActions(object):
     :param name: stack
     :type Stack: object
     """
-    hooks = HookProperty("hooks")
 
     def __init__(self, stack):
         self.stack = stack
         self.name = self.stack.name
         self.logger = logging.getLogger(__name__)
-        self.hooks = self.stack.hooks
         self.connection_manager = ConnectionManager(
             self.stack.region, self.stack.profile, self.stack.external_name
         )
-
-    @property
-    def template(self):
-        """
-        Returns the CloudFormation template used to create the stack.
-
-        :returns: The stack's template.
-        :rtype: str
-        """
-        if self.stack._template is None:
-            self.stack._template = Template(
-                path=self.stack.template_path,
-                sceptre_user_data=self.stack.sceptre_user_data,
-                s3_details=self.stack.s3_details,
-                connection_manager=self.connection_manager
-            )
-        return self.stack._template
 
     @add_stack_hooks
     def create(self):
@@ -303,7 +282,8 @@ class StackActions(object):
 
         if self.stack.on_failure:
             create_stack_kwargs.update({"OnFailure": self.stack.on_failure})
-        create_stack_kwargs.update(self.template.get_boto_call_parameter())
+        create_stack_kwargs.update(
+            self.stack.template.get_boto_call_parameter())
         create_stack_kwargs.update(self._get_role_arn())
         create_stack_kwargs.update(self._get_stack_timeout())
         response = self.connection_manager.call(
@@ -339,7 +319,8 @@ class StackActions(object):
                 for k, v in self.stack.tags.items()
             ]
         }
-        update_stack_kwargs.update(self.template.get_boto_call_parameter())
+        update_stack_kwargs.update(
+            self.stack.template.get_boto_call_parameter())
         update_stack_kwargs.update(self._get_role_arn())
         response = self.connection_manager.call(
             service="cloudformation",
@@ -598,9 +579,9 @@ class StackActions(object):
             policy = f.read()
 
         self.logger.debug(
-           "%s - Setting stack policy: \n%s",
-           self.stack.name,
-           policy
+            "%s - Setting stack policy: \n%s",
+            self.stack.name,
+            policy
         )
 
         self.connection_manager.call(
@@ -650,7 +631,7 @@ class StackActions(object):
             ]
         }
         create_change_set_kwargs.update(
-            self.template.get_boto_call_parameter()
+            self.stack.template.get_boto_call_parameter()
         )
         create_change_set_kwargs.update(self._get_role_arn())
         self.logger.debug(
@@ -752,6 +733,52 @@ class StackActions(object):
                 "StackName": self.stack.external_name
             }
         )
+
+    def generate(self):
+        """
+        Returns a generated template for a given Stack
+        """
+        return self.stack.template.body
+
+    def validate(self):
+        """
+        Validates the stack's CloudFormation template.
+
+        Raises an error if the template is invalid.
+
+        :returns: Information about the template.
+        :rtype: dict
+        :raises: botocore.exceptions.ClientError
+        """
+        self.logger.debug("%s - Validating template", self.stack.name)
+        response = self.connection_manager.call(
+            service="cloudformation",
+            command="validate_template",
+            kwargs=self.stack.template.get_boto_call_parameter()
+        )
+        self.logger.debug(
+            "%s - Validate template response: %s", self.stack.name, response
+        )
+        return response
+
+    def estimate_cost(self):
+        """
+        Estimates a stack's cost.
+
+        :returns: An estimate of the stack's cost.
+        :rtype: dict
+        :raises: botocore.exceptions.ClientError
+        """
+        self.logger.debug("%s - Estimating template cost", self.stack.name)
+        response = self.connection_manager.call(
+            service="cloudformation",
+            command="estimate_template_cost",
+            kwargs=self.stack.template.get_boto_call_parameter()
+        )
+        self.logger.debug(
+            "%s - Estimate stack cost response: %s", self.stack.name, response
+        )
+        return response
 
     def get_status(self):
         """
@@ -986,174 +1013,3 @@ class StackActions(object):
             return StackChangeSetStatus.DEFUNCT
         else:  # pragma: no cover
             raise Exception("This else should not be reachable.")
-
-class TemplateActions(object):
-    def __init__(self):
-        self.logger = logging.getLogger(__name__)
-
-        self.path = path
-        self.connection_manager = connection_manager
-
-    def upload_to_s3(self):
-        """
-        Uploads the template to ``bucket_name`` and returns its URL.
-
-        The template is uploaded with the ``bucket_key``.
-
-        :returns: The URL of the template object in S3.
-        :rtype: str
-        :raises: botocore.exceptions.ClientError
-
-        """
-        self.logger.debug("%s - Uploading template to S3...", self.name)
-
-        with self._boto_s3_lock:
-            if not self._bucket_exists():
-                self._create_bucket()
-
-        # Remove any leading or trailing slashes the user may have added.
-        bucket_name = self.s3_details["bucket_name"]
-        bucket_key = self.s3_details["bucket_key"]
-
-        self.logger.debug(
-            "%s - Uploading template to: 's3://%s/%s'",
-            self.name, bucket_name, bucket_key
-        )
-        self.connection_manager.call(
-            service="s3",
-            command="put_object",
-            kwargs={
-                "Bucket": bucket_name,
-                "Key": bucket_key,
-                "Body": self.body,
-                "ServerSideEncryption": "AES256"
-            }
-        )
-
-        url = "https://{0}.s3.amazonaws.com/{1}".format(
-            bucket_name, bucket_key
-        )
-
-        self.logger.debug("%s - Template URL: '%s'", self.name, url)
-
-        return url
-
-    def _bucket_exists(self):
-        """
-        Checks if the bucket ``bucket_name`` exists.
-
-        :returns: Boolean whether the bucket exists
-        :rtype: bool
-        :raises: botocore.exception.ClientError
-
-        """
-        bucket_name = self.s3_details["bucket_name"]
-        self.logger.debug(
-            "%s - Attempting to find template bucket '%s'",
-            self.name, bucket_name
-        )
-        try:
-            self.connection_manager.call(
-                service="s3",
-                command="head_bucket",
-                kwargs={"Bucket": bucket_name}
-            )
-        except botocore.exceptions.ClientError as exp:
-            if exp.response["Error"]["Message"] == "Not Found":
-                self.logger.debug(
-                    "%s - %s bucket not found.", self.name, bucket_name
-                )
-                return False
-            else:
-                raise
-        self.logger.debug(
-            "%s - Found template bucket '%s'", self.name, bucket_name
-        )
-        return True
-
-    def _create_bucket(self):
-        """
-        Create the s3 bucket ``bucket_name``.
-
-        :raises: botocore.exception.ClientError
-
-        """
-        bucket_name = self.s3_details["bucket_name"]
-
-        self.logger.debug(
-            "%s - Creating new bucket '%s'", self.name, bucket_name
-        )
-
-        if self.connection_manager.region == "us-east-1":
-            self.connection_manager.call(
-                service="s3",
-                command="create_bucket",
-                kwargs={"Bucket": bucket_name}
-            )
-        else:
-            self.connection_manager.call(
-                service="s3",
-                command="create_bucket",
-                kwargs={
-                    "Bucket": bucket_name,
-                    "CreateBucketConfiguration": {
-                        "LocationConstraint": self.connection_manager.region
-                    }
-                }
-            )
-
-    def get_boto_call_parameter(self):
-        """
-        Returns the CloudFormation template location.
-
-        Uploads the template to S3 and returns the object's URL, or returns
-        the template itself.
-
-        :returns: The boto call parameter for the template.
-        :rtype: dict
-        """
-        if self.s3_details:
-            url = self.upload_to_s3()
-            return {"TemplateURL": url}
-        else:
-            return {"TemplateBody": self.body}
-
-    def validate(self):
-        """
-        Validates the stack's CloudFormation template.
-
-        Raises an error if the template is invalid.
-
-        :returns: Information about the template.
-        :rtype: dict
-        :raises: botocore.exceptions.ClientError
-        """
-        self.logger.debug("%s - Validating template", self.name)
-        response = self.connection_manager.call(
-            service="cloudformation",
-            command="validate_template",
-            kwargs=self.get_boto_call_parameter()
-        )
-        self.logger.debug(
-            "%s - Validate template response: %s", self.name, response
-        )
-        return response
-
-    def estimate_cost(self):
-        """
-        Estimates a stack's cost.
-
-        :returns: An estimate of the stack's cost.
-        :rtype: dict
-        :raises: botocore.exceptions.ClientError
-        """
-        self.logger.debug("%s - Estimating template cost", self.name)
-        response = self.connection_manager.call(
-            service="cloudformation",
-            command="estimate_template_cost",
-            kwargs=self.get_boto_call_parameter()
-        )
-        self.logger.debug(
-            "%s - Estimate stack cost response: %s", self.name, response
-        )
-        return response

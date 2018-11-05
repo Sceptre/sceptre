@@ -9,7 +9,6 @@ from mock import MagicMock, patch, sentinel
 import pytest
 import click
 
-from sceptre.context import SceptreContext
 from sceptre.cli import cli
 from sceptre.config.reader import ConfigReader
 from sceptre.stack import Stack
@@ -17,7 +16,6 @@ from sceptre.stack_group import StackGroup
 from sceptre.stack_status import StackStatus
 from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
 from sceptre.cli.helpers import CustomJsonEncoder, catch_exceptions
-from sceptre.cli.helpers import get_stack_or_stack_group
 from botocore.exceptions import ClientError
 from sceptre.exceptions import SceptreException
 
@@ -688,42 +686,3 @@ class TestCli(object):
         encoder = CustomJsonEncoder()
         response = encoder.encode(datetime.datetime(2016, 5, 3))
         assert response == '"2016-05-03 00:00:00"'
-
-    def test_get_stack_or_stack_group_with_stack(self):
-        context = MagicMock(spec=SceptreContext)
-        context.project_path = "tests/fixtures"
-        context.command_path = "account/stack-group/region/vpc.yaml"
-        context.user_variables = sentinel.user_variables
-
-        stack, stack_group = get_stack_or_stack_group(context)
-        self.mock_ConfigReader.assert_called_once_with(
-            context.project_path, context.user_variables
-        )
-        assert isinstance(stack, Stack)
-        assert stack_group is None
-
-    def test_get_stack_or_stack_group_with_nested_stack(self):
-        context = MagicMock(spec=SceptreContext)
-        context.project_path = "tests/fixtures"
-        context.command_path = "account/stack-group/region/vpc.yaml"
-        context.user_variables = sentinel.user_variables
-        stack, stack_group = get_stack_or_stack_group(context)
-        self.mock_ConfigReader.assert_called_once_with(
-            context.project_path, context.user_variables
-        )
-        assert isinstance(stack, Stack)
-        assert stack_group is None
-
-    def test_get_stack_or_stack_group_with_group(self):
-        context = MagicMock(spec=SceptreContext)
-        context.project_path = "tests/fixtures"
-        context.command_path = "account/stack-group/region"
-        context.user_variables = sentinel.user_variables
-
-        stack, stack_group = get_stack_or_stack_group(context)
-
-        self.mock_ConfigReader.assert_called_once_with(
-           context.project_path, context.user_variables
-        )
-        assert isinstance(stack_group, StackGroup)
-        assert stack is None

@@ -46,6 +46,7 @@ class HookProperty(object):
     :param name: Attribute suffix used to store the property in the instance.
     :type name: string
     """
+
     def __init__(self, name):
         self.name = "_" + name
         self.logger = logging.getLogger(__name__)
@@ -99,9 +100,9 @@ def add_stack_hooks(func):
     """
     @wraps(func)
     def decorated(self, *args, **kwargs):
-        execute_hooks(self.hooks.get("before_" + func.__name__))
+        execute_hooks(self.stack.hooks.get("before_" + func.__name__))
         response = func(self, *args, **kwargs)
-        execute_hooks(self.hooks.get("after_" + func.__name__))
+        execute_hooks(self.stack.hooks.get("after_" + func.__name__))
 
         return response
 

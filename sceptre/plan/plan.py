@@ -28,7 +28,7 @@ class SceptrePlan(SceptrePlanExecutor):
             self.command = command
         else:
             raise TypeError(
-                    "Command passed to plan.resolve() must have a value")
+                "Command passed to plan.resolve() must have a value")
 
     def _generate_stack_group(self):
         """
@@ -42,13 +42,13 @@ class SceptrePlan(SceptrePlanExecutor):
         if path.splitext(self.context.command_path)[1]:
             stack_group = StackGroup(self.context.command_path)
             stack = config_reader.construct_stack(
-                        (self.context.command_path)
-                    )
+                (self.context.command_path)
+            )
             stack_group.stacks.append(stack)
             return stack_group
         else:
             stack_group = config_reader.construct_stack_group(
-                    self.context.command_path)
+                self.context.command_path)
             return stack_group
 
     def template(self, *args):
@@ -295,4 +295,11 @@ class SceptrePlan(SceptrePlanExecutor):
         :raises: botocore.exceptions.ClientError
         """
         self._resolve(command=self.estimate_cost.__name__)
+        self._execute(*args)
+
+    def generate(self, *args):
+        """
+        Returns a generated template for a given Stack
+        """
+        self._resolve(command=self.generate.__name__)
         self._execute(*args)

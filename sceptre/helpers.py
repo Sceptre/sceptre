@@ -58,7 +58,7 @@ def recurse_into_sub_stack_groups(func, factory=dict):
                         *args,
                         **kwargs
                     )
-                    for stack_group in self.stack_group.sub_stack_groups
+                    for stack_group in self.sub_stack_groups
                 ]
                 for future in as_completed(futures):
                     response = future.result()

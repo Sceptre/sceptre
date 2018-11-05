@@ -59,23 +59,25 @@ class TestHelpers(object):
         assert response == {"stack_group": sentinel.response}
 
     def test_recurse_into_sub_stack_groups_with_non_leaf_object(self):
-        class MockStackGroup(object):
 
-            def __init__(self, name):
-                self.name = name
-                self.sub_stack_groups = []
+        mock_group = MagicMock(spec=StackGroup)
+        mock_group_2 = MagicMock(spec=StackGroup)
+        mock_group_3 = MagicMock(spec=StackGroup)
 
-            @recurse_into_sub_stack_groups
-            def do(self):
-                return {self.name: sentinel.response}
+        mock_group.name = "stack_group_1"
+        mock_group_2.name = "stack_group_2"
+        mock_group_3.name = "stack_group_3"
 
-        mock_group = MockStackGroup("stack_group_1")
-
-        # Add leaf sub-stack_groups
         mock_group.sub_stack_groups = [
-            MockStackGroup("stack_group_2"), MockStackGroup("stack_group_3")
+            mock_group_2, mock_group_3
         ]
 
+        def do(self):
+            return {self.name: sentinel.response}
+        mock_group.do = types.MethodType(
+            recurse_into_sub_stack_groups(do),
+            mock_group
+        )
         response = mock_group.do()
         assert response == {
             "stack_group_1": sentinel.response,
