@@ -17,7 +17,7 @@ class TestSceptreContext(object):
             user_variables=sentinel.user_variables,
             options=sentinel.options,
             output_format=sentinel.output_format,
-            no_color=sentinel.no_color
+            no_colour=sentinel.no_colour
         )
 
         sentinel.project_path = "project_path/to/sceptre"
@@ -30,7 +30,7 @@ class TestSceptreContext(object):
             user_variables=sentinel.user_variables,
             options=sentinel.options,
             output_format=sentinel.output_format,
-            no_color=sentinel.no_color
+            no_colour=sentinel.no_colour
         )
 
         full_config_path = path.join("project_path", self.config_path)
@@ -43,7 +43,7 @@ class TestSceptreContext(object):
             user_variables=sentinel.user_variables,
             options=sentinel.options,
             output_format=sentinel.output_format,
-            no_color=sentinel.no_color
+            no_colour=sentinel.no_colour
         )
         full_command_path = path.join("project_path",
                                       self.config_path,
@@ -58,7 +58,7 @@ class TestSceptreContext(object):
             user_variables=sentinel.user_variables,
             options=sentinel.options,
             output_format=sentinel.output_format,
-            no_color=sentinel.no_color
+            no_colour=sentinel.no_colour
         )
         full_templates_path = path.join("project_path", self.templates_path)
         assert context.full_templates_path() == full_templates_path

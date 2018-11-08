@@ -74,6 +74,7 @@ def write(var, output_format="str", no_colour=True):
     :param no_colour: Whether to colour stack statuses
     :type no_colour: bool
     """
+    stream = var
     if output_format == "json":
         encoder = CustomJsonEncoder()
         stream = encoder.encode(var)

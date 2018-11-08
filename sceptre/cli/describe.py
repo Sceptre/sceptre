@@ -45,7 +45,7 @@ def describe_change_set(ctx, path, change_set_name, verbose):
     description = plan.execute(change_set_name)
     if not verbose:
         description = simplify_change_set_description(description)
-    write(description, context.obj["output_format"])
+    write(description, context.output_format)
 
 
 @describe_group.command(name="policy")
