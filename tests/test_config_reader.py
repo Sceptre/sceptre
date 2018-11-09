@@ -16,16 +16,16 @@ from sceptre.config.reader import ConfigReader
 
 
 class TestConfigReader(object):
-    @patch("sceptre.config.reader.ConfigReader._check_valid_sceptre_dir")
-    def setup_method(self, test_method, mock_check_valid_sceptre_dir):
+    @patch("sceptre.config.reader.ConfigReader._check_valid_project_path")
+    def setup_method(self, test_method, mock_check_valid_project_path):
         self.runner = CliRunner()
-        self.test_sceptre_directory = os.path.join(
+        self.test_project_pathectory = os.path.join(
             os.getcwd(), "tests", "fixtures"
         )
 
     def test_config_reader_correctly_initialised(self):
-        config_reader = ConfigReader(self.test_sceptre_directory)
-        assert config_reader.sceptre_dir == self.test_sceptre_directory
+        config_reader = ConfigReader(self.test_project_pathectory)
+        assert config_reader.project_path == self.test_project_pathectory
 
     def test_config_reader_with_invalid_path(self):
         with pytest.raises(InvalidSceptreDirectoryError):
@@ -44,8 +44,8 @@ class TestConfigReader(object):
     ])
     def test_read_reads_config_file(self, filepaths, target):
         with self.runner.isolated_filesystem():
-            sceptre_dir = os.path.abspath('./example')
-            config_dir = os.path.join(sceptre_dir, "config")
+            project_path = os.path.abspath('./example')
+            config_dir = os.path.join(project_path, "config")
             os.makedirs(config_dir)
 
             for rel_path in filepaths:
@@ -63,18 +63,18 @@ class TestConfigReader(object):
                         config, stream=config_file, default_flow_style=False
                     )
 
-            config = ConfigReader(sceptre_dir).read(target)
+            config = ConfigReader(project_path).read(target)
 
             assert config == {
-                "sceptre_dir": sceptre_dir,
+                "project_path": project_path,
                 "stack_group_path": os.path.split(target)[0],
                 "filepath": target
             }
 
     def test_read_reads_config_file_with_base_config(self):
         with self.runner.isolated_filesystem():
-            sceptre_dir = os.path.abspath('./example')
-            config_dir = os.path.join(sceptre_dir, "config")
+            project_path = os.path.abspath('./example')
+            config_dir = os.path.join(project_path, "config")
             stack_group_dir = os.path.join(config_dir, "A")
 
             os.makedirs(stack_group_dir)
@@ -90,12 +90,12 @@ class TestConfigReader(object):
                 "base_config": "base_config"
             }
 
-            config = ConfigReader(sceptre_dir).read(
+            config = ConfigReader(project_path).read(
                 "A/stack.yaml", base_config
             )
 
             assert config == {
-                "sceptre_dir": sceptre_dir,
+                "project_path": project_path,
                 "stack_group_path": "A",
                 "config": "config",
                 "base_config": "base_config"
@@ -103,26 +103,26 @@ class TestConfigReader(object):
 
     def test_read_with_nonexistant_filepath(self):
         with self.runner.isolated_filesystem():
-            sceptre_dir = os.path.abspath('./example')
-            config_dir = os.path.join(sceptre_dir, "config")
+            project_path = os.path.abspath('./example')
+            config_dir = os.path.join(project_path, "config")
             os.makedirs(config_dir)
 
             with pytest.raises(ConfigFileNotFoundError):
-                ConfigReader(sceptre_dir).read("stack.yaml")
+                ConfigReader(project_path).read("stack.yaml")
 
     def test_read_with_empty_config_file(self):
-        config_reader = ConfigReader(self.test_sceptre_directory)
+        config_reader = ConfigReader(self.test_project_pathectory)
         config = config_reader.read(
           "account/stack-group/region/subnets.yaml"
         )
         assert config == {
-            "sceptre_dir": self.test_sceptre_directory,
+            "project_path": self.test_project_pathectory,
             "stack_group_path": "account/stack-group/region"
         }
 
     def test_read_with_templated_config_file(self):
         config_reader = ConfigReader(
-            self.test_sceptre_directory,
+            self.test_project_pathectory,
             {"user_variable": "user_variable_value"}
         )
         config_reader.templating_vars["stack_group_config"] = {
@@ -134,7 +134,7 @@ class TestConfigReader(object):
         )
         # self.config.read({"user_variable": "user_variable_value"})
         assert config == {
-            'sceptre_dir': config_reader.sceptre_dir,
+            'project_path': config_reader.project_path,
             "stack_group_path": "account/stack-group/region",
             "parameters": {
                 "param1": "user_variable_value",
@@ -151,7 +151,7 @@ class TestConfigReader(object):
             'require_version': '<0'
         }
         with pytest.raises(VersionIncompatibleError):
-            ConfigReader(self.test_sceptre_directory)._check_version(config)
+            ConfigReader(self.test_project_pathectory)._check_version(config)
 
     @freeze_time("2012-01-01")
     @pytest.mark.parametrize("stack_name,config,expected", [
@@ -192,7 +192,7 @@ class TestConfigReader(object):
     ):
         mock_Stack.return_value = sentinel.stack
         mock_collect_s3_details.return_value = sentinel.s3_details
-        config_reader = ConfigReader(self.test_sceptre_directory)
+        config_reader = ConfigReader(self.test_project_pathectory)
         stack = config_reader.construct_stack(
             "account/stack-group/region/vpc.yaml"
         )
@@ -200,7 +200,7 @@ class TestConfigReader(object):
                 name="account/stack-group/region/vpc",
                 project_code="account_project_code",
                 template_path=os.path.join(
-                    self.test_sceptre_directory, "path/to/template"
+                    self.test_project_pathectory, "path/to/template"
                 ),
                 region="region_region",
                 profile="account_profile",
@@ -303,8 +303,8 @@ class TestConfigReader(object):
         self, filepaths, targets, results
     ):
         with self.runner.isolated_filesystem():
-            sceptre_dir = os.path.abspath('./example')
-            config_dir = os.path.join(sceptre_dir, "config")
+            project_path = os.path.abspath('./example')
+            config_dir = os.path.join(project_path, "config")
             os.makedirs(config_dir)
 
             for rel_path in filepaths:
@@ -329,7 +329,7 @@ class TestConfigReader(object):
                         config, stream=config_file, default_flow_style=False
                     )
 
-            config_reader = ConfigReader(sceptre_dir)
+            config_reader = ConfigReader(project_path)
 
             def check_stack_group(stack_group, details):
                 assert sorted(details["stacks"]) == sorted([

@@ -6,27 +6,22 @@ This module implements a SceptrePlanExecutor, which is responsible for
 executing the command specified in a SceptrePlan.
 """
 
-from sceptre.config.graph import StackDependencyGraph
 from sceptre.plan.executor import SceptrePlanExecutor
 from sceptre.plan.type import PlanType
-from sceptre import stack, stack_group
+from sceptre.stack import Stack
+from sceptre.stack_group import StackGroup
 
 
 class SceptrePlan(SceptrePlanExecutor):
-    path = ""
-    dependencies = StackDependencyGraph()
-    launch_order = []
-    command = ""
-    plan_type = ""
 
-    def __init__(self, path, command, subject):
-        self.path = path
+    def __init__(self, context, command, subject):
+        self.context = context
         self.command = command
         self.subject = subject
-        if isinstance(self.subject, stack.Stack):
+        if isinstance(self.subject, Stack):
             self.plan_type = PlanType.STACK
         elif isinstance(self.subject,
-                        stack_group.StackGroup):
+                        StackGroup):
             self.plan_type = PlanType.STACK_GROUP
 
     def execute(self, *args):

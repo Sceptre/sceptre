@@ -39,7 +39,7 @@ class TestStackGroup(object):
 
     def test_repr(self):
         self.stack_group.path = "path"
-        self.stack_group.sceptre_dir = "sceptre_dir"
+        self.stack_group.project_path = "project_path"
         self.stack_group._options = {}
         response = self.stack_group.__repr__()
         assert response == \

@@ -1,5 +1,6 @@
 import click
 
+from sceptre.context import SceptreContext
 from sceptre.cli.helpers import (
             catch_exceptions,
             get_stack_or_stack_group,
@@ -31,13 +32,20 @@ def describe_change_set(ctx, path, change_set_name, verbose):
     Describes the change set.
 
     """
-    stack, _ = get_stack_or_stack_group(ctx, path)
+    context = SceptreContext(
+                command_path=path,
+                project_path=ctx.obj.get("project_path"),
+                user_variables=ctx.obj.get("user_variables"),
+                options=ctx.obj.get("options")
+            )
+
+    stack, _ = get_stack_or_stack_group(context)
     action = 'describe_change_set'
-    plan = SceptrePlan(path, action, stack)
+    plan = SceptrePlan(context, action, stack)
     description = plan.execute(change_set_name)
     if not verbose:
         description = simplify_change_set_description(description)
-    write(description, ctx.obj["output_format"])
+    write(description, context.output_format)
 
 
 @describe_group.command(name="policy")
@@ -49,8 +57,15 @@ def describe_policy(ctx, path):
     Displays the stack policy used.
 
     """
-    stack, _ = get_stack_or_stack_group(ctx, path)
+    context = SceptreContext(
+                command_path=path,
+                project_path=ctx.obj.get("project_path"),
+                user_variables=ctx.obj.get("user_variables"),
+                options=ctx.obj.get("options")
+            )
+
+    stack, _ = get_stack_or_stack_group(context)
     action = 'get_policy'
-    plan = SceptrePlan(path, action, stack)
+    plan = SceptrePlan(context, action, stack)
     response = plan.execute()
     write(response.get('StackPolicyBody', {}))

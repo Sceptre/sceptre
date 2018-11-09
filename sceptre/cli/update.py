@@ -2,6 +2,7 @@ from uuid import uuid1
 
 import click
 
+from sceptre.context import SceptreContext
 from sceptre.cli.helpers import catch_exceptions, confirmation
 from sceptre.cli.helpers import write, get_stack_or_stack_group
 from sceptre.cli.helpers import simplify_change_set_description
@@ -30,12 +31,19 @@ def update_command(ctx, path, change_set, verbose, yes):
     Updates a stack for a given config PATH. Or perform an update via
     change-set when the change-set flag is set.
     """
+    context = SceptreContext(
+                command_path=path,
+                project_path=ctx.obj.get("project_path"),
+                user_variables=ctx.obj.get("user_variables"),
+                options=ctx.obj.get("options"),
+                output_format=ctx.obj.get("output_format")
+            )
 
-    stack, _ = get_stack_or_stack_group(ctx, path)
+    stack, _ = get_stack_or_stack_group(context)
     if change_set:
         action = 'create_change_set'
         change_set_name = "-".join(["change-set", uuid1().hex])
-        plan = SceptrePlan(path, action, stack)
+        plan = SceptrePlan(context, action, stack)
         plan.execute(change_set_name)
         try:
             # Wait for change set to be created
@@ -51,7 +59,7 @@ def update_command(ctx, path, change_set, verbose, yes):
             description = plan.execute(change_set_name)
             if not verbose:
                 description = simplify_change_set_description(description)
-            write(description, ctx.obj["output_format"])
+            write(description, context.output_format)
 
             # Execute change set if happy with changes
             if yes or click.confirm("Proceed with stack update?"):
@@ -64,7 +72,7 @@ def update_command(ctx, path, change_set, verbose, yes):
     else:
         confirmation("update", yes, stack=path)
         action = 'update'
-        plan = SceptrePlan(path, action, stack)
+        plan = SceptrePlan(context, action, stack)
         response = plan.execute()
         if response != StackStatus.COMPLETE:
             exit(1)

@@ -29,7 +29,7 @@ def init_stack_group(ctx, stack_group):
     Creates STACK_GROUP folder in the project and a config.yaml with any
     required properties.
     """
-    cwd = ctx.obj["sceptre_dir"]
+    cwd = ctx.obj.get("project_path")
     for item in os.listdir(cwd):
         # If already a config folder create a sub stack_group
         if os.path.isdir(item) and item == "config":
@@ -44,7 +44,6 @@ def init_stack_group(ctx, stack_group):
 def init_project(ctx, project_name):
     """
     Initialises a new project.
-
     Creates PROJECT_NAME project folder and a config.yaml with any
     required properties.
     """
@@ -80,7 +79,6 @@ def _create_new_stack_group(config_dir, new_path):
     Creates the subfolder for the stack_group specified by `path`
     starting from the `config_dir`. Even if folder path already exists,
     they want to initialise `config.yaml`.
-
     :param config_dir: The directory path to the top-level config folder.
     :type config_dir: str
     :param path: The directory path to the stack_group folder.
@@ -109,7 +107,6 @@ def _get_nested_config(config_dir, path):
     """
     Collects nested config from between `config_dir` and `path`. Config at
     lower level as greater precedence.
-
     :param config_dir: The directory path to the top-level config folder.
     :type config_dir: str
     :param path: The directory path to the stack_group folder.
@@ -135,7 +132,6 @@ def _create_config_file(config_dir, path, defaults={}):
     properties and their values are the same as in parent `config.yaml`, then
     they are not included. No file is produced if require values are satisfied
     by parent `config.yaml` files.
-
     :param config_dir: The directory path to the top-level config folder.
     :type config_dir: str
     :param path: The directory path to the stack_group folder.

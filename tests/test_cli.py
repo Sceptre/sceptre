@@ -9,6 +9,7 @@ from mock import MagicMock, patch, sentinel
 import pytest
 import click
 
+from sceptre.context import SceptreContext
 from sceptre.cli import cli
 from sceptre.config.reader import ConfigReader
 from sceptre.stack import Stack
@@ -33,7 +34,6 @@ class TestCli(object):
         self.mock_config_reader = MagicMock(spec=ConfigReader)
         self.mock_stack = MagicMock(spec=Stack)
         self.mock_stack_group = MagicMock(spec=StackGroup)
-
         self.mock_config_reader.construct_stack.return_value = self.mock_stack
         self.mock_config_reader.construct_stack_group.return_value = \
             self.mock_stack_group
@@ -103,7 +103,7 @@ class TestCli(object):
         @cli.command()
         @click.pass_context
         def noop(ctx):
-            click.echo(yaml.safe_dump(ctx.obj["user_variables"]))
+            click.echo(yaml.safe_dump(ctx.obj.get("user_variables")))
 
         self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():
@@ -376,7 +376,7 @@ class TestCli(object):
                 }
             ]
         }
-        args = ["describe", "change-set", "dev/vpc.yaml", "cs1"]
+        args = ["describe", "change-set", "region/vpc.yaml", "cs1"]
         if verbose_flag:
             args.append("-v")
 
@@ -443,7 +443,6 @@ class TestCli(object):
 
     def test_status_with_stack(self):
         self.mock_stack.get_status.return_value = "status"
-
         result = self.runner.invoke(cli, ["status", "dev/vpc.yaml"])
         assert result.exit_code == 0
         assert result.output == "status\n"
@@ -451,9 +450,9 @@ class TestCli(object):
     def test_init_project_non_existant(self):
         self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():
-            sceptre_dir = os.path.abspath('./example')
-            config_dir = os.path.join(sceptre_dir, "config")
-            template_dir = os.path.join(sceptre_dir, "templates")
+            project_path = os.path.abspath('./example')
+            config_dir = os.path.join(project_path, "config")
+            template_dir = os.path.join(project_path, "templates")
             region = "test-region"
             os.environ["AWS_DEFAULT_REGION"] = region
             defaults = {
@@ -475,12 +474,12 @@ class TestCli(object):
     def test_init_project_already_exist(self):
         self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():
-            sceptre_dir = os.path.abspath('./example')
-            config_dir = os.path.join(sceptre_dir, "config")
-            template_dir = os.path.join(sceptre_dir, "templates")
+            project_path = os.path.abspath('./example')
+            config_dir = os.path.join(project_path, "config")
+            template_dir = os.path.join(project_path, "templates")
             existing_config = {"Test": "Test"}
 
-            os.mkdir(sceptre_dir)
+            os.mkdir(project_path)
             os.mkdir(config_dir)
             os.mkdir(template_dir)
 
@@ -550,11 +549,11 @@ class TestCli(object):
     ):
         self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():
-            sceptre_dir = os.path.abspath('./example')
-            config_dir = os.path.join(sceptre_dir, "config")
+            project_path = os.path.abspath('./example')
+            config_dir = os.path.join(project_path, "config")
             os.makedirs(config_dir)
 
-            stack_group_dir = os.path.join(sceptre_dir, "config", stack_group)
+            stack_group_dir = os.path.join(project_path, "config", stack_group)
             for stack_group_path, config in config_structure.items():
                 path = os.path.join(config_dir, stack_group_path)
                 try:
@@ -571,7 +570,7 @@ class TestCli(object):
                         config, stream=config_file, default_flow_style=False
                     )
 
-            os.chdir(sceptre_dir)
+            os.chdir(project_path)
 
             cmd_result = self.runner.invoke(
                 cli, ["init", "grp", stack_group],
@@ -592,12 +591,12 @@ class TestCli(object):
     def test_init_stack_group_with_existing_folder(self):
         self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():
-            sceptre_dir = os.path.abspath('./example')
-            config_dir = os.path.join(sceptre_dir, "config")
+            project_path = os.path.abspath('./example')
+            config_dir = os.path.join(project_path, "config")
             stack_group_dir = os.path.join(config_dir, "A")
 
             os.makedirs(stack_group_dir)
-            os.chdir(sceptre_dir)
+            os.chdir(project_path)
 
             cmd_result = self.runner.invoke(
                 cli, ["init", "grp", "A"], input="y\n\n\n"
@@ -617,13 +616,12 @@ class TestCli(object):
     def test_init_stack_group_with_another_exception(self):
         self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():
-            sceptre_dir = os.path.abspath('./example')
-            config_dir = os.path.join(sceptre_dir, "config")
+            project_path = os.path.abspath('./example')
+            config_dir = os.path.join(project_path, "config")
             stack_group_dir = os.path.join(config_dir, "A")
 
             os.makedirs(stack_group_dir)
-            os.chdir(sceptre_dir)
-
+            os.chdir(project_path)
             patcher_mkdir = patch("sceptre.cli.init.os.mkdir")
             mock_mkdir = patcher_mkdir.start()
             mock_mkdir.side_effect = OSError(errno.EINVAL)
@@ -692,39 +690,40 @@ class TestCli(object):
         assert response == '"2016-05-03 00:00:00"'
 
     def test_get_stack_or_stack_group_with_stack(self):
-        ctx = MagicMock(obj={
-            "sceptre_dir": sentinel.sceptre_dir,
-            "user_variables": sentinel.user_variables
-        })
-        stack, stack_group = get_stack_or_stack_group(ctx, "stack.yaml")
+        context = MagicMock(spec=SceptreContext)
+        context.project_path = "tests/fixtures"
+        context.command_path = "account/stack-group/region/vpc.yaml"
+        context.user_variables = sentinel.user_variables
+
+        stack, stack_group = get_stack_or_stack_group(context)
         self.mock_ConfigReader.assert_called_once_with(
-            sentinel.sceptre_dir, sentinel.user_variables
+            context.project_path, context.user_variables
         )
         assert isinstance(stack, Stack)
         assert stack_group is None
 
     def test_get_stack_or_stack_group_with_nested_stack(self):
-        ctx = MagicMock(obj={
-            "sceptre_dir": sentinel.sceptre_dir,
-            "user_variables": sentinel.user_variables
-        })
-        stack, stack_group = get_stack_or_stack_group(
-                ctx, "stack-group/dir/stack.yaml"
-        )
+        context = MagicMock(spec=SceptreContext)
+        context.project_path = "tests/fixtures"
+        context.command_path = "account/stack-group/region/vpc.yaml"
+        context.user_variables = sentinel.user_variables
+        stack, stack_group = get_stack_or_stack_group(context)
         self.mock_ConfigReader.assert_called_once_with(
-            sentinel.sceptre_dir, sentinel.user_variables
+            context.project_path, context.user_variables
         )
         assert isinstance(stack, Stack)
         assert stack_group is None
 
     def test_get_stack_or_stack_group_with_group(self):
-        ctx = MagicMock(obj={
-            "sceptre_dir": sentinel.sceptre_dir,
-            "user_variables": sentinel.user_variables
-        })
-        stack, stack_group = get_stack_or_stack_group(ctx, "stack-group/dir")
+        context = MagicMock(spec=SceptreContext)
+        context.project_path = "tests/fixtures"
+        context.command_path = "account/stack-group/region"
+        context.user_variables = sentinel.user_variables
+
+        stack, stack_group = get_stack_or_stack_group(context)
+
         self.mock_ConfigReader.assert_called_once_with(
-            sentinel.sceptre_dir, sentinel.user_variables
+           context.project_path, context.user_variables
         )
         assert isinstance(stack_group, StackGroup)
         assert stack is None
