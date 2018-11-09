@@ -32,7 +32,7 @@ def list_resources(ctx, path):
                 project_path=ctx.obj.get("project_path"),
                 user_variables=ctx.obj.get("user_variables"),
                 options=ctx.obj.get("options"),
-                output_format=ctx.obj["output_format"]
+                output_format=ctx.obj.get("output_format")
             )
 
     stack, stack_group = get_stack_or_stack_group(context)

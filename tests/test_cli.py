@@ -103,7 +103,7 @@ class TestCli(object):
         @cli.command()
         @click.pass_context
         def noop(ctx):
-            click.echo(yaml.safe_dump(ctx.obj["user_variables"]))
+            click.echo(yaml.safe_dump(ctx.obj.get("user_variables")))
 
         self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():

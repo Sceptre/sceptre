@@ -29,7 +29,7 @@ def init_stack_group(ctx, stack_group):
     Creates STACK_GROUP folder in the project and a config.yaml with any
     required properties.
     """
-    cwd = ctx.obj["project_path"]
+    cwd = ctx.obj.get("project_path")
     for item in os.listdir(cwd):
         # If already a config folder create a sub stack_group
         if os.path.isdir(item) and item == "config":

@@ -65,10 +65,10 @@ def cli(
     if var_file:
         for fh in var_file:
             parsed = yaml.safe_load(fh.read())
-            ctx.obj["user_variables"].update(parsed)
+            ctx.obj.get("user_variables").update(parsed)
 
             # the rest of this block is for debug purposes only
-            existing_keys = set(ctx.obj["user_variables"].keys())
+            existing_keys = set(ctx.obj.get("user_variables").keys())
             new_keys = set(parsed.keys())
             overloaded_keys = existing_keys & new_keys  # intersection
             if overloaded_keys:
@@ -82,13 +82,15 @@ def cli(
         # --var options overwrite --var-file options
         for variable in var:
             variable_key, variable_value = variable.split("=")
-            if variable_key in ctx.obj["user_variables"]:
+            if variable_key in ctx.obj.get("user_variables"):
                 logger.debug(
                     "Duplicate variable encountered: {0}. "
                     "Using value from --var option."
                     .format(variable_key)
                 )
-            ctx.obj["user_variables"].update({variable_key: variable_value})
+            ctx.obj.get("user_variables").update(
+                {variable_key: variable_value}
+            )
 
 
 cli.add_command(init_group)
