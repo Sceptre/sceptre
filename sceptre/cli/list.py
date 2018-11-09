@@ -29,9 +29,9 @@ def list_resources(ctx, path):
     """
     context = SceptreContext(
                 command_path=path,
-                project_path=ctx.obj.get("project_path", None),
-                user_variables=ctx.obj.get("user_variables", {}),
-                options=ctx.obj.get("options", {}),
+                project_path=ctx.obj.get("project_path"),
+                user_variables=ctx.obj.get("user_variables"),
+                options=ctx.obj.get("options"),
                 output_format=ctx.obj["output_format"]
             )
 

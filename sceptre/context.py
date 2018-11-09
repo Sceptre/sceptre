@@ -27,9 +27,11 @@ class SceptreContext(object):
         self.templates_path = "templates"
 
         self.user_variables = user_variables if user_variables else {}
+        self.user_variables = user_variables\
+            if user_variables is not None else {}
         self.options = options if options else {}
         self.output_format = output_format if output_format else ""
-        self.no_colour = no_colour if no_colour else False
+        self.no_colour = no_colour if no_colour is True else False
 
     def full_config_path(self):
         """

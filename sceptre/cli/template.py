@@ -22,10 +22,10 @@ def validate_command(ctx, path):
     """
     context = SceptreContext(
                 command_path=path,
-                project_path=ctx.obj.get("project_path", None),
-                user_variables=ctx.obj.get("user_variables", {}),
-                options=ctx.obj.get("options", {}),
-                output_format=ctx.obj.get("output_format", None)
+                project_path=ctx.obj.get("project_path"),
+                user_variables=ctx.obj.get("user_variables"),
+                options=ctx.obj.get("options"),
+                output_format=ctx.obj.get("output_format")
             )
 
     stack, _ = get_stack_or_stack_group(context)
@@ -51,9 +51,9 @@ def generate_command(ctx, path):
     """
     context = SceptreContext(
                 command_path=path,
-                project_path=ctx.obj.get("project_path", None),
-                user_variables=ctx.obj.get("user_variables", {}),
-                options=ctx.obj.get("options", {})
+                project_path=ctx.obj.get("project_path"),
+                user_variables=ctx.obj.get("user_variables"),
+                options=ctx.obj.get("options")
             )
 
     stack, _ = get_stack_or_stack_group(context)
@@ -76,10 +76,10 @@ def estimate_cost_command(ctx, path):
     action = 'estimate_cost'
     context = SceptreContext(
                 command_path=path,
-                project_path=ctx.obj.get("project_path", None),
-                user_variables=ctx.obj.get("user_variables", {}),
-                options=ctx.obj.get("options", {}),
-                output_format=ctx.obj.get("output_format", None)
+                project_path=ctx.obj.get("project_path"),
+                user_variables=ctx.obj.get("user_variables"),
+                options=ctx.obj.get("options"),
+                output_format=ctx.obj.get("output_format")
             )
 
     stack, _ = get_stack_or_stack_group(context)

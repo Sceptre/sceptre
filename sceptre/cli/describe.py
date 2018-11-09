@@ -34,9 +34,9 @@ def describe_change_set(ctx, path, change_set_name, verbose):
     """
     context = SceptreContext(
                 command_path=path,
-                project_path=ctx.obj.get("project_path", None),
-                user_variables=ctx.obj.get("user_variables", {}),
-                options=ctx.obj.get("options", {})
+                project_path=ctx.obj.get("project_path"),
+                user_variables=ctx.obj.get("user_variables"),
+                options=ctx.obj.get("options")
             )
 
     stack, _ = get_stack_or_stack_group(context)
@@ -59,9 +59,9 @@ def describe_policy(ctx, path):
     """
     context = SceptreContext(
                 command_path=path,
-                project_path=ctx.obj.get("project_path", None),
-                user_variables=ctx.obj.get("user_variables", {}),
-                options=ctx.obj.get("options", {})
+                project_path=ctx.obj.get("project_path"),
+                user_variables=ctx.obj.get("user_variables"),
+                options=ctx.obj.get("options")
             )
 
     stack, _ = get_stack_or_stack_group(context)

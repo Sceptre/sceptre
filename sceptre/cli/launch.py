@@ -22,9 +22,9 @@ def launch_command(ctx, path, yes):
     """
     context = SceptreContext(
                 command_path=path,
-                project_path=ctx.obj.get("project_path", None),
-                user_variables=ctx.obj.get("user_variables", {}),
-                options=ctx.obj.get("options", {})
+                project_path=ctx.obj.get("project_path"),
+                user_variables=ctx.obj.get("user_variables"),
+                options=ctx.obj.get("options")
             )
 
     action = "launch"
