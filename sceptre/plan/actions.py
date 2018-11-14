@@ -247,7 +247,7 @@ class StackGroupActions(object):
             while launching, keyed by that stack's name.
         :rtype: StackDependencyGraph
         """
-        dependencies = generate_dependencies(self.path)
+        dependencies = generate_dependencies(self.stack_group)
         graph = StackDependencyGraph(dependencies)
         graph.write()
         return graph

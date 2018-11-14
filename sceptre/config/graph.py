@@ -41,13 +41,13 @@ class StackDependencyGraph(object):
 
     def write(self):
         nx.drawing.nx_pydot.write_dot(
-                self.graph,
-                './out.dot'
-            )
+            self.graph,
+            './out.dot'
+        )
 
         print(list(reversed(
-                nx.algorithms.dag.dag_longest_path(self.graph)
-              )))
+            nx.algorithms.dag.dag_longest_path(self.graph)
+        )))
 
         print(self.as_dict())
 
@@ -64,7 +64,7 @@ class StackDependencyGraph(object):
     def _is_acyclic(self):
         return nx.is_directed_acyclic_graph(self.graph)
 
-    def _generate_edges(self, stack_path, dependency_paths):
+    def _generate_edges(self, stack_path, dependencies):
         """
         Adds edges to the graph based on a list of dependencies that are
         generated from the inital stack config. Each of the paths
@@ -77,15 +77,15 @@ class StackDependencyGraph(object):
         self.logger.debug(
             "Generate edges for graph {0}".format(self.graph)
         )
-        for dependency_path in dependency_paths:
-            edge = self.graph.add_edge(stack_path, dependency_path)
+        for stack in dependencies:
+            edge = self.graph.add_edge(stack_path, stack)
             if not self._is_acyclic():
                 raise CircularDependenciesError(
-                    "Dependency cycle detected: {} {}".format(stack_path,
-                                                              dependency_path))
+                    "Dependency cycle detected: {} {}".format(stack,
+                                                              dependencies))
             self.logger.debug("Added edge: {}".format(edge))
 
-        if not dependency_paths:
+        if not dependencies:
             self.graph.add_node(stack_path)
 
         self.graph.remove_edges_from(nx.selfloop_edges(self.graph))

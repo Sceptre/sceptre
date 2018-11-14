@@ -22,10 +22,10 @@ from packaging.version import Version
 
 from sceptre import __version__
 from sceptre.exceptions import (
-        InvalidSceptreDirectoryError,
-        StackGroupNotFoundError,
-        VersionIncompatibleError,
-        ConfigFileNotFoundError)
+    InvalidSceptreDirectoryError,
+    StackGroupNotFoundError,
+    VersionIncompatibleError,
+    ConfigFileNotFoundError)
 from sceptre.stack_group import StackGroup
 from sceptre.stack import Stack
 from . import strategies
@@ -191,7 +191,7 @@ class ConfigReader(object):
                 CONFIG_MERGE_STRATEGIES['dependencies'](
                     this_config.get("dependencies"),
                     config.get("dependencies")
-                )
+            )
         config.update(this_config)
 
         self._check_version(config)
@@ -250,7 +250,7 @@ class ConfigReader(object):
         """
         config = {}
         abs_directory_path = path.join(
-                self.full_config_path, directory_path)
+            self.full_config_path, directory_path)
         if path.isfile(path.join(abs_directory_path, basename)):
             stack_group = jinja2.Environment(
                 loader=jinja2.FileSystemLoader(abs_directory_path),
@@ -326,8 +326,8 @@ class ConfigReader(object):
                 template_key = "/".join([prefix.strip("/"), template_key])
 
             s3_details = {
-                 "bucket_name": config["template_bucket_name"],
-                 "bucket_key": template_key
+                "bucket_name": config["template_bucket_name"],
+                "bucket_key": template_key
             }
         return s3_details
 
@@ -345,7 +345,7 @@ class ConfigReader(object):
         directory, filename = path.split(rel_path)
         if filename != self.context.config_file:
             self.templating_vars["stack_group_config"] =\
-              stack_group_config
+                stack_group_config
             config = self.read(rel_path, stack_group_config)
             stack_name = path.splitext(rel_path)[0]
             abs_template_path = path.join(
@@ -394,7 +394,7 @@ class ConfigReader(object):
         directory = path.split(rel_path)[0]
         stack_group_config = self.read(
             path.join(directory, self.context.config_file)
-          )
+        )
         return self._construct_stack(rel_path, stack_group_config)
 
     def construct_stack_group(self, rel_path):
@@ -412,7 +412,7 @@ class ConfigReader(object):
             )
         stack_group_config = self.read(
             path.join(rel_path, self.context.config_file)
-          )
+        )
         stack_group = StackGroup(rel_path)
 
         items = glob(
@@ -427,8 +427,6 @@ class ConfigReader(object):
         }
 
         is_leaf = not any([path.isdir(abs_path) for abs_path in paths.keys()])
-        import ipdb
-        ipdb.set_trace()
         for abs_path, rel_path in paths.items():
             if is_leaf and path.isfile(abs_path):
                 stack = self._construct_stack(

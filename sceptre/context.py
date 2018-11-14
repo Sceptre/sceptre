@@ -54,9 +54,9 @@ class SceptreContext(object):
 
     def command_path_is_stack(self):
         return path.isfile(
-                    path.join(
-                        self.project_path,
-                        self.config_path,
-                        self.command_path
-                    )
-                )
+            path.join(
+                self.project_path,
+                self.config_path,
+                self.command_path
+            )
+        )

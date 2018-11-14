@@ -118,7 +118,7 @@ def resolve_stack_name(source_stack_name, destination_stack_path):
         return "/".join([source_stack_base_name, destination_stack_path])
 
 
-def generate_dependencies(stack_or_stack_group):
+def generate_dependencies(stack_group):
     """
     Generates a full map of dependencies given either a Stack or StackGroup as
     a parameter. This includes dependencies that are external to the given
@@ -135,8 +135,8 @@ def generate_dependencies(stack_or_stack_group):
     templating_vars = {}
     sceptre_dir = get_sceptre_dir(abs_project_path)
 
-    def recurse_deps(stack_or_stack_group):
-        stack_or_stack_group = stack_or_stack_group
+    def recurse_deps(stack_group):
+        stack_group = stack_group
 
         if path.isdir(path.join(sceptre_dir, stack_or_stack_group)):
             root = path.join(sceptre_dir, stack_or_stack_group)
@@ -173,7 +173,7 @@ def generate_dependencies(stack_or_stack_group):
                     for d in dependencies:
                         recurse_deps(path.split(d)[0])
 
-    recurse_deps(stack_or_stack_group)
+    recurse_deps(stack_group)
     return final_deps
 
 
