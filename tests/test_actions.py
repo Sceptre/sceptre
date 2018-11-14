@@ -1146,6 +1146,9 @@ class TestStackGroupActions(object):
         mock_ThreadPoolExecutor.return_value.__enter__.return_value\
             .submit.return_value = sentinel.future
 
+        mock_ThreadPoolExecutor.return_value.__enter__.return_value\
+            .stacks = [self.stack]
+
         self.actions._build(
             sentinel.command, sentinel.threading_events,
             sentinel.stack_statuses, sentinel.dependencies

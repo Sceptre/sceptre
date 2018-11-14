@@ -31,7 +31,7 @@ def create_command(ctx, path, change_set_name, yes):
     action = "create"
     plan = SceptrePlan(context)
 
-  # TODO this isn't going to work with sub-stack-group-stacks
+    # TODO this isn't going to work with sub-stack-group-stacks
     if any(change_set_name for change_set_name in plan.stack_group.stacks):
         confirmation(action, yes, change_set=change_set_name, stack=path)
         plan.create_change_set(change_set_name)

@@ -72,7 +72,7 @@ class StackGroupActions(object):
         return stack_statuses
 
     @recurse_into_sub_stack_groups
-    def describe(self):
+    def describe(self, stack_group):
         """
         Returns each stack's status.
 
@@ -80,7 +80,7 @@ class StackGroupActions(object):
         :rtype: dict
         """
         response = {}
-        for stack in self.stack_group.stacks:
+        for stack in stack_group.stacks:
             try:
                 status = StackActions(stack).get_status()
             except StackDoesNotExistError:
@@ -89,7 +89,7 @@ class StackGroupActions(object):
         return response
 
     @recurse_into_sub_stack_groups
-    def describe_resources(self):
+    def describe_resources(self, stack_group):
         """
         Describes the resources of each stack in the stack_group.
 
@@ -110,7 +110,8 @@ class StackGroupActions(object):
         return response
 
     @recurse_sub_stack_groups_with_graph
-    def _build(self, command, threading_events, stack_statuses, dependencies):
+    def _build(self, command, threading_events,
+               stack_statuses, dependencies, stack_group):
         """
         Launches or deletes all stacks in the stack_group.
 
@@ -125,8 +126,8 @@ class StackGroupActions(object):
         :param command: The stack command to run. Can be (launch | delete).
         :type command: str
         """
-        if self.stack_group.stacks:
-            with ThreadPoolExecutor(max_workers=len(self.stack_group.stacks))\
+        if stack_group.stacks:
+            with ThreadPoolExecutor(max_workers=len(stack_group.stacks))\
                     as stack_group:
                 futures = [
                     stack_group.submit(
@@ -134,7 +135,7 @@ class StackGroupActions(object):
                         command, threading_events, stack_statuses,
                         dependencies
                     )
-                    for stack in self.stack_group.stacks
+                    for stack in stack_group.stacks
                 ]
                 wait(futures)
         else:
@@ -186,7 +187,7 @@ class StackGroupActions(object):
         threading_events[stack.name].set()
 
     @recurse_into_sub_stack_groups
-    def _get_threading_events(self):
+    def _get_threading_events(self, stack_group):
         """
         Returns a threading.Event() for each stack in every sub-stack.
 
@@ -196,13 +197,13 @@ class StackGroupActions(object):
         """
         events = {
             stack.name: threading.Event()
-            for stack in self.stack_group.stacks
+            for stack in stack_group.stacks
         }
         self.logger.debug(events)
         return events
 
     @recurse_into_sub_stack_groups
-    def _get_initial_statuses(self):
+    def _get_initial_statuses(self, stack_group):
         """
         Returns a "pending" sceptre.stack_status.StackStatus for each stack
         in every sub-stack.
@@ -213,11 +214,11 @@ class StackGroupActions(object):
         """
         return {
             stack.name: StackStatus.PENDING
-            for stack in self.stack_group.stacks
+            for stack in stack_group.stacks
         }
 
     @recurse_sub_stack_groups_with_graph
-    def _get_launch_dependencies(self):
+    def _get_launch_dependencies(self, stack_group):
         """
         Returns a StackDependencyGraph of each stack's launch dependencies.
 
@@ -227,7 +228,7 @@ class StackGroupActions(object):
         """
         all_dependencies = {
             stack.name: stack.dependencies
-            for stack in self.stack_group.stacks
+            for stack in stack_group.stacks
         }
         return StackDependencyGraph(all_dependencies)
 

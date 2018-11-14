@@ -4,9 +4,10 @@ import os
 import types
 
 import pytest
-from mock import sentinel, MagicMock
+from mock import sentinel
 
 from sceptre.stack_group import StackGroup
+from sceptre.plan.actions import StackGroupActions
 from sceptre.helpers import get_subclasses
 from sceptre.helpers import camel_to_snake_case
 from sceptre.helpers import recurse_into_sub_stack_groups
@@ -43,46 +44,50 @@ class TestHelpers(object):
         assert snake_case_string == "asg_scaling_processes"
 
     def test_recurse_into_sub_stack_groups(self):
-        stack_group = MagicMock(spec=StackGroup)
-        stack_group.name = "stack_group"
-        stack_group.sub_stack_groups = []
+        parent = StackGroup('/parent')
+        stack_group_actions = StackGroupActions(parent)
 
-        def do(self):
-            return {self.name: sentinel.response}
+        def do(self, stack_group):
+            return {stack_group.path: sentinel.response}
 
-        stack_group.do = types.MethodType(
+        stack_group_actions.do = types.MethodType(
             recurse_into_sub_stack_groups(do),
-            stack_group
+            stack_group_actions
         )
 
-        response = stack_group.do()
-        assert response == {"stack_group": sentinel.response}
+        response = stack_group_actions.do()
+        assert response == {"/parent": sentinel.response}
 
     def test_recurse_into_sub_stack_groups_with_non_leaf_object(self):
+        parent = StackGroup('/parent')
 
-        mock_group = MagicMock(spec=StackGroup)
-        mock_group_2 = MagicMock(spec=StackGroup)
-        mock_group_3 = MagicMock(spec=StackGroup)
+        left_child = StackGroup('/parent/left_child')
+        right_child = StackGroup('/parent/right_child')
 
-        mock_group.name = "stack_group_1"
-        mock_group_2.name = "stack_group_2"
-        mock_group_3.name = "stack_group_3"
+        left_child_leaf = StackGroup('/parent/left_child/left_child_leaf')
+        right_child_leaf = StackGroup('/parent/right_child/right_child_leaf')
 
-        mock_group.sub_stack_groups = [
-            mock_group_2, mock_group_3
-        ]
+        parent.sub_stack_groups = [left_child, right_child]
+        left_child.sub_stack_groups = [left_child_leaf]
+        right_child.sub_stack_groups = [right_child_leaf]
 
-        def do(self):
-            return {self.name: sentinel.response}
-        mock_group.do = types.MethodType(
+        stack_group_actions = StackGroupActions(parent)
+
+        def do(self, stack_group):
+            return {stack_group.path: sentinel.response}
+
+        stack_group_actions.do = types.MethodType(
             recurse_into_sub_stack_groups(do),
-            mock_group
+            stack_group_actions
         )
-        response = mock_group.do()
+
+        response = stack_group_actions.do()
         assert response == {
-            "stack_group_1": sentinel.response,
-            "stack_group_2": sentinel.response,
-            "stack_group_3": sentinel.response
+            "/parent": sentinel.response,
+            "/parent/left_child": sentinel.response,
+            "/parent/right_child": sentinel.response,
+            "/parent/left_child/left_child_leaf": sentinel.response,
+            "/parent/right_child/right_child_leaf": sentinel.response
         }
 
     def test_get_name_tuple(self):

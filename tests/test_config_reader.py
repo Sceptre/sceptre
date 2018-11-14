@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-from mock import MagicMock, patch, sentinel
+from mock import patch, sentinel
 import pytest
 import yaml
 import errno
@@ -190,18 +190,17 @@ class TestConfigReader(object):
         assert details == expected
 
     @patch("sceptre.config.reader.ConfigReader._collect_s3_details")
-    @patch("sceptre.stack.Stack")
+    @patch("sceptre.config.reader.Stack")
     def test_construct_stack_with_valid_config(
         self, mock_Stack, mock_collect_s3_details
     ):
         mock_Stack.return_value = sentinel.stack
         mock_collect_s3_details.return_value = sentinel.s3_details
-        mock_config_reader = MagicMock(spec=ConfigReader)
-        mock_config_reader.context = self.context
-        stack = mock_config_reader.construct_stack(
-            "account/stack-group/region/vpc.yaml")
+        stack = ConfigReader(self.context).construct_stack(
+            "account/stack-group/region/vpc.yaml"
+        )
         mock_Stack.assert_called_with(
-            name="account/stack-group/region/vpc.yaml",
+            name="account/stack-group/region/vpc",
             project_code="account_project_code",
             template_path=os.path.join(
                 self.test_project_path, "path/to/template"
