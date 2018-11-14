@@ -8,6 +8,7 @@ import os
 import sys
 import re
 
+from copy import deepcopy
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
 
@@ -54,17 +55,14 @@ def recurse_into_sub_stack_groups(func, factory=dict):
         if num_stack_groups:
             with ThreadPoolExecutor(max_workers=num_stack_groups)\
                     as thread_stack_group:
-                futures = [
-                    thread_stack_group.submit(
-                        getattr(self, function_name),
-                        *args,
-                        **{
-                            **kwargs,
-                            'stack_group': stack_group
-                        }
-                    )
-                    for stack_group in stack_group.sub_stack_groups
-                ]
+                futures = []
+                for stack_group in stack_group.sub_stack_groups:
+                    nkwargs = deepcopy(kwargs)
+                    nkwargs.update({'stack_group': stack_group})
+
+                    futures.append(thread_stack_group.submit(
+                        getattr(self, function_name), *args, **nkwargs
+                    ))
                 for future in as_completed(futures):
                     response = future.result()
                     if response:
