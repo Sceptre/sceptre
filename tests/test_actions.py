@@ -81,24 +81,22 @@ class TestStackActions(object):
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
     @patch("sceptre.plan.actions.StackActions._get_stack_timeout")
-    @patch("sceptre.template.Template")
     def test_create_sends_correct_request(
-            self, mock_Template, mock_get_stack_timeout, mock_wait_for_completion
+            self, mock_get_stack_timeout, mock_wait_for_completion
     ):
-        mock_Template.get_boto_call_parameter.return_value = {
-            "Template": sentinel.template
-        }
+        self.template._body = sentinel.template
+
         mock_get_stack_timeout.return_value = {
             "TimeoutInMinutes": sentinel.timeout
         }
 
         self.actions.create()
-        self.actions.stack.connection_manager.call.assert_called_with(
+        self.actions.connection_manager.call.assert_called_with(
             service="cloudformation",
             command="create_stack",
             kwargs={
                 "StackName": sentinel.external_name,
-                "Template": sentinel.template,
+                "TemplateBody": sentinel.template,
                 "Parameters": [{
                     "ParameterKey": "key1",
                     "ParameterValue": "val1"
@@ -152,9 +150,7 @@ class TestStackActions(object):
     def test_create_sends_correct_request_with_no_failure_no_timeout(
         self, mock_wait_for_completion
     ):
-        self.actions.stack._template.get_boto_call_parameter.return_value = {
-            "Template": sentinel.template
-        }
+        self.template._body = sentinel.template
         self.actions.stack.on_failure = None
         self.actions.stack.stack_timeout = 0
 
@@ -165,7 +161,7 @@ class TestStackActions(object):
             command="create_stack",
             kwargs={
                 "StackName": sentinel.external_name,
-                "Template": sentinel.template,
+                "TemplateBody": sentinel.template,
                 "Parameters": [{
                     "ParameterKey": "key1",
                     "ParameterValue": "val1"
@@ -558,9 +554,7 @@ class TestStackActions(object):
         )
 
     def test_create_change_set_sends_correct_request(self):
-        self.actions.stack._template.get_boto_call_parameter.return_value = {
-            "Template": sentinel.template
-        }
+        self.template._body = sentinel.template
 
         self.actions.create_change_set(sentinel.change_set_name)
         self.actions.connection_manager.call.assert_called_with(
@@ -568,7 +562,7 @@ class TestStackActions(object):
             command="create_change_set",
             kwargs={
                 "StackName": sentinel.external_name,
-                "Template": sentinel.template,
+                "TemplateBody": sentinel.template,
                 "Parameters": [{
                     "ParameterKey": "key1",
                     "ParameterValue": "val1"
