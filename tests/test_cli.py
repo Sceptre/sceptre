@@ -13,6 +13,7 @@ from sceptre.cli import cli
 from sceptre.config.reader import ConfigReader
 from sceptre.stack import Stack
 from sceptre.stack_group import StackGroup
+from sceptre.plan.actions import StackActions
 from sceptre.stack_status import StackStatus
 from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
 from sceptre.cli.helpers import CustomJsonEncoder, catch_exceptions
@@ -23,27 +24,37 @@ from sceptre.exceptions import SceptreException
 class TestCli(object):
 
     def setup_method(self, test_method):
-        self.patcher_ConfigReader = patch("sceptre.cli.helpers.ConfigReader")
-        self.patcher_getcwd = patch("sceptre.cli.os.getcwd")
+        self.patcher_ConfigReader = patch("sceptre.plan.plan.ConfigReader")
+        self.patcher_StackActions = patch("sceptre.plan.executor.StackActions")
+        self.patcher_StackActions = patch("sceptre.plan.executor.StackActions")
 
         self.mock_ConfigReader = self.patcher_ConfigReader.start()
-        self.mock_getcwd = self.patcher_getcwd.start()
+        self.mock_StackActions = self.patcher_StackActions.start()
 
         self.mock_config_reader = MagicMock(spec=ConfigReader)
+        self.mock_stack_actions = MagicMock(spec=StackActions)
+
         self.mock_stack = MagicMock(spec=Stack)
         self.mock_stack_group = MagicMock(spec=StackGroup)
+
+        self.mock_stack.name = 'mock-stack'
+        self.mock_stack.region = None
+        self.mock_stack.profile = None
+        self.mock_stack.external_name = None
+
         self.mock_config_reader.construct_stack.return_value = self.mock_stack
         self.mock_config_reader.construct_stack_group.return_value = \
             self.mock_stack_group
 
+        self.mock_stack_actions.stack = self.mock_stack
+
         self.mock_ConfigReader.return_value = self.mock_config_reader
-        self.mock_getcwd.return_value = sentinel.cwd
+        self.mock_StackActions.return_value = self.mock_stack_actions
 
         self.runner = CliRunner()
 
     def teardown_method(self, test_method):
         self.patcher_ConfigReader.stop()
-        self.patcher_getcwd.stop()
 
     @patch("sys.exit")
     def test_catch_excecptions(self, mock_exit):
@@ -117,14 +128,14 @@ class TestCli(object):
         assert user_variables == output
 
     def test_validate_template_with_valid_template(self):
-        self.mock_stack.template.validate.return_value = {
+        self.mock_stack_actions.validate.return_value = {
                     "Parameters": "Example",
                     "ResponseMetadata": {
                         "HTTPStatusCode": 200
                     }
                 }
         result = self.runner.invoke(cli, ["validate", "dev/vpc.yaml"])
-        self.mock_stack.template.validate.assert_called_with()
+        self.mock_stack_actions.validate.assert_called_with()
 
         assert result.output == "Template is valid. Template details:\n\n" \
             "Parameters: Example\n\n"
