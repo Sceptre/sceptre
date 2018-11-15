@@ -118,7 +118,7 @@ def step_impl(context, stack_group_name):
 def step_impl(context, stack_group_name, status):
     stacks_names = get_stack_names(context, stack_group_name)
     expected_response = [{stack_name: status} for stack_name in stacks_names]
-    assert context.response == expected_response
+    assert sorted(context.response) == sorted(expected_response)
 
 
 @then('no resources are described')
