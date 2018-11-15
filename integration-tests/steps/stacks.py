@@ -96,7 +96,7 @@ def step_impl(context, stack_name, stack_timeout):
 @when('the user creates stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
-        command_path=f'{stack_name}.yaml',
+        command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
     )
 
@@ -114,7 +114,7 @@ def step_impl(context, stack_name):
 @when('the user updates stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
-        command_path=f'{stack_name}.yaml',
+        command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
     )
 
@@ -134,7 +134,7 @@ def step_impl(context, stack_name):
 @when('the user deletes stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
-        command_path=f'{stack_name}.yaml',
+        command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
     )
 
@@ -152,7 +152,7 @@ def step_impl(context, stack_name):
 @when('the user launches stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
-        command_path=f'{stack_name}.yaml',
+        command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
     )
 
@@ -166,7 +166,7 @@ def step_impl(context, stack_name):
 @when('the user describes the resources of stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
-        command_path=f'{stack_name}.yaml',
+        command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
     )
 

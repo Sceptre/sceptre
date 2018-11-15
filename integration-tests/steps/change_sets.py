@@ -50,7 +50,7 @@ def step_impl(context, stack_name):
 @when('the user creates change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
     sceptre_context = SceptreContext(
-        command_path=f'{stack_name}.yaml',
+        command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
     )
 
@@ -70,7 +70,7 @@ def step_impl(context, change_set_name, stack_name):
 @when('the user deletes change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
     sceptre_context = SceptreContext(
-        command_path=f'{stack_name}.yaml',
+        command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
     )
 
@@ -89,7 +89,7 @@ def step_impl(context, change_set_name, stack_name):
 @when('the user lists change sets for stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
-        command_path=f'{stack_name}.yaml',
+        command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
     )
 
@@ -109,7 +109,7 @@ def step_impl(context, stack_name):
 @when('the user executes change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
     sceptre_context = SceptreContext(
-        command_path=f'{stack_name}.yaml',
+        command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
     )
 
@@ -128,7 +128,7 @@ def step_impl(context, change_set_name, stack_name):
 @when('the user describes change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
     sceptre_context = SceptreContext(
-        command_path=f'{stack_name}.yaml',
+        command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
     )
 

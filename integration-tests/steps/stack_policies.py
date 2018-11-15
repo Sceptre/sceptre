@@ -21,7 +21,7 @@ def step_impl(context, stack_name, state):
 @when('the user unlocks stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
-        command_path=f'{stack_name}.yaml',
+        command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
     )
 
@@ -35,7 +35,7 @@ def step_impl(context, stack_name):
 @when('the user locks stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
-        command_path=f'{stack_name}.yaml',
+        command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
     )
 

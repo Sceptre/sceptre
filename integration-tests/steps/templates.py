@@ -30,7 +30,7 @@ def step_impl(context, stack_name, template_name):
 @when('the user validates the template for stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
-        command_path=f'{stack_name}.yaml',
+        command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
     )
 
@@ -45,7 +45,7 @@ def step_impl(context, stack_name):
 @when('the user generates the template for stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
-        command_path=f'{stack_name}.yaml',
+        command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
     )
 
