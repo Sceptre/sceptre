@@ -255,9 +255,10 @@ class TestCli(object):
                 ]
             }
         }
-        self.mock_stack_group.describe_resources.return_value = response
+        self.mock_stack_actions.describe_resources.return_value = response
         result = self.runner.invoke(cli, ["list", "resources", "dev"])
-        assert yaml.load(result.output) == response
+
+        assert yaml.load(result.output) == [response]
         assert result.exit_code == 0
 
     def test_list_stack_resources(self):
@@ -271,7 +272,7 @@ class TestCli(object):
         }
         self.mock_stack_actions.describe_resources.return_value = response
         result = self.runner.invoke(cli, ["list", "resources", "dev/vpc.yaml"])
-        assert yaml.load(result.output) == response
+        assert yaml.load(result.output) == [response]
         assert result.exit_code == 0
 
     @pytest.mark.parametrize(
@@ -306,6 +307,7 @@ class TestCli(object):
             kwargs["input"] = "y\n"
 
         result = self.runner.invoke(cli, **kwargs)
+
         run_command.assert_called_with()
         assert result.exit_code == exit_code
 
@@ -348,9 +350,7 @@ class TestCli(object):
     )
     def test_stack_group_commands(self, command, success, yes_flag, exit_code):
         status = StackStatus.COMPLETE if success else StackStatus.FAILED
-        response = {"stack": status}
-
-        getattr(self.mock_stack_group, command).return_value = response
+        getattr(self.mock_stack_actions, command).return_value = status
 
         kwargs = {"args": [command, "dev"]}
         if yes_flag:
@@ -360,7 +360,7 @@ class TestCli(object):
 
         result = self.runner.invoke(cli, **kwargs)
 
-        getattr(self.mock_stack_group, command).assert_called_with()
+        getattr(self.mock_stack_actions, command).assert_called_with()
         assert result.exit_code == exit_code
 
     @pytest.mark.parametrize(
@@ -451,12 +451,13 @@ class TestCli(object):
         assert yaml.load(result.output) == "export SCEPTRE_Key=Value"
 
     def test_status_with_group(self):
-        self.mock_stack_actions.describe.return_value = {
-            "stack": "status"}
+        self.mock_stack_actions.get_status.return_value = {
+            "stack": "status"
+        }
 
         result = self.runner.invoke(cli, ["status", "dev"])
         assert result.exit_code == 0
-        assert result.output == "stack: status\n\n"
+        assert result.output == "{'stack': 'status'}\n"
 
     def test_status_with_stack(self):
         self.mock_stack_actions.get_status.return_value = "status"

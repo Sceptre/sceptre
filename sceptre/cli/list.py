@@ -33,7 +33,6 @@ def list_resources(ctx, path):
         options=ctx.obj.get("options"),
         output_format=ctx.obj.get("output_format")
     )
-
     plan = SceptrePlan(context)
     plan.describe_resources()
     write(plan.responses, context.output_format)
