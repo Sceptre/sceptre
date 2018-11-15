@@ -11,10 +11,13 @@ Feature: Stack output resolver
     Given stack "6/1/B" does not exist
     and stack "6/1/A" does not exist
     When the user launches stack "6/1/B"
-    Then a "StackDoesNotExistError" is raised
+    Then stack "6/1/A" exists in "CREATE_COMPLETE" state
+    And stack "6/1/B" exists in "CREATE_COMPLETE" state
+    And that stack "6/1/A" was created before "6/1/B"
 
   Scenario: launch a stack_group where stacks reference other stack outputs
-    Given stack_group "6/1" does not exist
+    Given stack "6/1/B" does not exist
+    and stack "6/1/A" does not exist
     When the user launches stack_group "6/1"
     Then all the stacks in stack_group "6/1" are in "CREATE_COMPLETE"
     and that stack "6/1/A" was created before "6/1/B"
@@ -34,8 +37,8 @@ Feature: Stack output resolver
     and stack "6/1/B" exists in "CREATE_COMPLETE" state
     and stack "6/1/C" does not exist
     When the user deletes stack "6/1/B"
-    Then stack "6/1/A" exists in "CREATE_COMPLETE" state
-    and stack "6/1/B" does not exist
+    Then stack "6/1/B" does not exist
+    and stack "6/1/A" does not exist
 
   Scenario: delete a stack referencing an output of existing stack
     Given stack "6/1/A" exists in "CREATE_COMPLETE" state

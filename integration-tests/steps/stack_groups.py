@@ -71,12 +71,14 @@ def step_impl(context, stack_group_name):
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
-    sceptre_plan.describe()
+    responses = sceptre_plan.describe()
 
     stack_names = get_full_stack_names(context, stack_group_name)
     cfn_stacks = {}
 
-    for response in sceptre_plan.responses:
+    for response in responses.values():
+        if response is None:
+            continue
         for stack in response['Stacks']:
             cfn_stacks[stack['StackName']] = stack['StackStatus']
 
@@ -95,9 +97,7 @@ def step_impl(context, stack_group_name):
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
-    sceptre_plan.describe_resources()
-
-    context.response = sceptre_plan.responses
+    context.response = sceptre_plan.describe_resources().values()
 
 
 @then('all the stacks in stack_group "{stack_group_name}" are in "{status}"')
@@ -118,12 +118,14 @@ def step_impl(context, stack_group_name):
 def step_impl(context, stack_group_name, status):
     stacks_names = get_stack_names(context, stack_group_name)
     expected_response = [{stack_name: status} for stack_name in stacks_names]
-    assert sorted(context.response) == sorted(expected_response)
+    for response in context.response:
+        assert response in expected_response
 
 
 @then('no resources are described')
 def step_impl(context):
-    assert context.response == []
+    for stack_resources in context.response:
+        assert stack_resources == []
 
 
 @then('stack "{stack_name}" is described as "{status}"')
@@ -242,17 +244,16 @@ def create_stacks(context, stack_names):
 
 
 def delete_stacks(context, stack_names):
-    for stack_name in stack_names:
-        time.sleep(1)
-        stack = retry_boto_call(context.cloudformation.Stack, stack_name)
-        retry_boto_call(stack.delete)
-
     waiter = context.client.get_waiter('stack_delete_complete')
     waiter.config.delay = 5
     waiter.config.max_attempts = 240
-    for stack_name in stack_names:
+
+    for stack_name in reversed(list(stack_names)):
         time.sleep(1)
+        stack = retry_boto_call(context.cloudformation.Stack, stack_name)
+        retry_boto_call(stack.delete)
         waiter.wait(StackName=stack_name)
+        time.sleep(1)
 
 
 def check_stack_status(context, stack_names, desired_status):

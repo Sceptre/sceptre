@@ -105,7 +105,7 @@ def step_impl(context, stack_name):
         sceptre_plan.create()
     except ClientError as e:
         if e.response['Error']['Code'] == 'AlreadyExistsException' \
-          and e.response['Error']['Message'].endswith("already exists"):
+                and e.response['Error']['Message'].endswith("already exists"):
             return
         else:
             raise e
@@ -143,7 +143,7 @@ def step_impl(context, stack_name):
         sceptre_plan.delete()
     except ClientError as e:
         if e.response['Error']['Code'] == 'ValidationError' \
-          and e.response['Error']['Message'].endswith("does not exist"):
+                and e.response['Error']['Message'].endswith("does not exist"):
             return
         else:
             raise e
@@ -172,8 +172,7 @@ def step_impl(context, stack_name):
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
-    sceptre_plan.describe_resources()
-    context.output = sceptre_plan.responses
+    context.output = list(sceptre_plan.describe_resources().values())
 
 
 @then(
@@ -191,6 +190,13 @@ def step_impl(context, stack_name, region_name, desired_status):
 @then('stack "{stack_name}" exists in "{desired_status}" state')
 def step_impl(context, stack_name, desired_status):
     full_name = get_cloudformation_stack_name(context, stack_name)
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    status = sceptre_plan.get_status()
     status = get_stack_status(context, full_name)
     assert (status == desired_status)
 
@@ -216,7 +222,7 @@ def step_impl(context, stack_name):
         for item in response["StackResources"]
     ]
 
-    assert formatted_response == context.output
+    assert [formatted_response] == context.output
 
 
 def get_stack_status(context, stack_name, region_name=None):
@@ -231,7 +237,7 @@ def get_stack_status(context, stack_name, region_name=None):
         return stack.stack_status
     except ClientError as e:
         if e.response['Error']['Code'] == 'ValidationError' \
-          and e.response['Error']['Message'].endswith("does not exist"):
+                and e.response['Error']['Message'].endswith("does not exist"):
             return None
         else:
             raise e

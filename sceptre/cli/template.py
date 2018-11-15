@@ -28,12 +28,13 @@ def validate_command(ctx, path):
     )
 
     plan = SceptrePlan(context)
-    plan.validate()
+    responses = plan.validate()
 
-    if plan.responses[0]['ResponseMetadata']['HTTPStatusCode'] == 200:
-        del plan.responses[0]['ResponseMetadata']
-        click.echo("Template is valid. Template details:\n")
-    write(plan.responses[0], context.output_format)
+    for stack, response in responses.items():
+        if response['ResponseMetadata']['HTTPStatusCode'] == 200:
+            del response['ResponseMetadata']
+            click.echo("Template {} is valid. Template details:\n".format(stack.name))
+        write(response, context.output_format)
 
 
 @click.command(name="generate")
@@ -54,8 +55,8 @@ def generate_command(ctx, path):
     )
 
     plan = SceptrePlan(context)
-    plan.generate()
-    write(plan.responses[0])
+    responses = plan.generate()
+    write(responses.values())
 
 
 @click.command(name="estimate-cost")
@@ -78,11 +79,12 @@ def estimate_cost_command(ctx, path):
     )
 
     plan = SceptrePlan(context)
-    plan.estimate_cost()
+    responses = plan.estimate_cost()
 
-    if plan.responses[0]['ResponseMetadata']['HTTPStatusCode'] == 200:
-        del plan.responses[0]['ResponseMetadata']
-        click.echo("View the estimated cost at:")
-        response = plan.responses[0]["Url"]
-        webbrowser.open(response, new=2)
-    write(response + "\n", 'str')
+    for stack, response in responses.items():
+        if response['ResponseMetadata']['HTTPStatusCode'] == 200:
+            del response['ResponseMetadata']
+            click.echo("View the estimated cost for {} at:".format(stack.name))
+            response = response["Url"]
+            webbrowser.open(response, new=2)
+        write(response + "\n", 'str')

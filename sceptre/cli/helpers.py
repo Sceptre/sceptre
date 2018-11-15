@@ -44,18 +44,16 @@ def catch_exceptions(func):
 
 
 def confirmation(
-    command, ignore, stack_group=None, stack=None, change_set=None
+    command, ignore, command_path, change_set=None
 ):
     if not ignore:
         msg = "Do you want to {} ".format(command)
-        if stack_group:
-            msg = msg + "stack_group '{0}'?".format(stack_group)
-        elif change_set and stack:
-            msg = msg + "change set '{0}' for stack '{1}'".format(
-                change_set, stack
+        if change_set:
+            msg = msg + "change set '{0}' for '{1}'".format(
+                change_set, command_path
             )
-        elif stack:
-            msg = msg + "stack '{0}'".format(stack)
+        else:
+            msg = msg + "'{0}'".format(command_path)
         click.confirm(msg, abort=True)
 
 
@@ -90,10 +88,10 @@ def write(var, output_format="str", no_colour=True):
     click.echo(stream)
 
 
-def stack_status_exit_code(plan):
+def stack_status_exit_code(statuses):
     if not all(
             status == StackStatus.COMPLETE
-            for status in plan.responses):
+            for status in statuses):
         return 1
     else:
         return 0

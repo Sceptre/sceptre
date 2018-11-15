@@ -7,12 +7,11 @@ This module implements a Config class, which stores a stack or
 stack_group's configuration.
 """
 
-from glob import glob
-import copy
 import collections
 import datetime
+import fnmatch
 import logging
-from os import path, environ
+from os import path, environ, walk
 from pkg_resources import iter_entry_points
 import yaml
 
@@ -23,10 +22,8 @@ from packaging.version import Version
 from sceptre import __version__
 from sceptre.exceptions import (
     InvalidSceptreDirectoryError,
-    StackGroupNotFoundError,
     VersionIncompatibleError,
     ConfigFileNotFoundError)
-from sceptre.stack_group import StackGroup
 from sceptre.stack import Stack
 from . import strategies
 
@@ -90,6 +87,7 @@ class ConfigReader(object):
         self.logger = logging.getLogger(__name__)
         self.context = context
         self.full_config_path = self.context.full_config_path()
+
         # Check is valid sceptre project folder
         self._check_valid_project_path(self.full_config_path)
 
@@ -149,6 +147,51 @@ class ConfigReader(object):
                     "Added constructor for %s with node tag %s",
                     str(node_class), node_tag
                 )
+
+    def construct_stacks(self):
+        stack_map = {}
+
+        root = self.context.full_command_path()
+        if path.isfile(root):
+            todo = {root}
+        else:
+            todo = set()
+            for directory_name, sub_directories, files in walk(root):
+                for filename in fnmatch.filter(files, '*.yaml'):
+                    if filename.startswith('config'):
+                        continue
+
+                    todo.add(path.join(directory_name, filename))
+
+        stack_group_configs = {}
+        done = set()
+        while todo:
+            abs_path = todo.pop()
+            rel_path = path.relpath(abs_path,
+                                    start=self.context.full_config_path())
+            directory, filename = path.split(rel_path)
+
+            if directory in stack_group_configs:
+                stack_group_config = stack_group_configs[directory]
+            else:
+                stack_group_config = stack_group_configs[directory] = \
+                    self.read(path.join(directory, self.context.config_file))
+
+            stack = self._construct_stack(rel_path, stack_group_config)
+            stack_map[rel_path] = stack
+            done.add(abs_path)
+
+            for dep in stack.dependencies:
+                dep_path = path.join(self.context.full_config_path(), dep)
+                if dep_path not in done:
+                    todo.add(dep_path)
+
+        stacks = set()
+        for stack in stack_map.values():
+            stack.dependencies = [stack_map[dep] for dep in stack.dependencies]
+            stacks.add(stack)
+
+        return stacks
 
     def read(self, rel_path, base_config=None):
         """
@@ -222,7 +265,7 @@ class ConfigReader(object):
             config = self._recursive_read(parent_directory, filename)
 
         # Read config file and overwrite inherited properties
-        child_config = self._read(directory_path, filename) or {}
+        child_config = self._render(directory_path, filename) or {}
 
         for config_key, strategy in CONFIG_MERGE_STRATEGIES.items():
             value = strategy(
@@ -236,7 +279,7 @@ class ConfigReader(object):
 
         return config
 
-    def _read(self, directory_path, basename):
+    def _render(self, directory_path, basename):
         """
         Reads a configuration file, loads the config file as a template
         and returns config loaded from the file.
@@ -342,96 +385,43 @@ class ConfigReader(object):
         :returns: Stack object
         :rtype: sceptre.stack.Stack
         """
+
         directory, filename = path.split(rel_path)
-        if filename != self.context.config_file:
-            self.templating_vars["stack_group_config"] =\
-                stack_group_config
-            config = self.read(rel_path, stack_group_config)
-            stack_name = path.splitext(rel_path)[0]
-            abs_template_path = path.join(
-                self.context.project_path, config["template_path"]
-            )
+        if filename == self.context.config_file:
+            pass
 
-            s3_details = self._collect_s3_details(
-                stack_name, config
-            )
+        self.templating_vars["stack_group_config"] = stack_group_config
 
-            stack = Stack(
-                name=stack_name,
-                project_code=config["project_code"],
-                template_path=abs_template_path,
-                region=config["region"],
-                profile=config.get("profile"),
-                parameters=config.get("parameters", {}),
-                sceptre_user_data=config.get("sceptre_user_data", {}),
-                hooks=config.get("hooks", {}),
-                s3_details=s3_details,
-                dependencies=config.get("dependencies", []),
-                role_arn=config.get("role_arn"),
-                protected=config.get("protect", False),
-                tags=config.get("stack_tags", {}),
-                external_name=config.get("stack_name"),
-                notifications=config.get("notifications"),
-                on_failure=config.get("on_failure"),
-                stack_timeout=config.get("stack_timeout", 0)
-            )
-
-            del self.templating_vars["stack_group_config"]
-            return stack
-
-    def construct_stack(self, rel_path):
-        """
-        Construct a Stack object from a config path with the stack_group
-        config as the base config.
-
-        :param rel_path: A relative stack config path from the config folder.
-        :type rel_path: str
-        """
-        if not path.isfile(path.join(self.full_config_path, rel_path)):
-            raise ConfigFileNotFoundError(
-                "Config file not found for '{}'".format(rel_path)
-            )
-        directory = path.split(rel_path)[0]
-        stack_group_config = self.read(
-            path.join(directory, self.context.config_file)
-        )
-        return self._construct_stack(rel_path, stack_group_config)
-
-    def construct_stack_group(self, rel_path):
-        """
-        Construct a StackGroup object from a stack_group path
-        with all associated sub-stack_groups and stack objects.
-
-        :param rel_path: A relative stack_group path from the config
-        folder.
-        :type rel_path: str
-        """
-        if not path.isdir(path.join(self.full_config_path, rel_path)):
-            raise StackGroupNotFoundError(
-                "StackGroup not found for '{}'".format(rel_path)
-            )
-        stack_group_config = self.read(
-            path.join(rel_path, self.context.config_file)
-        )
-        stack_group = StackGroup(rel_path)
-
-        items = glob(
-            path.join(self.full_config_path, rel_path, "*")
+        config = self.read(rel_path, stack_group_config)
+        stack_name = path.splitext(rel_path)[0]
+        abs_template_path = path.join(
+            self.context.project_path, self.context.templates_path,
+            config["template_path"]
         )
 
-        paths = {
-            item: path.relpath(
-                item, self.full_config_path
-            )
-            for item in items if not item.endswith(self.context.config_file)
-        }
+        s3_details = self._collect_s3_details(
+            stack_name, config
+        )
 
-        is_leaf = not any([path.isdir(abs_path) for abs_path in paths.keys()])
-        for abs_path, rel_path in paths.items():
-            if is_leaf and path.isfile(abs_path):
-                stack = self._construct_stack(
-                    rel_path, copy.deepcopy(stack_group_config)
-                )
-                stack_group.stacks.append(stack)
+        stack = Stack(
+            name=stack_name,
+            project_code=config["project_code"],
+            template_path=abs_template_path,
+            region=config["region"],
+            profile=config.get("profile"),
+            parameters=config.get("parameters", {}),
+            sceptre_user_data=config.get("sceptre_user_data", {}),
+            hooks=config.get("hooks", {}),
+            s3_details=s3_details,
+            dependencies=config.get("dependencies", []),
+            role_arn=config.get("role_arn"),
+            protected=config.get("protect", False),
+            tags=config.get("stack_tags", {}),
+            external_name=config.get("stack_name"),
+            notifications=config.get("notifications"),
+            on_failure=config.get("on_failure"),
+            stack_timeout=config.get("stack_timeout", 0)
+        )
 
-        return stack_group
+        del self.templating_vars["stack_group_config"]
+        return stack

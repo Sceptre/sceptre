@@ -65,6 +65,6 @@ def update_command(ctx, path, change_set, verbose, yes):
             # Clean up by deleting change set
             plan.delete_change_set(change_set_name)
     else:
-        confirmation("update", yes, stack=path)
-        plan.update()
-        exit(stack_status_exit_code(plan))
+        confirmation("update", yes, command_path=path)
+        responses = plan.update()
+        exit(stack_status_exit_code(responses.values()))

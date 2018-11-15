@@ -39,11 +39,13 @@ def describe_change_set(ctx, path, change_set_name, verbose):
             )
 
     plan = SceptrePlan(context)
-    plan.describe_change_set(change_set_name)
-    description = plan.responses[0]
-    if not verbose:
-        description = simplify_change_set_description(description)
-    write(description, context.output_format)
+
+    responses = plan.describe_change_set(change_set_name)
+    for response in responses.values():
+        description = response
+        if not verbose:
+            description = simplify_change_set_description(description)
+        write(description, context.output_format)
 
 
 @describe_group.command(name="policy")
@@ -63,6 +65,6 @@ def describe_policy(ctx, path):
             )
 
     plan = SceptrePlan(context)
-    plan.get_policy()
-    response = plan.responses[0]
-    write(response.get('StackPolicyBody', {}))
+    responses = plan.get_policy()
+    for response in responses.values():
+        write(response.get('StackPolicyBody', {}))

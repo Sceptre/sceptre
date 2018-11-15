@@ -1,3 +1,3 @@
-template_path: templates/input_output_template.json
+template_path: input_output_template.json
 parameters:
-  Input: !stack_output B::Output
+  Input: !stack_output B.yaml::Output

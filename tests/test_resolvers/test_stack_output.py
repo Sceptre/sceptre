@@ -23,17 +23,28 @@ class TestStackOutputResolver(object):
         stack.dependencies = []
         stack.project_code = "project-code"
         stack.template.connection_manager = MagicMock(spec=ConnectionManager)
+
+        dependency = MagicMock()
+        dependency.name = "account/dev/vpc"
+        dependency.profile = 'dependency_profile'
+        dependency.region = 'dependency_region'
+
+        mock_get_output_value.return_value = "output_value"
+
         stack_output_resolver = StackOutput(
             "account/dev/vpc::VpcId", stack
         )
-        mock_get_output_value.return_value = "output_value"
+
         stack_output_resolver.setup()
+        assert stack.dependencies == ["account/dev/vpc"]
+
+        stack.dependencies = [dependency]
         result = stack_output_resolver.resolve()
         assert result == "output_value"
         mock_get_output_value.assert_called_once_with(
-            "project-code-account-dev-vpc", "VpcId"
+            "project-code-account-dev-vpc", "VpcId",
+            profile='dependency_profile', region='dependency_region'
         )
-        assert stack.dependencies == ["account/dev/vpc"]
 
     @patch(
         "sceptre.resolvers.stack_output.StackOutput._get_output_value"
@@ -43,19 +54,28 @@ class TestStackOutputResolver(object):
         stack.dependencies = ["existing"]
         stack.project_code = "project-code"
         stack.template.connection_manager = MagicMock(spec=ConnectionManager)
+
+        dependency = MagicMock()
+        dependency.name = "account/dev/vpc"
+        dependency.profile = 'dependency_profile'
+        dependency.region = 'dependency_region'
+
+        mock_get_output_value.return_value = "output_value"
+
         stack_output_resolver = StackOutput(
             "account/dev/vpc::VpcId", stack
         )
-        mock_get_output_value.return_value = "output_value"
 
         stack_output_resolver.setup()
-        result = stack_output_resolver.resolve()
+        assert stack.dependencies == ["existing", "account/dev/vpc"]
 
+        stack.dependencies = [MagicMock(), dependency]
+        result = stack_output_resolver.resolve()
         assert result == "output_value"
         mock_get_output_value.assert_called_once_with(
-            "project-code-account-dev-vpc", "VpcId"
+            "project-code-account-dev-vpc", "VpcId",
+            profile='dependency_profile', region='dependency_region'
         )
-        assert stack.dependencies == ["existing", "account/dev/vpc"]
 
     @patch(
         "sceptre.resolvers.stack_output.StackOutput._get_output_value"
@@ -68,17 +88,26 @@ class TestStackOutputResolver(object):
         stack.project_code = "project-code"
         stack.name = "account/dev/stack"
         stack.template.connection_manager = MagicMock(spec=ConnectionManager)
-        stack_output_resolver = StackOutput("vpc::VpcId", stack)
+
+        dependency = MagicMock()
+        dependency.name = "account/dev/vpc"
+        dependency.profile = 'dependency_profile'
+        dependency.region = 'dependency_region'
+
         mock_get_output_value.return_value = "output_value"
 
-        stack_output_resolver.setup()
-        result = stack_output_resolver.resolve()
+        stack_output_resolver = StackOutput("vpc::VpcId", stack)
 
+        stack_output_resolver.setup()
+        assert stack.dependencies == ["account/dev/vpc"]
+
+        stack.dependencies = [dependency]
+        result = stack_output_resolver.resolve()
         assert result == "output_value"
         mock_get_output_value.assert_called_once_with(
-            "project-code-account-dev-vpc", "VpcId"
+            "project-code-account-dev-vpc", "VpcId",
+            profile='dependency_profile', region='dependency_region'
         )
-        assert stack.dependencies == ["account/dev/vpc"]
 
 
 class TestStackOutputExternalResolver(object):

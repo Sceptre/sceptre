@@ -29,11 +29,7 @@ def status_command(ctx, path):
             )
 
     plan = SceptrePlan(context)
-
-    if len(plan.stack_group.stacks) == 1:
-        plan.get_status()
-        write(plan.responses[0], no_colour=context.no_colour)
-    else:
-        plan.describe()
-        write(plan.responses, output_format=context.output_format,
-              no_colour=context.no_colour)
+    responses = plan.get_status()
+    message = "\n".join("{}: {}".format(stack.name, status)
+                        for stack, status in responses.items())
+    write(message, no_colour=context.no_colour)

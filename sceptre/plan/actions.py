@@ -72,16 +72,28 @@ class StackActions(object):
             self.stack.template.get_boto_call_parameter())
         create_stack_kwargs.update(self._get_role_arn())
         create_stack_kwargs.update(self._get_stack_timeout())
-        response = self.connection_manager.call(
-            service="cloudformation",
-            command="create_stack",
-            kwargs=create_stack_kwargs
-        )
-        self.logger.debug(
-            "%s - Create stack response: %s", self.stack.name, response
-        )
 
-        status = self._wait_for_completion()
+        try:
+            response = self.connection_manager.call(
+                service="cloudformation",
+                command="create_stack",
+                kwargs=create_stack_kwargs
+            )
+
+            self.logger.debug(
+                "%s - Create stack response: %s", self.stack.name, response
+            )
+
+            status = self._wait_for_completion()
+        except botocore.exceptions.ClientError as exp:
+            if exp.response["Error"]["Code"] == "AlreadyExistsException":
+                self.logger.info(
+                    "%s - Stack already exists", self.stack.name
+                )
+
+                status = "COMPLETE"
+            else:
+                raise
 
         return status
 
@@ -160,7 +172,7 @@ class StackActions(object):
         self._protect_execution()
         self.logger.info("%s - Launching stack", self.stack.name)
         try:
-            existing_status = self.get_status()
+            existing_status = self._get_status()
         except StackDoesNotExistError:
             existing_status = "PENDING"
 
@@ -214,11 +226,12 @@ class StackActions(object):
         :rtype: sceptre.stack_status.StackStatus
         """
         self._protect_execution()
+
         self.logger.info("%s - Deleting stack", self.stack.name)
         try:
-            status = self.get_status()
+            status = self._get_status()
         except StackDoesNotExistError:
-            self.logger.info("%s does not exist.", self.stack.name)
+            self.logger.info("%s - Does not exist.", self.stack.name)
             status = StackStatus.COMPLETE
             return status
 
@@ -275,11 +288,16 @@ class StackActions(object):
         :returns: A stack description.
         :rtype: dict
         """
-        return self.connection_manager.call(
-            service="cloudformation",
-            command="describe_stacks",
-            kwargs={"StackName": self.stack.external_name}
-        )
+        try:
+            return self.connection_manager.call(
+                service="cloudformation",
+                command="describe_stacks",
+                kwargs={"StackName": self.stack.external_name}
+            )
+        except botocore.exceptions.ClientError as e:
+            if e.response["Error"]["Message"].endswith("does not exist"):
+                return
+            raise
 
     def describe_events(self):
         """
@@ -302,11 +320,17 @@ class StackActions(object):
         :rtype: dict
         """
         self.logger.debug("%s - Describing stack resources", self.stack.name)
-        response = self.connection_manager.call(
-            service="cloudformation",
-            command="describe_stack_resources",
-            kwargs={"StackName": self.stack.external_name}
-        )
+        try:
+            response = self.connection_manager.call(
+                service="cloudformation",
+                command="describe_stack_resources",
+                kwargs={"StackName": self.stack.external_name}
+            )
+        except botocore.exceptions.ClientError as e:
+            if e.response["Error"]["Message"].endswith("does not exist"):
+                return []
+            raise
+
         self.logger.debug(
             "%s - Describe stack resource response: %s",
             self.stack.name,
@@ -329,7 +353,11 @@ class StackActions(object):
         :rtype: list
         """
         self.logger.debug("%s - Describing stack outputs", self.stack.name)
-        response = self.describe()
+
+        try:
+            response = self._describe()
+        except botocore.exceptions.ClientError:
+            return []
 
         return response["Stacks"][0].get("Outputs", [])
 
@@ -512,13 +540,16 @@ class StackActions(object):
         :rtype: dict
         """
         self.logger.debug("%s - Listing change sets", self.stack.name)
-        return self.connection_manager.call(
-            service="cloudformation",
-            command="list_change_sets",
-            kwargs={
-                "StackName": self.stack.external_name
-            }
-        )
+        try:
+            return self.connection_manager.call(
+                service="cloudformation",
+                command="list_change_sets",
+                kwargs={
+                    "StackName": self.stack.external_name
+                }
+            )
+        except botocore.exceptions.ClientError:
+            return []
 
     def generate(self):
         """
@@ -556,10 +587,19 @@ class StackActions(object):
         :raises: botocore.exceptions.ClientError
         """
         self.logger.debug("%s - Estimating template cost", self.stack.name)
+
+        parameters = [
+           {'ParameterKey': key, 'ParameterValue': value}
+           for key, value in self.stack.parameters.items()
+        ]
+
+        kwargs = self.stack.template.get_boto_call_parameter()
+        kwargs.update({'Parameters': parameters})
+
         response = self.connection_manager.call(
             service="cloudformation",
             command="estimate_template_cost",
-            kwargs=self.stack.template.get_boto_call_parameter()
+            kwargs=kwargs
         )
         self.logger.debug(
             "%s - Estimate stack cost response: %s", self.stack.name, response
@@ -572,16 +612,11 @@ class StackActions(object):
 
         :returns: The stack's status.
         :rtype: sceptre.stack_status.StackStatus
-        :raises: sceptre.exceptions.StackDoesNotExistError
         """
         try:
-            status = self.describe()["Stacks"][0]["StackStatus"]
-        except botocore.exceptions.ClientError as exp:
-            if exp.response["Error"]["Message"].endswith("does not exist"):
-                raise StackDoesNotExistError(exp.response["Error"]["Message"])
-            else:
-                raise exp
-        return status
+            return self._get_status()
+        except StackDoesNotExistError:
+            return "PENDING"
 
     def _format_parameters(self, parameters):
         """
@@ -671,11 +706,28 @@ class StackActions(object):
         )
         elapsed = 0
         while status == StackStatus.IN_PROGRESS and not timed_out(elapsed):
-            status = self._get_simplified_status(self.get_status())
+            status = self._get_simplified_status(self._get_status())
             self._log_new_events()
             time.sleep(4)
             elapsed += 4
 
+        return status
+
+    def _describe(self):
+        return self.connection_manager.call(
+            service="cloudformation",
+            command="describe_stacks",
+            kwargs={"StackName": self.stack.external_name}
+        )
+
+    def _get_status(self):
+        try:
+            status = self._describe()["Stacks"][0]["StackStatus"]
+        except botocore.exceptions.ClientError as exp:
+            if exp.response["Error"]["Message"].endswith("does not exist"):
+                raise StackDoesNotExistError(exp.response["Error"]["Message"])
+            else:
+                raise exp
         return status
 
     @staticmethod

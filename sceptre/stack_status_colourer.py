@@ -17,6 +17,7 @@ class StackStatusColourer(object):
     """
 
     STACK_STATUS_CODES = {
+        "PENDING": Fore.CYAN,
         "CREATE_COMPLETE": Fore.GREEN,
         "CREATE_FAILED": Fore.RED,
         "CREATE_IN_PROGRESS": Fore.YELLOW,

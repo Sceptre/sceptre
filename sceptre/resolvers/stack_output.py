@@ -12,6 +12,8 @@ from sceptre.resolvers import Resolver
 from sceptre.exceptions import DependencyStackMissingOutputError
 from sceptre.exceptions import StackDoesNotExistError
 
+TEMPLATE_EXTENSION = ".yaml"
+
 
 @six.add_metaclass(abc.ABCMeta)
 class StackOutputBase(Resolver):
@@ -23,7 +25,7 @@ class StackOutputBase(Resolver):
         self.logger = logging.getLogger(__name__)
         super(StackOutputBase, self).__init__(*args, **kwargs)
 
-    def _get_output_value(self, stack_name, output_key, profile=None):
+    def _get_output_value(self, stack_name, output_key, profile=None, region=None):
         """
         Tries to get the stack output named by ``output_key``
 
@@ -35,7 +37,7 @@ class StackOutputBase(Resolver):
         :rtype: str
         :raises: sceptre.exceptions.DependencyStackMissingOutputError
         """
-        outputs = self._get_stack_outputs(stack_name, profile)
+        outputs = self._get_stack_outputs(stack_name, profile, region)
 
         try:
             return outputs[output_key]
@@ -46,7 +48,7 @@ class StackOutputBase(Resolver):
                 )
             )
 
-    def _get_stack_outputs(self, stack_name, profile=None):
+    def _get_stack_outputs(self, stack_name, profile=None, region=None):
         """
         Communicates with AWS Cloudformation to fetch outputs from a specific
         stack.
@@ -68,6 +70,7 @@ class StackOutputBase(Resolver):
                 command="describe_stacks",
                 kwargs={"StackName": stack_name},
                 profile=profile,
+                region=region,
                 stack_name=stack_name
             )
         except ClientError as e:
@@ -123,12 +126,15 @@ class StackOutput(StackOutputBase):
         """
         self.logger.debug("Resolving stack output: {0}".format(self.argument))
 
-        stack_name = "-".join([
-            self.stack.project_code,
-            self.dependency_stack_name.replace("/", "-")
-        ])
+        friendly_stack_name = self.dependency_stack_name.replace(TEMPLATE_EXTENSION, "")
+        stack_name = "-".join([self.stack.project_code, friendly_stack_name.replace("/", "-")])
 
-        return self._get_output_value(stack_name, self.output_key)
+        stack = next(
+            stack for stack in self.stack.dependencies if stack.name == friendly_stack_name
+        )
+
+        return self._get_output_value(stack_name, self.output_key,
+                                      profile=stack.profile, region=stack.region)
 
 
 class StackOutputExternal(StackOutputBase):

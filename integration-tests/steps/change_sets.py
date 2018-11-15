@@ -56,17 +56,15 @@ def step_impl(context, change_set_name, stack_name):
 
     sceptre_plan = SceptrePlan(sceptre_context)
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
-    sceptre_plan.create_change_set(change_set_name)
+    try:
+        sceptre_plan.create_change_set(change_set_name)
+    except ClientError as e:
+        if e.response['Error']['Code'] in allowed_errors:
+            context.error = e
+            return
+        else:
+            raise e
 
-    for error in sceptre_plan.errors:
-        try:
-            raise error
-        except ClientError as e:
-            if e.response['Error']['Code'] in allowed_errors:
-                context.error = e
-                return
-            else:
-                raise e
     wait_for_final_state(context, stack_name, change_set_name)
 
 
@@ -81,15 +79,14 @@ def step_impl(context, change_set_name, stack_name):
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
     sceptre_plan.delete_change_set(change_set_name)
 
-    for error in sceptre_plan.errors:
-        try:
-            raise error
-        except ClientError as e:
-            if e.response['Error']['Code'] in allowed_errors:
-                context.error = e
-                return
-            else:
-                raise e
+    try:
+        sceptre_plan.delete_change_set(change_set_name)
+    except ClientError as e:
+        if e.response['Error']['Code'] in allowed_errors:
+            context.error = e
+            return
+        else:
+            raise e
 
 
 @when('the user lists change sets for stack "{stack_name}"')
@@ -101,19 +98,14 @@ def step_impl(context, stack_name):
 
     sceptre_plan = SceptrePlan(sceptre_context)
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
-    sceptre_plan.list_change_sets()
 
-    for error in sceptre_plan.errors:
-        try:
-            raise error
-        except ClientError as e:
-            if e.response['Error']['Code'] in allowed_errors:
-                context.error = e
-                return
-            else:
-                raise e
-
-    context.output = sceptre_plan.responses[0]
+    try:
+        context.output = sceptre_plan.list_change_sets().values()
+    except ClientError as e:
+        if e.response['Error']['Code'] in allowed_errors:
+            context.error = e
+            return
+        raise e
 
 
 @when('the user executes change set "{change_set_name}" for stack "{stack_name}"')
@@ -125,17 +117,15 @@ def step_impl(context, change_set_name, stack_name):
 
     sceptre_plan = SceptrePlan(sceptre_context)
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
-    sceptre_plan.execute_change_set(change_set_name)
 
-    for error in sceptre_plan.errors:
-        try:
-            raise error
-        except ClientError as e:
-            if e.response['Error']['Code'] in allowed_errors:
-                context.error = e
-                return
-            else:
-                raise e
+    try:
+        sceptre_plan.execute_change_set(change_set_name)
+    except ClientError as e:
+        if e.response['Error']['Code'] in allowed_errors:
+            context.error = e
+            return
+        else:
+            raise e
 
 
 @when('the user describes change set "{change_set_name}" for stack "{stack_name}"')
@@ -147,18 +137,16 @@ def step_impl(context, change_set_name, stack_name):
 
     sceptre_plan = SceptrePlan(sceptre_context)
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
-    sceptre_plan.describe_change_set(change_set_name)
 
-    for error in sceptre_plan.errors:
-        try:
-            raise error
-        except ClientError as e:
-            if e.response['Error']['Code'] in allowed_errors:
-                context.error = e
-                return
-            else:
-                raise e
-    context.output = sceptre_plan.responses[0]
+    try:
+        sceptre_plan.describe_change_set(change_set_name)
+    except ClientError as e:
+        if e.response['Error']['Code'] in allowed_errors:
+            context.error = e
+            return
+        else:
+            raise e
+    context.output = sceptre_plan.responses
 
 
 @then('stack "{stack_name}" has change set "{change_set_name}" in "{state}" state')
@@ -187,14 +175,15 @@ def step_impl(context, stack_name):
     )
 
     del response["ResponseMetadata"]
-    del context.output["ResponseMetadata"]
-
-    assert response == context.output
+    for output in context.output:
+        del output["ResponseMetadata"]
+        assert response == output
 
 
 @then('no change sets for stack "{stack_name}" are listed')
 def step_impl(context, stack_name):
-    assert context.output["Summaries"] == []
+    for output in context.output:
+        assert output["Summaries"] == []
 
 
 @then('change set "{change_set_name}" for stack "{stack_name}" is described')
@@ -207,9 +196,11 @@ def step_impl(context, change_set_name, stack_name):
     )
 
     del response["ResponseMetadata"]
-    del context.output["ResponseMetadata"]
+    for output in context.output:
+        del output["ResponseMetadata"]
 
-    assert response == context.output
+    for output in context.output:
+        assert response == output
 
 
 @then('stack "{stack_name}" was updated with change set "{change_set_name}"')

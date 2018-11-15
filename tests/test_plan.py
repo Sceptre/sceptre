@@ -4,7 +4,6 @@ from mock import MagicMock, patch, sentinel
 from sceptre.context import SceptreContext
 from sceptre.stack import Stack
 from sceptre.config.reader import ConfigReader
-from sceptre.stack_group import StackGroup
 from sceptre.plan.plan import SceptrePlan
 
 
@@ -26,7 +25,6 @@ class TestSceptrePlan(object):
         )
         self.mock_context = MagicMock(spec=SceptreContext)
         self.mock_config_reader = MagicMock(spec=ConfigReader)
-        self.mock_stack_group = MagicMock(spec=StackGroup)
         self.mock_context.project_path = sentinel.project_path
         self.mock_context.command_path = sentinel.command_path
         self.mock_context.config_file = sentinel.config_file

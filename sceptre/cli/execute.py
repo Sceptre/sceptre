@@ -30,6 +30,6 @@ def execute_command(ctx, path, change_set_name, yes):
             plan.execute_change_set.__name__,
             yes,
             change_set=change_set_name,
-            stack=path
+            command_path=path
     )
     plan.execute_change_set(change_set_name)

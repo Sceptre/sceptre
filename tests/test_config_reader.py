@@ -67,6 +67,7 @@ class TestConfigReader(object):
                     yaml.safe_dump(
                         config, stream=config_file, default_flow_style=False
                     )
+
             self.context.project_path = project_path
             config = ConfigReader(self.context).read(target)
 
@@ -191,19 +192,21 @@ class TestConfigReader(object):
 
     @patch("sceptre.config.reader.ConfigReader._collect_s3_details")
     @patch("sceptre.config.reader.Stack")
-    def test_construct_stack_with_valid_config(
+    def test_construct_stacks_constructs_stack(
         self, mock_Stack, mock_collect_s3_details
     ):
         mock_Stack.return_value = sentinel.stack
+        sentinel.stack.dependencies = []
+
         mock_collect_s3_details.return_value = sentinel.s3_details
-        stack = ConfigReader(self.context).construct_stack(
-            "account/stack-group/region/vpc.yaml"
-        )
+        self.context.project_path = os.path.abspath("tests/fixtures")
+        self.context.command_path = "account/stack-group/region/vpc.yaml"
+        stacks = ConfigReader(self.context).construct_stacks()
         mock_Stack.assert_called_with(
             name="account/stack-group/region/vpc",
             project_code="account_project_code",
             template_path=os.path.join(
-                self.test_project_path, "path/to/template"
+                self.test_project_path, "templates/path/to/template"
             ),
             region="region_region",
             profile="account_profile",
@@ -220,90 +223,18 @@ class TestConfigReader(object):
             on_failure=None,
             stack_timeout=0
         )
-        assert stack == sentinel.stack
+        assert stacks == {sentinel.stack}
 
-    @pytest.mark.parametrize("filepaths,targets,results", [
-        (
-            ["A/1.yaml"], ["A"], [
-                {
-                    "A": {"stacks": ["A/1"], "stack_groups": {}}
-                }
-            ]
-        ),
-        (
-            ["A/1.yaml", "A/2.yaml", "A/3.yaml"], ["A"], [
-                {
-                    "A": {
-                        "stacks": ["A/3", "A/2", "A/1"],
-                        "stack_groups": {}
-                    }
-                }
-            ]
-        ),
-        (
-            ["A/1.yaml", "A/A/1.yaml"], ["A", "A/A"], [
-                {
-                    "A": {
-                        "stacks": [],
-                        "stack_groups": {
-                            "A/A": {
-                                "stacks": ["A/A/1"],
-                                "stack_groups": {}
-                            },
-                        }
-                    }
-                },
-                {
-                    "A/A": {"stacks": ["A/A/1"], "stack_groups": {}}
-                }
-            ]
-        ),
-        (
-            ["A/1.yaml", "A/A/1.yaml", "A/A/2.yaml"], ["A", "A/A"], [
-                {
-                    "A": {
-                        "stacks": [],
-                        "stack_groups": {
-                            "A/A": {
-                                "stacks": ["A/A/1", "A/A/2"],
-                                "stack_groups": {}
-                            },
-                        }
-                    }
-                },
-                {
-                    "A/A": {
-                        "stacks": ["A/A/1", "A/A/2"], "stack_groups": {}
-                    }
-                }
-            ]
-        ),
-        (
-            ["A/A/1.yaml", "A/B/1.yaml"], ["A", "A/A", "A/B"], [
-                {
-                    "A": {
-                        "stacks": [],
-                        "stack_groups": {
-                            "A/A": {
-                                "stacks": ["A/A/1"], "stack_groups": {}
-                            },
-                            "A/B": {
-                                "stacks": ["A/B/1"], "stack_groups": {}
-                            }
-                        }
-                    }
-                },
-                {
-                    "A/A": {"stacks": ["A/A/1"], "stack_groups":{}}
-                },
-                {
-                    "A/B": {"stacks": ["A/B/1"], "stack_groups":{}}
-                }
-            ]
-        )
+    @pytest.mark.parametrize("filepaths,targets,expected_stacks", [
+        (["A/1.yaml"], ["A"], {"A/1"}),
+        (["A/1.yaml", "A/2.yaml", "A/3.yaml"], ["A"], {"A/3", "A/2", "A/1"}),
+        (["A/1.yaml", "A/A/1.yaml"], ["A", "A/A"], {"A/1", "A/A/1"}),
+        (["A/1.yaml", "A/A/1.yaml", "A/A/2.yaml"], ["A", "A/A"],
+         {"A/1", "A/A/1", "A/A/2"}),
+        (["A/A/1.yaml", "A/B/1.yaml"], ["A", "A/A", "A/B"], {"A/A/1", "A/B/1"})
     ])
-    def test_construct_stack_group_with_valid_config(
-        self, filepaths, targets, results
+    def test_construct_stacks_with_valid_config(
+        self, filepaths, targets, expected_stacks
     ):
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath('./example')
@@ -331,22 +262,8 @@ class TestConfigReader(object):
                     yaml.safe_dump(
                         config, stream=config_file, default_flow_style=False
                     )
+
             self.context.project_path = project_path
             config_reader = ConfigReader(self.context)
-
-            def check_stack_group(stack_group, details):
-                assert sorted(details["stacks"]) == sorted([
-                    stack.name for stack in stack_group.stacks
-                ])
-                for sub_group in stack_group.sub_stack_groups:
-                    sub_group_details =\
-                        details["stack_groups"][sub_group.path]
-                    check_stack_group(sub_group, sub_group_details)
-
-            for i, target in enumerate(targets):
-                stack_group =\
-                    config_reader.construct_stack_group(target)
-                expected = results[i]
-                check_stack_group(
-                    stack_group, expected[stack_group.path]
-                )
+            stacks = config_reader.construct_stacks()
+            assert {str(stack) for stack in stacks} == expected_stacks

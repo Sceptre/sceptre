@@ -96,6 +96,9 @@ class Stack(object):
             )
         )
 
+    def __str__(self):
+        return self.name
+
     @property
     def template(self):
         """

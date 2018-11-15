@@ -26,13 +26,11 @@ def step_impl(context, stack_name):
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
-    sceptre_plan.unlock()
 
-    for error in sceptre_plan.errors:
-        try:
-            raise error
-        except ClientError as e:
-            context.error = e
+    try:
+        sceptre_plan.unlock()
+    except ClientError as e:
+        context.error = e
 
 
 @when('the user locks stack "{stack_name}"')
@@ -43,13 +41,10 @@ def step_impl(context, stack_name):
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
-    sceptre_plan.lock()
-
-    for error in sceptre_plan.errors:
-        try:
-            raise error
-        except ClientError as e:
-            context.error = e
+    try:
+        sceptre_plan.lock()
+    except ClientError as e:
+        context.error = e
 
 
 @then('the policy for stack "{stack_name}" is {state}')
@@ -69,7 +64,7 @@ def get_stack_policy(context, stack_name):
         )
     except ClientError as e:
         if e.response['Error']['Code'] == 'ValidationError' \
-          and e.response['Error']['Message'].endswith("does not exist"):
+                and e.response['Error']['Message'].endswith("does not exist"):
             return None
         else:
             raise e
@@ -87,7 +82,7 @@ def generate_stack_policy(policy_type):
                     "Principal": "*",
                     "Resource": "*"
                 }
-             ]
+            ]
         }
     elif policy_type == 'deny all':
         data = {
@@ -98,7 +93,7 @@ def generate_stack_policy(policy_type):
                     "Principal": "*",
                     "Resource": "*"
                 }
-             ]
+            ]
         }
 
     return json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '))

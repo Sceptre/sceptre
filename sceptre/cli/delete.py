@@ -31,20 +31,14 @@ def delete_command(ctx, path, change_set_name, yes):
 
     plan = SceptrePlan(context)
 
-    if len(plan.stack_group.stacks) == 1:
-        if change_set_name:
-            confirmation(
-                plan.delete_change_set.__name__,
-                yes,
-                change_set=change_set_name,
-                stack=path
-            )
-            plan.delete_change_set(change_set_name)
-        else:
-            confirmation(plan.delete.__name__, yes, stack=path)
-            plan.delete()
-            exit(stack_status_exit_code(plan))
-    elif plan.stack_group:
-        confirmation(plan.delete.__name__, yes, stack_group=path)
-        plan.delete()
-        exit(stack_status_exit_code(plan))
+    confirmation(
+        plan.delete_change_set.__name__,
+        yes,
+        change_set=change_set_name,
+        command_path=path
+    )
+    if change_set_name:
+        plan.delete_change_set(change_set_name)
+    else:
+        responses = plan.delete()
+        exit(stack_status_exit_code(responses.values()))

@@ -12,7 +12,6 @@ import click
 from sceptre.cli import cli
 from sceptre.config.reader import ConfigReader
 from sceptre.stack import Stack
-from sceptre.stack_group import StackGroup
 from sceptre.plan.actions import StackActions
 from sceptre.stack_status import StackStatus
 from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
@@ -34,18 +33,15 @@ class TestCli(object):
         self.mock_stack_actions = MagicMock(spec=StackActions)
 
         self.mock_stack = MagicMock(spec=Stack)
-        self.mock_stack_group = MagicMock(spec=StackGroup)
 
         self.mock_stack.name = 'mock-stack'
         self.mock_stack.region = None
         self.mock_stack.profile = None
         self.mock_stack.external_name = None
         self.mock_stack.dependencies = []
-        self.mock_stack_group.stacks = [self.mock_stack]
 
-        self.mock_config_reader.construct_stack.return_value = self.mock_stack
-        self.mock_config_reader.construct_stack_group.return_value = \
-            self.mock_stack_group
+        self.mock_config_reader.construct_stacks.return_value = \
+            set([self.mock_stack])
 
         self.mock_stack_actions.stack = self.mock_stack
 
@@ -137,7 +133,7 @@ class TestCli(object):
         result = self.runner.invoke(cli, ["validate", "dev/vpc.yaml"])
         self.mock_stack_actions.validate.assert_called_with()
 
-        assert result.output == "Template is valid. Template details:\n\n" \
+        assert result.output == "Template mock-stack is valid. Template details:\n\n" \
             "Parameters: Example\n\n"
 
     def test_validate_template_with_invalid_template(self):
@@ -155,7 +151,7 @@ class TestCli(object):
 
         expected_result = str(client_error) + "\n"
         result = self.runner.invoke(cli, ["validate", "dev/vpc.yaml"])
-        assert result.output == expected_result
+        assert expected_result in result.output
 
     def test_estimate_template_cost_with_browser(self):
         self.mock_stack_actions.estimate_cost.return_value = {
@@ -171,7 +167,7 @@ class TestCli(object):
         self.mock_stack_actions.estimate_cost.assert_called_with()
 
         assert result.output == \
-            '{0}{1}'.format("View the estimated cost at:\n",
+            '{0}{1}'.format("View the estimated cost for mock-stack at:\n",
                             "http://example.com\n\n")
 
     def test_estimate_template_cost_with_no_browser(self):
@@ -192,25 +188,20 @@ class TestCli(object):
             cli,
             ["estimate-cost", "dev/vpc.yaml"]
         )
-
-        assert result.output == expected_result
+        assert expected_result in result.output
 
     def test_lock_stack(self):
         self.runner.invoke(
             cli, ["set-policy", "dev/vpc.yaml", "-b", "deny-all"]
         )
-        self.mock_config_reader.construct_stack.assert_called_with(
-            "dev/vpc.yaml"
-        )
+        self.mock_config_reader.construct_stacks.assert_called_with()
         self.mock_stack_actions.lock.assert_called_with()
 
     def test_unlock_stack(self):
         self.runner.invoke(
             cli, ["set-policy", "dev/vpc.yaml", "-b", "allow-all"]
         )
-        self.mock_config_reader.construct_stack.assert_called_with(
-            "dev/vpc.yaml"
-        )
+        self.mock_config_reader.construct_stacks.assert_called_with()
         self.mock_stack_actions.unlock.assert_called_with()
 
     def test_set_policy_with_file_flag(self):
@@ -332,33 +323,6 @@ class TestCli(object):
         assert result.exit_code == 0
 
     @pytest.mark.parametrize(
-        "command,success,yes_flag,exit_code", [
-            ("delete", True, True, 0),
-            ("delete", False, True, 1),
-            ("delete", True, False, 0),
-            ("delete", False, False, 1),
-            ("launch", True, True, 0),
-            ("launch", False, True, 1),
-            ("launch", True, False, 0),
-            ("launch", False, False, 1)
-        ]
-    )
-    def test_stack_group_commands(self, command, success, yes_flag, exit_code):
-        status = StackStatus.COMPLETE if success else StackStatus.FAILED
-        getattr(self.mock_stack_actions, command).return_value = status
-
-        kwargs = {"args": [command, "dev"]}
-        if yes_flag:
-            kwargs["args"].append("-y")
-        else:
-            kwargs["input"] = "y\n"
-
-        result = self.runner.invoke(cli, **kwargs)
-
-        getattr(self.mock_stack_actions, command).assert_called_with()
-        assert result.exit_code == exit_code
-
-    @pytest.mark.parametrize(
         "verbose_flag,", [
             (False),
             (True)
@@ -428,13 +392,13 @@ class TestCli(object):
         assert yaml.load(result.output) == response
 
     def test_list_outputs(self):
-        outputs = {"OutputKey": "Key", "OutputValue": "Value"}
+        outputs = [{"OutputKey": "Key", "OutputValue": "Value"}]
         self.mock_stack_actions.describe_outputs.return_value = outputs
         result = self.runner.invoke(
             cli, ["list", "outputs", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert yaml.load(result.output) == outputs
+        assert yaml.load(result.output) == [outputs]
 
     def test_list_outputs_with_export(self):
         outputs = [{"OutputKey": "Key", "OutputValue": "Value"}]
@@ -452,13 +416,13 @@ class TestCli(object):
 
         result = self.runner.invoke(cli, ["status", "dev"])
         assert result.exit_code == 0
-        assert result.output == "{'stack': 'status'}\n"
+        assert result.output == "mock-stack: {'stack': 'status'}\n"
 
     def test_status_with_stack(self):
         self.mock_stack_actions.get_status.return_value = "status"
         result = self.runner.invoke(cli, ["status", "dev/vpc.yaml"])
         assert result.exit_code == 0
-        assert result.output == "status\n"
+        assert result.output == "mock-stack: status\n"
 
     def test_init_project_non_existant(self):
         with self.runner.isolated_filesystem():

@@ -287,7 +287,7 @@ class TestStackActions(object):
         mock_wait_for_completion.assert_called_once_with()
 
     @patch("sceptre.plan.actions.StackActions.create")
-    @patch("sceptre.plan.actions.StackActions.get_status")
+    @patch("sceptre.plan.actions.StackActions._get_status")
     def test_launch_with_stack_that_does_not_exist(
             self, mock_get_status, mock_create
     ):
@@ -299,7 +299,7 @@ class TestStackActions(object):
 
     @patch("sceptre.plan.actions.StackActions.create")
     @patch("sceptre.plan.actions.StackActions.delete")
-    @patch("sceptre.plan.actions.StackActions.get_status")
+    @patch("sceptre.plan.actions.StackActions._get_status")
     def test_launch_with_stack_that_failed_to_create(
             self, mock_get_status, mock_delete, mock_create
     ):
@@ -311,7 +311,7 @@ class TestStackActions(object):
         assert response == sentinel.launch_response
 
     @patch("sceptre.plan.actions.StackActions.update")
-    @patch("sceptre.plan.actions.StackActions.get_status")
+    @patch("sceptre.plan.actions.StackActions._get_status")
     def test_launch_with_complete_stack_with_updates_to_perform(
             self, mock_get_status, mock_update
     ):
@@ -322,7 +322,7 @@ class TestStackActions(object):
         assert response == sentinel.launch_response
 
     @patch("sceptre.plan.actions.StackActions.update")
-    @patch("sceptre.plan.actions.StackActions.get_status")
+    @patch("sceptre.plan.actions.StackActions._get_status")
     def test_launch_with_complete_stack_with_no_updates_to_perform(
             self, mock_get_status, mock_update
     ):
@@ -341,7 +341,7 @@ class TestStackActions(object):
         assert response == StackStatus.COMPLETE
 
     @patch("sceptre.plan.actions.StackActions.update")
-    @patch("sceptre.plan.actions.StackActions.get_status")
+    @patch("sceptre.plan.actions.StackActions._get_status")
     def test_launch_with_complete_stack_with_unknown_client_error(
             self, mock_get_status, mock_update
     ):
@@ -358,27 +358,27 @@ class TestStackActions(object):
         with pytest.raises(ClientError):
             self.actions.launch()
 
-    @patch("sceptre.plan.actions.StackActions.get_status")
+    @patch("sceptre.plan.actions.StackActions._get_status")
     def test_launch_with_in_progress_stack(self, mock_get_status):
         mock_get_status.return_value = "CREATE_IN_PROGRESS"
         response = self.actions.launch()
         assert response == StackStatus.IN_PROGRESS
 
-    @patch("sceptre.plan.actions.StackActions.get_status")
+    @patch("sceptre.plan.actions.StackActions._get_status")
     def test_launch_with_failed_stack(self, mock_get_status):
         mock_get_status.return_value = "UPDATE_FAILED"
         with pytest.raises(CannotUpdateFailedStackError):
             response = self.actions.launch()
             assert response == StackStatus.FAILED
 
-    @patch("sceptre.plan.actions.StackActions.get_status")
+    @patch("sceptre.plan.actions.StackActions._get_status")
     def test_launch_with_unknown_stack_status(self, mock_get_status):
         mock_get_status.return_value = "UNKNOWN_STATUS"
         with pytest.raises(UnknownStackStatusError):
             self.actions.launch()
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
-    @patch("sceptre.plan.actions.StackActions.get_status")
+    @patch("sceptre.plan.actions.StackActions._get_status")
     def test_delete_with_created_stack(
             self, mock_get_status, mock_wait_for_completion
     ):
@@ -395,7 +395,7 @@ class TestStackActions(object):
         )
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
-    @patch("sceptre.plan.actions.StackActions.get_status")
+    @patch("sceptre.plan.actions.StackActions._get_status")
     def test_delete_when_wait_for_completion_raises_stack_does_not_exist_error(
             self, mock_get_status, mock_wait_for_completion
     ):
@@ -405,7 +405,7 @@ class TestStackActions(object):
         assert status == StackStatus.COMPLETE
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
-    @patch("sceptre.plan.actions.StackActions.get_status")
+    @patch("sceptre.plan.actions.StackActions._get_status")
     def test_delete_when_wait_for_completion_raises_non_existent_client_error(
             self, mock_get_status, mock_wait_for_completion
     ):
@@ -423,7 +423,7 @@ class TestStackActions(object):
         assert status == StackStatus.COMPLETE
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
-    @patch("sceptre.plan.actions.StackActions.get_status")
+    @patch("sceptre.plan.actions.StackActions._get_status")
     def test_delete_when_wait_for_completion_raises_unexpected_client_error(
             self, mock_get_status, mock_wait_for_completion
     ):
@@ -441,7 +441,7 @@ class TestStackActions(object):
             self.actions.delete()
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
-    @patch("sceptre.plan.actions.StackActions.get_status")
+    @patch("sceptre.plan.actions.StackActions._get_status")
     def test_delete_with_non_existent_stack(
             self, mock_get_status, mock_wait_for_completion
     ):
@@ -488,7 +488,7 @@ class TestStackActions(object):
             }
         ]
 
-    @patch("sceptre.plan.actions.StackActions.describe")
+    @patch("sceptre.plan.actions.StackActions._describe")
     def test_describe_outputs_sends_correct_request(self, mock_describe):
         mock_describe.return_value = {
             "Stacks": [{
@@ -499,7 +499,7 @@ class TestStackActions(object):
         mock_describe.assert_called_once_with()
         assert response == sentinel.outputs
 
-    @patch("sceptre.plan.actions.StackActions.describe")
+    @patch("sceptre.plan.actions.StackActions._describe")
     def test_describe_outputs_handles_stack_with_no_outputs(
             self, mock_describe
     ):
@@ -782,7 +782,7 @@ class TestStackActions(object):
             {"ParameterKey": "key2", "ParameterValue": "value4"},
         ]
 
-    @patch("sceptre.plan.actions.StackActions.describe")
+    @patch("sceptre.plan.actions.StackActions._describe")
     def test_get_status_with_created_stack(self, mock_describe):
         mock_describe.return_value = {
             "Stacks": [{"StackStatus": "CREATE_COMPLETE"}]
@@ -790,7 +790,7 @@ class TestStackActions(object):
         status = self.actions.get_status()
         assert status == "CREATE_COMPLETE"
 
-    @patch("sceptre.plan.actions.StackActions.describe")
+    @patch("sceptre.plan.actions.StackActions._describe")
     def test_get_status_with_non_existent_stack(self, mock_describe):
         mock_describe.side_effect = ClientError(
             {
@@ -801,10 +801,9 @@ class TestStackActions(object):
             },
             sentinel.operation
         )
-        with pytest.raises(StackDoesNotExistError):
-            self.actions.get_status()
+        assert self.actions.get_status() == "PENDING"
 
-    @patch("sceptre.plan.actions.StackActions.describe")
+    @patch("sceptre.plan.actions.StackActions._describe")
     def test_get_status_with_unknown_clinet_error(self, mock_describe):
         mock_describe.side_effect = ClientError(
             {
@@ -838,7 +837,7 @@ class TestStackActions(object):
             self.actions._protect_execution()
 
     @patch("sceptre.plan.actions.StackActions._log_new_events")
-    @patch("sceptre.plan.actions.StackActions.get_status")
+    @patch("sceptre.plan.actions.StackActions._get_status")
     @patch("sceptre.plan.actions.StackActions._get_simplified_status")
     def test_wait_for_completion_calls_log_new_events(
             self, mock_get_simplified_status, mock_get_status,

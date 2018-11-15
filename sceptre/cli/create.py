@@ -33,9 +33,10 @@ def create_command(ctx, path, change_set_name, yes):
 
     # TODO this isn't going to work with sub-stack-group-stacks
     if change_set_name:
-        confirmation(action, yes, change_set=change_set_name, stack=path)
+        confirmation(action, yes, change_set=change_set_name,
+                     command_path=path)
         plan.create_change_set(change_set_name)
     else:
-        confirmation(action, yes, stack=path)
-        plan.create()
-        exit(stack_status_exit_code(plan))
+        confirmation(action, yes, command_path=path)
+        responses = plan.create()
+        exit(stack_status_exit_code(responses.values()))
