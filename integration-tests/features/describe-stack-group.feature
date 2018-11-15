@@ -3,7 +3,7 @@ Feature: Describe stack_group
   Scenario: describe a stack_group that does not exist
     Given stack_group "2" does not exist
     When the user describes stack_group "2"
-    Then all stacks in stack_group "2" are described as "PENDING"
+    Then no resources are described
 
   Scenario: describe a stack_group that already exists
     Given all the stacks in stack_group "2" are in "CREATE_COMPLETE"

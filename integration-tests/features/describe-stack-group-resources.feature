@@ -5,7 +5,7 @@ Feature: Describe stack_group resources
     When the user describes resources in stack_group "2"
     Then no resources are described
 
-  Scenario: describe rosources of a stack_group that already exists
+  Scenario: describe resources of a stack_group that already exists
     Given all the stacks in stack_group "2" are in "CREATE_COMPLETE"
     When the user describes resources in stack_group "2"
     Then only all resources in stack_group "2" are described

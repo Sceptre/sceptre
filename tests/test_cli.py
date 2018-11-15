@@ -198,6 +198,7 @@ class TestCli(object):
             cli,
             ["estimate-cost", "dev/vpc.yaml"]
         )
+
         assert result.output == expected_result
 
     def test_lock_stack(self):
