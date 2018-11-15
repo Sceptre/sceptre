@@ -22,11 +22,11 @@ def create_command(ctx, path, change_set_name, yes):
     creates a change set for stack in PATH.
     """
     context = SceptreContext(
-                command_path=path,
-                project_path=ctx.obj.get("project_path"),
-                user_variables=ctx.obj.get("user_variables"),
-                options=ctx.obj.get("options")
-            )
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options")
+    )
 
     action = "create"
     plan = SceptrePlan(context)

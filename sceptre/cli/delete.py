@@ -23,11 +23,11 @@ def delete_command(ctx, path, change_set_name, yes):
     deletes a change set for stack in PATH.
     """
     context = SceptreContext(
-                command_path=path,
-                project_path=ctx.obj.get("project_path"),
-                user_variables=ctx.obj.get("user_variables"),
-                options=ctx.obj.get("options")
-            )
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options")
+    )
 
     plan = SceptrePlan(context)
 
@@ -39,7 +39,7 @@ def delete_command(ctx, path, change_set_name, yes):
                 change_set=change_set_name,
                 stack=path
             )
-            plan.delete_change_set()
+            plan.delete_change_set(change_set_name)
         else:
             confirmation(plan.delete.__name__, yes, stack=path)
             plan.delete()
