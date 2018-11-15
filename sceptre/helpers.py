@@ -4,7 +4,6 @@
 def get_external_stack_name(project_code, stack_name):
     """
     Returns the name given to a stack in CloudFormation.
-
     :param project_code: The project code, as defined in config.yaml.
     :type project_code: str
     :param stack_name: The name of the stack.

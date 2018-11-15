@@ -20,10 +20,9 @@ from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
 from sceptre import __version__
-from sceptre.exceptions import (
-    InvalidSceptreDirectoryError,
-    VersionIncompatibleError,
-    ConfigFileNotFoundError)
+from sceptre.exceptions import InvalidSceptreDirectoryError
+from sceptre.exceptions import VersionIncompatibleError
+from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.stack import Stack
 from . import strategies
 
