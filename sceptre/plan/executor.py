@@ -25,6 +25,7 @@ class SceptrePlanExecutor(object):
                 except(ClientError) as exp:
                     not_exists = exp.response.get("Error", {}).get("Message")
                     if not_exists and not_exists.endswith("does not exist"):
+                        plan.errors.append(exp)
                         continue
                     else:
                         raise
@@ -42,6 +43,7 @@ class SceptrePlanExecutor(object):
                         if not_exists and not_exists.endswith(
                             "does not exist"
                         ):
+                            plan.errors.append(exp)
                             continue
                         else:
                             raise

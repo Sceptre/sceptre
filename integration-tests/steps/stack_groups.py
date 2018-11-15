@@ -208,9 +208,7 @@ def get_stack_names(context, stack_group_name):
         for filepath in files:
             filename = os.path.splitext(filepath)[0]
             if not filename == "config":
-                prefix = stack_group_name
-                stack_group = root[path.find(prefix):]
-                stack_names.append(os.path.join(stack_group, filename))
+                stack_names.append(os.path.join(stack_group_name, filename))
     return stack_names
 
 
