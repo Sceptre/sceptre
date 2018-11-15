@@ -1,7 +1,8 @@
 from behave import *
 import os
 import time
-from sceptre.config.reader import ConfigReader
+from sceptre.plan.plan import SceptrePlan
+from sceptre.context import SceptreContext
 from botocore.exceptions import ClientError
 from helpers import read_template_file, get_cloudformation_stack_name
 from helpers import retry_boto_call
@@ -43,26 +44,48 @@ def step_impl(context, stack_group_name, status):
 
 @when('the user launches stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
-    stack_group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
-    stack_group.launch()
+    sceptre_context = SceptreContext(
+        command_path=stack_group_name,
+        project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    sceptre_plan.launch()
 
 
 @when('the user deletes stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
-    stack_group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
-    stack_group.delete()
+    sceptre_context = SceptreContext(
+        command_path=stack_group_name,
+        project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    sceptre_plan.delete()
 
 
 @when('the user describes stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
-    stack_group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
-    context.response = stack_group.describe()
+    sceptre_context = SceptreContext(
+        command_path=stack_group_name,
+        project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    sceptre_plan.describe()
+    context.response = sceptre_plan.responses[0]
 
 
 @when('the user describes resources in stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
-    stack_group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
-    context.response = stack_group.describe_resources()
+    sceptre_context = SceptreContext(
+        command_path=stack_group_name,
+        project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    sceptre_plan.describe_resources()
+    context.response = sceptre_plan.responses[0]
 
 
 @then('all the stacks in stack_group "{stack_group_name}" are in "{status}"')

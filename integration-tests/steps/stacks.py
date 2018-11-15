@@ -8,7 +8,8 @@ from botocore.exceptions import ClientError
 from helpers import read_template_file, get_cloudformation_stack_name
 from helpers import retry_boto_call
 
-from sceptre.config.reader import ConfigReader
+from sceptre.plan.plan import SceptrePlan
+from sceptre.context import SceptreContext
 
 
 def set_stack_timeout(context, stack_name, stack_timeout):
@@ -94,10 +95,14 @@ def step_impl(context, stack_name, stack_timeout):
 
 @when('the user creates stack "{stack_name}"')
 def step_impl(context, stack_name):
-    config_reader = ConfigReader(context.sceptre_dir)
-    stack = config_reader.construct_stack(stack_name + ".yaml")
+    sceptre_context = SceptreContext(
+        command_path=f'{stack_name}.yaml',
+        project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
     try:
-        stack.create()
+        sceptre_plan.create()
     except ClientError as e:
         if e.response['Error']['Code'] == 'AlreadyExistsException' \
           and e.response['Error']['Message'].endswith("already exists"):
@@ -108,10 +113,14 @@ def step_impl(context, stack_name):
 
 @when('the user updates stack "{stack_name}"')
 def step_impl(context, stack_name):
-    config_reader = ConfigReader(context.sceptre_dir)
-    stack = config_reader.construct_stack(stack_name + ".yaml")
+    sceptre_context = SceptreContext(
+        command_path=f'{stack_name}.yaml',
+        project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
     try:
-        stack.update()
+        sceptre_plan.update()
     except ClientError as e:
         message = e.response['Error']['Message']
         if e.response['Error']['Code'] == 'ValidationError' \
@@ -124,10 +133,14 @@ def step_impl(context, stack_name):
 
 @when('the user deletes stack "{stack_name}"')
 def step_impl(context, stack_name):
-    config_reader = ConfigReader(context.sceptre_dir)
-    stack = config_reader.construct_stack(stack_name + ".yaml")
+    sceptre_context = SceptreContext(
+        command_path=f'{stack_name}.yaml',
+        project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
     try:
-        stack.delete()
+        sceptre_plan.delete()
     except ClientError as e:
         if e.response['Error']['Code'] == 'ValidationError' \
           and e.response['Error']['Message'].endswith("does not exist"):
@@ -138,20 +151,28 @@ def step_impl(context, stack_name):
 
 @when('the user launches stack "{stack_name}"')
 def step_impl(context, stack_name):
-    config_reader = ConfigReader(context.sceptre_dir)
-    stack = config_reader.construct_stack(stack_name + ".yaml")
+    sceptre_context = SceptreContext(
+        command_path=f'{stack_name}.yaml',
+        project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
     try:
-        stack.launch()
+        sceptre_plan.launch()
     except Exception as e:
         context.error = e
 
 
 @when('the user describes the resources of stack "{stack_name}"')
 def step_impl(context, stack_name):
-    config_reader = ConfigReader(context.sceptre_dir)
-    stack = config_reader.construct_stack(stack_name + ".yaml")
+    sceptre_context = SceptreContext(
+        command_path=f'{stack_name}.yaml',
+        project_path=context.sceptre_dir
+    )
 
-    context.output = stack.describe_resources()
+    sceptre_plan = SceptrePlan(sceptre_context)
+    sceptre_plan.describe_resources()
+    context.output = sceptre_plan.responses[0]
 
 
 @then(

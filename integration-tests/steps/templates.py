@@ -4,7 +4,8 @@ import imp
 import yaml
 
 from botocore.exceptions import ClientError
-from sceptre.config.reader import ConfigReader
+from sceptre.plan.plan import SceptrePlan
+from sceptre.context import SceptreContext
 
 
 def set_template_path(context, stack_name, template_name):
@@ -28,20 +29,29 @@ def step_impl(context, stack_name, template_name):
 
 @when('the user validates the template for stack "{stack_name}"')
 def step_impl(context, stack_name):
-    config_reader = ConfigReader(context.sceptre_dir)
-    stack = config_reader.construct_stack(stack_name + ".yaml")
+    sceptre_context = SceptreContext(
+        command_path=f'{stack_name}.yaml',
+        project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
     try:
-        context.response = stack.template.validate()
+        sceptre_plan.validate()
+        context.response = sceptre_plan.responses[0]
     except ClientError as e:
         context.error = e
 
 
 @when('the user generates the template for stack "{stack_name}"')
 def step_impl(context, stack_name):
-    config_reader = ConfigReader(context.sceptre_dir)
-    stack = config_reader.construct_stack(stack_name + ".yaml")
+    sceptre_context = SceptreContext(
+        command_path=f'{stack_name}.yaml',
+        project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
     try:
-        context.output = stack.template.body
+        context.output = sceptre_plan.stack_group.stacks[0].template.body
     except Exception as e:
         context.error = e
 
