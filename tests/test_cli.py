@@ -45,6 +45,7 @@ class TestCli(object):
         self.mock_stack.region = None
         self.mock_stack.profile = None
         self.mock_stack.external_name = None
+        self.mock_stack.dependencies = []
         self.mock_stack_group.stacks = [self.mock_stack]
 
         self.mock_config_reader.construct_stack.return_value = self.mock_stack

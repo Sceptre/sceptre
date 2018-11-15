@@ -157,6 +157,7 @@ def step_impl(context, stack_name):
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
+
     try:
         sceptre_plan.launch()
     except Exception as e:
@@ -172,7 +173,7 @@ def step_impl(context, stack_name):
 
     sceptre_plan = SceptrePlan(sceptre_context)
     sceptre_plan.describe_resources()
-    context.output = sceptre_plan.responses[0]
+    context.output = sceptre_plan.responses
 
 
 @then(
