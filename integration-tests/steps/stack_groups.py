@@ -118,7 +118,7 @@ def step_impl(context, stack_group_name):
 def step_impl(context, stack_group_name, status):
     stacks_names = get_stack_names(context, stack_group_name)
     expected_response = [{stack_name: status} for stack_name in stacks_names]
-    assert context.response == expected_response
+    assert sorted(context.response) == sorted(expected_response)
 
 
 @then('no resources are described')
@@ -208,9 +208,7 @@ def get_stack_names(context, stack_group_name):
         for filepath in files:
             filename = os.path.splitext(filepath)[0]
             if not filename == "config":
-                prefix = stack_group_name
-                stack_group = root[path.find(prefix):]
-                stack_names.append(os.path.join(stack_group, filename))
+                stack_names.append(os.path.join(stack_group_name, filename))
     return stack_names
 
 
@@ -235,7 +233,7 @@ def create_stacks(context, stack_names):
             )
         except ClientError as e:
             if e.response['Error']['Code'] == 'AlreadyExistsException' \
-              and e.response['Error']['Message'].endswith("already exists"):
+                    and e.response['Error']['Message'].endswith("already exists"):
                 pass
             else:
                 raise e

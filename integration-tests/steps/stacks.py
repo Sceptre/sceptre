@@ -157,6 +157,7 @@ def step_impl(context, stack_name):
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
+
     try:
         sceptre_plan.launch()
     except Exception as e:
@@ -172,7 +173,7 @@ def step_impl(context, stack_name):
 
     sceptre_plan = SceptrePlan(sceptre_context)
     sceptre_plan.describe_resources()
-    context.output = sceptre_plan.responses[0]
+    context.output = sceptre_plan.responses
 
 
 @then(
@@ -211,8 +212,8 @@ def step_impl(context, stack_name):
 
     properties = {"LogicalResourceId", "PhysicalResourceId"}
     formatted_response = [
-            {k: v for k, v in item.items() if k in properties}
-            for item in response["StackResources"]
+        {k: v for k, v in item.items() if k in properties}
+        for item in response["StackResources"]
     ]
 
     assert formatted_response == context.output

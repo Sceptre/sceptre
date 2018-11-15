@@ -56,14 +56,17 @@ def step_impl(context, change_set_name, stack_name):
 
     sceptre_plan = SceptrePlan(sceptre_context)
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
-    try:
-        sceptre_plan.create_change_set(change_set_name)
-    except ClientError as e:
-        if e.response['Error']['Code'] in allowed_errors:
-            context.error = e
-            return
-        else:
-            raise e
+    sceptre_plan.create_change_set(change_set_name)
+
+    for error in sceptre_plan.errors:
+        try:
+            raise error
+        except ClientError as e:
+            if e.response['Error']['Code'] in allowed_errors:
+                context.error = e
+                return
+            else:
+                raise e
     wait_for_final_state(context, stack_name, change_set_name)
 
 
@@ -76,14 +79,17 @@ def step_impl(context, change_set_name, stack_name):
 
     sceptre_plan = SceptrePlan(sceptre_context)
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
-    try:
-        sceptre_plan.delete_change_set(change_set_name)
-    except ClientError as e:
-        if e.response['Error']['Code'] in allowed_errors:
-            context.error = e
-            return
-        else:
-            raise e
+    sceptre_plan.delete_change_set(change_set_name)
+
+    for error in sceptre_plan.errors:
+        try:
+            raise error
+        except ClientError as e:
+            if e.response['Error']['Code'] in allowed_errors:
+                context.error = e
+                return
+            else:
+                raise e
 
 
 @when('the user lists change sets for stack "{stack_name}"')
@@ -95,14 +101,18 @@ def step_impl(context, stack_name):
 
     sceptre_plan = SceptrePlan(sceptre_context)
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
-    try:
-        sceptre_plan.list_change_sets()
-    except ClientError as e:
-        if e.response['Error']['Code'] in allowed_errors:
-            context.error = e
-            return
-        else:
-            raise e
+    sceptre_plan.list_change_sets()
+
+    for error in sceptre_plan.errors:
+        try:
+            raise error
+        except ClientError as e:
+            if e.response['Error']['Code'] in allowed_errors:
+                context.error = e
+                return
+            else:
+                raise e
+
     context.output = sceptre_plan.responses[0]
 
 
@@ -115,14 +125,17 @@ def step_impl(context, change_set_name, stack_name):
 
     sceptre_plan = SceptrePlan(sceptre_context)
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
-    try:
-        sceptre_plan.execute_change_set(change_set_name)
-    except ClientError as e:
-        if e.response['Error']['Code'] in allowed_errors:
-            context.error = e
-            return
-        else:
-            raise e
+    sceptre_plan.execute_change_set(change_set_name)
+
+    for error in sceptre_plan.errors:
+        try:
+            raise error
+        except ClientError as e:
+            if e.response['Error']['Code'] in allowed_errors:
+                context.error = e
+                return
+            else:
+                raise e
 
 
 @when('the user describes change set "{change_set_name}" for stack "{stack_name}"')
@@ -134,14 +147,17 @@ def step_impl(context, change_set_name, stack_name):
 
     sceptre_plan = SceptrePlan(sceptre_context)
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
-    try:
-        sceptre_plan.describe_change_set(change_set_name)
-    except ClientError as e:
-        if e.response['Error']['Code'] in allowed_errors:
-            context.error = e
-            return
-        else:
-            raise e
+    sceptre_plan.describe_change_set(change_set_name)
+
+    for error in sceptre_plan.errors:
+        try:
+            raise error
+        except ClientError as e:
+            if e.response['Error']['Code'] in allowed_errors:
+                context.error = e
+                return
+            else:
+                raise e
     context.output = sceptre_plan.responses[0]
 
 

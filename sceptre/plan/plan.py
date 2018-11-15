@@ -19,6 +19,7 @@ class SceptrePlan(SceptrePlanExecutor):
         self.context = context
         self.stack_group = self._generate_stack_group()
         self.responses = []
+        self.errors = []
 
     def _execute(self, *args):
         return super(SceptrePlan, self).execute(self, *args)

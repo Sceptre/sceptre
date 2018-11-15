@@ -60,7 +60,6 @@ class TestHelpers(object):
 
     def test_recurse_into_sub_stack_groups_with_non_leaf_object(self):
         parent = StackGroup('/parent')
-
         left_child = StackGroup('/parent/left_child')
         right_child = StackGroup('/parent/right_child')
 
