@@ -31,57 +31,6 @@ def camel_to_snake_case(string):
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
 
-def recurse_sub_stack_groups_with_graph(func):
-    return recurse_into_sub_stack_groups(func, StackDependencyGraph)
-
-
-def recurse_into_sub_stack_groups(func, factory=dict):
-    """
-    Two types of StackGroups exist, non-leaf and leaf. Non-leaf
-    stack_groups contain sub-stack_groups, while leaf
-    stack_groups contain stacks. If a command is executed by a leaf
-    stack_group, it should execute that command on the stacks it
-    contains. If a command is executed by a non-leaf stack_group, it
-    should invoke that command on each of its sub-stack_groups. Recurse
-    is a decorator used by sceptre.stack_group.StackGroup to do
-    this. The function passed, ``func``, must return a dictionary.
-    """
-    @wraps(func)
-    def decorated(self, *args, **kwargs):
-        import ipdb
-        ipdb.set_trace()
-        function_name = func.__name__
-        responses = factory()
-        nkwargs = copy(kwargs)
-
-        stack_group = kwargs.get('stack_group', self.stack_group)
-        kwargs.update({'stack_group': stack_group})
-        num_stack_groups = len(stack_group.sub_stack_groups)
-        # As commands carried out by sub-stack_groups may be blocking,
-        # execute them on separate threads.
-        if num_stack_groups:
-            with ThreadPoolExecutor(max_workers=num_stack_groups)\
-                    as thread_stack_group:
-                futures = []
-                for stack_group in stack_group.sub_stack_groups:
-                    nkwargs.update({'stack_group': stack_group})
-
-                    futures.append(thread_stack_group.submit(
-                        getattr(self, function_name), *args, **nkwargs
-                    ))
-                for future in as_completed(futures):
-                    response = future.result()
-                    if response:
-                        responses.update(response)
-
-        response = func(self, *args, **kwargs)
-        if response:
-            responses.update(response)
-        return responses
-
-    return decorated
-
-
 def get_name_tuple(name):
     """
     Returns a tuple of the stack name, split on the slashes.
@@ -116,65 +65,6 @@ def resolve_stack_name(source_stack_name, destination_stack_path):
     else:
         source_stack_base_name = source_stack_name.rsplit("/", 1)[0]
         return "/".join([source_stack_base_name, destination_stack_path])
-
-
-def generate_dependencies(stack_group):
-    """
-    Generates a full map of dependencies given either a Stack or StackGroup as
-    a parameter. This includes dependencies that are external to the given
-    Stack.
-
-    :param stack_or_stack_group: A Stack or StackGroup
-    :type stack_or_stack_group: str
-    :returns: A map of every dependency required for the given Stack or
-    StackGroup
-    :rtype: dict
-    """
-    final_deps = {}
-    abs_project_path = path.split(path.abspath(stack_or_stack_group))[0]
-    templating_vars = {}
-    sceptre_dir = get_sceptre_dir(abs_project_path)
-
-    def recurse_deps(stack_group):
-        stack_group = stack_group
-
-        if path.isdir(path.join(sceptre_dir, stack_or_stack_group)):
-            root = path.join(sceptre_dir, stack_or_stack_group)
-        else:
-            root = path.split(stack_or_stack_group)[0]
-
-        for directory_name, sub_directories, files in walk(root):
-            for filename in fnmatch.filter(files, '*.yaml'):
-                if not filename.startswith("config"):
-                    def get_dependencies(config_path):
-                        abs_directory_path = path.abspath(directory_name)
-                        if path.isfile(path.join(abs_directory_path, filename)):
-                            stack_group = jinja2.Environment(
-                                loader=jinja2.FileSystemLoader(
-                                    abs_directory_path),
-                                undefined=jinja2.StrictUndefined
-                            )
-
-                            template = stack_group.get_template(filename)
-                            rendered_template = template.render(
-                                environment_variable=environ,
-                                stack_group_path=config_path,
-                                **templating_vars
-                            )
-
-                            config = yaml.safe_load(rendered_template)
-                            return config.get("dependencies", [])
-
-                    dependencies = get_dependencies(directory_name)
-                    final_deps.update({
-                        # trim extension
-                        get_stack_group_name(directory_name) + '/' + filename[:-5]: dependencies
-                    })
-                    for d in dependencies:
-                        recurse_deps(path.split(d)[0])
-
-    recurse_deps(stack_group)
-    return final_deps
 
 
 def generate_stack_groups(stack_or_stack_group):

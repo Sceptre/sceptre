@@ -1,16 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import os
-import types
 
 import pytest
-from mock import sentinel
 
-from sceptre.stack_group import StackGroup
-from sceptre.plan.actions import StackGroupActions
 from sceptre.helpers import get_subclasses
 from sceptre.helpers import camel_to_snake_case
-from sceptre.helpers import recurse_into_sub_stack_groups
 from sceptre.helpers import get_name_tuple
 from sceptre.helpers import resolve_stack_name
 from sceptre.helpers import get_external_stack_name
@@ -42,52 +37,6 @@ class TestHelpers(object):
         assert snake_case_string == "cmd"
         snake_case_string = camel_to_snake_case("ASGScalingProcesses")
         assert snake_case_string == "asg_scaling_processes"
-
-    def test_recurse_into_sub_stack_groups(self):
-        parent = StackGroup('/parent')
-        stack_group_actions = StackGroupActions(parent)
-
-        def do(self, stack_group):
-            return {stack_group.path: sentinel.response}
-
-        stack_group_actions.do = types.MethodType(
-            recurse_into_sub_stack_groups(do),
-            stack_group_actions
-        )
-
-        response = stack_group_actions.do()
-        assert response == {"/parent": sentinel.response}
-
-    def test_recurse_into_sub_stack_groups_with_non_leaf_object(self):
-        parent = StackGroup('/parent')
-        left_child = StackGroup('/parent/left_child')
-        right_child = StackGroup('/parent/right_child')
-
-        left_child_leaf = StackGroup('/parent/left_child/left_child_leaf')
-        right_child_leaf = StackGroup('/parent/right_child/right_child_leaf')
-
-        parent.sub_stack_groups = [left_child, right_child]
-        left_child.sub_stack_groups = [left_child_leaf]
-        right_child.sub_stack_groups = [right_child_leaf]
-
-        stack_group_actions = StackGroupActions(parent)
-
-        def do(self, stack_group):
-            return {stack_group.path: sentinel.response}
-
-        stack_group_actions.do = types.MethodType(
-            recurse_into_sub_stack_groups(do),
-            stack_group_actions
-        )
-
-        response = stack_group_actions.do()
-        assert response == {
-            "/parent": sentinel.response,
-            "/parent/left_child": sentinel.response,
-            "/parent/right_child": sentinel.response,
-            "/parent/left_child/left_child_leaf": sentinel.response,
-            "/parent/right_child/right_child_leaf": sentinel.response
-        }
 
     def test_get_name_tuple(self):
         result = get_name_tuple("dev/ew1/jump-host")

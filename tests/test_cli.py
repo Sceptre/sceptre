@@ -14,7 +14,6 @@ from sceptre.config.reader import ConfigReader
 from sceptre.stack import Stack
 from sceptre.stack_group import StackGroup
 from sceptre.plan.actions import StackActions
-from sceptre.plan.actions import StackGroupActions
 from sceptre.stack_status import StackStatus
 from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
 from sceptre.cli.helpers import CustomJsonEncoder, catch_exceptions
@@ -27,16 +26,12 @@ class TestCli(object):
     def setup_method(self, test_method):
         self.patcher_ConfigReader = patch("sceptre.plan.plan.ConfigReader")
         self.patcher_StackActions = patch("sceptre.plan.executor.StackActions")
-        self.patcher_StackGroupActions = patch(
-            "sceptre.plan.actions.StackGroupActions")
 
         self.mock_ConfigReader = self.patcher_ConfigReader.start()
         self.mock_StackActions = self.patcher_StackActions.start()
-        self.mock_StackGroupActions = self.patcher_StackGroupActions.start()
 
         self.mock_config_reader = MagicMock(spec=ConfigReader)
         self.mock_stack_actions = MagicMock(spec=StackActions)
-        self.mock_stack_group_actions = MagicMock(spec=StackGroupActions)
 
         self.mock_stack = MagicMock(spec=Stack)
         self.mock_stack_group = MagicMock(spec=StackGroup)
@@ -53,11 +48,9 @@ class TestCli(object):
             self.mock_stack_group
 
         self.mock_stack_actions.stack = self.mock_stack
-        self.mock_stack_group_actions.stack_group = self.mock_stack_group
 
         self.mock_ConfigReader.return_value = self.mock_config_reader
         self.mock_StackActions.return_value = self.mock_stack_actions
-        self.mock_StackGroupActions.return_value = self.mock_stack_actions
 
         self.runner = CliRunner()
 

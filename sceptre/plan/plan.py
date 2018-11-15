@@ -17,7 +17,7 @@ from sceptre.config.reader import ConfigReader
 from sceptre.plan.executor import SceptrePlanExecutor
 
 
-class SceptrePlan(SceptrePlanExecutor):
+class SceptrePlan(object):
 
     def __init__(self, context):
         self.context = context
@@ -28,7 +28,8 @@ class SceptrePlan(SceptrePlanExecutor):
         self.launch_order = self._generate_launch_order()
 
     def _execute(self, *args):
-        return super(SceptrePlan, self).execute(self, *args)
+        executor = SceptrePlanExecutor(self)
+        executor.execute(*args)
 
     def _resolve(self, command=None):
         if command:
