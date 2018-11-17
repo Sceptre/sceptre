@@ -20,6 +20,13 @@ def create_command(ctx, path, change_set_name, yes):
 
     Creates a stack for a given config PATH. Or if CHANGE_SET_NAME is specified
     creates a change set for stack in PATH.
+
+    :param path: Path to a Stack or StackGroup
+    :type path: str
+    :param change_set_name: A name of the Change Set.
+    :type change_set_name: str
+    :param yes: A flag to assume yes to all questions.
+    :type yes: str
     """
     context = SceptreContext(
         command_path=path,
@@ -31,7 +38,6 @@ def create_command(ctx, path, change_set_name, yes):
     action = "create"
     plan = SceptrePlan(context)
 
-    # TODO this isn't going to work with sub-stack-group-stacks
     if change_set_name:
         confirmation(action, yes, change_set=change_set_name,
                      command_path=path)

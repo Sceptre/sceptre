@@ -3,8 +3,8 @@
 """
 sceptre.config
 
-This module implements a Config class, which stores a stack or
-stack_group's configuration.
+This module implements a ConfigReader class, which is responsible for reading
+and constructing a Stacks.
 """
 
 import collections
@@ -73,13 +73,13 @@ STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
 
 class ConfigReader(object):
     """
-    Respresents a Sceptre project folder. Reads in yaml configuration files and
-    produces Stack or StackGroup objects. Responsible for loading
-    Resolvers and Hook classes and adding them as constructors to the PyYAML
-    parser.
+    Parses YAML configuration files and produces Stack objects.
 
-    :param project_path: The absolute path to the Sceptre directory.
-    :type project_path: str
+    Responsible for loading Resolvers and Hook classes and adding them as
+    constructors to the PyYAML parser.
+
+    :param context: A SceptreContext.
+    :type sceptre.context.SceptreContext:
     """
 
     def __init__(self, context):
@@ -148,6 +148,15 @@ class ConfigReader(object):
                 )
 
     def construct_stacks(self):
+        """
+        Recurses through the command path. For each Stack that is encountered
+        the Stack is added to a set containing the absolute path to that Stack.
+        Each path is then constructed into a Stack using the correct config.
+        Depependencies are traversed and a final set of Stacks is returned.
+
+        :returns: A set of Stacks.
+        :rtype: set
+        """
         stack_map = {}
 
         root = self.context.full_command_path()
@@ -194,7 +203,7 @@ class ConfigReader(object):
 
     def read(self, rel_path, base_config=None):
         """
-        Reads in configuration from yaml files within the Sceptre project
+        Reads in configuration from a YAML file within the Sceptre project
         folder.
 
         :param rel_path: Relative path to config to read.
@@ -244,8 +253,9 @@ class ConfigReader(object):
     def _recursive_read(self, directory_path, filename):
         """
         Traverses the directory_path, from top to bottom, reading in all
-        relevant config files. If config items appear in files lower down the
-        stack_group tree, they overwrite items from further up.
+        relevant config files. If config attributes are encountered further
+        down the StackGroup they are merged with the parent as defined in the
+        `CONFIG_MERGE_STRATEGIES` dict.
 
         :param directory_path: Relative directory path to config to read.
         :type directory_path: str
@@ -286,7 +296,7 @@ class ConfigReader(object):
         :param directory_path: Relative directory path to config to read.
         :type directory_path: str
         :param basename: The filename of the config file
-        :type filename: str
+        :type basename: str
         :returns: rendered template of config file.
         :rtype: dict
         """
@@ -325,7 +335,7 @@ class ConfigReader(object):
 
     def _check_version(self, config):
         """
-        Raises a VersionIncompatibleException when the current sceptre version
+        Raises a VersionIncompatibleException when the current Sceptre version
         does not comply with the configured version requirement.
 
         :raises: sceptre.exceptions.VersionIncompatibleException
@@ -344,7 +354,7 @@ class ConfigReader(object):
     @staticmethod
     def _collect_s3_details(stack_name, config):
         """
-        Collects and constructs details for where to store the template in S3.
+        Collects and constructs details for where to store the Template in S3.
 
         :param stack_name: Stack name.
         :type stack_name: str
@@ -375,11 +385,12 @@ class ConfigReader(object):
 
     def _construct_stack(self, rel_path, stack_group_config=None):
         """
-        Construct a Stack object from a config path and a base config.
+        Constructs an individual Stack object from a config path and a
+        base config.
 
         :param rel_path: A relative config file path.
         :type rel_path: str
-        :param config: Base config to use as defaults.
+        :param stack_group_config: The Stack group config to use as defaults.
         :type config: dict
         :returns: Stack object
         :rtype: sceptre.stack.Stack

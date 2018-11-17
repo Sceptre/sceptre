@@ -18,7 +18,7 @@ TEMPLATE_EXTENSION = ".yaml"
 @six.add_metaclass(abc.ABCMeta)
 class StackOutputBase(Resolver):
     """
-    A abstract base class which provides methods for getting stack outputs.
+    A abstract base class which provides methods for getting Stack outputs.
     """
 
     def __init__(self, *args, **kwargs):
@@ -27,11 +27,11 @@ class StackOutputBase(Resolver):
 
     def _get_output_value(self, stack_name, output_key, profile=None, region=None):
         """
-        Tries to get the stack output named by ``output_key``
+        Attempts to get the Stack output named by ``output_key``
 
-        :param stack_name: Name of the stack to collect output for.
+        :param stack_name: Name of the Stack to collect output for.
         :type stack_name: str
-        :param output_key: The name of the stack output in which to return.
+        :param output_key: The name of the Stack output in which to return.
         :type output_key: str
         :returns: Stack output value.
         :rtype: str
@@ -43,19 +43,19 @@ class StackOutputBase(Resolver):
             return outputs[output_key]
         except KeyError:
             raise DependencyStackMissingOutputError(
-                "The stack '{0}' does not have an output named '{1}'".format(
+                "The Stack '{0}' does not have an output named '{1}'".format(
                     stack_name, output_key
                 )
             )
 
     def _get_stack_outputs(self, stack_name, profile=None, region=None):
         """
-        Communicates with AWS Cloudformation to fetch outputs from a specific
-        stack.
+        Communicates with AWS CloudFormation to fetch outputs from a specific
+        Stack.
 
-        :param stack_name: Name of the stack to collect output for.
+        :param stack_name: Name of the Stack to collect output for.
         :type stack_name: str
-        :returns: A formatted version of the stack outputs.
+        :returns: A formatted version of the Stack outputs.
         :rtype: dict
         :raises: sceptre.stack.DependencyStackNotLaunchedException
         """
@@ -93,11 +93,11 @@ class StackOutputBase(Resolver):
 
 class StackOutput(StackOutputBase):
     """
-    Resolver for retrieving the value of a stack output within the current
-    Sceptre stack_group. Adds the target stack to the dependencies of the
-    stack using the resolver.
+    Resolver for retrieving the value of a Stack output within the current
+    Sceptre StackGroup. Adds the target Stack to the dependencies of the
+    Stack using the Resolver.
 
-    :param argument: The stack name and output name to get.
+    :param argument: The Stack name and output name to get.
     :type argument: str in the format ``"<stack name>::<output key>"``
     """
 
@@ -106,7 +106,7 @@ class StackOutput(StackOutputBase):
 
     def setup(self):
         """
-        Adds dependency to stack.
+        Adds dependency to a Stack.
         """
         self.dependency_stack_name, self.output_key = self.argument.split("::")
         if "/" not in self.dependency_stack_name:
@@ -119,12 +119,12 @@ class StackOutput(StackOutputBase):
 
     def resolve(self):
         """
-        Retrieves the value of an output of a internal stack.
+        Retrieves the value of an output of an internal Stack.
 
-        :returns: The value of the stack output.
+        :returns: The value of the Stack output.
         :rtype: str
         """
-        self.logger.debug("Resolving stack output: {0}".format(self.argument))
+        self.logger.debug("Resolving Stack output: {0}".format(self.argument))
 
         friendly_stack_name = self.dependency_stack_name.replace(TEMPLATE_EXTENSION, "")
         stack_name = "-".join([self.stack.project_code, friendly_stack_name.replace("/", "-")])
@@ -139,10 +139,10 @@ class StackOutput(StackOutputBase):
 
 class StackOutputExternal(StackOutputBase):
     """
-    Resolver for retrieving the value of an output of any stack within the
+    Resolver for retrieving the value of an output of any Stack within the
     current Sceptre stack_group's account and region.
 
-    :param argument: The stack name and output name to get.
+    :param argument: The Stack name and output name to get.
     :type argument: str in the format ``"<full stack name>::<output key>"``
     """
 
@@ -151,13 +151,13 @@ class StackOutputExternal(StackOutputBase):
 
     def resolve(self):
         """
-        Retrieves the value of Cloudformation output of the external stack
+        Retrieves the value of CloudFormation output of the external Stack
 
-        :returns: The value of the stack output.
+        :returns: The value of the Stack output.
         :rtype: str
         """
         self.logger.debug(
-            "Resolving external stack output: {0}".format(self.argument)
+            "Resolving external Stack output: {0}".format(self.argument)
         )
 
         profile = None

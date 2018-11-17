@@ -16,16 +16,23 @@ from sceptre.plan.plan import SceptrePlan
 @catch_exceptions
 def set_policy_command(ctx, path, policy_file, built_in):
     """
-    Sets stack policy.
+    Sets Stack policy.
 
-    Sets a specific stack policy for either a file or using a built-in policy.
+    Sets a specific Stack policy for either a file or using a built-in policy.
+
+    :param path: Path to execute the command on.
+    :type path: str
+    :param policy_file: path to the AWS Policy file to use.
+    :type policy_file: str
+    :param built_in: the name of the built-in policy file to use.
+    :type built-in: str
     """
     context = SceptreContext(
-                command_path=path,
-                project_path=ctx.obj.get("project_path"),
-                user_variables=ctx.obj.get("user_variables"),
-                options=ctx.obj.get("options")
-            )
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options")
+    )
     plan = SceptrePlan(context)
 
     if built_in == 'deny-all':

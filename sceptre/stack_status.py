@@ -3,14 +3,14 @@
 """
 sceptre.stack_status
 
-This module implemets structs for simplified stack status and simplified change
-set status values.
+This module implemets structs for simplified Stack status and simplified
+ChangeSet status values.
 """
 
 
 class StackStatus(object):
     """
-    StackStatus stores simplified stack statuses.
+    StackStatus stores simplified Stack statuses.
     """
     COMPLETE = "complete"
     FAILED = "failed"
@@ -20,7 +20,7 @@ class StackStatus(object):
 
 class StackChangeSetStatus(object):
     """
-    StackChangeSetStatus stores simplified change set statuses.
+    StackChangeSetStatus stores simplified ChangeSet statuses.
     """
     PENDING = "pending"
     READY = "ready"

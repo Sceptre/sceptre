@@ -23,6 +23,13 @@ def delete_command(ctx, path, change_set_name, yes):
 
     Deletes a stack for a given config PATH. Or if CHANGE_SET_NAME is specified
     deletes a change set for stack in PATH.
+
+    :param path: Path to execute command on.
+    :type path: str
+    :param change_set_name: The name of the change set to use.
+    :type change_set_name: str
+    :param yes: Flag to answer yes to all CLI questions.
+    :type yes: str
     """
     context = SceptreContext(
         command_path=path,

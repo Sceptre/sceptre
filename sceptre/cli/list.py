@@ -25,6 +25,8 @@ def list_resources(ctx, path):
     """
     List resources for stack or stack_group.
 
+    :param path: Path to execute the command on.
+    :type path: str
     """
     context = SceptreContext(
         command_path=path,
@@ -55,7 +57,11 @@ def list_outputs(ctx, path, export):
     """
     List outputs for stack.
 
-    """
+    :param path: Path to execute the command on.
+    :type path: str
+    :param export: Specify the export formatting.
+    :type export: str
+   """
     context = SceptreContext(
         command_path=path,
         project_path=ctx.obj.get("project_path", None),
@@ -89,6 +95,8 @@ def list_change_sets(ctx, path):
     """
     List change sets for stack.
 
+    :param path: Path to execute the command on.
+    :type path: str
     """
     context = SceptreContext(
         command_path=path,

@@ -30,14 +30,23 @@ def update_command(ctx, path, change_set, verbose, yes):
 
     Updates a stack for a given config PATH. Or perform an update via
     change-set when the change-set flag is set.
+
+    :param path: Path to execute the command on.
+    :type path: str
+    :param change_set: Name of the Change Set to use.
+    :type path: str
+    :param verbose: A flag to print a verbose output.
+    :type path: str
+    :param yes: A flag to answer 'yes' to all CLI questions.
     """
+
     context = SceptreContext(
-                command_path=path,
-                project_path=ctx.obj.get("project_path"),
-                user_variables=ctx.obj.get("user_variables"),
-                options=ctx.obj.get("options"),
-                output_format=ctx.obj.get("output_format")
-            )
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options"),
+        output_format=ctx.obj.get("output_format")
+    )
 
     plan = SceptrePlan(context)
 

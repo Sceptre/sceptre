@@ -2,8 +2,9 @@
 
 """
 sceptre.config.graph
-This module implements a StackConfig graph, which stores a directed graph
-of a stack's dependencies.
+
+This module implements a StackGraph, which is represented as a directed
+acyclic graph of a Stack's dependencies.
 """
 
 import logging
@@ -13,16 +14,16 @@ from sceptre.exceptions import CircularDependenciesError
 
 class StackGraph(object):
     """
-    A Directed Graph representing the relationship between Stack config
-    dependencies. Responsible for initalizing the graph object based on
-    a given inital stack config path.
+    A Directed Acyclic Graph representing the relationship between a Stack
+    and it's dependencies. Responsible for initalising the graph based on a set
+    of Stacks.
     """
 
     def __init__(self, stacks):
         """
-        Graph that is based on a given `dependency_map`.
+        Initialises a StackGraph based on a `set` of Stacks.
 
-        :param dependency_map: A dict containing a list of the dependencies for
+        :param stacks: A set of Stacks.
         a given stack
         :type dict: dict
         """
@@ -37,9 +38,19 @@ class StackGraph(object):
         return self.graph.__iter__()
 
     def count_dependencies(self, stack):
+        """
+        Returns the number of incoming edges a given Stack has in the
+        StackGraph. The number of incoming edge also represents the number
+        of Stacks that depend on the given Stack.
+        """
         return self.graph.in_degree(stack)
 
     def remove_stack(self, stack):
+        """
+        Removes a Stack from the StackGraph. This operation will also remove
+        all adjecent edges that represent a 'depends on' relationship with
+        other Stacks.
+        """
         return self.graph.remove_node(stack)
 
     def write(self):
@@ -56,8 +67,12 @@ class StackGraph(object):
 
     def _generate_graph(self, stacks):
         """
-        Generates the graph for the initalized StackDependencyGraph object
+        Generates the graph for the StackGraph object.
+
+        :param stacks: A set of Stacks
+        :type: set
         """
+
         for stack in stacks:
             self._generate_edges(stack, stack.dependencies)
         self.graph.remove_edges_from(nx.selfloop_edges(self.graph))
@@ -87,6 +102,12 @@ class StackGraph(object):
             self.graph.add_node(stack)
 
     def reverse_graph(self):
+        """
+        Reverses the direction of the edge in a StackGraph. Normally, an
+        edge represents a 'depends on' relationship. In reverse this is
+        'has dependency'. Useful when deleting Stacks.
+        """
+
         rev = StackGraph(set())
         rev.graph = nx.reverse(self.graph)
         return rev

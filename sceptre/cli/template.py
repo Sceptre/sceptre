@@ -18,6 +18,9 @@ def validate_command(ctx, path):
     Validates the template.
 
     Validates the template used for stack in PATH.
+
+    :param path: Path to execute the command on.
+    :type path: str
     """
     context = SceptreContext(
         command_path=path,
@@ -46,6 +49,9 @@ def generate_command(ctx, path):
     Prints the template.
 
     Prints the template used for stack in PATH.
+
+    :param path: Path to execute the command on.
+    :type path: str
     """
     context = SceptreContext(
         command_path=path,
@@ -66,9 +72,13 @@ def generate_command(ctx, path):
 def estimate_cost_command(ctx, path):
     """
     Estimates the cost of the template.
+
     Prints a URI to STOUT that provides an estimated cost based on the
     resources in the stack. This command will also attempt to open a web
     browser with the returned URI.
+
+    :param path: Path to execute the command on.
+    :type path: str
     """
     context = SceptreContext(
         command_path=path,

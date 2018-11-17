@@ -3,7 +3,7 @@
 """
 sceptre.connection_manager
 
-This module implements a ConnectionManager class, which simplifies and  manages
+This module implements a ConnectionManager class, which simplifies and manages
 Boto3 calls.
 """
 
@@ -28,7 +28,7 @@ def _retry_boto_call(func):
     hit 30 times, _retry_boto_call raises a
     sceptre.exceptions.RetryLimitExceededException.
 
-    :param func: a function that uses boto calls
+    :param func: A function that uses boto calls
     :type func: function
     :returns: The decorated function.
     :rtype: function
@@ -61,12 +61,12 @@ def _retry_boto_call(func):
 
 class ConnectionManager(object):
     """
-    The Connection Manager should be used to create boto3 clients for
-    the various AWS services that we need to interact with.
+    The Connection Manager is used to create boto3 clients for
+    the various AWS services that Sceprtre needs to interact with.
 
-    :param profile: The aws credential profile that should be used.
+    :param profile: The AWS credentials profile that should be used.
     :type profile: str
-    :param stack_name: The cloudformation stack name for this connection.
+    :param stack_name: The CloudFormation stack name for this connection.
     :type stack_name: str
     :param region: The region to use.
     :type region: str
@@ -102,7 +102,7 @@ class ConnectionManager(object):
 
         If a ``profile`` is specified in ConnectionManager's initialiser,
         then the profile is used to generate temporary credentials to create
-        the boto session. If ``profile`` is not specified then the default
+        the Boto session. If ``profile`` is not specified then the default
         profile is assumed to create the boto session.
 
         :returns: The Boto3 session.
@@ -119,13 +119,13 @@ class ConnectionManager(object):
 
                 # Credentials from env take priority over profile
                 config = {
-                  "profile_name": profile,
-                  "region_name": region,
-                  "aws_access_key_id": environ.get("AWS_ACCESS_KEY_ID"),
-                  "aws_secret_access_key": environ.get(
-                    "AWS_SECRET_ACCESS_KEY"
-                  ),
-                  "aws_session_token": environ.get("AWS_SESSION_TOKEN")
+                    "profile_name": profile,
+                    "region_name": region,
+                    "aws_access_key_id": environ.get("AWS_ACCESS_KEY_ID"),
+                    "aws_secret_access_key": environ.get(
+                        "AWS_SECRET_ACCESS_KEY"
+                    ),
+                    "aws_session_token": environ.get("AWS_SESSION_TOKEN")
                 }
 
                 session = boto3.session.Session(**config)
@@ -178,7 +178,7 @@ class ConnectionManager(object):
         stack_name=None
     ):
         """
-        Makes a threadsafe Boto3 client call.
+        Makes a thread-safe Boto3 client call.
 
         Equivalent to ``boto3.client(<service>).<command>(**kwargs)``.
 
