@@ -22,20 +22,6 @@ class InvalidSceptreDirectoryError(SceptreException):
     pass
 
 
-class InvalidStackGroupPathError(SceptreException):
-    """
-    Error raised if the stack_group path string is invalid
-    """
-    pass
-
-
-class ConfigItemNotFoundError(SceptreException):
-    """
-    Error raised if a necessary config item has not been provided
-    """
-    pass
-
-
 class UnsupportedTemplateFileTypeError(SceptreException):
     """
     Error raised if an unsupported template file type is used.
@@ -150,12 +136,5 @@ class StackDoesNotExistError(SceptreException):
 class ConfigFileNotFoundError(SceptreException):
     """
     Error raised when a config file does not exist.
-    """
-    pass
-
-
-class StackGroupNotFoundError(SceptreException):
-    """
-    Error raised when a stack_group does not exist.
     """
     pass

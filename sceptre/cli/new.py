@@ -26,8 +26,11 @@ def new_stack_group(ctx, stack_group):
     """
     Creates a new Stack Group directory in a project.
 
-    Creates STACK_GROUP folder in the project and a config.yaml with any
+    Creates StackGroup folder in the project and a config.yaml with any
     required properties.
+
+    :param stack_group: Name of the StackGroup directory to create.
+    :type stack_group: str
     """
     cwd = ctx.obj.get("project_path")
     for item in os.listdir(cwd):
@@ -46,6 +49,9 @@ def new_project(ctx, project_name):
     Creates a new project.
     Creates PROJECT_NAME project folder and a config.yaml with any
     required properties.
+
+    :param project_name: The name of the Sceptre Project to create.
+    :type project_name: str
     """
     cwd = os.getcwd()
     sceptre_folders = {"config", "templates"}
@@ -76,13 +82,14 @@ def new_project(ctx, project_name):
 
 def _create_new_stack_group(config_dir, new_path):
     """
-    Creates the subfolder for the stack_group specified by `path`
+    Creates the subfolder for the stack_group specified by `new_path`
     starting from the `config_dir`. Even if folder path already exists,
     they want to initialise `config.yaml`.
+
     :param config_dir: The directory path to the top-level config folder.
     :type config_dir: str
-    :param path: The directory path to the stack_group folder.
-    :type path: str
+    :param new_path: The directory path to the stack_group folder.
+    :type new_path: str
     """
     # Create full path to stack_group
     folder_path = os.path.join(config_dir, new_path)
@@ -107,6 +114,7 @@ def _get_nested_config(config_dir, path):
     """
     Collects nested config from between `config_dir` and `path`. Config at
     lower level as greater precedence.
+
     :param config_dir: The directory path to the top-level config folder.
     :type config_dir: str
     :param path: The directory path to the stack_group folder.
@@ -132,6 +140,7 @@ def _create_config_file(config_dir, path, defaults={}):
     properties and their values are the same as in parent `config.yaml`, then
     they are not included. No file is produced if require values are satisfied
     by parent `config.yaml` files.
+
     :param config_dir: The directory path to the top-level config folder.
     :type config_dir: str
     :param path: The directory path to the stack_group folder.
