@@ -17,7 +17,8 @@ install_requirements = [
     "Jinja2>=2.8,<3",
     "packaging==16.8",
     "colorama==0.3.7",
-    "six==1.11.0"
+    "six==1.11.0",
+    "networkx==2.1"
 ]
 
 test_requirements = [
@@ -46,7 +47,10 @@ setup(
         "sceptre",
         "sceptre/resolvers",
         "sceptre/hooks",
-        "sceptre/cli"
+        "sceptre/cli",
+        "sceptre/config",
+        "sceptre/stack_policies",
+        "sceptre/plan"
     ],
     package_dir={
         "sceptre": "sceptre"
