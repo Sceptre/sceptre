@@ -6,6 +6,8 @@ from sceptre.cli.helpers import confirmation
 from sceptre.cli.helpers import stack_status_exit_code
 from sceptre.plan.plan import SceptrePlan
 
+from colorama import Fore, Style
+
 
 @click.command(name="delete")
 @click.argument("path")
@@ -30,6 +32,13 @@ def delete_command(ctx, path, change_set_name, yes):
     )
 
     plan = SceptrePlan(context)
+
+    dependencies = ''
+    for stacks in reversed(plan.launch_order):
+        for stack in reversed(list(stacks)):
+            dependencies += "{}{}{}\n".format(Fore.YELLOW, stack.name, Style.RESET_ALL)
+
+    print("The following stacks in the following order will be deleted:\n{}".format(dependencies))
 
     confirmation(
         plan.delete_change_set.__name__,
