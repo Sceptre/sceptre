@@ -33,8 +33,8 @@ class StackActions(object):
     StackActions stores the operations a Stack can take, such as creating or
     deleting the Stack.
 
-    :param Stack: A Stack object
-    :type Stack: sceptre.stack.Stack
+    :param stack: A Stack object
+    :type stack: sceptre.stack.Stack
     """
 
     def __init__(self, stack):
@@ -538,7 +538,7 @@ class StackActions(object):
         Lists the Stack's Change Sets.
 
         :returns: The Stack's Change Sets.
-        :rtype: dict
+        :rtype: dict | list
         """
         self.logger.debug("%s - Listing change sets", self.stack.name)
         try:

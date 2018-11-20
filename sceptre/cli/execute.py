@@ -7,7 +7,7 @@ from sceptre.plan.plan import SceptrePlan
 
 @click.command(name="execute")
 @click.argument("path")
-@click.argument("change-set-name", required=False)
+@click.argument("change-set-name")
 @click.option(
     "-y", "--yes", is_flag=True, help="Assume yes to all questions."
 )
@@ -22,7 +22,7 @@ def execute_command(ctx, path, change_set_name, yes):
     :param change_set_name: Change Set to use.
     :type change_set_name: str
     :param yes: A flag to answer 'yes' too all CLI questions.
-    :type yes: str
+    :type yes: bool
     """
     context = SceptreContext(
         command_path=path,

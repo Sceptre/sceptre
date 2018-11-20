@@ -36,7 +36,7 @@ class Stack(object):
 
     :param parameters: The keys must match up with the name of the parameter.\
             The value must be of the type as defined in the template.
-    :type parameters: str
+    :type parameters: dict
 
     :param sceptre_user_data: Data passed into\
             `sceptre_handler(sceptre_user_data)` function in Python templates\

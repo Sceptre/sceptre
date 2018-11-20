@@ -35,7 +35,7 @@ def describe_change_set(ctx, path, change_set_name, verbose):
     :param change_set_name: Name of the Change Set to use.
     :type change_set_name: str
     :param verbose: A flag to display verbose output.
-    :type verbose: str
+    :type verbose: bool
     """
     context = SceptreContext(
         command_path=path,

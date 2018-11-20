@@ -62,7 +62,7 @@ def _retry_boto_call(func):
 class ConnectionManager(object):
     """
     The Connection Manager is used to create boto3 clients for
-    the various AWS services that Sceprtre needs to interact with.
+    the various AWS services that Sceptre needs to interact with.
 
     :param profile: The AWS credentials profile that should be used.
     :type profile: str

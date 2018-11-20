@@ -15,7 +15,7 @@ from sceptre.exceptions import CircularDependenciesError
 class StackGraph(object):
     """
     A Directed Acyclic Graph representing the relationship between a Stack
-    and it's dependencies. Responsible for initalising the graph based on a set
+    and its dependencies. Responsible for initalising the graph based on a set
     of Stacks.
     """
 
@@ -25,7 +25,7 @@ class StackGraph(object):
 
         :param stacks: A set of Stacks.
         a given stack
-        :type dict: dict
+        :type stacks: dict
         """
         self.logger = logging.getLogger(__name__)
         self.graph = nx.DiGraph()
@@ -70,7 +70,7 @@ class StackGraph(object):
         Generates the graph for the StackGraph object.
 
         :param stacks: A set of Stacks
-        :type: set
+        :type stacks: set
         """
 
         for stack in stacks:
@@ -84,8 +84,10 @@ class StackGraph(object):
         in the inital_dependency_paths list are a depency that the inital
         Stack config depends on.
 
-        :param dependency_paths: a collection of dependency paths
-        :type inital_dependency_paths: string
+        :param stack: A Sceptre Stack
+        :type stack: sceptre.stack.Stack
+        :param dependencies: a collection of dependency paths
+        :type dependencies: list
         """
         self.logger.debug(
             "Generate edges for graph {0}".format(self.graph)

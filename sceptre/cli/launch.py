@@ -23,7 +23,7 @@ def launch_command(ctx, path, yes):
     :param path: The path to launch. Can be a Stack or StackGroup.
     :type path: str
     :param yes: A flag to answer 'yes' to all CLI questions.
-    :type yes: str
+    :type yes: bool
     """
     context = SceptreContext(
         command_path=path,

@@ -33,11 +33,12 @@ def update_command(ctx, path, change_set, verbose, yes):
 
     :param path: Path to execute the command on.
     :type path: str
-    :param change_set: Name of the Change Set to use.
-    :type path: str
+    :param change_set: Whether a change set should be created.
+    :type change_set: bool
     :param verbose: A flag to print a verbose output.
-    :type path: str
+    :type verbose: bool
     :param yes: A flag to answer 'yes' to all CLI questions.
+    :type yes: bool
     """
 
     context = SceptreContext(

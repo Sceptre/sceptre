@@ -34,7 +34,7 @@ class Template(object):
     :type sceptre_user_data: dict
 
     :param connection_manager:
-    :type connection_manager: sceptre.connection_manager
+    :type connection_manager: sceptre.connection_manager.ConnectionManager
 
     :param s3_details:
     :type s3_details: dict

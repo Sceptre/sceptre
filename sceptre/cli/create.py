@@ -23,10 +23,10 @@ def create_command(ctx, path, change_set_name, yes):
 
     :param path: Path to a Stack or StackGroup
     :type path: str
-    :param change_set_name: A name of the Change Set.
+    :param change_set_name: A name of the Change Set - optional
     :type change_set_name: str
     :param yes: A flag to assume yes to all questions.
-    :type yes: str
+    :type yes: bool
     """
     context = SceptreContext(
         command_path=path,

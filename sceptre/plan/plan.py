@@ -63,8 +63,8 @@ class SceptrePlan(object):
         """
         Returns the CloudFormation Template used to create the Stack.
 
-        :returns: The Stack's Template.
-        :rtype: str
+        :returns: A dictionary of Stacks and their templates.
+        :rtype: dict
         """
         self._resolve(command=self.template.__name__)
         return self._execute(*args)
@@ -73,8 +73,8 @@ class SceptrePlan(object):
         """
         Creates the Stack.
 
-        :returns: The Stack's status.
-        :rtype: sceptre.stack_status.StackStatus
+        :returns: A dictionary of Stacks and their status.
+        :rtype: dict
         """
         self._resolve(command=self.create.__name__)
         return self._execute(*args)
@@ -83,8 +83,8 @@ class SceptrePlan(object):
         """
         Updates the Stack.
 
-        :returns: The Stack's status.
-        :rtype: sceptre.stack_status.StackStatus
+        :returns: A dictionary of Stacks and their status.
+        :rtype: dict
         """
         self._resolve(command=self.update.__name__)
         return self._execute(*args)
@@ -93,8 +93,8 @@ class SceptrePlan(object):
         """
         Cancels a Stack update.
 
-        :returns: The cancelled Stack status.
-        :rtype: sceptre.stack_status.StackStatus
+        :returns: A dictionary of Stacks and their cancelled statuses.
+        :rtype: dict
         """
         self._resolve(command=self.cancel_stack_update.__name__)
         return self._execute(*args)
@@ -108,8 +108,8 @@ class SceptrePlan(object):
         depending if it already exists. If there are no updates to be
         performed, launch exits gracefully.
 
-        :returns: The Stack's status.
-        :rtype: sceptre.stack_status.StackStatus
+        :returns: A dictionary of Stacks and their status.
+        :rtype: dict
         """
         self._resolve(command=self.launch.__name__)
         return self._execute(*args)
@@ -118,8 +118,8 @@ class SceptrePlan(object):
         """
         Deletes the Stack.
 
-        :returns: The Stack's status.
-        :rtype: sceptre.stack_status.StackStatus
+        :returns: A dictionary of Stacks and their status.
+        :rtype: dict
         """
         self._resolve(command=self.delete.__name__)
         return self._execute_reverse(*args)
@@ -142,7 +142,7 @@ class SceptrePlan(object):
         """
         Returns the a description of the Stack.
 
-        :returns: A Stack description.
+        :returns: A dictionary of Stacks and their description.
         :rtype: dict
         """
         self._resolve(command=self.describe.__name__)
@@ -152,7 +152,7 @@ class SceptrePlan(object):
         """
         Returns a dictionary contianing the Stack events.
 
-        :returns: The CloudFormation events for a Stack.
+        :returns: A dictionary of Stacks and their CloudFormation events.
         :rtype: dict
         """
         self._resolve(command=self.describe_events.__name__)
@@ -162,7 +162,7 @@ class SceptrePlan(object):
         """
         Returns the logical and physical resource IDs of the Stack's resources.
 
-        :returns: Information about the Stack's resources.
+        :returns: A dictionary of Stacks and their resources.
         :rtype: dict
         """
         self._resolve(command=self.describe_resources.__name__)
@@ -172,8 +172,8 @@ class SceptrePlan(object):
         """
         Returns a list of Stack outputs.
 
-        :returns: The Stack's outputs.
-        :rtype: list
+        :returns: A dictionary of Stacks and their outputs.
+        :rtype: dict
         """
         self._resolve(command=self.describe_outputs.__name__)
         return self._execute(*args)
@@ -200,7 +200,7 @@ class SceptrePlan(object):
         """
         Returns a Stack's policy.
 
-        :returns: The Stack's Stack policy.
+        :returns: A dictionary of Stacks and their Stack policy.
         :rtype: str
         """
         self._resolve(command=self.get_policy.__name__)
@@ -232,7 +232,7 @@ class SceptrePlan(object):
 
         :param change_set_name: The name of the Change Set.
         :type change_set_name: str
-        :returns: The description of the Change Set.
+        :returns: A dictionary of Stacks and their Change Set description.
         :rtype: dict
         """
         self._resolve(command=self.describe_change_set.__name__)
@@ -252,7 +252,7 @@ class SceptrePlan(object):
         """
         Lists the Stack's Change Sets.
 
-        :returns: The Stack's Change Sets.
+        :returns: TA dictionary of Stacks and their Change Sets.
         :rtype: dict
         """
         self._resolve(command=self.list_change_sets.__name__)
@@ -262,8 +262,8 @@ class SceptrePlan(object):
         """
         Returns the Stack's status.
 
-        :returns: The Stack's status.
-        :rtype: sceptre.stack_status.StackStatus
+        :returns: A dictionary of Stacks and their status.
+        :rtype: dict
         :raises: sceptre.exceptions.StackDoesNotExistError
         """
         self._resolve(command=self.get_status.__name__)
@@ -275,7 +275,7 @@ class SceptrePlan(object):
 
         :param change_set_name: The name of the Change Set.
         :type change_set_name: str
-        :returns: The Change Set's status.
+        :rtype: dict
         :rtype: sceptre.stack_status.StackChangeSetStatus
         """
         self._resolve(command=self.wait_for_cs_completion.__name__)
@@ -287,7 +287,7 @@ class SceptrePlan(object):
 
         Raises an error if the Template is invalid.
 
-        :returns: Information about the Template.
+        :returns: A dictionary of Stacks and their template validation information.
         :rtype: dict
         :raises: botocore.exceptions.ClientError
         """
@@ -298,7 +298,7 @@ class SceptrePlan(object):
         """
         Estimates a Stack's cost.
 
-        :returns: An estimate of the Stack's cost.
+        :returns: A dictionary of Stacks and their estimated costs.
         :rtype: dict
         :raises: botocore.exceptions.ClientError
         """

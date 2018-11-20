@@ -26,10 +26,10 @@ def delete_command(ctx, path, change_set_name, yes):
 
     :param path: Path to execute command on.
     :type path: str
-    :param change_set_name: The name of the change set to use.
+    :param change_set_name: The name of the change set to use - optional 
     :type change_set_name: str
     :param yes: Flag to answer yes to all CLI questions.
-    :type yes: str
+    :type yes: bool
     """
     context = SceptreContext(
         command_path=path,

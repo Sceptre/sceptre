@@ -18,26 +18,26 @@ class SceptreContext(object):
     your configuration files.
 
     :param project_path: Absolute path to the base sceptre project folder
-    :param_type: str
+    :type project_path: str
 
     :param command_path: The relative path to either StackGroup or Stack.
-    :param_type: str
+    :type command_path: str
 
     :param user_variables: Used to replace the value of anyvitem in a Config\
             file with a value defined by the CLI flag or in a YAML variable\
             file
-    :param_type: dict
+    :type user_variables: dict
 
     :param options: The options specified in by the CLI command
-    :param_type: {}
+    :type options: dict
 
     :param output_format: Specify the output format. Available formats:\
             [yaml, json]
-    :param_type: str
+    :type output_format: str
 
     :param no_colour: Specify whether colouring should be used in the CLI\
             output
-    :param_type: bool
+    :type no_colour: bool
     """
 
     def __init__(self, project_path, command_path,
@@ -75,6 +75,7 @@ class SceptreContext(object):
         Returns the config path in the format: ``project_path/config_path``.
 
         :returns: The absolute path to the config directory
+        :rtype: str
         """
         return path.join(self.project_path, self.config_path)
 
@@ -84,6 +85,7 @@ class SceptreContext(object):
         ``project_path/config_path/command_path``.
 
         :returns: The absolute path to the path that will be executed
+        :rtype: str
         """
         return path.join(self.project_path, self.config_path,
                          self.command_path)
@@ -93,6 +95,7 @@ class SceptreContext(object):
         Returns the templates path in the format: project_path/templates_path.
 
         :returns: The absolute path to the  templates directory
+        :rtype: str
         """
         return path.join(self.project_path, self.templates_path)
 

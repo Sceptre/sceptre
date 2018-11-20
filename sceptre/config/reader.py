@@ -4,7 +4,7 @@
 sceptre.config
 
 This module implements a ConfigReader class, which is responsible for reading
-and constructing a Stacks.
+and constructing Stacks.
 """
 
 import collections
@@ -149,10 +149,10 @@ class ConfigReader(object):
 
     def construct_stacks(self):
         """
-        Recurses through the command path. For each Stack that is encountered
-        the Stack is added to a set containing the absolute path to that Stack.
-        Each path is then constructed into a Stack using the correct config.
-        Depependencies are traversed and a final set of Stacks is returned.
+        Traverses the files under the command path.
+        For each file encountered, a Stack is constructed
+        using the correct config. Depependencies are traversed
+        and a final set of Stacks is returned.
 
         :returns: A set of Stacks.
         :rtype: set
@@ -203,8 +203,8 @@ class ConfigReader(object):
 
     def read(self, rel_path, base_config=None):
         """
-        Reads in configuration from a YAML file within the Sceptre project
-        folder.
+        Reads in configuration from one or more YAML files
+        within the Sceptre project folder.
 
         :param rel_path: Relative path to config to read.
         :type rel_path: str
@@ -259,7 +259,7 @@ class ConfigReader(object):
 
         :param directory_path: Relative directory path to config to read.
         :type directory_path: str
-        :param filename: Base config to provide defaults.
+        :param filename: File name for the config to read.
         :type filename: dict
         :returns: Representation of inherited config.
         :rtype: dict
@@ -391,7 +391,7 @@ class ConfigReader(object):
         :param rel_path: A relative config file path.
         :type rel_path: str
         :param stack_group_config: The Stack group config to use as defaults.
-        :type config: dict
+        :type stack_group_config: dict
         :returns: Stack object
         :rtype: sceptre.stack.Stack
         """
