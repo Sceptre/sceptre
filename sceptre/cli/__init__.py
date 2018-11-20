@@ -15,7 +15,7 @@ import colorama
 import yaml
 
 from sceptre import __version__
-from sceptre.cli.init import init_group
+from sceptre.cli.new import new_group
 from sceptre.cli.create import create_command
 from sceptre.cli.update import update_command
 from sceptre.cli.delete import delete_command
@@ -93,7 +93,7 @@ def cli(
             )
 
 
-cli.add_command(init_group)
+cli.add_command(new_group)
 cli.add_command(create_command)
 cli.add_command(update_command)
 cli.add_command(delete_command)

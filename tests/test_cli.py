@@ -424,7 +424,7 @@ class TestCli(object):
         assert result.exit_code == 0
         assert result.output == "mock-stack: status\n"
 
-    def test_init_project_non_existant(self):
+    def test_new_project_non_existant(self):
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath('./example')
             config_dir = os.path.join(project_path, "config")
@@ -436,7 +436,7 @@ class TestCli(object):
                 "region": region
             }
 
-            result = self.runner.invoke(cli, ["init", "project", "example"])
+            result = self.runner.invoke(cli, ["new", "project", "example"])
             assert not result.exception
             assert os.path.isdir(config_dir)
             assert os.path.isdir(template_dir)
@@ -446,7 +446,7 @@ class TestCli(object):
 
             assert config == defaults
 
-    def test_init_project_already_exist(self):
+    def test_new_project_already_exist(self):
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath('./example')
             config_dir = os.path.join(project_path, "config")
@@ -461,7 +461,7 @@ class TestCli(object):
             with open(config_filepath, 'w') as config_file:
                 yaml.dump(existing_config, config_file)
 
-            result = self.runner.invoke(cli, ["init", "project", "example"])
+            result = self.runner.invoke(cli, ["new", "project", "example"])
             assert result.exit_code == 1
             assert result.output == 'Folder \"example\" already exists.\n'
             assert os.path.isdir(config_dir)
@@ -471,12 +471,12 @@ class TestCli(object):
                 config = yaml.load(config_file)
             assert existing_config == config
 
-    def test_init_project_another_exception(self):
+    def test_new_project_another_exception(self):
         with self.runner.isolated_filesystem():
-            patcher_mkdir = patch("sceptre.cli.init.os.mkdir")
+            patcher_mkdir = patch("sceptre.cli.new.os.mkdir")
             mock_mkdir = patcher_mkdir.start()
             mock_mkdir.side_effect = OSError(errno.EINVAL)
-            result = self.runner.invoke(cli, ["init", "project", "example"])
+            result = self.runner.invoke(cli, ["new", "project", "example"])
             mock_mkdir = patcher_mkdir.stop()
             assert str(result.exception) == str(OSError(errno.EINVAL))
 
@@ -515,7 +515,7 @@ class TestCli(object):
             )
         ]
     )
-    def test_init_stack_group(
+    def test_create_new_stack_group_folder(
         self, stack_group, config_structure, stdin, result
     ):
         with self.runner.isolated_filesystem():
@@ -543,7 +543,7 @@ class TestCli(object):
             os.chdir(project_path)
 
             cmd_result = self.runner.invoke(
-                cli, ["init", "grp", stack_group],
+                cli, ["new", "group", stack_group],
                 input=stdin
             )
 
@@ -557,7 +557,7 @@ class TestCli(object):
                     "No config.yaml file needed - covered by parent config.\n"
                 )
 
-    def test_init_stack_group_with_existing_folder(self):
+    def test_new_stack_group_folder_with_existing_folder(self):
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath('./example')
             config_dir = os.path.join(project_path, "config")
@@ -567,7 +567,7 @@ class TestCli(object):
             os.chdir(project_path)
 
             cmd_result = self.runner.invoke(
-                cli, ["init", "grp", "A"], input="y\n\n\n"
+                cli, ["new", "group", "A"], input="y\n\n\n"
             )
 
             assert cmd_result.output.startswith(
@@ -579,7 +579,7 @@ class TestCli(object):
                 config = yaml.load(config_file)
             assert config == {"project_code": "", "region": ""}
 
-    def test_init_stack_group_with_another_exception(self):
+    def test_new_stack_group_folder_with_another_exception(self):
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath('./example')
             config_dir = os.path.join(project_path, "config")
@@ -587,10 +587,10 @@ class TestCli(object):
 
             os.makedirs(stack_group_dir)
             os.chdir(project_path)
-            patcher_mkdir = patch("sceptre.cli.init.os.mkdir")
+            patcher_mkdir = patch("sceptre.cli.new.os.mkdir")
             mock_mkdir = patcher_mkdir.start()
             mock_mkdir.side_effect = OSError(errno.EINVAL)
-            result = self.runner.invoke(cli, ["init", "grp", "A"])
+            result = self.runner.invoke(cli, ["new", "group", "A"])
             mock_mkdir = patcher_mkdir.stop()
             assert str(result.exception) == str(OSError(errno.EINVAL))
 
