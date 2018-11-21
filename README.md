@@ -43,7 +43,7 @@ More information on installing sceptre can be found in our [Installation Guide](
 
 Sceptre organises Stacks into "Stack Groups". Each Stack is represented by a
 YAML configuration file stored in a directory which represents the Stack Group.
-Here, we have two Stacks, `vpc` and `subnets`, in an Stack Group named `dev`:
+Here, we have two Stacks, `vpc` and `subnets`, in a Stack Group named `dev`:
 
 ```bash
 $ tree
@@ -84,10 +84,10 @@ dev/subnets sceptre-demo-dev-subnets AWS::CloudFormation::Stack CREATE_COMPLETE
 ```
 
 Sceptre implements meta-operations, which allow us to find out information
-about our Stacks::
+about our Stacks:
 
 ```bash
-$ sceptre describe resources dev dev/subnets
+$ sceptre list resources dev/subnets.yaml
 
 - LogicalResourceId: Subnet
   PhysicalResourceId: subnet-445e6e32
@@ -98,7 +98,7 @@ $ sceptre describe resources dev dev/subnets
 
 Sceptre provides Stack Group level commands. This one deletes the whole `dev`
 Stack Group. The subnet exists within the vpc, so it must be deleted first.
-Sceptre handles this automatically::
+Sceptre handles this automatically:
 
 ```bash
 $ sceptre delete dev
