@@ -223,18 +223,17 @@ class TestConfigReader(object):
             on_failure=None,
             stack_timeout=0
         )
-        assert stacks == {sentinel.stack}
+        assert stacks == ({sentinel.stack}, {sentinel.stack})
 
-    @pytest.mark.parametrize("filepaths,targets,expected_stacks", [
-        (["A/1.yaml"], ["A"], {"A/1"}),
-        (["A/1.yaml", "A/2.yaml", "A/3.yaml"], ["A"], {"A/3", "A/2", "A/1"}),
-        (["A/1.yaml", "A/A/1.yaml"], ["A", "A/A"], {"A/1", "A/A/1"}),
-        (["A/1.yaml", "A/A/1.yaml", "A/A/2.yaml"], ["A", "A/A"],
-         {"A/1", "A/A/1", "A/A/2"}),
-        (["A/A/1.yaml", "A/B/1.yaml"], ["A", "A/A", "A/B"], {"A/A/1", "A/B/1"})
+    @pytest.mark.parametrize("filepaths,expected_stacks", [
+        (["A/1.yaml"], {"A/1"}),
+        (["A/1.yaml", "A/2.yaml", "A/3.yaml"], {"A/3", "A/2", "A/1"}),
+        (["A/1.yaml", "A/A/1.yaml"], {"A/1", "A/A/1"}),
+        (["A/1.yaml", "A/A/1.yaml", "A/A/2.yaml"], {"A/1", "A/A/1", "A/A/2"}),
+        (["A/A/1.yaml", "A/B/1.yaml"], {"A/A/1", "A/B/1"})
     ])
     def test_construct_stacks_with_valid_config(
-        self, filepaths, targets, expected_stacks
+        self, filepaths, expected_stacks
     ):
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath('./example')
@@ -265,5 +264,5 @@ class TestConfigReader(object):
 
             self.context.project_path = project_path
             config_reader = ConfigReader(self.context)
-            stacks = config_reader.construct_stacks()
-            assert {str(stack) for stack in stacks} == expected_stacks
+            all_stacks, command_stacks = config_reader.construct_stacks()
+            assert {str(stack) for stack in all_stacks} == expected_stacks

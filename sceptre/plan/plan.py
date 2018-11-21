@@ -23,41 +23,42 @@ class SceptrePlan(object):
         :type sceptre.context.SceptreContext:
         """
         self.context = context
-        self.responses = []
+        self.command = None
+        self.reverse = None
+        self.launch_order = None
+
         config_reader = ConfigReader(context)
-        stacks = config_reader.construct_stacks()
-        self.graph = StackGraph(stacks)
-        self.launch_order = self._generate_launch_order()
+        all_stacks, command_stacks = config_reader.construct_stacks()
+        self.graph = StackGraph(all_stacks)
+        self.command_stacks = command_stacks
 
     def _execute(self, *args):
         executor = SceptrePlanExecutor(self.command, self.launch_order)
         return executor.execute(*args)
 
-    def _execute_reverse(self, *args):
-        executor = SceptrePlanExecutor(self.command,
-                                       list(reversed(self.launch_order)))
-        return executor.execute(*args)
+    def _generate_launch_order(self, reverse=False):
+        graph = self.graph.filtered(self.command_stacks, reverse)
 
-    def _resolve(self, command=None):
-        if command:
-            self.command = command
-        else:
-            raise TypeError(
-                "Command passed to plan.resolve() must have a value")
-
-    def _generate_launch_order(self):
         launch_order = []
-        while self.graph.graph:
+        while graph.graph:
             batch = set()
-            for stack in self.graph:
-                if self.graph.count_dependencies(stack) == 0:
+            for stack in graph:
+                if graph.count_dependencies(stack) == 0:
                     batch.add(stack)
             launch_order.append(batch)
 
             for stack in batch:
-                self.graph.remove_stack(stack)
+                graph.remove_stack(stack)
 
         return launch_order
+
+    def resolve(self, command, reverse=False):
+        if command == self.command and reverse == self.reverse:
+            return
+
+        self.command = command
+        self.reverse = reverse
+        self.launch_order = self._generate_launch_order(reverse)
 
     def template(self, *args):
         """
@@ -66,7 +67,7 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks and their templates.
         :rtype: dict
         """
-        self._resolve(command=self.template.__name__)
+        self.resolve(command=self.template.__name__)
         return self._execute(*args)
 
     def create(self, *args):
@@ -76,7 +77,7 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks and their status.
         :rtype: dict
         """
-        self._resolve(command=self.create.__name__)
+        self.resolve(command=self.create.__name__)
         return self._execute(*args)
 
     def update(self, *args):
@@ -86,7 +87,7 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks and their status.
         :rtype: dict
         """
-        self._resolve(command=self.update.__name__)
+        self.resolve(command=self.update.__name__)
         return self._execute(*args)
 
     def cancel_stack_update(self, *args):
@@ -96,7 +97,7 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks and their cancelled statuses.
         :rtype: dict
         """
-        self._resolve(command=self.cancel_stack_update.__name__)
+        self.resolve(command=self.cancel_stack_update.__name__)
         return self._execute(*args)
 
     def launch(self, *args):
@@ -111,7 +112,7 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks and their status.
         :rtype: dict
         """
-        self._resolve(command=self.launch.__name__)
+        self.resolve(command=self.launch.__name__)
         return self._execute(*args)
 
     def delete(self, *args):
@@ -121,8 +122,8 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks and their status.
         :rtype: dict
         """
-        self._resolve(command=self.delete.__name__)
-        return self._execute_reverse(*args)
+        self.resolve(command=self.delete.__name__, reverse=True)
+        return self._execute(*args)
 
     def lock(self, *args):
         """
@@ -131,7 +132,7 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks
         :rtype: dict
         """
-        self._resolve(command=self.lock.__name__)
+        self.resolve(command=self.lock.__name__)
         return self._execute(*args)
 
     def unlock(self, *args):
@@ -141,7 +142,7 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks
         :rtype: dict
         """
-        self._resolve(command=self.unlock.__name__)
+        self.resolve(command=self.unlock.__name__)
         return self._execute(*args)
 
     def describe(self, *args):
@@ -151,7 +152,7 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks and their description.
         :rtype: dict
         """
-        self._resolve(command=self.describe.__name__)
+        self.resolve(command=self.describe.__name__)
         return self._execute(*args)
 
     def describe_events(self, *args):
@@ -161,7 +162,7 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks and their CloudFormation events.
         :rtype: dict
         """
-        self._resolve(command=self.describe_events.__name__)
+        self.resolve(command=self.describe_events.__name__)
         return self._execute(*args)
 
     def describe_resources(self, *args):
@@ -171,7 +172,7 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks and their resources.
         :rtype: dict
         """
-        self._resolve(command=self.describe_resources.__name__)
+        self.resolve(command=self.describe_resources.__name__)
         return self._execute(*args)
 
     def describe_outputs(self, *args):
@@ -181,7 +182,7 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks and their outputs.
         :rtype: dict
         """
-        self._resolve(command=self.describe_outputs.__name__)
+        self.resolve(command=self.describe_outputs.__name__)
         return self._execute(*args)
 
     def continue_update_rollback(self, *args):
@@ -192,7 +193,7 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks
         :rtype: dict
        """
-        self._resolve(command=self.continue_update_rollback.__name__)
+        self.resolve(command=self.continue_update_rollback.__name__)
         return self._execute(*args)
 
     def set_policy(self, *args):
@@ -204,7 +205,7 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks
         :rtype: dict
         """
-        self._resolve(command=self.set_policy.__name__)
+        self.resolve(command=self.set_policy.__name__)
         return self._execute(*args)
 
     def get_policy(self, *args):
@@ -214,7 +215,7 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks and their Stack policy.
         :rtype: dict
         """
-        self._resolve(command=self.get_policy.__name__)
+        self.resolve(command=self.get_policy.__name__)
         return self._execute(*args)
 
     def create_change_set(self, *args):
@@ -226,7 +227,7 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks
         :rtype: dict
         """
-        self._resolve(command=self.create_change_set.__name__)
+        self.resolve(command=self.create_change_set.__name__)
         return self._execute(*args)
 
     def delete_change_set(self, *args):
@@ -238,7 +239,7 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks
         :rtype: dict
         """
-        self._resolve(command=self.delete_change_set.__name__)
+        self.resolve(command=self.delete_change_set.__name__)
         return self._execute(*args)
 
     def describe_change_set(self, *args):
@@ -250,7 +251,7 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks and their Change Set description.
         :rtype: dict
         """
-        self._resolve(command=self.describe_change_set.__name__)
+        self.resolve(command=self.describe_change_set.__name__)
         return self._execute(*args)
 
     def execute_change_set(self, *args):
@@ -262,7 +263,7 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks and their status.
         :rtype: dict
         """
-        self._resolve(command=self.execute_change_set.__name__)
+        self.resolve(command=self.execute_change_set.__name__)
         return self._execute(*args)
 
     def list_change_sets(self, *args):
@@ -272,7 +273,7 @@ class SceptrePlan(object):
         :returns: TA dictionary of Stacks and their Change Sets.
         :rtype: dict
         """
-        self._resolve(command=self.list_change_sets.__name__)
+        self.resolve(command=self.list_change_sets.__name__)
         return self._execute(*args)
 
     def get_status(self, *args):
@@ -283,7 +284,7 @@ class SceptrePlan(object):
         :rtype: dict
         :raises: sceptre.exceptions.StackDoesNotExistError
         """
-        self._resolve(command=self.get_status.__name__)
+        self.resolve(command=self.get_status.__name__)
         return self._execute(*args)
 
     def wait_for_cs_completion(self, *args):
@@ -295,7 +296,7 @@ class SceptrePlan(object):
         :rtype: dict
         :rtype: sceptre.stack_status.StackChangeSetStatus
         """
-        self._resolve(command=self.wait_for_cs_completion.__name__)
+        self.resolve(command=self.wait_for_cs_completion.__name__)
         return self._execute(*args)
 
     def validate(self, *args):
@@ -308,7 +309,7 @@ class SceptrePlan(object):
         :rtype: dict
         :raises: botocore.exceptions.ClientError
         """
-        self._resolve(command=self.validate.__name__)
+        self.resolve(command=self.validate.__name__)
         return self._execute(*args)
 
     def estimate_cost(self, *args):
@@ -319,7 +320,7 @@ class SceptrePlan(object):
         :rtype: dict
         :raises: botocore.exceptions.ClientError
         """
-        self._resolve(command=self.estimate_cost.__name__)
+        self.resolve(command=self.estimate_cost.__name__)
         return self._execute(*args)
 
     def generate(self, *args):
@@ -329,5 +330,5 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks and their template body.
         :rtype: dict
         """
-        self._resolve(command=self.generate.__name__)
+        self.resolve(command=self.generate.__name__)
         return self._execute(*args)

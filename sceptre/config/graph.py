@@ -36,6 +36,19 @@ class StackGraph(object):
     def __iter__(self):
         return self.graph.__iter__()
 
+    def filtered(self, source_stacks, reverse=False):
+        graph = (nx.reverse if reverse else nx.DiGraph)(self.graph)
+
+        relevant = set(source_stacks)
+        for stack in source_stacks:
+            relevant |= nx.algorithms.dag.ancestors(graph, stack)
+        graph.remove_nodes_from({stack for stack in graph if stack not in relevant})
+
+        filtered = StackGraph(set())
+        filtered.graph = graph
+
+        return filtered
+
     def count_dependencies(self, stack):
         """
         Returns the number of incoming edges a given Stack has in the
@@ -101,14 +114,3 @@ class StackGraph(object):
 
         if not dependencies:
             self.graph.add_node(stack)
-
-    def reverse_graph(self):
-        """
-        Reverses the direction of the edge in a StackGraph. Normally, an
-        edge represents a 'depends on' relationship. In reverse this is
-        'has dependency'. Useful when deleting Stacks.
-        """
-
-        rev = StackGraph(set())
-        rev.graph = nx.reverse(self.graph)
-        return rev
