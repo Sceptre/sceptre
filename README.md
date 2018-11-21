@@ -1,7 +1,5 @@
 # Sceptre
 
-[![All Contributors](https://img.shields.io/badge/all_contributors-0-orange.svg?style=flat-square)](#contributors)
-
 ![image](https://circleci.com/gh/cloudreach/sceptre.png?style=shield) ![image](https://badge.fury.io/py/sceptre.svg)
 
 # About
@@ -116,6 +114,10 @@ dev/vpc Deleting stack
 dev/vpc VirtualPrivateCloud AWS::EC2::VPC DELETE_IN_PROGRESS
 dev/vpc - Stack deleted
 ```
+
+> Note: Deleting Stacks will _only_ delete a given Stack, or the Stacks that
+> are directly in a given StackGroup. By default Stack dependencies that are
+> external to the StackGroup are not deleted.
 
 Sceptre can also handle cross Stack Group dependencies, take the following
 example project:
