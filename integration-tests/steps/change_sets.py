@@ -139,14 +139,14 @@ def step_impl(context, change_set_name, stack_name):
     allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
 
     try:
-        sceptre_plan.describe_change_set(change_set_name)
+        responses = sceptre_plan.describe_change_set(change_set_name)
     except ClientError as e:
         if e.response['Error']['Code'] in allowed_errors:
             context.error = e
             return
         else:
             raise e
-    context.output = sceptre_plan.responses
+    context.output = responses
 
 
 @then('stack "{stack_name}" has change set "{change_set_name}" in "{state}" state')
@@ -196,10 +196,10 @@ def step_impl(context, change_set_name, stack_name):
     )
 
     del response["ResponseMetadata"]
-    for output in context.output:
+    for stack, output in context.output.items():
         del output["ResponseMetadata"]
 
-    for output in context.output:
+    for stack, output in context.output.items():
         assert response == output
 
 

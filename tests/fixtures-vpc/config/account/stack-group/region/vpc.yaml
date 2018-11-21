@@ -1,0 +1,5 @@
+template_path: path/to/template
+parameters:
+  param1: val1
+dependencies:
+  - "child/level"

@@ -39,10 +39,11 @@ def delete_command(ctx, path, change_set_name, yes):
     )
 
     plan = SceptrePlan(context)
+    plan.resolve(command='delete', reverse=True)
 
     dependencies = ''
-    for stacks in reversed(plan.launch_order):
-        for stack in reversed(list(stacks)):
+    for stacks in plan.launch_order:
+        for stack in stacks:
             dependencies += "{}{}{}\n".format(Fore.YELLOW, stack.name, Style.RESET_ALL)
 
     print("The following stacks in the following order will be deleted:\n{}".format(dependencies))

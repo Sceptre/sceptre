@@ -38,7 +38,6 @@ Feature: Stack output resolver
     and stack "6/1/C" does not exist
     When the user deletes stack "6/1/B"
     Then stack "6/1/B" does not exist
-    and stack "6/1/A" does not exist
 
   Scenario: delete a stack referencing an output of existing stack
     Given stack "6/1/A" exists in "CREATE_COMPLETE" state

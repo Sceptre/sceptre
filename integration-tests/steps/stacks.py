@@ -139,6 +139,8 @@ def step_impl(context, stack_name):
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
+    sceptre_plan.resolve(command='delete', reverse=True)
+
     try:
         sceptre_plan.delete()
     except ClientError as e:
