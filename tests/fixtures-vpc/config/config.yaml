@@ -1,0 +1,4 @@
+profile: account_profile
+project_code: account_project_code
+region: account_region
+require_version: ">=0a"

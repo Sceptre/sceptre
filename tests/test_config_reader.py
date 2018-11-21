@@ -199,14 +199,15 @@ class TestConfigReader(object):
         sentinel.stack.dependencies = []
 
         mock_collect_s3_details.return_value = sentinel.s3_details
-        self.context.project_path = os.path.abspath("tests/fixtures")
+        self.context.project_path = os.path.abspath("tests/fixtures-vpc")
         self.context.command_path = "account/stack-group/region/vpc.yaml"
         stacks = ConfigReader(self.context).construct_stacks()
-        mock_Stack.assert_called_with(
+
+        mock_Stack.assert_any_call(
             name="account/stack-group/region/vpc",
             project_code="account_project_code",
             template_path=os.path.join(
-                self.test_project_path, "templates/path/to/template"
+                self.context.project_path, "templates/path/to/template"
             ),
             region="region_region",
             profile="account_profile",
