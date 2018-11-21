@@ -10,7 +10,7 @@ from sceptre.helpers import _call_func_on_values
 class Resolver():
     """
     Resolver is an abstract base class that should be inherited by all
-    resolvers.
+    Resolvers.
 
     :param argument: The argument of the resolver.
     :type argument: str
@@ -54,6 +54,7 @@ class ResolvableProperty(object):
     :param name: Attribute suffix used to store the property in the instance.
     :type name: string
     """
+
     def __init__(self, name):
         self.name = "_" + name
         self.logger = logging.getLogger(__name__)

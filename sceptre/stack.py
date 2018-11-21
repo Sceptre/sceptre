@@ -3,8 +3,7 @@
 """
 sceptre.stack
 
-This module implements a Stack class, which stores data and logic associated
-with a particular stack.
+This module implements a Stack class, which stores a Stack's data.
 
 """
 
@@ -19,15 +18,73 @@ from sceptre.resolvers import ResolvableProperty
 
 class Stack(object):
     """
-    Stack stores information about a particular CloudFormation stack.
+    Stack stores information about a particular CloudFormation Stack.
 
-    It implements methods for carrying out stack-level operations, such as
-    creating or deleting the stack.
-
-    :param name: The name of the stack.
+    :param name: The name of the Stack.
     :type project: str
-    :param connection_manager: A connection manager, used to make Boto3 calls.
-    :type connection_manager: sceptre.connection_manager.ConnectionManager
+
+    :param project_code: A code which is prepended to the Stack names\
+            of all Stacks built by Sceptre.
+    :type project_code: str
+
+    :param template_path: The relative path to the CloudFormation, Jinja2\
+            or Python template to build the Stack from
+    :type template_path: str
+
+    :param region: The AWS region to build Stacks in.
+    :type region: str
+
+    :param parameters: The keys must match up with the name of the parameter.\
+            The value must be of the type as defined in the template.
+    :type parameters: dict
+
+    :param sceptre_user_data: Data passed into\
+            `sceptre_handler(sceptre_user_data)` function in Python templates\
+            or accessible under `sceptre_user_data` variable within Jinja2\
+            templates.
+    :type sceptre_user_data: dict
+
+    :param hooks: A list of arbitrary shell or python commands or scripts to\
+            run.
+    :type hooks: sceptre.hooks.hook
+
+    :param s3_details:
+    :type s3_details: dict
+
+    :param dependencies: The relative path to the Stack, including the file\
+            extension of the Stack.
+    :type dependencies: list
+
+    :param role_arn: The ARN of a CloudFormation Service Role that is assumed\
+            by CloudFormation to create, update or delete resources.
+    :type role_arn: str
+
+    :param protected: Stack protection against execution.
+    :type protected: bool
+
+    :param tags: CloudFormation Tags to be applied to the Stack.
+    :type tags: dict
+
+    :param external_name:
+    :type external_name: str
+
+    :param notifications: SNS topic ARNs to publish Stack related events to.\
+            A maximum of 5 ARNs can be specified per Stack.
+    :type notifications: list
+
+    :param on_failure: This parameter describes the action taken by\
+            CloudFormation when a Stack fails to create.
+    :type on_failure: str
+
+    :param profile: The name of the profile as defined in ~/.aws/config and\
+            ~/.aws/credentials.
+    :type profile: str
+
+    :param stack_timeout: A timeout in minutes before considering the Stack\
+            deployment as failed. After the specified timeout, the Stack will\
+            be rolled back. Specifiyng zero, as well as ommiting the field,\
+            will result in no timeout. Supports only positive integer value.
+    :type stack_timeout: int
     """
 
     parameters = ResolvableProperty("parameters")
@@ -102,9 +159,9 @@ class Stack(object):
     @property
     def template(self):
         """
-        Returns the CloudFormation template used to create the stack.
+        Returns the CloudFormation Template used to create the Stack.
 
-        :returns: The stack's template.
+        :returns: The Stack's template.
         :rtype: str
         """
         self.connection_manager = ConnectionManager(

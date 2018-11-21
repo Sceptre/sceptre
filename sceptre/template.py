@@ -22,14 +22,22 @@ from .exceptions import TemplateSceptreHandlerError
 class Template(object):
     """
     Template represents an AWS CloudFormation template. It is responsible for
-    loading, storing, and optionally uploading, local templates for use by the
-    CloudFormation service.
+    loading, storing and optionally uploading local templates for use by
+    CloudFormation.
 
-    :param path: The absolute path to the file which stores the template.
+    :param path: The absolute path to the file which stores the CloudFormation\
+            template.
     :type path: str
-    :param sceptre_user_data: A dictionary of arbitrary data to be passed to \
-        a handler function in an external Python script.
+
+    :param sceptre_user_data: A dictionary of arbitrary data to be passed to\
+            a handler function in an external Python script.
     :type sceptre_user_data: dict
+
+    :param connection_manager:
+    :type connection_manager: sceptre.connection_manager.ConnectionManager
+
+    :param s3_details:
+    :type s3_details: dict
     """
 
     _boto_s3_lock = threading.Lock()
@@ -135,9 +143,9 @@ class Template(object):
         """
         Uploads the template to ``bucket_name`` and returns its URL.
 
-        The template is uploaded with the ``bucket_key``.
+        The Template is uploaded with the ``bucket_key``.
 
-        :returns: The URL of the template object in S3.
+        :returns: The URL of the Template object in S3.
         :rtype: str
         :raises: botocore.exceptions.ClientError
 

@@ -16,16 +16,21 @@ from sceptre.plan.plan import SceptrePlan
 @catch_exceptions
 def launch_command(ctx, path, yes):
     """
-    Launch a stack or stack_group.
+    Launch a Stack or StackGroup.
 
-    Launch a stack or stack_group for a given config PATH.
+    Launch a Stack or StackGroup for a given config PATH.
+
+    :param path: The path to launch. Can be a Stack or StackGroup.
+    :type path: str
+    :param yes: A flag to answer 'yes' to all CLI questions.
+    :type yes: bool
     """
     context = SceptreContext(
-                command_path=path,
-                project_path=ctx.obj.get("project_path"),
-                user_variables=ctx.obj.get("user_variables"),
-                options=ctx.obj.get("options")
-            )
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options")
+    )
 
     plan = SceptrePlan(context)
 
