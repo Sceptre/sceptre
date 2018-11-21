@@ -24,8 +24,7 @@ class StackGraph(object):
         Initialises a StackGraph based on a `set` of Stacks.
 
         :param stacks: A set of Stacks.
-        a given stack
-        :type stacks: dict
+        :type stacks: set
         """
         self.logger = logging.getLogger(__name__)
         self.graph = nx.DiGraph()

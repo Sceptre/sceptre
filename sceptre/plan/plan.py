@@ -127,6 +127,9 @@ class SceptrePlan(object):
     def lock(self, *args):
         """
         Locks the Stack by applying a deny all updates Stack policy.
+
+        :returns: A dictionary of Stacks
+        :rtype: dict
         """
         self._resolve(command=self.lock.__name__)
         return self._execute(*args)
@@ -134,6 +137,9 @@ class SceptrePlan(object):
     def unlock(self, *args):
         """
         Unlocks the Stack by applying an allow all updates Stack policy.
+
+        :returns: A dictionary of Stacks
+        :rtype: dict
         """
         self._resolve(command=self.unlock.__name__)
         return self._execute(*args)
@@ -182,6 +188,9 @@ class SceptrePlan(object):
         """
         Rolls back a Stack in the UPDATE_ROLLBACK_FAILED state to
         UPDATE_ROLLBACK_COMPLETE.
+
+        :returns: A dictionary of Stacks
+        :rtype: dict
        """
         self._resolve(command=self.continue_update_rollback.__name__)
         return self._execute(*args)
@@ -192,6 +201,8 @@ class SceptrePlan(object):
 
         :param policy_path: the path of json file containing a aws policy
         :type policy_path: str
+        :returns: A dictionary of Stacks
+        :rtype: dict
         """
         self._resolve(command=self.set_policy.__name__)
         return self._execute(*args)
@@ -201,7 +212,7 @@ class SceptrePlan(object):
         Returns a Stack's policy.
 
         :returns: A dictionary of Stacks and their Stack policy.
-        :rtype: str
+        :rtype: dict
         """
         self._resolve(command=self.get_policy.__name__)
         return self._execute(*args)
@@ -212,6 +223,8 @@ class SceptrePlan(object):
 
         :param change_set_name: The name of the Change Set.
         :type change_set_name: str
+        :returns: A dictionary of Stacks
+        :rtype: dict
         """
         self._resolve(command=self.create_change_set.__name__)
         return self._execute(*args)
@@ -222,6 +235,8 @@ class SceptrePlan(object):
 
         :param change_set_name: The name of the Change Set.
         :type change_set_name: str
+        :returns: A dictionary of Stacks
+        :rtype: dict
         """
         self._resolve(command=self.delete_change_set.__name__)
         return self._execute(*args)
@@ -244,6 +259,8 @@ class SceptrePlan(object):
 
         :param change_set_name: The name of the Change Set.
         :type change_set_name: str
+        :returns: A dictionary of Stacks and their status.
+        :rtype: dict
         """
         self._resolve(command=self.execute_change_set.__name__)
         return self._execute(*args)
@@ -308,6 +325,9 @@ class SceptrePlan(object):
     def generate(self, *args):
         """
         Returns a generated Template for a given Stack
+
+        :returns: A dictionary of Stacks and their template body.
+        :rtype: dict
         """
         self._resolve(command=self.generate.__name__)
         return self._execute(*args)

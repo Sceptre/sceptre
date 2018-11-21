@@ -516,6 +516,8 @@ class StackActions(object):
 
         :param change_set_name: The name of the Change Set.
         :type change_set_name: str
+        :returns: The Stack status
+        :rtype: str
         """
         self._protect_execution()
         self.logger.debug(
