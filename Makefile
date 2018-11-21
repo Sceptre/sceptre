@@ -54,7 +54,6 @@ clean-test:
 
 lint:
 	flake8 .
-	python setup.py check -r -s -m
 
 test:
 	pytest
