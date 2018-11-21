@@ -6,31 +6,36 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 # Added
 
-- StackGraph
+- StackGraph (5171ae0)
 
-- SceptreContext
+- SceptreContext (c17cfc5)
 
-- SceptrePlan
+- SceptrePlan (ab38157)
 
-- SceptrePlanExecutor
+- SceptrePlanExecutor (ab38157)
 
-- support for cross Stack Group dependencies
+- Support for cross-StackGroup dependencies
+
+- StackActions (e8e34e8)
 
 ## Removed
 
-- Environments
+- Environments. Stacks & their relationships are now held in StackGraph.
 
 ## Changed
 
-- Update dependencies
+- Config.yaml `template_path` attribute. By default Sceptre uses "templates" as the root
+  directory for `template_path` so the user should not specify `templates/` as
+  part of the `template_path` attribute.
 
 - Update docstrings
 
-## Fixed
+- Stack class. The functions available to Stacks are stored in StackActions
 
 ## Nonfunctional
 
-- Changed Project Docs to use Markdown format (README, CHANGELOG, CONTRIBUTING)
+- Updated project documentation such as README.
+- Changed project cocs to use Markdown format (README, CHANGELOG, CONTRIBUTING)
 
 ## 1.4.2 (2018.09.11)
 
