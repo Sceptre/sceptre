@@ -4,9 +4,9 @@ import click
 
 from sceptre.context import SceptreContext
 from sceptre.cli.helpers import catch_exceptions, confirmation
-from sceptre.cli.helpers import write, get_stack_or_stack_group
+from sceptre.cli.helpers import write, stack_status_exit_code
 from sceptre.cli.helpers import simplify_change_set_description
-from sceptre.stack_status import StackStatus, StackChangeSetStatus
+from sceptre.stack_status import StackChangeSetStatus
 from sceptre.plan.plan import SceptrePlan
 
 
@@ -30,49 +30,51 @@ def update_command(ctx, path, change_set, verbose, yes):
 
     Updates a stack for a given config PATH. Or perform an update via
     change-set when the change-set flag is set.
-    """
-    context = SceptreContext(
-                command_path=path,
-                project_path=ctx.obj.get("project_path"),
-                user_variables=ctx.obj.get("user_variables"),
-                options=ctx.obj.get("options"),
-                output_format=ctx.obj.get("output_format")
-            )
 
-    stack, _ = get_stack_or_stack_group(context)
+    :param path: Path to execute the command on.
+    :type path: str
+    :param change_set: Whether a change set should be created.
+    :type change_set: bool
+    :param verbose: A flag to print a verbose output.
+    :type verbose: bool
+    :param yes: A flag to answer 'yes' to all CLI questions.
+    :type yes: bool
+    """
+
+    context = SceptreContext(
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options"),
+        output_format=ctx.obj.get("output_format")
+    )
+
+    plan = SceptrePlan(context)
+
     if change_set:
-        action = 'create_change_set'
         change_set_name = "-".join(["change-set", uuid1().hex])
-        plan = SceptrePlan(context, action, stack)
-        plan.execute(change_set_name)
+        plan.create_change_set(change_set_name)
         try:
             # Wait for change set to be created
-            plan.action = 'wait_for_cs_completion'
-            status = plan.execute(change_set_name)
+            status = plan.wait_for_cs_completion(change_set_name)
 
             # Exit if change set fails to create
             if status != StackChangeSetStatus.READY:
                 exit(1)
 
             # Describe changes
-            plan.action = 'describe_change_set'
-            description = plan.execute(change_set_name)
+            description = plan.describe_change_set(change_set_name)
             if not verbose:
                 description = simplify_change_set_description(description)
             write(description, context.output_format)
 
             # Execute change set if happy with changes
             if yes or click.confirm("Proceed with stack update?"):
-                plan.action = 'execute_change_set'
-                plan.execute(change_set_name)
+                plan.execute_change_set(change_set_name)
         finally:
             # Clean up by deleting change set
-            plan.action = 'delete_change_set'
-            plan.execute(change_set_name)
+            plan.delete_change_set(change_set_name)
     else:
-        confirmation("update", yes, stack=path)
-        action = 'update'
-        plan = SceptrePlan(context, action, stack)
-        response = plan.execute()
-        if response != StackStatus.COMPLETE:
-            exit(1)
+        confirmation("update", yes, command_path=path)
+        responses = plan.update()
+        exit(stack_status_exit_code(responses.values()))

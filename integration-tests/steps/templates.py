@@ -4,20 +4,29 @@ import imp
 import yaml
 
 from botocore.exceptions import ClientError
-from sceptre.config.reader import ConfigReader
+from sceptre.plan.plan import SceptrePlan
+from sceptre.context import SceptreContext
 
 
 def set_template_path(context, stack_name, template_name):
-    config_path = os.path.join(
-        context.sceptre_dir, "config", stack_name + ".yaml"
+    sceptre_context = SceptreContext(
+        command_path=stack_name + ".yaml",
+        project_path=context.sceptre_dir
     )
-    template_path = os.path.join("templates", template_name)
-    with open(config_path) as config_file:
+
+    config_path = sceptre_context.full_config_path()
+
+    template_path = os.path.join(
+        sceptre_context.project_path,
+        sceptre_context.templates_path,
+        template_name
+    )
+    with open(os.path.join(config_path, stack_name + '.yaml')) as config_file:
         stack_config = yaml.safe_load(config_file)
 
     stack_config["template_path"] = template_path
 
-    with open(config_path, 'w') as config_file:
+    with open(os.path.join(config_path, stack_name + '.yaml'), 'w') as config_file:
         yaml.safe_dump(stack_config, config_file, default_flow_style=False)
 
 
@@ -28,32 +37,42 @@ def step_impl(context, stack_name, template_name):
 
 @when('the user validates the template for stack "{stack_name}"')
 def step_impl(context, stack_name):
-    config_reader = ConfigReader(context.sceptre_dir)
-    stack = config_reader.construct_stack(stack_name + ".yaml")
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
     try:
-        context.response = stack.template.validate()
+        response = sceptre_plan.validate()
+        context.response = response
     except ClientError as e:
         context.error = e
 
 
 @when('the user generates the template for stack "{stack_name}"')
 def step_impl(context, stack_name):
-    config_reader = ConfigReader(context.sceptre_dir)
-    stack = config_reader.construct_stack(stack_name + ".yaml")
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir
+    )
+    sceptre_plan = SceptrePlan(sceptre_context)
     try:
-        context.output = stack.template.body
+        context.output = sceptre_plan.generate()
     except Exception as e:
         context.error = e
 
 
 @then('the output is the same as the contents of "{filename}" template')
 def step_impl(context, filename):
+
     filepath = os.path.join(
         context.sceptre_dir, "templates", filename
     )
     with open(filepath) as template:
         body = template.read()
-    assert yaml.safe_load(body) == yaml.safe_load(context.output)
+    for template in context.output.values():
+        assert yaml.safe_load(body) == yaml.safe_load(template)
 
 
 @then('the output is the same as the string returned by "{filename}"')
@@ -64,4 +83,5 @@ def step_impl(context, filename):
 
     module = imp.load_source("template", filepath)
     body = module.sceptre_handler({})
-    assert body == context.output
+    for template in context.output.values():
+        assert body == template

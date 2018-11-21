@@ -2,10 +2,9 @@ import click
 
 from sceptre.context import SceptreContext
 from sceptre.cli.helpers import (
-     catch_exceptions,
-     get_stack_or_stack_group,
-     write
-    )
+    catch_exceptions,
+    write
+)
 from sceptre.plan.plan import SceptrePlan
 
 
@@ -19,24 +18,21 @@ def status_command(ctx, path):
 
     Prints the stack status or the status of the stacks within a
     stack_group for a given config PATH.
+
+    :param path: Path to execute the command on.
+    :type path: str
     """
     context = SceptreContext(
-                command_path=path,
-                project_path=ctx.obj.get("project_path"),
-                user_variables=ctx.obj.get("user_variables"),
-                options=ctx.obj.get("options"),
-                no_colour=ctx.obj.get("no_colour"),
-                output_format=ctx.obj.get("output_format")
-            )
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options"),
+        no_colour=ctx.obj.get("no_colour"),
+        output_format=ctx.obj.get("output_format")
+    )
 
-    stack, stack_group = get_stack_or_stack_group(context)
-
-    if stack:
-        command = 'get_status'
-        plan = SceptrePlan(context, command, stack)
-        write(plan.execute(), no_colour=context.no_colour)
-    elif stack_group:
-        command = 'describe'
-        plan = SceptrePlan(context, command, stack_group)
-        write(plan.execute(), output_format=context.output_format,
-              no_colour=context.no_colour)
+    plan = SceptrePlan(context)
+    responses = plan.get_status()
+    message = "\n".join("{}: {}".format(stack.name, status)
+                        for stack, status in responses.items())
+    write(message, no_colour=context.no_colour)

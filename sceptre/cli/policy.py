@@ -1,7 +1,7 @@
 import click
 
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import catch_exceptions, get_stack_or_stack_group
+from sceptre.cli.helpers import catch_exceptions
 from sceptre.plan.plan import SceptrePlan
 
 
@@ -16,28 +16,28 @@ from sceptre.plan.plan import SceptrePlan
 @catch_exceptions
 def set_policy_command(ctx, path, policy_file, built_in):
     """
-    Sets stack policy.
+    Sets Stack policy.
 
-    Sets a specific stack policy for either a file or using a built-in policy.
+    Sets a specific Stack policy for either a file or using a built-in policy.
+
+    :param path: Path to execute the command on.
+    :type path: str
+    :param policy_file: path to the AWS Policy file to use.
+    :type policy_file: str
+    :param built_in: the name of the built-in policy file to use.
+    :type built-in: str
     """
     context = SceptreContext(
-                command_path=path,
-                project_path=ctx.obj.get("project_path"),
-                user_variables=ctx.obj.get("user_variables"),
-                options=ctx.obj.get("options")
-            )
-
-    stack, _ = get_stack_or_stack_group(context)
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options")
+    )
+    plan = SceptrePlan(context)
 
     if built_in == 'deny-all':
-        action = 'lock'
-        plan = SceptrePlan(context, action, stack)
-        plan.execute()
+        plan.lock()
     elif built_in == 'allow-all':
-        action = 'unlock'
-        plan = SceptrePlan(context, action, stack)
-        plan.execute()
+        plan.unlock()
     else:
-        action = 'set_policy'
-        plan = SceptrePlan(context, action, stack)
-        plan.execute(policy_file)
+        plan.set_policy(policy_file)

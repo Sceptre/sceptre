@@ -1,8 +1,8 @@
-include AUTHORS.rst
-include CONTRIBUTING.rst
-include HISTORY.rst
+include CONTRIBUTORS.md
+include CONTRIBUTING.md
+include CHANGELOG.md
 include LICENSE
-include README.rst
+include README.md
 include requirements.txt
 include sceptre/stack_policies/lock.json
 include sceptre/stack_policies/unlock.json

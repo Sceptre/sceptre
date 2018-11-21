@@ -1,0 +1,9 @@
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: {{ sceptre_user_data.vpc_id }}
+Outputs:
+  VpcId:
+    Value:
+      Ref: VPC

@@ -1,7 +1,8 @@
 from behave import *
 import os
 import time
-from sceptre.config.reader import ConfigReader
+from sceptre.plan.plan import SceptrePlan
+from sceptre.context import SceptreContext
 from botocore.exceptions import ClientError
 from helpers import read_template_file, get_cloudformation_stack_name
 from helpers import retry_boto_call
@@ -25,7 +26,6 @@ def step_impl(context, stack_group_name, status):
     response = retry_boto_call(context.client.describe_stacks)
 
     stacks_to_delete = []
-
     for stack_name in full_stack_names:
         for stack in response["Stacks"]:
             if stack["StackName"] == stack_name:
@@ -43,26 +43,61 @@ def step_impl(context, stack_group_name, status):
 
 @when('the user launches stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
-    stack_group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
-    stack_group.launch()
+    sceptre_context = SceptreContext(
+        command_path=stack_group_name,
+        project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    sceptre_plan.launch()
 
 
 @when('the user deletes stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
-    stack_group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
-    stack_group.delete()
+    sceptre_context = SceptreContext(
+        command_path=stack_group_name,
+        project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    sceptre_plan.delete()
 
 
 @when('the user describes stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
-    stack_group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
-    context.response = stack_group.describe()
+    sceptre_context = SceptreContext(
+        command_path=stack_group_name,
+        project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    responses = sceptre_plan.describe()
+
+    stack_names = get_full_stack_names(context, stack_group_name)
+    cfn_stacks = {}
+
+    for response in responses.values():
+        if response is None:
+            continue
+        for stack in response['Stacks']:
+            cfn_stacks[stack['StackName']] = stack['StackStatus']
+
+    context.response = [
+        {short_name: cfn_stacks[full_name]}
+        for short_name, full_name in stack_names.items()
+        if cfn_stacks.get(full_name)
+    ]
 
 
 @when('the user describes resources in stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
-    stack_group = ConfigReader(context.sceptre_dir).construct_stack_group(stack_group_name)
-    context.response = stack_group.describe_resources()
+    sceptre_context = SceptreContext(
+        command_path=stack_group_name,
+        project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    context.response = sceptre_plan.describe_resources().values()
 
 
 @then('all the stacks in stack_group "{stack_group_name}" are in "{status}"')
@@ -82,18 +117,25 @@ def step_impl(context, stack_group_name):
 @then('all stacks in stack_group "{stack_group_name}" are described as "{status}"')
 def step_impl(context, stack_group_name, status):
     stacks_names = get_stack_names(context, stack_group_name)
-    expected_response = {stack_name: status for stack_name in stacks_names}
-    assert context.response == expected_response
+    expected_response = [{stack_name: status} for stack_name in stacks_names]
+    for response in context.response:
+        assert response in expected_response
 
 
 @then('no resources are described')
 def step_impl(context):
-    assert context.response == {}
+    for stack_resources in context.response:
+        assert stack_resources == []
 
 
 @then('stack "{stack_name}" is described as "{status}"')
 def step_impl(context, stack_name, status):
-    assert context.response[stack_name] == status
+    response = next((
+        stack for stack in context.response
+        if stack_name in stack
+    ), {stack_name: 'PENDING'})
+
+    assert response[stack_name] == status
 
 
 @then('only all resources in stack_group "{stack_group_name}" are described')
@@ -101,7 +143,7 @@ def step_impl(context, stack_group_name):
     stacks_names = get_full_stack_names(context, stack_group_name)
     expected_resources = {}
     sceptre_response = []
-    for stack_resources in context.response.values():
+    for stack_resources in context.response:
         for resource in stack_resources:
             sceptre_response.append(resource["PhysicalResourceId"])
 
@@ -124,7 +166,7 @@ def step_impl(context, stack_group_name):
 def step_impl(context, stack_name):
     expected_resources = {}
     sceptre_response = []
-    for stack_resources in context.response.values():
+    for stack_resources in context.response:
         for resource in stack_resources:
             sceptre_response.append(resource["PhysicalResourceId"])
 
@@ -168,9 +210,7 @@ def get_stack_names(context, stack_group_name):
         for filepath in files:
             filename = os.path.splitext(filepath)[0]
             if not filename == "config":
-                prefix = stack_group_name
-                stack_group = root[path.find(prefix):]
-                stack_names.append(os.path.join(stack_group, filename))
+                stack_names.append(os.path.join(stack_group_name, filename))
     return stack_names
 
 
@@ -195,7 +235,7 @@ def create_stacks(context, stack_names):
             )
         except ClientError as e:
             if e.response['Error']['Code'] == 'AlreadyExistsException' \
-              and e.response['Error']['Message'].endswith("already exists"):
+                    and e.response['Error']['Message'].endswith("already exists"):
                 pass
             else:
                 raise e
@@ -204,17 +244,16 @@ def create_stacks(context, stack_names):
 
 
 def delete_stacks(context, stack_names):
-    for stack_name in stack_names:
-        time.sleep(1)
-        stack = retry_boto_call(context.cloudformation.Stack, stack_name)
-        retry_boto_call(stack.delete)
-
     waiter = context.client.get_waiter('stack_delete_complete')
     waiter.config.delay = 5
     waiter.config.max_attempts = 240
-    for stack_name in stack_names:
+
+    for stack_name in reversed(list(stack_names)):
         time.sleep(1)
+        stack = retry_boto_call(context.cloudformation.Stack, stack_name)
+        retry_boto_call(stack.delete)
         waiter.wait(StackName=stack_name)
+        time.sleep(1)
 
 
 def check_stack_status(context, stack_names, desired_status):

@@ -1,10 +1,12 @@
 import click
 
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import catch_exceptions, get_stack_or_stack_group
+from sceptre.cli.helpers import catch_exceptions
 from sceptre.cli.helpers import confirmation
-from sceptre.stack_status import StackStatus
+from sceptre.cli.helpers import stack_status_exit_code
 from sceptre.plan.plan import SceptrePlan
+
+from colorama import Fore, Style
 
 
 @click.command(name="delete")
@@ -21,35 +23,39 @@ def delete_command(ctx, path, change_set_name, yes):
 
     Deletes a stack for a given config PATH. Or if CHANGE_SET_NAME is specified
     deletes a change set for stack in PATH.
+
+    :param path: Path to execute command on.
+    :type path: str
+    :param change_set_name: The name of the change set to use - optional
+    :type change_set_name: str
+    :param yes: Flag to answer yes to all CLI questions.
+    :type yes: bool
     """
     context = SceptreContext(
-                command_path=path,
-                project_path=ctx.obj.get("project_path"),
-                user_variables=ctx.obj.get("user_variables"),
-                options=ctx.obj.get("options")
-            )
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options")
+    )
 
-    action = "delete"
+    plan = SceptrePlan(context)
+    plan.resolve(command='delete', reverse=True)
 
-    stack, stack_group = get_stack_or_stack_group(context)
+    dependencies = ''
+    for stacks in plan.launch_order:
+        for stack in stacks:
+            dependencies += "{}{}{}\n".format(Fore.YELLOW, stack.name, Style.RESET_ALL)
 
-    if stack:
-        if change_set_name:
-            confirmation(action, yes, change_set=change_set_name, stack=path)
-            command = 'delete_change_set'
-            plan = SceptrePlan(context, command, stack)
-            plan.execute(change_set_name)
-        else:
-            confirmation(action, yes, stack=path)
-            plan = SceptrePlan(context, action, stack)
-            response = plan.execute()
-            if response != StackStatus.COMPLETE:
-                exit(1)
-    elif stack_group:
-        confirmation(action, yes, stack_group=path)
-        plan = SceptrePlan(context, action, stack_group)
-        response = plan.execute()
-        if not all(
-            status == StackStatus.COMPLETE for status in response.values()
-        ):
-            exit(1)
+    print("The following stacks in the following order will be deleted:\n{}".format(dependencies))
+
+    confirmation(
+        plan.delete_change_set.__name__,
+        yes,
+        change_set=change_set_name,
+        command_path=path
+    )
+    if change_set_name:
+        plan.delete_change_set(change_set_name)
+    else:
+        responses = plan.delete()
+        exit(stack_status_exit_code(responses.values()))

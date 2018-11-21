@@ -1,9 +1,9 @@
 import click
 
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import catch_exceptions, get_stack_or_stack_group
+from sceptre.cli.helpers import catch_exceptions
 from sceptre.cli.helpers import confirmation
-from sceptre.stack_status import StackStatus
+from sceptre.cli.helpers import stack_status_exit_code
 from sceptre.plan.plan import SceptrePlan
 
 
@@ -16,31 +16,24 @@ from sceptre.plan.plan import SceptrePlan
 @catch_exceptions
 def launch_command(ctx, path, yes):
     """
-    Launch a stack or stack_group.
+    Launch a Stack or StackGroup.
 
-    Launch a stack or stack_group for a given config PATH.
+    Launch a Stack or StackGroup for a given config PATH.
+
+    :param path: The path to launch. Can be a Stack or StackGroup.
+    :type path: str
+    :param yes: A flag to answer 'yes' to all CLI questions.
+    :type yes: bool
     """
     context = SceptreContext(
-                command_path=path,
-                project_path=ctx.obj.get("project_path"),
-                user_variables=ctx.obj.get("user_variables"),
-                options=ctx.obj.get("options")
-            )
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options")
+    )
 
-    action = "launch"
+    plan = SceptrePlan(context)
 
-    stack, stack_group = get_stack_or_stack_group(context)
-    if stack:
-        confirmation(action, yes, stack=path)
-        plan = SceptrePlan(context, action, stack)
-        response = plan.execute()
-        if response != StackStatus.COMPLETE:
-            exit(1)
-    elif stack_group:
-        confirmation(action, yes, stack_group=path)
-        plan = SceptrePlan(context, action, stack_group)
-        response = plan.execute()
-        if not all(
-            status == StackStatus.COMPLETE for status in response.values()
-        ):
-            exit(1)
+    confirmation(plan.launch.__name__, yes, command_path=path)
+    responses = plan.launch()
+    exit(stack_status_exit_code(responses.values()))

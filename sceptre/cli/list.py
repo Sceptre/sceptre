@@ -2,10 +2,9 @@ import click
 
 from sceptre.context import SceptreContext
 from sceptre.cli.helpers import (
-          catch_exceptions,
-          get_stack_or_stack_group,
-          write
-        )
+    catch_exceptions,
+    write
+)
 from sceptre.plan.plan import SceptrePlan
 
 
@@ -26,24 +25,24 @@ def list_resources(ctx, path):
     """
     List resources for stack or stack_group.
 
+    :param path: Path to execute the command on.
+    :type path: str
     """
     context = SceptreContext(
-                command_path=path,
-                project_path=ctx.obj.get("project_path"),
-                user_variables=ctx.obj.get("user_variables"),
-                options=ctx.obj.get("options"),
-                output_format=ctx.obj.get("output_format")
-            )
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options"),
+        output_format=ctx.obj.get("output_format")
+    )
+    plan = SceptrePlan(context)
 
-    stack, stack_group = get_stack_or_stack_group(context)
-    action = 'describe_resources'
+    responses = [
+        response for response
+        in plan.describe_resources().values() if response
+    ]
 
-    if stack:
-        plan = SceptrePlan(context, action, stack)
-        write(plan.execute(), context.output_format)
-    elif stack_group:
-        plan = SceptrePlan(context, action, stack_group)
-        write(plan.execute(), context.output_format)
+    write(list(responses), context.output_format)
 
 
 @list_group.command(name="outputs")
@@ -58,30 +57,34 @@ def list_outputs(ctx, path, export):
     """
     List outputs for stack.
 
-    """
+    :param path: Path to execute the command on.
+    :type path: str
+    :param export: Specify the export formatting.
+    :type export: str
+   """
     context = SceptreContext(
-                command_path=path,
-                project_path=ctx.obj.get("project_path"),
-                user_variables=ctx.obj.get("user_variables"),
-                options=ctx.obj.get("options")
-            )
+        command_path=path,
+        project_path=ctx.obj.get("project_path", None),
+        user_variables=ctx.obj.get("user_variables", {}),
+        options=ctx.obj.get("options", {}),
+        output_format=ctx.obj.get("output_format", {})
+    )
 
-    stack, _ = get_stack_or_stack_group(context)
-    action = 'describe_outputs'
-    plan = SceptrePlan(context, action, stack)
-    response = plan.execute()
+    plan = SceptrePlan(context)
+    responses = [
+        response for response
+        in plan.describe_outputs().values() if response
+    ]
 
     if export == "envvar":
         write("\n".join(
-            [
-                "export SCEPTRE_{0}={1}".format(
-                    output["OutputKey"], output["OutputValue"]
-                )
-                for output in response
-            ]
+            "export SCEPTRE_{0}={1}".format(
+                output["OutputKey"], output["OutputValue"]
+            )
+            for response in responses for output in response
         ))
     else:
-        write(response, context.output_format)
+        write(list(responses), context.output_format)
 
 
 @list_group.command(name="change-sets")
@@ -92,20 +95,24 @@ def list_change_sets(ctx, path):
     """
     List change sets for stack.
 
+    :param path: Path to execute the command on.
+    :type path: str
     """
     context = SceptreContext(
-                command_path=path,
-                project_path=ctx.obj.get("project_path"),
-                user_variables=ctx.obj.get("user_variables"),
-                output_format=ctx.obj.get("output_format"),
-                options=ctx.obj.get("options")
-            )
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        output_format=ctx.obj.get("output_format"),
+        options=ctx.obj.get("options")
+    )
 
-    stack, _ = get_stack_or_stack_group(context)
-    action = 'list_change_sets'
-    plan = SceptrePlan(context, action, stack)
-    response = plan.execute()
+    plan = SceptrePlan(context)
+    responses = [
+        response for response
+        in plan.list_change_sets().values() if response
+    ]
 
-    if response['ResponseMetadata']['HTTPStatusCode'] == 200:
-        del response['ResponseMetadata']
-    write(response, context.output_format)
+    for response in responses:
+        if response['ResponseMetadata']['HTTPStatusCode'] == 200:
+            del response['ResponseMetadata']
+        write(response, context.output_format)

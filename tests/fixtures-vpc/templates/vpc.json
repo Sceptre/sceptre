@@ -1,0 +1,43 @@
+{
+    "Outputs": {
+        "VpcId": {
+            "Description": "New VPC ID",
+            "Value": {
+                "Ref": "VirtualPrivateCloud"
+            }
+        }
+    },
+    "Parameters": {
+        "CidrBlock": {
+            "Default": "10.0.0.0/16",
+            "Type": "String"
+        }
+    },
+    "Resources": {
+        "IGWAttachment": {
+            "Properties": {
+                "InternetGatewayId": {
+                    "Ref": "InternetGateway"
+                },
+                "VpcId": {
+                    "Ref": "VirtualPrivateCloud"
+                }
+            },
+            "Type": "AWS::EC2::VPCGatewayAttachment"
+        },
+        "InternetGateway": {
+            "Type": "AWS::EC2::InternetGateway"
+        },
+        "VirtualPrivateCloud": {
+            "Properties": {
+                "CidrBlock": {
+                    "Ref": "CidrBlock"
+                },
+                "EnableDnsHostnames": "true",
+                "EnableDnsSupport": "true",
+                "InstanceTenancy": "default"
+            },
+            "Type": "AWS::EC2::VPC"
+        }
+    }
+}

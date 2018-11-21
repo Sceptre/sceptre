@@ -22,14 +22,22 @@ from .exceptions import TemplateSceptreHandlerError
 class Template(object):
     """
     Template represents an AWS CloudFormation template. It is responsible for
-    loading, storing, and optionally uploading, local templates for use by the
-    CloudFormation service.
+    loading, storing and optionally uploading local templates for use by
+    CloudFormation.
 
-    :param path: The absolute path to the file which stores the template.
+    :param path: The absolute path to the file which stores the CloudFormation\
+            template.
     :type path: str
-    :param sceptre_user_data: A dictionary of arbitrary data to be passed to \
-        a handler function in an external Python script.
+
+    :param sceptre_user_data: A dictionary of arbitrary data to be passed to\
+            a handler function in an external Python script.
     :type sceptre_user_data: dict
+
+    :param connection_manager:
+    :type connection_manager: sceptre.connection_manager.ConnectionManager
+
+    :param s3_details:
+    :type s3_details: dict
     """
 
     _boto_s3_lock = threading.Lock()
@@ -135,9 +143,9 @@ class Template(object):
         """
         Uploads the template to ``bucket_name`` and returns its URL.
 
-        The template is uploaded with the ``bucket_key``.
+        The Template is uploaded with the ``bucket_key``.
 
-        :returns: The URL of the template object in S3.
+        :returns: The URL of the Template object in S3.
         :rtype: str
         :raises: botocore.exceptions.ClientError
 
@@ -174,9 +182,6 @@ class Template(object):
         self.logger.debug("%s - Template URL: '%s'", self.name, url)
 
         return url
-
-    def generate(self):
-        return self.body
 
     def _bucket_exists(self):
         """
@@ -257,46 +262,6 @@ class Template(object):
             return {"TemplateURL": url}
         else:
             return {"TemplateBody": self.body}
-
-    def validate(self):
-        """
-        Validates the stack's CloudFormation template.
-
-        Raises an error if the template is invalid.
-
-        :returns: Information about the template.
-        :rtype: dict
-        :raises: botocore.exceptions.ClientError
-        """
-        self.logger.debug("%s - Validating template", self.name)
-        response = self.connection_manager.call(
-            service="cloudformation",
-            command="validate_template",
-            kwargs=self.get_boto_call_parameter()
-        )
-        self.logger.debug(
-            "%s - Validate template response: %s", self.name, response
-        )
-        return response
-
-    def estimate_cost(self):
-        """
-        Estimates a stack's cost.
-
-        :returns: An estimate of the stack's cost.
-        :rtype: dict
-        :raises: botocore.exceptions.ClientError
-        """
-        self.logger.debug("%s - Estimating template cost", self.name)
-        response = self.connection_manager.call(
-            service="cloudformation",
-            command="estimate_template_cost",
-            kwargs=self.get_boto_call_parameter()
-        )
-        self.logger.debug(
-            "%s - Estimate stack cost response: %s", self.name, response
-        )
-        return response
 
     @staticmethod
     def _render_jinja_template(template_dir, filename, jinja_vars):

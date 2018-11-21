@@ -9,15 +9,13 @@ from mock import MagicMock, patch, sentinel
 import pytest
 import click
 
-from sceptre.context import SceptreContext
 from sceptre.cli import cli
 from sceptre.config.reader import ConfigReader
 from sceptre.stack import Stack
-from sceptre.stack_group import StackGroup
+from sceptre.plan.actions import StackActions
 from sceptre.stack_status import StackStatus
 from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
 from sceptre.cli.helpers import CustomJsonEncoder, catch_exceptions
-from sceptre.cli.helpers import get_stack_or_stack_group
 from botocore.exceptions import ClientError
 from sceptre.exceptions import SceptreException
 
@@ -25,27 +23,36 @@ from sceptre.exceptions import SceptreException
 class TestCli(object):
 
     def setup_method(self, test_method):
-        self.patcher_ConfigReader = patch("sceptre.cli.helpers.ConfigReader")
-        self.patcher_getcwd = patch("sceptre.cli.os.getcwd")
+        self.patcher_ConfigReader = patch("sceptre.plan.plan.ConfigReader")
+        self.patcher_StackActions = patch("sceptre.plan.executor.StackActions")
 
         self.mock_ConfigReader = self.patcher_ConfigReader.start()
-        self.mock_getcwd = self.patcher_getcwd.start()
+        self.mock_StackActions = self.patcher_StackActions.start()
 
         self.mock_config_reader = MagicMock(spec=ConfigReader)
+        self.mock_stack_actions = MagicMock(spec=StackActions)
+
         self.mock_stack = MagicMock(spec=Stack)
-        self.mock_stack_group = MagicMock(spec=StackGroup)
-        self.mock_config_reader.construct_stack.return_value = self.mock_stack
-        self.mock_config_reader.construct_stack_group.return_value = \
-            self.mock_stack_group
+
+        self.mock_stack.name = 'mock-stack'
+        self.mock_stack.region = None
+        self.mock_stack.profile = None
+        self.mock_stack.external_name = None
+        self.mock_stack.dependencies = []
+
+        self.mock_config_reader.construct_stacks.return_value = \
+            set([self.mock_stack]), set([self.mock_stack])
+
+        self.mock_stack_actions.stack = self.mock_stack
 
         self.mock_ConfigReader.return_value = self.mock_config_reader
-        self.mock_getcwd.return_value = sentinel.cwd
+        self.mock_StackActions.return_value = self.mock_stack_actions
 
         self.runner = CliRunner()
 
     def teardown_method(self, test_method):
         self.patcher_ConfigReader.stop()
-        self.patcher_getcwd.stop()
+        self.patcher_StackActions.stop()
 
     @patch("sys.exit")
     def test_catch_excecptions(self, mock_exit):
@@ -105,30 +112,28 @@ class TestCli(object):
         def noop(ctx):
             click.echo(yaml.safe_dump(ctx.obj.get("user_variables")))
 
-        self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():
             for name, content in files.items():
                 with open(name, "w") as fh:
                     yaml.safe_dump(content, fh)
 
             result = self.runner.invoke(cli, command)
-        self.patcher_getcwd.start()
 
         user_variables = yaml.safe_load(result.output)
         assert result.exit_code == 0
         assert user_variables == output
 
     def test_validate_template_with_valid_template(self):
-        self.mock_stack.template.validate.return_value = {
-                    "Parameters": "Example",
-                    "ResponseMetadata": {
-                        "HTTPStatusCode": 200
-                    }
-                }
+        self.mock_stack_actions.validate.return_value = {
+            "Parameters": "Example",
+            "ResponseMetadata": {
+                "HTTPStatusCode": 200
+            }
+        }
         result = self.runner.invoke(cli, ["validate", "dev/vpc.yaml"])
-        self.mock_stack.template.validate.assert_called_with()
+        self.mock_stack_actions.validate.assert_called_with()
 
-        assert result.output == "Template is valid. Template details:\n\n" \
+        assert result.output == "Template mock-stack is valid. Template details:\n\n" \
             "Parameters: Example\n\n"
 
     def test_validate_template_with_invalid_template(self):
@@ -142,27 +147,27 @@ class TestCli(object):
             },
             "ValidateTemplate"
         )
-        self.mock_stack.template.validate.side_effect = client_error
+        self.mock_stack_actions.validate.side_effect = client_error
 
         expected_result = str(client_error) + "\n"
         result = self.runner.invoke(cli, ["validate", "dev/vpc.yaml"])
-        assert result.output == expected_result
+        assert expected_result in result.output
 
     def test_estimate_template_cost_with_browser(self):
-        self.mock_stack.template.estimate_cost.return_value = {
-                "Url": "http://example.com",
-                "ResponseMetadata": {
-                    "HTTPStatusCode": 200
-                }
+        self.mock_stack_actions.estimate_cost.return_value = {
+            "Url": "http://example.com",
+            "ResponseMetadata": {
+                "HTTPStatusCode": 200
             }
+        }
 
         args = ["estimate-cost", "dev/vpc.yaml"]
         result = self.runner.invoke(cli, args)
 
-        self.mock_stack.template.estimate_cost.assert_called_with()
+        self.mock_stack_actions.estimate_cost.assert_called_with()
 
         assert result.output == \
-            '{0}{1}'.format("View the estimated cost at:\n",
+            '{0}{1}'.format("View the estimated cost for mock-stack at:\n",
                             "http://example.com\n\n")
 
     def test_estimate_template_cost_with_no_browser(self):
@@ -176,32 +181,28 @@ class TestCli(object):
             },
             "Webbrowser"
         )
-        self.mock_stack.template.estimate_cost.side_effect = client_error
+        self.mock_stack_actions.estimate_cost.side_effect = client_error
 
         expected_result = str(client_error) + "\n"
         result = self.runner.invoke(
-                    cli,
-                    ["estimate-cost", "dev/vpc.yaml"]
-                )
-        assert result.output == expected_result
+            cli,
+            ["estimate-cost", "dev/vpc.yaml"]
+        )
+        assert expected_result in result.output
 
     def test_lock_stack(self):
         self.runner.invoke(
             cli, ["set-policy", "dev/vpc.yaml", "-b", "deny-all"]
         )
-        self.mock_config_reader.construct_stack.assert_called_with(
-                "dev/vpc.yaml"
-        )
-        self.mock_stack.lock.assert_called_with()
+        self.mock_config_reader.construct_stacks.assert_called_with()
+        self.mock_stack_actions.lock.assert_called_with()
 
     def test_unlock_stack(self):
         self.runner.invoke(
             cli, ["set-policy", "dev/vpc.yaml", "-b", "allow-all"]
         )
-        self.mock_config_reader.construct_stack.assert_called_with(
-                "dev/vpc.yaml"
-        )
-        self.mock_stack.unlock.assert_called_with()
+        self.mock_config_reader.construct_stacks.assert_called_with()
+        self.mock_stack_actions.unlock.assert_called_with()
 
     def test_set_policy_with_file_flag(self):
         policy_file = "tests/fixtures/stack_policies/lock.json"
@@ -211,7 +212,7 @@ class TestCli(object):
         assert result.exit_code == 0
 
     def test_describe_policy_with_existing_policy(self):
-        self.mock_stack.get_policy.return_value = {
+        self.mock_stack_actions.get_policy.return_value = {
             "StackPolicyBody": "Body"
         }
 
@@ -240,23 +241,24 @@ class TestCli(object):
                 ]
             }
         }
-        self.mock_stack_group.describe_resources.return_value = response
+        self.mock_stack_actions.describe_resources.return_value = response
         result = self.runner.invoke(cli, ["list", "resources", "dev"])
-        assert yaml.load(result.output) == response
+
+        assert yaml.load(result.output) == [response]
         assert result.exit_code == 0
 
     def test_list_stack_resources(self):
         response = {
-                "StackResources": [
-                    {
-                        "LogicalResourceId": "logical-resource-id",
-                        "PhysicalResourceId": "physical-resource-id"
-                    }
-                ]
-            }
-        self.mock_stack.describe_resources.return_value = response
+            "StackResources": [
+                {
+                    "LogicalResourceId": "logical-resource-id",
+                    "PhysicalResourceId": "physical-resource-id"
+                }
+            ]
+        }
+        self.mock_stack_actions.describe_resources.return_value = response
         result = self.runner.invoke(cli, ["list", "resources", "dev/vpc.yaml"])
-        assert yaml.load(result.output) == response
+        assert yaml.load(result.output) == [response]
         assert result.exit_code == 0
 
     @pytest.mark.parametrize(
@@ -280,7 +282,8 @@ class TestCli(object):
         ]
     )
     def test_stack_commands(self, command, success, yes_flag, exit_code):
-        getattr(self.mock_stack, command).return_value = \
+        run_command = getattr(self.mock_stack_actions, command)
+        run_command.return_value = \
             StackStatus.COMPLETE if success else StackStatus.FAILED
 
         kwargs = {"args": [command, "dev/vpc.yaml"]}
@@ -291,7 +294,7 @@ class TestCli(object):
 
         result = self.runner.invoke(cli, **kwargs)
 
-        getattr(self.mock_stack, command).assert_called_with()
+        run_command.assert_called_with()
         assert result.exit_code == exit_code
 
     @pytest.mark.parametrize(
@@ -315,37 +318,9 @@ class TestCli(object):
 
         result = self.runner.invoke(cli, **kwargs)
 
-        getattr(self.mock_stack, stack_command).assert_called_with("cs1")
+        getattr(self.mock_stack_actions,
+                stack_command).assert_called_with("cs1")
         assert result.exit_code == 0
-
-    @pytest.mark.parametrize(
-        "command,success,yes_flag,exit_code", [
-            ("delete", True, True, 0),
-            ("delete", False, True, 1),
-            ("delete", True, False, 0),
-            ("delete", False, False, 1),
-            ("launch", True, True, 0),
-            ("launch", False, True, 1),
-            ("launch", True, False, 0),
-            ("launch", False, False, 1)
-        ]
-    )
-    def test_stack_group_commands(self, command, success, yes_flag, exit_code):
-        status = StackStatus.COMPLETE if success else StackStatus.FAILED
-        response = {"stack": status}
-
-        getattr(self.mock_stack_group, command).return_value = response
-
-        kwargs = {"args": [command, "dev"]}
-        if yes_flag:
-            kwargs["args"].append("-y")
-        else:
-            kwargs["input"] = "y\n"
-
-        result = self.runner.invoke(cli, **kwargs)
-
-        getattr(self.mock_stack_group, command).assert_called_with()
-        assert result.exit_code == exit_code
 
     @pytest.mark.parametrize(
         "verbose_flag,", [
@@ -380,7 +355,7 @@ class TestCli(object):
         if verbose_flag:
             args.append("-v")
 
-        self.mock_stack.describe_change_set.return_value = response
+        self.mock_stack_actions.describe_change_set.return_value = response
         result = self.runner.invoke(cli, args)
         if not verbose_flag:
             del response["VerboseProperty"]
@@ -389,7 +364,7 @@ class TestCli(object):
         assert result.exit_code == 0
 
     def test_list_change_sets_with_200(self):
-        self.mock_stack.list_change_sets.return_value = {
+        self.mock_stack_actions.list_change_sets.return_value = {
             "ResponseMetadata": {
                 "HTTPStatusCode": 200
             },
@@ -408,7 +383,7 @@ class TestCli(object):
             },
             "ChangeSets": "Test"
         }
-        self.mock_stack.list_change_sets.return_value = response
+        self.mock_stack_actions.list_change_sets.return_value = response
 
         result = self.runner.invoke(
             cli, ["list", "change-sets", "dev/vpc.yaml"]
@@ -418,16 +393,16 @@ class TestCli(object):
 
     def test_list_outputs(self):
         outputs = [{"OutputKey": "Key", "OutputValue": "Value"}]
-        self.mock_stack.describe_outputs.return_value = outputs
+        self.mock_stack_actions.describe_outputs.return_value = outputs
         result = self.runner.invoke(
             cli, ["list", "outputs", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert yaml.load(result.output) == outputs
+        assert yaml.load(result.output) == [outputs]
 
     def test_list_outputs_with_export(self):
         outputs = [{"OutputKey": "Key", "OutputValue": "Value"}]
-        self.mock_stack.describe_outputs.return_value = outputs
+        self.mock_stack_actions.describe_outputs.return_value = outputs
         result = self.runner.invoke(
             cli, ["list", "outputs", "dev/vpc.yaml", "-e", "envvar"]
         )
@@ -435,20 +410,21 @@ class TestCli(object):
         assert yaml.load(result.output) == "export SCEPTRE_Key=Value"
 
     def test_status_with_group(self):
-        self.mock_stack_group.describe.return_value = {"stack": "status"}
+        self.mock_stack_actions.get_status.return_value = {
+            "stack": "status"
+        }
 
         result = self.runner.invoke(cli, ["status", "dev"])
         assert result.exit_code == 0
-        assert result.output == "stack: status\n\n"
+        assert result.output == "mock-stack: {'stack': 'status'}\n"
 
     def test_status_with_stack(self):
-        self.mock_stack.get_status.return_value = "status"
+        self.mock_stack_actions.get_status.return_value = "status"
         result = self.runner.invoke(cli, ["status", "dev/vpc.yaml"])
         assert result.exit_code == 0
-        assert result.output == "status\n"
+        assert result.output == "mock-stack: status\n"
 
-    def test_init_project_non_existant(self):
-        self.patcher_getcwd.stop()
+    def test_new_project_non_existant(self):
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath('./example')
             config_dir = os.path.join(project_path, "config")
@@ -460,7 +436,7 @@ class TestCli(object):
                 "region": region
             }
 
-            result = self.runner.invoke(cli, ["init", "project", "example"])
+            result = self.runner.invoke(cli, ["new", "project", "example"])
             assert not result.exception
             assert os.path.isdir(config_dir)
             assert os.path.isdir(template_dir)
@@ -469,10 +445,8 @@ class TestCli(object):
                 config = yaml.load(config_file)
 
             assert config == defaults
-        self.patcher_getcwd.start()
 
-    def test_init_project_already_exist(self):
-        self.patcher_getcwd.stop()
+    def test_new_project_already_exist(self):
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath('./example')
             config_dir = os.path.join(project_path, "config")
@@ -487,7 +461,7 @@ class TestCli(object):
             with open(config_filepath, 'w') as config_file:
                 yaml.dump(existing_config, config_file)
 
-            result = self.runner.invoke(cli, ["init", "project", "example"])
+            result = self.runner.invoke(cli, ["new", "project", "example"])
             assert result.exit_code == 1
             assert result.output == 'Folder \"example\" already exists.\n'
             assert os.path.isdir(config_dir)
@@ -496,58 +470,54 @@ class TestCli(object):
             with open(os.path.join(config_dir, "config.yaml")) as config_file:
                 config = yaml.load(config_file)
             assert existing_config == config
-        self.patcher_getcwd.start()
 
-    def test_init_project_another_exception(self):
-        self.patcher_getcwd.stop()
+    def test_new_project_another_exception(self):
         with self.runner.isolated_filesystem():
-            patcher_mkdir = patch("sceptre.cli.init.os.mkdir")
+            patcher_mkdir = patch("sceptre.cli.new.os.mkdir")
             mock_mkdir = patcher_mkdir.start()
             mock_mkdir.side_effect = OSError(errno.EINVAL)
-            result = self.runner.invoke(cli, ["init", "project", "example"])
+            result = self.runner.invoke(cli, ["new", "project", "example"])
             mock_mkdir = patcher_mkdir.stop()
             assert str(result.exception) == str(OSError(errno.EINVAL))
-        self.patcher_getcwd.start()
 
     @pytest.mark.parametrize(
-      "stack_group,config_structure,stdin,result", [
-        (
-         "A",
-         {"": {}},
-         'y\nA\nA\n', {"project_code": "A", "region": "A"}
-        ),
-        (
-         "A",
-         {"": {"project_code": "top", "region": "top"}},
-         'y\n\n\n', {}
-        ),
-        (
-         "A",
-         {"": {"project_code": "top", "region": "top"}},
-         'y\nA\nA\n', {"project_code": "A", "region": "A"}
-        ),
-        (
-         "A/A",
-         {
-            "": {"project_code": "top", "region": "top"},
-            "A": {"project_code": "A", "region": "A"},
-         },
-         'y\nA/A\nA/A\n', {"project_code": "A/A", "region": "A/A"}
-        ),
-        (
-         "A/A",
-         {
-            "": {"project_code": "top", "region": "top"},
-            "A": {"project_code": "A", "region": "A"},
-         },
-         'y\nA\nA\n', {}
-        )
-      ]
+        "stack_group,config_structure,stdin,result", [
+            (
+                "A",
+                {"": {}},
+                'y\nA\nA\n', {"project_code": "A", "region": "A"}
+            ),
+            (
+                "A",
+                {"": {"project_code": "top", "region": "top"}},
+                'y\n\n\n', {}
+            ),
+            (
+                "A",
+                {"": {"project_code": "top", "region": "top"}},
+                'y\nA\nA\n', {"project_code": "A", "region": "A"}
+            ),
+            (
+                "A/A",
+                {
+                    "": {"project_code": "top", "region": "top"},
+                    "A": {"project_code": "A", "region": "A"},
+                },
+                'y\nA/A\nA/A\n', {"project_code": "A/A", "region": "A/A"}
+            ),
+            (
+                "A/A",
+                {
+                    "": {"project_code": "top", "region": "top"},
+                    "A": {"project_code": "A", "region": "A"},
+                },
+                'y\nA\nA\n', {}
+            )
+        ]
     )
-    def test_init_stack_group(
+    def test_create_new_stack_group_folder(
         self, stack_group, config_structure, stdin, result
     ):
-        self.patcher_getcwd.stop()
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath('./example')
             config_dir = os.path.join(project_path, "config")
@@ -573,23 +543,21 @@ class TestCli(object):
             os.chdir(project_path)
 
             cmd_result = self.runner.invoke(
-                cli, ["init", "grp", stack_group],
+                cli, ["new", "group", stack_group],
                 input=stdin
             )
 
             if result:
                 with open(os.path.join(stack_group_dir, "config.yaml"))\
-                  as config_file:
+                        as config_file:
                     config = yaml.load(config_file)
                 assert config == result
             else:
                 assert cmd_result.output.endswith(
                     "No config.yaml file needed - covered by parent config.\n"
                 )
-        self.patcher_getcwd.start()
 
-    def test_init_stack_group_with_existing_folder(self):
-        self.patcher_getcwd.stop()
+    def test_new_stack_group_folder_with_existing_folder(self):
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath('./example')
             config_dir = os.path.join(project_path, "config")
@@ -599,7 +567,7 @@ class TestCli(object):
             os.chdir(project_path)
 
             cmd_result = self.runner.invoke(
-                cli, ["init", "grp", "A"], input="y\n\n\n"
+                cli, ["new", "group", "A"], input="y\n\n\n"
             )
 
             assert cmd_result.output.startswith(
@@ -607,14 +575,11 @@ class TestCli(object):
                 "Do you want initialise config.yaml?"
             )
             with open(os.path.join(
-                  stack_group_dir, "config.yaml")) as config_file:
+                    stack_group_dir, "config.yaml")) as config_file:
                 config = yaml.load(config_file)
             assert config == {"project_code": "", "region": ""}
 
-        self.patcher_getcwd.start()
-
-    def test_init_stack_group_with_another_exception(self):
-        self.patcher_getcwd.stop()
+    def test_new_stack_group_folder_with_another_exception(self):
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath('./example')
             config_dir = os.path.join(project_path, "config")
@@ -622,14 +587,12 @@ class TestCli(object):
 
             os.makedirs(stack_group_dir)
             os.chdir(project_path)
-            patcher_mkdir = patch("sceptre.cli.init.os.mkdir")
+            patcher_mkdir = patch("sceptre.cli.new.os.mkdir")
             mock_mkdir = patcher_mkdir.start()
             mock_mkdir.side_effect = OSError(errno.EINVAL)
-            result = self.runner.invoke(cli, ["init", "grp", "A"])
+            result = self.runner.invoke(cli, ["new", "group", "A"])
             mock_mkdir = patcher_mkdir.stop()
             assert str(result.exception) == str(OSError(errno.EINVAL))
-
-        self.patcher_getcwd.start()
 
     def test_setup_logging_with_debug(self):
         logger = setup_logging(True, False)
@@ -688,42 +651,3 @@ class TestCli(object):
         encoder = CustomJsonEncoder()
         response = encoder.encode(datetime.datetime(2016, 5, 3))
         assert response == '"2016-05-03 00:00:00"'
-
-    def test_get_stack_or_stack_group_with_stack(self):
-        context = MagicMock(spec=SceptreContext)
-        context.project_path = "tests/fixtures"
-        context.command_path = "account/stack-group/region/vpc.yaml"
-        context.user_variables = sentinel.user_variables
-
-        stack, stack_group = get_stack_or_stack_group(context)
-        self.mock_ConfigReader.assert_called_once_with(
-            context.project_path, context.user_variables
-        )
-        assert isinstance(stack, Stack)
-        assert stack_group is None
-
-    def test_get_stack_or_stack_group_with_nested_stack(self):
-        context = MagicMock(spec=SceptreContext)
-        context.project_path = "tests/fixtures"
-        context.command_path = "account/stack-group/region/vpc.yaml"
-        context.user_variables = sentinel.user_variables
-        stack, stack_group = get_stack_or_stack_group(context)
-        self.mock_ConfigReader.assert_called_once_with(
-            context.project_path, context.user_variables
-        )
-        assert isinstance(stack, Stack)
-        assert stack_group is None
-
-    def test_get_stack_or_stack_group_with_group(self):
-        context = MagicMock(spec=SceptreContext)
-        context.project_path = "tests/fixtures"
-        context.command_path = "account/stack-group/region"
-        context.user_variables = sentinel.user_variables
-
-        stack, stack_group = get_stack_or_stack_group(context)
-
-        self.mock_ConfigReader.assert_called_once_with(
-           context.project_path, context.user_variables
-        )
-        assert isinstance(stack_group, StackGroup)
-        assert stack is None

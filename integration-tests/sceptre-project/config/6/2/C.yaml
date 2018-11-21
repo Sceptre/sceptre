@@ -1,4 +1,4 @@
-template_path: templates/dependencies/dependent_template_local_export.json
+template_path: dependencies/dependent_template_local_export.json
 region: eu-west-3
 parameters:
-  DependentStackName: !stack_output B::StackName
+  DependentStackName: !stack_output B.yaml::StackName

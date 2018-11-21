@@ -24,6 +24,18 @@ def before_all(context):
     context.cloudformation = boto3.resource('cloudformation')
     context.client = boto3.client("cloudformation")
 
+    config_path = os.path.join(
+        context.sceptre_dir, "config", "9/B" + ".yaml"
+    )
+
+    with open(config_path, "r") as file:
+        file_data = file.read()
+
+    file_data = file_data.replace("{project_code}", context.project_code)
+
+    with open(config_path, "w") as file:
+        file.write(file_data)
+
 
 def before_scenario(context, scenario):
     os.environ.pop("AWS_REGION", None)
@@ -52,11 +64,11 @@ def update_config(context):
 def after_all(context):
     response = context.client.describe_stacks()
     for stack in response["Stacks"]:
-        time.sleep(2)
         if stack["StackName"].startswith(context.project_code):
             context.client.delete_stack(
                 StackName=stack["StackName"]
             )
+            time.sleep(2)
     context.project_code = "sceptre-integration-tests"
     context.bucket_name = "sceptre-integration-tests-templates"
     update_config(context)

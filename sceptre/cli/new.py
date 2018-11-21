@@ -9,8 +9,8 @@ from sceptre.cli.helpers import catch_exceptions
 from sceptre.exceptions import ProjectAlreadyExistsError
 
 
-@click.group(name="init")
-def init_group():
+@click.group(name="new")
+def new_group():
     """
     Commands for initialising Sceptre projects.
 
@@ -18,16 +18,19 @@ def init_group():
     pass
 
 
-@init_group.command("grp")
+@new_group.command("group")
 @click.argument('stack_group')
 @catch_exceptions
 @click.pass_context
-def init_stack_group(ctx, stack_group):
+def new_stack_group(ctx, stack_group):
     """
-    Initialises a stack_group in a project.
+    Creates a new Stack Group directory in a project.
 
-    Creates STACK_GROUP folder in the project and a config.yaml with any
+    Creates StackGroup folder in the project and a config.yaml with any
     required properties.
+
+    :param stack_group: Name of the StackGroup directory to create.
+    :type stack_group: str
     """
     cwd = ctx.obj.get("project_path")
     for item in os.listdir(cwd):
@@ -37,15 +40,18 @@ def init_stack_group(ctx, stack_group):
             _create_new_stack_group(config_dir, stack_group)
 
 
-@init_group.command("project")
+@new_group.command("project")
 @catch_exceptions
 @click.argument('project_name')
 @click.pass_context
-def init_project(ctx, project_name):
+def new_project(ctx, project_name):
     """
-    Initialises a new project.
+    Creates a new project.
     Creates PROJECT_NAME project folder and a config.yaml with any
     required properties.
+
+    :param project_name: The name of the Sceptre Project to create.
+    :type project_name: str
     """
     cwd = os.getcwd()
     sceptre_folders = {"config", "templates"}
@@ -76,17 +82,18 @@ def init_project(ctx, project_name):
 
 def _create_new_stack_group(config_dir, new_path):
     """
-    Creates the subfolder for the stack_group specified by `path`
+    Creates the subfolder for the stack_group specified by `new_path`
     starting from the `config_dir`. Even if folder path already exists,
     they want to initialise `config.yaml`.
+
     :param config_dir: The directory path to the top-level config folder.
     :type config_dir: str
-    :param path: The directory path to the stack_group folder.
-    :type path: str
+    :param new_path: The directory path to the stack_group folder.
+    :type new_path: str
     """
     # Create full path to stack_group
     folder_path = os.path.join(config_dir, new_path)
-    init_config_msg = 'Do you want initialise config.yaml?'
+    new_config_msg = 'Do you want initialise config.yaml?'
 
     # Make folders for the stack_group
     try:
@@ -94,12 +101,12 @@ def _create_new_stack_group(config_dir, new_path):
     except OSError as e:
         # Check if stack_group folder already exists
         if e.errno == errno.EEXIST:
-            init_config_msg =\
-              'StackGroup path exists. ' + init_config_msg
+            new_config_msg =\
+                'StackGroup path exists. ' + new_config_msg
         else:
             raise
 
-    if click.confirm(init_config_msg):
+    if click.confirm(new_config_msg):
         _create_config_file(config_dir, folder_path)
 
 
@@ -107,6 +114,7 @@ def _get_nested_config(config_dir, path):
     """
     Collects nested config from between `config_dir` and `path`. Config at
     lower level as greater precedence.
+
     :param config_dir: The directory path to the top-level config folder.
     :type config_dir: str
     :param path: The directory path to the stack_group folder.
@@ -132,6 +140,7 @@ def _create_config_file(config_dir, path, defaults={}):
     properties and their values are the same as in parent `config.yaml`, then
     they are not included. No file is produced if require values are satisfied
     by parent `config.yaml` files.
+
     :param config_dir: The directory path to the top-level config folder.
     :type config_dir: str
     :param path: The directory path to the stack_group folder.

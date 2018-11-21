@@ -19,7 +19,8 @@ def step_impl(context, message):
         msg = context.error.response['Error']['Message']
         assert msg.endswith("does not exist")
     elif message == "the template is valid":
-        assert context.response["ResponseMetadata"]["HTTPStatusCode"] == 200
+        for stack, status in context.response.items():
+            assert status["ResponseMetadata"]["HTTPStatusCode"] == 200
     elif message == "the template is malformed":
         msg = context.error.response['Error']['Message']
         assert msg.endswith("[Malformed]")
@@ -57,21 +58,6 @@ def step_impl(context, stack_group, config):
     )
 
     os.environ['AWS_CONFIG_FILE'] = config_path
-
-
-@given('stack "{stack_name}" has its project code resolved')
-def step_impl(context, stack_name):
-    config_path = os.path.join(
-        context.sceptre_dir, "config", stack_name + ".yaml"
-    )
-
-    with open(config_path, "r") as file:
-        file_data = file.read()
-
-    file_data = file_data.replace("{project_code}", context.project_code)
-
-    with open(config_path, "w") as file:
-        file.write(file_data)
 
 
 def read_template_file(context, template_name):

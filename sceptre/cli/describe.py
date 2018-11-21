@@ -2,11 +2,10 @@ import click
 
 from sceptre.context import SceptreContext
 from sceptre.cli.helpers import (
-            catch_exceptions,
-            get_stack_or_stack_group,
-            simplify_change_set_description,
-            write
-            )
+    catch_exceptions,
+    simplify_change_set_description,
+    write
+)
 from sceptre.plan.plan import SceptrePlan
 
 
@@ -31,21 +30,28 @@ def describe_change_set(ctx, path, change_set_name, verbose):
     """
     Describes the change set.
 
+    :param path: Path to execute the command on.
+    :type path: str
+    :param change_set_name: Name of the Change Set to use.
+    :type change_set_name: str
+    :param verbose: A flag to display verbose output.
+    :type verbose: bool
     """
     context = SceptreContext(
-                command_path=path,
-                project_path=ctx.obj.get("project_path"),
-                user_variables=ctx.obj.get("user_variables"),
-                options=ctx.obj.get("options")
-            )
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options")
+    )
 
-    stack, _ = get_stack_or_stack_group(context)
-    action = 'describe_change_set'
-    plan = SceptrePlan(context, action, stack)
-    description = plan.execute(change_set_name)
-    if not verbose:
-        description = simplify_change_set_description(description)
-    write(description, context.output_format)
+    plan = SceptrePlan(context)
+
+    responses = plan.describe_change_set(change_set_name)
+    for response in responses.values():
+        description = response
+        if not verbose:
+            description = simplify_change_set_description(description)
+        write(description, context.output_format)
 
 
 @describe_group.command(name="policy")
@@ -56,16 +62,17 @@ def describe_policy(ctx, path):
     """
     Displays the stack policy used.
 
+    :param path: Path to execute the command on.
+    :type path: str
     """
     context = SceptreContext(
-                command_path=path,
-                project_path=ctx.obj.get("project_path"),
-                user_variables=ctx.obj.get("user_variables"),
-                options=ctx.obj.get("options")
-            )
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options")
+    )
 
-    stack, _ = get_stack_or_stack_group(context)
-    action = 'get_policy'
-    plan = SceptrePlan(context, action, stack)
-    response = plan.execute()
-    write(response.get('StackPolicyBody', {}))
+    plan = SceptrePlan(context)
+    responses = plan.get_policy()
+    for response in responses.values():
+        write(response.get('StackPolicyBody', {}))

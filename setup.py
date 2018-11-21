@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from sceptre import __version__
-from setuptools import setup
+from setuptools import setup, find_packages
 
-with open("README.rst") as readme_file:
+with open("README.md") as readme_file:
     readme = readme_file.read()
 
-with open("HISTORY.rst") as history_file:
+with open("CHANGELOG.md") as history_file:
     history = history_file.read()
 
 install_requirements = [
@@ -17,7 +17,8 @@ install_requirements = [
     "Jinja2>=2.8,<3",
     "packaging==16.8",
     "colorama==0.3.7",
-    "six==1.11.0"
+    "six==1.11.0",
+    "networkx==2.1"
 ]
 
 test_requirements = [
@@ -38,16 +39,12 @@ setup(
     version=__version__,
     description="Cloud Provisioning Tool",
     long_description=readme,
+    long_description_content_type="text/markdown",
     author="Cloudreach",
     author_email="sceptre@cloudreach.com",
     license='Apache2',
     url="https://github.com/cloudreach/sceptre",
-    packages=[
-        "sceptre",
-        "sceptre/resolvers",
-        "sceptre/hooks",
-        "sceptre/cli"
-    ],
+    packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     package_dir={
         "sceptre": "sceptre"
     },
