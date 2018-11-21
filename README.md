@@ -39,6 +39,12 @@ on building better infrastructure.
 
 More information on installing sceptre can be found in our [Installation Guide](https://sceptre.cloudreach.com/latest/docs/install.html)
 
+# Migrate v1 to v2
+
+We have tried to make the migration to Sceptre v2 as simple as possible. For
+information about how to migration your v1 project please see our [Migration
+Guide](https://github.com/cloudreach/sceptre/wiki/Migration-Guide:-V1-to-V2)
+
 # Example
 
 Sceptre organises Stacks into "Stack Groups". Each Stack is represented by a
