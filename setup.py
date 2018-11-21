@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from sceptre import __version__
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open("README.rst") as readme_file:
     readme = readme_file.read()
@@ -12,7 +12,7 @@ with open("HISTORY.rst") as history_file:
 
 install_requirements = [
     "boto3>=1.3,<2.0",
-    "click==6.7",
+    "click>=6.7,<7.0",
     "PyYaml==3.13",
     "Jinja2>=2.8,<3",
     "packaging==16.8",
@@ -43,18 +43,7 @@ setup(
     author_email="sceptre@cloudreach.com",
     license='Apache2',
     url="https://github.com/cloudreach/sceptre",
-    packages=[
-        "sceptre",
-        "sceptre/resolvers",
-        "sceptre/hooks",
-        "sceptre/cli",
-        "sceptre/config",
-        "sceptre/stack_policies",
-        "sceptre/plan"
-    ],
-    package_dir={
-        "sceptre": "sceptre"
-    },
+    packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     py_modules=["sceptre"],
     entry_points={
         "console_scripts": [
