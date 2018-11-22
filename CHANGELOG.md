@@ -2,7 +2,13 @@
 
 Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
-## 2.0rc-0 (2018.11.21)
+## 2.0.0rc1-1 (2018.11.22)
+
+# Fixed
+
+- Added missing `stack_group_config` attributes to Stack.
+
+## 2.0rc1 (2018.11.21)
 
 # Added
 
