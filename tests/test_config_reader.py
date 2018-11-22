@@ -222,8 +222,12 @@ class TestConfigReader(object):
             external_name=None,
             notifications=None,
             on_failure=None,
-            stack_timeout=0
+            stack_timeout=0,
+            required_version=None,
+            template_bucket_name='stack_group_template_bucket_name',
+            template_key_prefix=None
         )
+
         assert stacks == ({sentinel.stack}, {sentinel.stack})
 
     @pytest.mark.parametrize("filepaths,expected_stacks", [
