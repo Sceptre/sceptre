@@ -11,6 +11,9 @@ class TestStack(object):
     def setup_method(self, test_method):
         self.stack = Stack(
             name=sentinel.stack_name, project_code=sentinel.project_code,
+            template_bucket_name=sentinel.template_bucket_name,
+            template_key_prefix=sentinel.template_key_prefix,
+            required_version=sentinel.required_version,
             template_path=sentinel.template_path, region=sentinel.region,
             profile=sentinel.profile, parameters={"key1": "val1"},
             sceptre_user_data=sentinel.sceptre_user_data, hooks={},
@@ -26,11 +29,17 @@ class TestStack(object):
     def test_initiate_stack(self):
         stack = Stack(
             name=sentinel.stack_name, project_code=sentinel.project_code,
-            template_path=sentinel.template_path, region=sentinel.region,
-            external_name=sentinel.external_name
+            template_path=sentinel.template_path,
+            template_bucket_name=sentinel.template_bucket_name,
+            template_key_prefix=sentinel.template_key_prefix,
+            required_version=sentinel.required_version,
+            region=sentinel.region, external_name=sentinel.external_name
         )
         assert stack.name == sentinel.stack_name
         assert stack.project_code == sentinel.project_code
+        assert stack.template_bucket_name == sentinel.template_bucket_name
+        assert stack.template_key_prefix == sentinel.template_key_prefix
+        assert stack.required_version == sentinel.required_version
         assert stack.external_name == sentinel.external_name
         assert stack.hooks == {}
         assert stack.parameters == {}
@@ -52,8 +61,12 @@ class TestStack(object):
             "project_code='sentinel.project_code', " \
             "template_path='sentinel.template_path', " \
             "region='sentinel.region', " \
-            "profile='sentinel.profile', parameters='{'key1': 'val1'}', " \
+            "template_bucket_name='sentinel.template_bucket_name', "\
+            "template_key_prefix='sentinel.template_key_prefix', "\
+            "required_version='sentinel.required_version', "\
+            "profile='sentinel.profile', " \
             "sceptre_user_data='sentinel.sceptre_user_data', " \
+            "parameters='{'key1': 'val1'}', "\
             "hooks='{}', s3_details='None', " \
             "dependencies='sentinel.dependencies', "\
             "role_arn='sentinel.role_arn', " \

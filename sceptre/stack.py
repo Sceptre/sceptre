@@ -28,11 +28,21 @@ class Stack(object):
     :type project_code: str
 
     :param template_path: The relative path to the CloudFormation, Jinja2\
-            or Python template to build the Stack from
+            or Python template to build the Stack from.
     :type template_path: str
 
     :param region: The AWS region to build Stacks in.
     :type region: str
+
+    :param template_bucket_name: The name of the S3 bucket the Template is uploaded to.
+    :type template_bucket_name: str
+
+    :param template_key_prefix: A prefix to the key used to store templates uploaded to S3
+    :type template_key_prefix: str
+
+    :param required_version: A PEP 440 compatible version specifier. If the Sceptre version does\
+            not fall within the given version requirement it will abort.
+    :type required_version: str
 
     :param parameters: The keys must match up with the name of the parameter.\
             The value must be of the type as defined in the template.
@@ -93,7 +103,8 @@ class Stack(object):
     hooks = HookProperty("hooks")
 
     def __init__(
-        self, name, project_code, template_path, region, parameters=None,
+        self, name, project_code, template_path, region, template_bucket_name=None,
+        template_key_prefix=None, required_version=None, parameters=None,
         sceptre_user_data=None, hooks=None, s3_details=None,
         dependencies=None, role_arn=None, protected=False, tags=None,
         external_name=None, notifications=None, on_failure=None, profile=None,
@@ -104,6 +115,9 @@ class Stack(object):
         self.name = name
         self.project_code = project_code
         self.region = region
+        self.template_bucket_name = template_bucket_name
+        self.template_key_prefix = template_key_prefix
+        self.required_version = required_version
         self.hooks = hooks
 
         self.external_name = external_name or \
@@ -130,8 +144,12 @@ class Stack(object):
             "sceptre.stack.Stack("
             "name='{name}', project_code='{project_code}', "
             "template_path='{template_path}', region='{region}', "
-            "profile='{profile}', parameters='{parameters}', "
+            "template_bucket_name='{template_bucket_name}', "
+            "template_key_prefix='{template_key_prefix}', "
+            "required_version='{required_version}', "
+            "profile='{profile}', "
             "sceptre_user_data='{sceptre_user_data}', "
+            "parameters='{parameters}', "
             "hooks='{hooks}', s3_details='{s3_details}', "
             "dependencies='{dependencies}', role_arn='{role_arn}', "
             "protected='{protected}', tags='{tags}', "
@@ -139,16 +157,25 @@ class Stack(object):
             "notifications='{notifications}', on_failure='{on_failure}', "
             "stack_timeout='{stack_timeout}'"
             ")".format(
-                name=self.name, project_code=self.project_code,
+                name=self.name,
+                project_code=self.project_code,
                 template_path=self.template_path,
                 region=self.region,
-                profile=self.profile, parameters=self.parameters,
+                template_bucket_name=self.template_bucket_name,
+                template_key_prefix=self.template_key_prefix,
+                required_version=self.required_version,
+                profile=self.profile,
                 sceptre_user_data=self.sceptre_user_data,
-                hooks=self.hooks, s3_details=self.s3_details,
-                dependencies=self.dependencies, role_arn=self.role_arn,
-                protected=self.protected, tags=self.tags,
+                parameters=self.parameters,
+                hooks=self.hooks,
+                s3_details=self.s3_details,
+                dependencies=self.dependencies,
+                role_arn=self.role_arn,
+                protected=self.protected,
+                tags=self.tags,
                 external_name=self.external_name,
-                notifications=self.notifications, on_failure=self.on_failure,
+                notifications=self.notifications,
+                on_failure=self.on_failure,
                 stack_timeout=self.stack_timeout
             )
         )
