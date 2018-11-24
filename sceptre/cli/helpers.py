@@ -81,8 +81,6 @@ def write(var, output_format="str", no_colour=True):
         stream = var
     if not no_colour:
         stack_status_colourer = StackStatusColourer()
-        if not isinstance(var, str):
-            stream = str(var)
         stream = stack_status_colourer.colour(stream)
 
     click.echo(stream)
