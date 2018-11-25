@@ -16,6 +16,7 @@ def step_impl(context, stack_name, change_set_name, filename):
     retry_boto_call(
         context.client.create_change_set,
         StackName=full_name,
+        Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
         ChangeSetName=change_set_name,
         TemplateBody=read_template_file(context, filename)
     )
@@ -68,11 +69,55 @@ def step_impl(context, change_set_name, stack_name):
     wait_for_final_state(context, stack_name, change_set_name)
 
 
+@when('the user creates change set "{change_set_name}" for stack "{stack_name}" with ignore dependencies')
+def step_impl(context, change_set_name, stack_name):
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir,
+        ignore_dependencies=True
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
+    try:
+        sceptre_plan.create_change_set(change_set_name)
+    except ClientError as e:
+        if e.response['Error']['Code'] in allowed_errors:
+            context.error = e
+            return
+        else:
+            raise e
+
+    wait_for_final_state(context, stack_name, change_set_name)
+
+
 @when('the user deletes change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
     sceptre_context = SceptreContext(
         command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
+    sceptre_plan.delete_change_set(change_set_name)
+
+    try:
+        sceptre_plan.delete_change_set(change_set_name)
+    except ClientError as e:
+        if e.response['Error']['Code'] in allowed_errors:
+            context.error = e
+            return
+        else:
+            raise e
+
+
+@when('the user deletes change set "{change_set_name}" for stack "{stack_name}" with ignore dependencies')
+def step_impl(context, change_set_name, stack_name):
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir,
+        ignore_dependencies=True
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
@@ -108,6 +153,26 @@ def step_impl(context, stack_name):
         raise e
 
 
+@when('the user lists change sets for stack "{stack_name}" with ignore dependencies')
+def step_impl(context, stack_name):
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir,
+        ignore_dependencies=True
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
+
+    try:
+        context.output = sceptre_plan.list_change_sets().values()
+    except ClientError as e:
+        if e.response['Error']['Code'] in allowed_errors:
+            context.error = e
+            return
+        raise e
+
+
 @when('the user executes change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
     sceptre_context = SceptreContext(
@@ -128,11 +193,54 @@ def step_impl(context, change_set_name, stack_name):
             raise e
 
 
+@when('the user executes change set "{change_set_name}" for stack "{stack_name}" with ignore dependencies')
+def step_impl(context, change_set_name, stack_name):
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir,
+        ignore_dependencies=True
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
+
+    try:
+        sceptre_plan.execute_change_set(change_set_name)
+    except ClientError as e:
+        if e.response['Error']['Code'] in allowed_errors:
+            context.error = e
+            return
+        else:
+            raise e
+
+
 @when('the user describes change set "{change_set_name}" for stack "{stack_name}"')
 def step_impl(context, change_set_name, stack_name):
     sceptre_context = SceptreContext(
         command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    allowed_errors = {'ValidationError', 'ChangeSetNotFound'}
+
+    try:
+        responses = sceptre_plan.describe_change_set(change_set_name)
+    except ClientError as e:
+        if e.response['Error']['Code'] in allowed_errors:
+            context.error = e
+            return
+        else:
+            raise e
+    context.output = responses
+
+
+@when('the user describes change set "{change_set_name}" for stack "{stack_name}" with ignore dependencies')
+def step_impl(context, change_set_name, stack_name):
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir,
+        ignore_dependencies=True
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)

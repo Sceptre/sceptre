@@ -24,3 +24,10 @@ Feature: Update stack
     and the stack_timeout for stack "1/A" is "1"
     When the user updates stack "1/A"
     Then stack "1/A" exists in "UPDATE_ROLLBACK_COMPLETE" state
+
+  Scenario: update a stack that was newly created with ignore dependencies
+    Given stack "1/A" exists in "CREATE_COMPLETE" state
+    and the template for stack "1/A" is "updated_template.json"
+    When the user updates stack "1/A" with ignore dependencies
+    Then stack "1/A" exists in "UPDATE_COMPLETE" state
+
