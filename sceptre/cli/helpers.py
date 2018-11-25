@@ -132,7 +132,7 @@ def setup_logging(debug, no_colour):
     formatter_class = logging.Formatter if no_colour else ColouredFormatter
 
     formatter = formatter_class(
-        fmt="[%(asctime)s] - %(name)s - %(message)s",
+        fmt="[%(asctime)s] - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S"
     )
 
