@@ -42,7 +42,7 @@ class SceptreContext(object):
 
     def __init__(self, project_path, command_path,
                  user_variables=None, options=None, output_format=None,
-                 no_colour=False):
+                 no_colour=False, ignore_dependencies=False):
         # project_path: absolute path to the base sceptre project folder
         # e.g. absolute_path/to/sceptre_directory
         self.project_path = project_path
@@ -69,6 +69,7 @@ class SceptreContext(object):
         self.options = options if options else {}
         self.output_format = output_format if output_format else ""
         self.no_colour = no_colour if no_colour is True else False
+        self.ignore_dependencies = ignore_dependencies if ignore_dependencies is True else False
 
     def full_config_path(self):
         """

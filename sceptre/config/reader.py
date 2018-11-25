@@ -166,39 +166,51 @@ class ConfigReader(object):
         """
         stack_map = {}
         command_stacks = set()
+        if self.context.ignore_dependencies:
+            root = self.context.full_command_path()
+        else:
+            root = self.context.full_config_path()
+
+        if path.isfile(root):
+            todo = {root}
+        else:
+            todo = set()
+            for directory_name, sub_directories, files in walk(root):
+                for filename in fnmatch.filter(files, '*.yaml'):
+                    if filename.startswith('config.'):
+                        continue
+
+                    todo.add(path.join(directory_name, filename))
+
         stack_group_configs = {}
 
-        root = self.context.full_config_path()
-        command_path = self.context.full_command_path()
+        while todo:
+            abs_path = todo.pop()
+            rel_path = path.relpath(abs_path,
+                                    start=self.context.full_config_path())
+            directory, filename = path.split(rel_path)
 
-        for directory_name, sub_directories, files in walk(root):
-            for filename in fnmatch.filter(files, '*.yaml'):
-                if filename.startswith('config.'):
-                    continue
+            if directory in stack_group_configs:
+                stack_group_config = stack_group_configs[directory]
+            else:
+                stack_group_config = stack_group_configs[directory] = \
+                    self.read(path.join(directory, self.context.config_file))
 
-                abs_path = path.join(directory_name, filename)
-                rel_path = path.relpath(abs_path,
-                                        start=self.context.full_config_path())
-                directory, filename = path.split(rel_path)
+            stack = self._construct_stack(rel_path, stack_group_config)
+            stack_map[rel_path] = stack
 
-                if directory in stack_group_configs:
-                    stack_group_config = stack_group_configs[directory]
-                else:
-                    stack_group_config = stack_group_configs[directory] = \
-                        self.read(path.join(directory, self.context.config_file))
+            if abs_path.startswith(self.context.full_command_path()):
+                command_stacks.add(stack)
 
-                stack = self._construct_stack(rel_path, stack_group_config)
-                stack_map[rel_path] = stack
-
-                if abs_path.startswith(command_path):
-                    command_stacks.add(stack)
-
-        all_stacks = set()
+        stacks = set()
         for stack in stack_map.values():
-            stack.dependencies = [stack_map[dep] for dep in stack.dependencies]
-            all_stacks.add(stack)
+            if not self.context.ignore_dependencies:
+                stack.dependencies = [stack_map[dep] for dep in stack.dependencies]
+            else:
+                stack.dependencies = []
+            stacks.add(stack)
 
-        return all_stacks, command_stacks
+        return stacks, command_stacks
 
     def read(self, rel_path, base_config=None):
         """
