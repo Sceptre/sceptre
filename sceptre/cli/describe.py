@@ -41,7 +41,9 @@ def describe_change_set(ctx, path, change_set_name, verbose):
         command_path=path,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
-        options=ctx.obj.get("options")
+        options=ctx.obj.get("options"),
+        output_format=ctx.obj.get("output_format"),
+        no_colour=ctx.obj.get("no_colour")
     )
 
     plan = SceptrePlan(context)
@@ -51,7 +53,7 @@ def describe_change_set(ctx, path, change_set_name, verbose):
         description = response
         if not verbose:
             description = simplify_change_set_description(description)
-        write(description, context.output_format)
+        write(description, context.output_format, context.no_colour)
 
 
 @describe_group.command(name="policy")
@@ -69,10 +71,17 @@ def describe_policy(ctx, path):
         command_path=path,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
-        options=ctx.obj.get("options")
+        options=ctx.obj.get("options"),
+        output_format=ctx.obj.get("output_format"),
+        no_colour=ctx.obj.get("no_colour")
+
     )
 
     plan = SceptrePlan(context)
     responses = plan.get_policy()
     for response in responses.values():
-        write(response.get('StackPolicyBody', {}))
+        write(
+            response.get('StackPolicyBody', {}),
+            context.output_format,
+            context.no_colour
+        )
