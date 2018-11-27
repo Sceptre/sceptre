@@ -144,9 +144,9 @@ class TestConfigReader(object):
             "parameters": {
                 "param1": "user_variable_value",
                 "param2": "environment_variable_value",
-                "param3": "account",
-                "param4": "stack-group",
-                "param5": "region",
+                "param3": "a",
+                "param4": "c",
+                "param5": "c",
                 "param6": "stack_group_region"
             }
         }

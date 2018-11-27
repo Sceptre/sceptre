@@ -29,6 +29,8 @@ from . import strategies
 ConfigAttributes = collections.namedtuple("Attributes", "required optional")
 
 CONFIG_MERGE_STRATEGIES = {
+    'template_path': strategies.child_wins,
+    'profile': strategies.child_wins,
     'dependencies': strategies.list_join,
     'hooks': strategies.child_wins,
     'parameters': strategies.child_wins,
@@ -37,7 +39,12 @@ CONFIG_MERGE_STRATEGIES = {
     'stack_name': strategies.child_wins,
     'stack_tags': strategies.child_wins,
     'role_arn': strategies.child_wins,
-    'template_path': strategies.child_wins
+    'stack_timeout': strategies.child_wins,
+    'project_code': strategies.child_wins,
+    'region': strategies.child_wins,
+    'template_bucket_name': strategies.child_wins,
+    'template_key_value': strategies.child_wins,
+    'required_version': strategies.child_wins,
 }
 
 STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
@@ -242,7 +249,7 @@ class ConfigReader(object):
         self.logger.debug("Config: %s", config)
         return config
 
-    def _recursive_read(self, directory_path, filename, parent_config):
+    def _recursive_read(self, directory_path, filename, stack_group_config):
         """
         Traverses the directory_path, from top to bottom, reading in all
         relevant config files. If config attributes are encountered further
@@ -263,10 +270,10 @@ class ConfigReader(object):
         config = {}
 
         if directory_path:
-            config = self._recursive_read(parent_directory, filename, parent_config)
+            config = self._recursive_read(parent_directory, filename, stack_group_config)
 
         # Read config file and overwrite inherited properties
-        child_config = self._render(directory_path, filename, parent_config) or {}
+        child_config = self._render(directory_path, filename, stack_group_config) or {}
 
         for config_key, strategy in CONFIG_MERGE_STRATEGIES.items():
             value = strategy(
@@ -280,7 +287,7 @@ class ConfigReader(object):
 
         return config
 
-    def _render(self, directory_path, basename, parent_config):
+    def _render(self, directory_path, basename, stack_group_config):
         """
         Reads a configuration file, loads the config file as a template
         and returns config loaded from the file.
@@ -296,15 +303,15 @@ class ConfigReader(object):
         abs_directory_path = path.join(
             self.full_config_path, directory_path)
         if path.isfile(path.join(abs_directory_path, basename)):
-            stack_group = jinja2.Environment(
+            jinja_env = jinja2.Environment(
                 loader=jinja2.FileSystemLoader(abs_directory_path),
                 undefined=jinja2.StrictUndefined
             )
-            template = stack_group.get_template(basename)
+            template = jinja_env.get_template(basename)
             rendered_template = template.render(
                 environment_variable=environ,
-                **parent_config,
-                **self.templating_vars
+                **self.templating_vars,
+                **stack_group_config
             )
 
             config = yaml.safe_load(rendered_template)
