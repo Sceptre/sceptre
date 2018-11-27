@@ -65,18 +65,6 @@ class StackGraph(object):
         """
         return self.graph.remove_node(stack)
 
-    def write(self):
-        nx.drawing.nx_pydot.write_dot(
-            self.graph,
-            './out.dot'
-        )
-
-        print(list(reversed(
-            nx.algorithms.dag.dag_longest_path(self.graph)
-        )))
-
-        print(nx.convert.to_dict_of_lists(self.graph))
-
     def _generate_graph(self, stacks):
         """
         Generates the graph for the StackGraph object.
