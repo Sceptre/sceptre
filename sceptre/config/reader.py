@@ -44,7 +44,7 @@ CONFIG_MERGE_STRATEGIES = {
     'region': strategies.child_wins,
     'template_bucket_name': strategies.child_wins,
     'template_key_value': strategies.child_wins,
-    'required_version': strategies.child_wins,
+    'required_version': strategies.child_wins
 }
 
 STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
@@ -55,7 +55,7 @@ STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
     {
         "template_bucket_name",
         "template_key_prefix",
-        "require_version"
+        "required_version"
     }
 )
 
@@ -308,10 +308,9 @@ class ConfigReader(object):
                 undefined=jinja2.StrictUndefined
             )
             template = jinja_env.get_template(basename)
+            self.templating_vars.update(stack_group_config)
             rendered_template = template.render(
-                environment_variable=environ,
-                **self.templating_vars,
-                **stack_group_config
+                self.templating_vars, environment_variable=environ
             )
 
             config = yaml.safe_load(rendered_template)
@@ -340,13 +339,13 @@ class ConfigReader(object):
         :raises: sceptre.exceptions.VersionIncompatibleException
         """
         sceptre_version = __version__
-        if 'require_version' in config:
-            require_version = config['require_version']
-            if Version(sceptre_version) not in SpecifierSet(require_version):
+        if 'required_version' in config:
+            required_version = config['required_version']
+            if Version(sceptre_version) not in SpecifierSet(required_version, True):
                 raise VersionIncompatibleError(
                     "Current sceptre version ({0}) does not meet version "
                     "requirements: {1}".format(
-                        sceptre_version, require_version
+                        sceptre_version, required_version
                     )
                 )
 
