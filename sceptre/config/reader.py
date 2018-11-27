@@ -29,6 +29,8 @@ from . import strategies
 ConfigAttributes = collections.namedtuple("Attributes", "required optional")
 
 CONFIG_MERGE_STRATEGIES = {
+    'template_path': strategies.child_wins,
+    'profile': strategies.child_wins,
     'dependencies': strategies.list_join,
     'hooks': strategies.child_wins,
     'parameters': strategies.child_wins,
@@ -37,7 +39,12 @@ CONFIG_MERGE_STRATEGIES = {
     'stack_name': strategies.child_wins,
     'stack_tags': strategies.child_wins,
     'role_arn': strategies.child_wins,
-    'template_path': strategies.child_wins
+    'stack_timeout': strategies.child_wins,
+    'project_code': strategies.child_wins,
+    'region': strategies.child_wins,
+    'template_bucket_name': strategies.child_wins,
+    'template_key_value': strategies.child_wins,
+    'required_version': strategies.child_wins
 }
 
 STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
@@ -48,7 +55,7 @@ STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
     {
         "template_bucket_name",
         "template_key_prefix",
-        "require_version"
+        "required_version"
     }
 )
 
@@ -227,7 +234,7 @@ class ConfigReader(object):
             )
 
         # Parse and read in the config files.
-        this_config = self._recursive_read(directory_path, filename)
+        this_config = self._recursive_read(directory_path, filename, config)
 
         if "dependencies" in config or "dependencies" in this_config:
             this_config['dependencies'] = \
@@ -242,7 +249,7 @@ class ConfigReader(object):
         self.logger.debug("Config: %s", config)
         return config
 
-    def _recursive_read(self, directory_path, filename):
+    def _recursive_read(self, directory_path, filename, stack_group_config):
         """
         Traverses the directory_path, from top to bottom, reading in all
         relevant config files. If config attributes are encountered further
@@ -263,10 +270,10 @@ class ConfigReader(object):
         config = {}
 
         if directory_path:
-            config = self._recursive_read(parent_directory, filename)
+            config = self._recursive_read(parent_directory, filename, stack_group_config)
 
         # Read config file and overwrite inherited properties
-        child_config = self._render(directory_path, filename) or {}
+        child_config = self._render(directory_path, filename, stack_group_config) or {}
 
         for config_key, strategy in CONFIG_MERGE_STRATEGIES.items():
             value = strategy(
@@ -280,7 +287,7 @@ class ConfigReader(object):
 
         return config
 
-    def _render(self, directory_path, basename):
+    def _render(self, directory_path, basename, stack_group_config):
         """
         Reads a configuration file, loads the config file as a template
         and returns config loaded from the file.
@@ -296,15 +303,14 @@ class ConfigReader(object):
         abs_directory_path = path.join(
             self.full_config_path, directory_path)
         if path.isfile(path.join(abs_directory_path, basename)):
-            stack_group = jinja2.Environment(
+            jinja_env = jinja2.Environment(
                 loader=jinja2.FileSystemLoader(abs_directory_path),
                 undefined=jinja2.StrictUndefined
             )
-            template = stack_group.get_template(basename)
+            template = jinja_env.get_template(basename)
+            self.templating_vars.update(stack_group_config)
             rendered_template = template.render(
-                environment_variable=environ,
-                stack_group_path=directory_path.split("/"),
-                **self.templating_vars
+                self.templating_vars, environment_variable=environ
             )
 
             config = yaml.safe_load(rendered_template)
@@ -333,13 +339,13 @@ class ConfigReader(object):
         :raises: sceptre.exceptions.VersionIncompatibleException
         """
         sceptre_version = __version__
-        if 'require_version' in config:
-            require_version = config['require_version']
-            if Version(sceptre_version) not in SpecifierSet(require_version):
+        if 'required_version' in config:
+            required_version = config['required_version']
+            if Version(sceptre_version) not in SpecifierSet(required_version, True):
                 raise VersionIncompatibleError(
                     "Current sceptre version ({0}) does not meet version "
                     "requirements: {1}".format(
-                        sceptre_version, require_version
+                        sceptre_version, required_version
                     )
                 )
 
