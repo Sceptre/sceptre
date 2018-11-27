@@ -227,7 +227,7 @@ class ConfigReader(object):
             )
 
         # Parse and read in the config files.
-        this_config = self._recursive_read(directory_path, filename)
+        this_config = self._recursive_read(directory_path, filename, config)
 
         if "dependencies" in config or "dependencies" in this_config:
             this_config['dependencies'] = \
@@ -242,7 +242,7 @@ class ConfigReader(object):
         self.logger.debug("Config: %s", config)
         return config
 
-    def _recursive_read(self, directory_path, filename):
+    def _recursive_read(self, directory_path, filename, parent_config):
         """
         Traverses the directory_path, from top to bottom, reading in all
         relevant config files. If config attributes are encountered further
@@ -263,10 +263,10 @@ class ConfigReader(object):
         config = {}
 
         if directory_path:
-            config = self._recursive_read(parent_directory, filename)
+            config = self._recursive_read(parent_directory, filename, parent_config)
 
         # Read config file and overwrite inherited properties
-        child_config = self._render(directory_path, filename) or {}
+        child_config = self._render(directory_path, filename, parent_config) or {}
 
         for config_key, strategy in CONFIG_MERGE_STRATEGIES.items():
             value = strategy(
@@ -280,7 +280,7 @@ class ConfigReader(object):
 
         return config
 
-    def _render(self, directory_path, basename):
+    def _render(self, directory_path, basename, parent_config):
         """
         Reads a configuration file, loads the config file as a template
         and returns config loaded from the file.
@@ -303,7 +303,7 @@ class ConfigReader(object):
             template = stack_group.get_template(basename)
             rendered_template = template.render(
                 environment_variable=environ,
-                stack_group_path=directory_path.split("/"),
+                **parent_config,
                 **self.templating_vars
             )
 
