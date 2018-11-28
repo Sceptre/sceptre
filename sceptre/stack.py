@@ -118,8 +118,6 @@ class Stack(object):
         self.template_bucket_name = template_bucket_name
         self.template_key_prefix = template_key_prefix
         self.required_version = required_version
-        self.hooks = hooks
-
         self.external_name = external_name or \
             get_external_stack_name(self.project_code, self.name)
 

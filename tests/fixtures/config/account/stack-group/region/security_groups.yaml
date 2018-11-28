@@ -1,7 +1,7 @@
 parameters:
-  param1: {{ var.user_variable }}
+  param1: {{ var.variable_key }}
   param2: {{ environment_variable.TEST_ENV_VAR }}
-  param3: {{ stack_group_path.0 }}
-  param4: {{ stack_group_path.1 }}
-  param5: {{ stack_group_path.2 }}
-  param6: {{ stack_group_config.region }}
+  param3: {{ stack_group_config.region }}
+  param4: {{ stack_group_config.project_code }}
+  param5: {{ stack_group_config.required_version }}
+  param6: {{ stack_group_config.template_bucket_name }}
