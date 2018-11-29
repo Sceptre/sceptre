@@ -1,6 +1,6 @@
 ---
 layout: docs
-title: CLI
+title: CLI Guide
 ---
 
 # Command Line Interface
@@ -8,52 +8,44 @@ title: CLI
 Sceptre can be used as a command line tool. Sceptre commands take the format:
 
 ```
-$ sceptre [GLOBAL_OPTIONS] COMMAND [ARGS] [COMMAND_OPTIONS]
+$ sceptre [OPTIONS] COMMAND [ARGS]
 ```
 
-Running sceptre without a subcommand will display help, showing a list of the available commands.
+Running Sceptre without a subcommand will display help, showing a list of the available commands.
 
-## Global Options
+## Options
 
-- `--debug`: Turn on debug logging.
-- `--dir`: Specify the sceptre directory with an absolute or relative path.
-- `--no-colour`: Disable coloured output.
-- `--output`: Specify the output format. Available formats: `[yaml, json]`.
-- `--var`: Overwrite an arbitrary config item. For more information, see the section on [Templating]({{ site.baseurl }}/docs/environment_config.html#templating).
-- `--var-file`: Overwrite arbitrary config item(s) with data from a variables file. For more information, see the section on [Templating]({{ site.baseurl }}/docs/environment_config.html#templating).
-
+```
+  --version             Show the version and exit.
+  --debug               Turn on debug logging.
+  --dir TEXT            Specify sceptre directory.
+  --output [yaml|json]  The formatting style for command output.
+  --no-colour           Turn off output colouring.
+  --var TEXT            A variable to template into config files.
+  --var-file FILENAME   A YAML file of variables to template into config
+                        files.
+  --help                Show this message and exit.
+```
 
 ## Commands
 
 The available commands are:
 
 ```
-$ sceptre continue-update-rollback
-$ sceptre create-change-set
-$ sceptre create-stack
-$ sceptre delete-change-set
-$ sceptre delete-env
-$ sceptre delete-stack
-$ sceptre describe-change-set
-$ sceptre describe-env
-$ sceptre describe-env-resources
-$ sceptre describe-stack-outputs
-$ sceptre describe-stack-resources
-$ sceptre execute-change-set
-$ sceptre generate-template
-$ sceptre get-stack-policy
-$ sceptre init
-$ sceptre launch-env
-$ sceptre launch-stack
-$ sceptre list-change-sets
-$ sceptre lock-stack
-$ sceptre set-stack-policy
-$ sceptre unlock-stack
-$ sceptre update-stack
-$ sceptre update-stack-cs
-$ sceptre validate-template
+  create         Creates a stack or a change set.
+  delete         Deletes a stack or a change set.
+  describe       Commands for describing attributes of stacks.
+  estimate-cost  Estimates the cost of the template.
+  execute        Executes a Change Set.
+  generate       Prints the template.
+  launch         Launch a Stack or StackGroup.
+  list           Commands for listing attributes of stacks.
+  new            Commands for initialising Sceptre projects.
+  set-policy     Sets Stack policy.
+  status         Print status of stack or stack_group.
+  update         Update a stack.
+  validate       Validates the template.
 ```
-
 
 ## Command Options
 
@@ -63,14 +55,13 @@ Command options differ depending on the command, and can be found by running:
 $ sceptre COMMAND --help
 ```
 
-
 ## Export Stack Outputs to Environment Variables
 
 Stack outputs can be exported as environment variables with the command:
 
 ```shell
-$ eval $(sceptre describe-stack-outputs ENVIRONMENT STACK --export=envvar)
-```
+$ eval $(sceptre --ignore-dependencies list outputs STACKGROUP/STACK.yaml
+--export=envvar) ```
 
 Note that Sceptre prepends the string `SCEPTRE_` to the name of the environment variable:
 
