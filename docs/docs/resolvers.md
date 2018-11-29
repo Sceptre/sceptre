@@ -5,19 +5,21 @@ title: Resolvers
 
 # Resolvers
 
-Sceptre implements resolvers, which can be used to resolve a value of a CloudFormation `parameter` or `sceptre_user_data` value at runtime. This is most commonly used to chain the outputs of one stack to the inputs of another.
+Sceptre implements resolvers, which can be used to resolve a value of
+a CloudFormation `parameter` or `sceptre_user_data` value at runtime. This is
+most commonly used to chain the outputs of one Stack to the inputs of another.
 
-If required, users can create their own resolvers, as described in the section on [Custom Resolvers](#custom-resolvers).
+If required, users can create their own resolvers, as described in the section
+on [Custom Resolvers](#custom-resolvers).
 
 Syntax:
 
 ```yaml
 parameters:
-    <parameter_name>: !<resolver_name> <resolver_value>
+  <parameter_name>: !<resolver_name> <resolver_value>
 sceptre_user_data:
-    <name>: !<resolver_name> <resolver_value>
+  <name>: !<resolver_name> <resolver_value>
 ```
-
 
 ## Available Resolvers
 
@@ -29,7 +31,7 @@ Syntax:
 
 ```yaml
 parameter|sceptre_user_data:
-    <name>: !environment_variable ENVIRONMENT_VARIABLE_NAME
+  <name>: !environment_variable ENVIRONMENT_VARIABLE_NAME
 ```
 
 Example:
@@ -39,7 +41,6 @@ parameters:
     database_password: !environment_variable DATABASE_PASSWORD
 ```
 
-
 ### file_contents
 
 Reads in the contents of a file.
@@ -48,70 +49,80 @@ Syntax:
 
 ```yaml
 parameters|sceptre_user_data:
-    <name>: !file_contents /path/to/file.txt
+  <name>: !file_contents /path/to/file.txt
 ```
 
 Example:
 
 ```yaml
 sceptre_user_data:
-    iam_policy: !file_contents /path/to/policy.json
+  iam_policy: !file_contents /path/to/policy.json
 ```
 
 ### stack_output
 
-Fetches the value of an output from a different stack controlled by Sceptre.
+Fetches the value of an output from a different Stack controlled by Sceptre.
 
 Syntax:
 
 ```yaml
 parameters | sceptre_user_data:
-    <name>: !stack_output <stack_name>::<output_name>
+  <name>: !stack_output <stack_name>.yaml::<output_name>
 ```
 
 Example:
 
 ```
 parameters:
-    VpcIdParameter: !stack_output shared/vpc::VpcIdOutput
+    VpcIdParameter: !stack_output shared/vpc.yaml::VpcIdOutput
 ```
 
+Sceptre infers that the Stack to fetch the output value from is a dependency,
+and builds that Stack before the current one.
 
-Sceptre infers that the stack to fetch the output value from is a dependency, and builds that stack before the current one.
-This resolver will add a dependency for the stack in which needs the output from.
+This resolver will add a dependency for the Stack in which needs the output
+from.
 
-### stack\_output\_external
+### stack_output_external
 
-Fetches the value of an output from a different stack in the same account and region.
+Fetches the value of an output from a different Stack in the same account and
+region.
 
-If the stack whose output is being fetched is in the same environment, the basename of that stack can be used.
+If the Stack whose output is being fetched is in the same environment, the
+basename of that Stack can be used.
 
 Syntax:
 
 ```yaml
 parameters/sceptre_user_data:
-    <name>: !stack_output_external <full_stack_name>::<output_name>
+  <name>: !stack_output_external <full_stack_name>.yaml::<output_name>
 ```
 
 Example:
 
 ```yaml
 parameters:
-    VpcIdParameter: !stack_output_external prj-network-vpc::VpcIdOutput
+  VpcIdParameter: !stack_output_external prj-network-vpc.yaml::VpcIdOutput
 ```
-
 
 ## Custom Resolvers
 
-Users can define their own resolvers which are used by Sceptre to resolve the value of a parameter before it is passed to the CloudFormation template.
+Users can define their own resolvers which are used by Sceptre to resolve the
+value of a parameter before it is passed to the CloudFormation template.
 
-A resolver is a Python class which inherits from abstract base class `Resolver` found in the `sceptre.resolvers module`.
+A resolver is a Python class which inherits from abstract base class `Resolver`
+found in the `sceptre.resolvers module`.
 
-Resolvers are require to implement a `resolve()` function that takes no parameters and to call the base class initializer on initialisation.
+Resolvers are require to implement a `resolve()` function that takes no
+parameters and to call the base class initializer on initialisation.
 
-Resolvers may have access to `argument`,  `stack_config`, `environment_config` and `connection_manager` as an attribute of `self`. For example `self.stack_config`.
+Resolvers may have access to `argument`, `stack_config`, `stack_group_config`
+and `connection_manager` as an attribute of `self`. For example
+`self.stack_config`.
 
-Sceptre uses the `sceptre.resolvers` entry point to locate resolver classes. Your custom resolver can be written anywhere and is installed as Python package.
+Sceptre uses the `sceptre.resolvers` entry point to locate resolver classes.
+Your custom resolver can be written anywhere and is installed as Python
+package.
 
 ### Example
 
@@ -146,14 +157,16 @@ class CustomResolver(Resolver):
 
         The following attributes may be available from the base class:
         self.stack_config  (A dict of data from <stack_name>.yaml)
-        self.environment_config  (A dict of data from config.yaml)
+        self.stack.stack_group_config  (A dict of data from config.yaml)
         self.connection_manager (A connection_manager)
         """
         return self.argument
 ```
 
-The resolver name is the lower snake-case version of the class name. The argument of the resolver (`<value>`) will be available inside the resolver as `self.argument`. The resolver subclass above can be used in a stack config file with the following syntax:
-
+The resolver name is the lower snake-case version of the class name. The
+argument of the resolver (`<value>`) will be available inside the resolver as
+`self.argument`. The resolver subclass above can be used in a Stack config file
+with the following syntax:
 
 #### setup.py
 
@@ -172,10 +185,10 @@ setup(
 
 Then install using `python setup.py install` or `pip install .` commands.
 
-This resolver can be used in a stack config file with the following syntax:
+This resolver can be used in a Stack config file with the following syntax:
 
 ```yaml
 template_path: <...>
 parameters:
-    param1: !<your_resolver_name> <value>
+  param1: !<your_resolver_name> <value>
 ```
