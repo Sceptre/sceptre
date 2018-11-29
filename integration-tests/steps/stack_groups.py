@@ -52,11 +52,35 @@ def step_impl(context, stack_group_name):
     sceptre_plan.launch()
 
 
+@when('the user launches stack_group "{stack_group_name}" with ignore dependencies')
+def step_impl(context, stack_group_name):
+    sceptre_context = SceptreContext(
+        command_path=stack_group_name,
+        project_path=context.sceptre_dir,
+        ignore_dependencies=True
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    sceptre_plan.launch()
+
+
 @when('the user deletes stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
     sceptre_context = SceptreContext(
         command_path=stack_group_name,
         project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    sceptre_plan.delete()
+
+
+@when('the user deletes stack_group "{stack_group_name}" with ignore dependencies')
+def step_impl(context, stack_group_name):
+    sceptre_context = SceptreContext(
+        command_path=stack_group_name,
+        project_path=context.sceptre_dir,
+        ignore_dependencies=True
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
@@ -89,6 +113,33 @@ def step_impl(context, stack_group_name):
     ]
 
 
+@when('the user describes stack_group "{stack_group_name}" with ignore dependencies')
+def step_impl(context, stack_group_name):
+    sceptre_context = SceptreContext(
+        command_path=stack_group_name,
+        project_path=context.sceptre_dir,
+        ignore_dependencies=True
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    responses = sceptre_plan.describe()
+
+    stack_names = get_full_stack_names(context, stack_group_name)
+    cfn_stacks = {}
+
+    for response in responses.values():
+        if response is None:
+            continue
+        for stack in response['Stacks']:
+            cfn_stacks[stack['StackName']] = stack['StackStatus']
+
+    context.response = [
+        {short_name: cfn_stacks[full_name]}
+        for short_name, full_name in stack_names.items()
+        if cfn_stacks.get(full_name)
+    ]
+
+
 @when('the user describes resources in stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
     sceptre_context = SceptreContext(
@@ -100,7 +151,26 @@ def step_impl(context, stack_group_name):
     context.response = sceptre_plan.describe_resources().values()
 
 
+@when('the user describes resources in stack_group "{stack_group_name}" with ignore dependencies')
+def step_impl(context, stack_group_name):
+    sceptre_context = SceptreContext(
+        command_path=stack_group_name,
+        project_path=context.sceptre_dir,
+        ignore_dependencies=True
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    context.response = sceptre_plan.describe_resources().values()
+
+
 @then('all the stacks in stack_group "{stack_group_name}" are in "{status}"')
+def step_impl(context, stack_group_name, status):
+    full_stack_names = get_full_stack_names(context, stack_group_name).values()
+
+    check_stack_status(context, full_stack_names, status)
+
+
+@then('only the stacks in stack_group "{stack_group_name}", excluding dependencies are in "{status}"')
 def step_impl(context, stack_group_name, status):
     full_stack_names = get_full_stack_names(context, stack_group_name).values()
 

@@ -93,6 +93,25 @@ def step_impl(context, stack_name, stack_timeout):
     set_stack_timeout(context, stack_name, stack_timeout)
 
 
+@given('stack "{dependant_stack_name}" depends on stack "{stack_name}"')
+def step_impl(context, dependant_stack_name, stack_name):
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir
+    )
+    plan = SceptrePlan(sceptre_context)
+    plan.resolve('create')
+    if plan.launch_order:
+        for stack in plan.launch_order:
+            stk = stack.pop()
+            if stk.name == stack_name:
+                for d in stk.dependencies:
+                    if d.name == dependant_stack_name:
+                        assert True
+                        return
+    assert False
+
+
 @when('the user creates stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
@@ -111,11 +130,51 @@ def step_impl(context, stack_name):
             raise e
 
 
+@when('the user creates stack "{stack_name}" with ignore dependencies')
+def step_impl(context, stack_name):
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir,
+        ignore_dependencies=True
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    try:
+        sceptre_plan.create()
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'AlreadyExistsException' \
+                and e.response['Error']['Message'].endswith("already exists"):
+            return
+        else:
+            raise e
+
+
 @when('the user updates stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
         command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    try:
+        sceptre_plan.update()
+    except ClientError as e:
+        message = e.response['Error']['Message']
+        if e.response['Error']['Code'] == 'ValidationError' \
+            and (message.endswith("does not exist")
+                 or message.endswith("No updates are to be performed.")):
+            return
+        else:
+            raise e
+
+
+@when('the user updates stack "{stack_name}" with ignore dependencies')
+def step_impl(context, stack_name):
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir,
+        ignore_dependencies=True
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
@@ -151,6 +210,27 @@ def step_impl(context, stack_name):
             raise e
 
 
+@when('the user deletes stack "{stack_name}" with ignore dependencies')
+def step_impl(context, stack_name):
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir,
+        ignore_dependencies=True
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    sceptre_plan.resolve(command='delete', reverse=True)
+
+    try:
+        sceptre_plan.delete()
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'ValidationError' \
+                and e.response['Error']['Message'].endswith("does not exist"):
+            return
+        else:
+            raise e
+
+
 @when('the user launches stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
@@ -166,11 +246,39 @@ def step_impl(context, stack_name):
         context.error = e
 
 
+@when('the user launches stack "{stack_name}" with ignore dependencies')
+def step_impl(context, stack_name):
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir,
+        ignore_dependencies=True
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+
+    try:
+        sceptre_plan.launch()
+    except Exception as e:
+        context.error = e
+
+
 @when('the user describes the resources of stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
         command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    context.output = list(sceptre_plan.describe_resources().values())
+
+
+@when('the user describes the resources of stack "{stack_name}" with ignore dependencies')
+def step_impl(context, stack_name):
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir,
+        ignore_dependencies=True
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
@@ -225,6 +333,24 @@ def step_impl(context, stack_name):
     ]
 
     assert [formatted_response] == context.output
+
+
+@then('stack "{stack_name}" does not exist and stack "{dependant_stack_name}" exists in "{desired_state}"')
+def step_impl(context, stack_name, dependant_stack_name, desired_state):
+    full_name = get_cloudformation_stack_name(context, stack_name)
+    status = get_stack_status(context, full_name)
+    assert (status is None)
+
+    dep_full_name = get_cloudformation_stack_name(context, dependant_stack_name)
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir
+    )
+
+    sceptre_plan = SceptrePlan(sceptre_context)
+    dep_status = sceptre_plan.get_status()
+    dep_status = get_stack_status(context, dep_full_name)
+    assert (dep_status == desired_state)
 
 
 def get_stack_status(context, stack_name, region_name=None):

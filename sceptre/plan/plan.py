@@ -37,7 +37,12 @@ class SceptrePlan(object):
         return executor.execute(*args)
 
     def _generate_launch_order(self, reverse=False):
+        if self.context.ignore_dependencies:
+            return [self.command_stacks]
+
         graph = self.graph.filtered(self.command_stacks, reverse)
+        if self.context.ignore_dependencies:
+            return [self.command_stacks]
 
         launch_order = []
         while graph.graph:

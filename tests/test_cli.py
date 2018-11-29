@@ -298,6 +298,21 @@ class TestCli(object):
         assert result.exit_code == exit_code
 
     @pytest.mark.parametrize(
+        "command, ignore_dependencies", [
+            ("create", True),
+            ("create", False),
+            ("delete", True),
+            ("delete", False),
+        ]
+    )
+    def test_ignore_dependencies_commands(self, command, ignore_dependencies):
+        args = [command, "dev/vpc.yaml", "cs-1", "-y"]
+        if ignore_dependencies:
+            args.insert(0, "--ignore-dependencies")
+        result = self.runner.invoke(cli, args)
+        assert result.exit_code == 0
+
+    @pytest.mark.parametrize(
         "command,yes_flag", [
             ("create", True),
             ("create", False),

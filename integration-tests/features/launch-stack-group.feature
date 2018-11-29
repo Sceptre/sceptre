@@ -4,6 +4,11 @@ Feature: Launch stack_group
     Given stack_group "2" does not exist
     When the user launches stack_group "2"
     Then all the stacks in stack_group "2" are in "CREATE_COMPLETE"
+  
+  Scenario: launch a stack_group, excluding dependencies, that does not exist
+    Given stack_group "2" does not exist
+    When the user launches stack_group "2"
+    Then all the stacks in stack_group "2" are in "CREATE_COMPLETE"
 
   Scenario: launch a stack_group that already exists
     Given all the stacks in stack_group "2" are in "CREATE_COMPLETE"
@@ -37,3 +42,8 @@ Feature: Launch stack_group
     Given stack_group "5" does not exist
     When the user launches stack_group "5"
     Then all the stacks in stack_group "5" are in "CREATE_COMPLETE"
+
+  Scenario: launch a stack_group that does not exist ignoring dependencies
+    Given stack_group "2" does not exist
+    When the user launches stack_group "2" with ignore dependencies
+    Then all the stacks in stack_group "2" are in "CREATE_COMPLETE"

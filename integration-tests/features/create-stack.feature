@@ -36,3 +36,9 @@ Feature: Create stack
     and the stack_timeout for stack "8/C" is "1"
     When the user creates stack "8/C"
     Then stack "8/C" exists in "ROLLBACK_COMPLETE" state
+
+  Scenario: create new stack that ignores dependencies 
+    Given stack "1/A" does not exist
+    and the template for stack "1/A" is "valid_template.json"
+    When the user creates stack "1/A" with ignore dependencies
+    Then stack "1/A" exists in "CREATE_COMPLETE" state
