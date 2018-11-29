@@ -272,6 +272,8 @@ class ConfigReader(object):
         :type directory_path: str
         :param filename: File name for the config to read.
         :type filename: dict
+        :param stack_group_config: The loaded config file for the StackGroup
+        :type stack_group_config: dict
         :returns: Representation of inherited config.
         :rtype: dict
         """
@@ -308,6 +310,8 @@ class ConfigReader(object):
         :type directory_path: str
         :param basename: The filename of the config file
         :type basename: str
+        :param stack_group_config: The loaded config file for the StackGroup
+        :type stack_group_config: dict
         :returns: rendered template of config file.
         :rtype: dict
         """
