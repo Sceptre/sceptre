@@ -95,6 +95,10 @@ class Stack(object):
             be rolled back. Specifiyng zero, as well as ommiting the field,\
             will result in no timeout. Supports only positive integer value.
     :type stack_timeout: int
+
+    :param stack_group_config: The StackGroup config for the Stack
+    :type stack_group_config: dict
+
     """
 
     parameters = ResolvableProperty("parameters")
@@ -108,7 +112,7 @@ class Stack(object):
         sceptre_user_data=None, hooks=None, s3_details=None,
         dependencies=None, role_arn=None, protected=False, tags=None,
         external_name=None, notifications=None, on_failure=None, profile=None,
-        stack_timeout=0
+        stack_timeout=0, stack_group_config={}
     ):
         self.logger = logging.getLogger(__name__)
 
@@ -118,8 +122,6 @@ class Stack(object):
         self.template_bucket_name = template_bucket_name
         self.template_key_prefix = template_key_prefix
         self.required_version = required_version
-        self.hooks = hooks
-
         self.external_name = external_name or \
             get_external_stack_name(self.project_code, self.name)
 
@@ -138,6 +140,7 @@ class Stack(object):
         self.parameters = parameters or {}
         self.sceptre_user_data = sceptre_user_data or {}
         self.notifications = notifications or []
+        self.stack_group_config = stack_group_config or {}
 
     def __repr__(self):
         return (
@@ -155,7 +158,8 @@ class Stack(object):
             "protected='{protected}', tags='{tags}', "
             "external_name='{external_name}', "
             "notifications='{notifications}', on_failure='{on_failure}', "
-            "stack_timeout='{stack_timeout}'"
+            "stack_timeout='{stack_timeout}', "
+            "stack_group_config='{stack_group_config}'"
             ")".format(
                 name=self.name,
                 project_code=self.project_code,
@@ -176,7 +180,8 @@ class Stack(object):
                 external_name=self.external_name,
                 notifications=self.notifications,
                 on_failure=self.on_failure,
-                stack_timeout=self.stack_timeout
+                stack_timeout=self.stack_timeout,
+                stack_group_config=self.stack_group_config
             )
         )
 

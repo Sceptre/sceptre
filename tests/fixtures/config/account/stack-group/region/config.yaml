@@ -1,3 +1,4 @@
 region: region_region
+required_version: ">1.0"
 dependencies:
   - top/level

@@ -28,7 +28,8 @@ def execute_command(ctx, path, change_set_name, yes):
         command_path=path,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
-        options=ctx.obj.get("options")
+        options=ctx.obj.get("options"),
+        ignore_dependencies=ctx.obj.get("ignore_dependencies")
     )
 
     plan = SceptrePlan(context)

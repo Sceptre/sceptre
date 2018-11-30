@@ -127,12 +127,15 @@ class TestConfigReader(object):
         }
 
     def test_read_with_templated_config_file(self):
-        self.context.user_variables = {"user_variable": "user_variable_value"}
+        self.context.user_variables = {"variable_key": "user_variable_value"}
         config_reader = ConfigReader(self.context)
-        config_reader.templating_vars["stack_group_config"] = {
-            "region": "stack_group_region"
-        }
 
+        config_reader.templating_vars["stack_group_config"] = {
+            "region": "region_region",
+            "project_code": "account_project_code",
+            "required_version": "'>1.0'",
+            "template_bucket_name": "stack_group_template_bucket_name"
+        }
         os.environ["TEST_ENV_VAR"] = "environment_variable_value"
         config = config_reader.read(
             "account/stack-group/region/security_groups.yaml"
@@ -144,16 +147,16 @@ class TestConfigReader(object):
             "parameters": {
                 "param1": "user_variable_value",
                 "param2": "environment_variable_value",
-                "param3": "account",
-                "param4": "stack-group",
-                "param5": "region",
-                "param6": "stack_group_region"
+                "param3": "region_region",
+                "param4": "account_project_code",
+                "param5": ">1.0",
+                "param6": "stack_group_template_bucket_name"
             }
         }
 
     def test_aborts_on_incompatible_version_requirement(self):
         config = {
-            'require_version': '<0'
+            'required_version': '<0'
         }
         with pytest.raises(VersionIncompatibleError):
             ConfigReader(self.context)._check_version(config)
@@ -202,7 +205,6 @@ class TestConfigReader(object):
         self.context.project_path = os.path.abspath("tests/fixtures-vpc")
         self.context.command_path = "account/stack-group/region/vpc.yaml"
         stacks = ConfigReader(self.context).construct_stacks()
-
         mock_Stack.assert_any_call(
             name="account/stack-group/region/vpc",
             project_code="account_project_code",
@@ -223,9 +225,12 @@ class TestConfigReader(object):
             notifications=None,
             on_failure=None,
             stack_timeout=0,
-            required_version=None,
+            required_version='>1.0',
             template_bucket_name='stack_group_template_bucket_name',
-            template_key_prefix=None
+            template_key_prefix=None,
+            stack_group_config={
+                "custom_key": "custom_value"
+            }
         )
 
         assert stacks == ({sentinel.stack}, {sentinel.stack})

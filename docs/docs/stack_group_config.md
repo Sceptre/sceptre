@@ -1,75 +1,84 @@
 ---
 layout: docs
-title: Environment Config
+title: StackGroup Config
 ---
 
-# Environment Config
+# StackGroup Config
 
-Environment config stores information related to the environment, such as a particular IAM role to assume, the name of the S3 bucket in which to store templates, and the target region in which to build resources. Environment config is stored in various files around the directory structure, all with the name `config.yaml`.
+StackGroup config stores information related to the StackGroup, such as
+a particular profile to use, the name of the S3 bucket in which to store
+templates, and the target region in which to build resources. StackGroup config
+is stored in various files around the directory structure, all with the name
+`config.yaml`.
 
 ## Structure
 
-An environment config file is a yaml object of key-value pairs configuring Sceptre. The available keys are listed below.
+An StackGroup config file is a yaml object of key-value pairs configuring
+Sceptre. The available keys are listed below.
 
-- [iam_role](#iam_role) *(optional)*
-- [profile](#profile) *optional*
-- [project_code](#project_code) *(required)*
-- [region](#region) *(required)*
-- [template_bucket_name](#template_bucket_name) *(optional)*
-- [template_key_prefix](#template_key_prefix) *(optional)*
-- [require_version](#require_version) *(optional)*
+- [project_code](#project_code) _(required)_
+- [region](#region) _(required)_
 
-Sceptre only checks for and uses the above keys in environment config files, but any others added by the user are read in and are made available to the user via the `sceptre.environment.Environment().config` attribute.
+- [profile](#profile) _optional_
+- [required_version](#required_version) _(optional)_
+- [template_bucket_name](#template_bucket_name) _(optional)_
+- [template_key_prefix](#template_key_prefix) _(optional)_
 
-
-### iam_role
-
-The ARN of a role for Sceptre to assume before interacting with the environment. If not supplied, Sceptre uses the user's AWS CLI credentials.
+Sceptre will only check for and uses the above keys in StackGroup config files
+and are directly accessible from Stack(). Any other keys added by the user are
+made available via `stack_group_confg` attribute on `Stack()`.
 
 ### profile
 
-The name of the profile as defined in ~/.aws/config and ~/.aws/credentials. If `iam_role` is also provided, Sceptre will use `profile` to assume the `iam_role`. If `iam_role` is not provided, Sceptre will use `profile` to interact with the environment.
+The name of the profile as defined in `~/.aws/config` and `~/.aws/credentials`.
 
 ### project_code
 
-A code which is prepended to the stack names of all stacks built by Sceptre.
-
+A string which is prepended to the Stack names of all Stacks built by Sceptre.
 
 ### region
 
-The AWS region to build stacks in. Sceptre should work in any [region which supports CloudFormation](http://docs.aws.amazon.com/general/latest/gr/rande.html#cfn_region).
+The AWS region to build Stacks in. Sceptre should work in any [region which
+supports
+CloudFormation](http://docs.aws.amazon.com/general/latest/gr/rande.html#cfn_region).
 
+### template_bucket_name
 
-### template\_bucket\_name
+The name of an S3 bucket to upload CloudFormation Templates to. Note that S3
+bucket names must be globally unique. If the bucket does not exist, Sceptre
+creates one using the given name, in the AWS region specified by `region`.
 
-The name of an S3 bucket to upload CloudFormation Templates to. Note that S3 bucket names must be globally unique. If the bucket does not exist, Sceptre creates one using the given name, in the AWS region specified by `region`.
+If this parameter is not added, Sceptre does not upload the template to S3, but
+supplies the template to Boto3 via the `TemplateBody` argument. Templates
+supplied in this way have a lower maximum length, so using the
+`template_bucket_name` parameter is recommended.
 
-If this parameter is not added, Sceptre does not upload the template to S3, but supplies the template to Boto3 via the `TemplateBody` argument. Templates supplied in this way have a lower maximum length, so using the `template_bucket_name` parameter is recommended.
+### template_key_prefix
 
-
-### template\_key\_prefix
-
-A string which is prefixed onto the key used to store templates uploaded to S3. Templates are stored using the key:
+A string which is prefixed onto the key used to store templates uploaded to S3.
+Templates are stored using the key:
 
 ```
-<template_key_prefix>/<region>/<environment>/<stack_name>-<timestamp>.<extension>
+<template_key_prefix>/<region>/<stack_group>/<stack_name>-<timestamp>.<extension>
 ```
 
-Template key prefix can contain slashes ("/"), which are displayed as directories in the S3 console.
+Template key prefix can contain slashes ("/"), which are displayed as
+directories in the S3 console.
 
 Extension can be `json` or `yaml`.
 
 Note that if `template_bucket_name` is not supplied, this parameter is ignored.
 
-
 ### require_version
 
-A [PEP 440](https://www.python.org/dev/peps/pep-0440/#version-specifiers) compatible version specifier. If the Sceptre version does not fall within the given version requirement it will abort.
-
+A [PEP 440](https://www.python.org/dev/peps/pep-0440/#version-specifiers)
+compatible version specifier. If the Sceptre version does not fall within the
+given version requirement it will abort.
 
 ## Cascading Config
 
-Using Sceptre, config files can be cascaded. Given the following sceptre directory structure:
+Using Sceptre, config files are cascaded. Given the following sceptre directory
+structure:
 
 ```
 .
@@ -81,33 +90,46 @@ Using Sceptre, config files can be cascaded. Given the following sceptre directo
     └── config.yaml
 ```
 
-General configurations should be defined at a high level, and more specific configurations should be defined at a lower directory level. YAML files which define configuration settings with names which overlap will take precedence if they are deeper in the directory structure. For example, if you wanted the dev environment to build to a different region, this setting could be specified in the config/dev/config.yaml file, and would only be applied to builds in the dev environment.
+General configurations should be defined at a high level, and more specific
+configurations should be defined at a lower directory level.
 
-In the above directory structure, `config/config.yaml` will be read in first, followed by `config/account-1/config.yaml`, followed by `config/account-1/dev/config.yaml`. Config files read in later overwrite any key-value pairs shared by those previously read in. Thus general config can be defined at a high level, and more specific config can be defined at a lower directory level.
+YAML files that define configuration settings with conflicting keys, the child
+configuration file will take precedence.
 
+In the above directory structure, `config/config.yaml` will be read in first,
+followed by `config/account-1/config.yaml`, followed by
+`config/account-1/dev/config.yaml`.
+
+For example, if you wanted the `dev` StackGroup to build to a different
+region, this setting could be specified in the `config/dev/config.yaml` file,
+and would only be applied to builds in the `dev` StackGroup.
 
 ## Templating
 
-Sceptre supports the use of templating in config files. Templating allows config files to be further configured using values from the command line, environment variables, files or parts of the environment path.
+Sceptre supports the use of templating in config files. Templating allows
+config files to be further configured using values from the command line,
+environment variables, files or parts of the environment path.
 
-Internally, Sceptre uses Jinja2 for templating, so any valid Jinja2 syntax should work with Sceptre templating.
+Internally, Sceptre uses Jinja2 for templating, so any valid Jinja2 syntax
+should work with Sceptre templating.
 
-Templating can be used for any values in the config files, not just those that are used by Sceptre.
-
+Templating can be used for any values in the config files, not just those that
+are used by Sceptre.
 
 ### Var
 
-User variables are used to replace the value of any item in a config file with a value defined by a cli flag or in a YAML variable file:
+User variables are used to replace the value of any item in a config file with
+a value defined by a CLI flag or in a YAML variable file:
 
 ```yaml
-iam_role: {% raw %}{{ var.iam_role }}{% endraw %}
+profile: {% raw %}{{ var.profile }}{% endraw %}
 region: eu-west-1
 ```
 
 This item can be set using either a command line flag:
 
 ```shell
-$ sceptre --var "iam_role=<your iam role>" <COMMAND>
+$ sceptre --var "profile=<your profile>" <COMMAND>
 ```
 
 Or from a YAML variable file:
@@ -119,10 +141,14 @@ $ sceptre --var-file=variables.yaml <COMMAND>
 where `variables.yaml` contains::
 
 ```yaml
-iam_role: <your iam role>
+profile: <your profile>
 ```
 
-Both the `--var` and `--var-file` flags can be used multiple times. If multiple `--var-file` options are supplied, the variables from these files will be merged, with a higher precedence given to options specified later in the command. Values supplied using `--var` take the highest precedence and will overwrite any value defined in the variable files.
+Both the `--var` and `--var-file` flags can be used multiple times. If multiple
+`--var-file` options are supplied, the variables from these files will be
+merged, with a higher precedence given to options specified later in the
+command. Values supplied using `--var` take the highest precedence and will
+overwrite any value defined in the variable files.
 
 For example if we have the following variable files:
 
@@ -150,22 +176,25 @@ profile: prod
 project_code: api
 ```
 
-For command line flags, Sceptre splits the string on the first equals sign "=", and sets the key to be the first substring, and the value to be the second. Due to the large number of possible user inputs, no error checking is performed on the value of the --var flag, and it is the user's responsibility to make sure that the value is correctly formatted.
+For command line flags, Sceptre splits the string on the first equals sign "=",
+and sets the key to be the first substring, and the value to be the second. Due
+to the large number of possible user inputs, no error checking is performed on
+the value of the --var flag, and it is the user's responsibility to make sure
+that the value is correctly formatted.
 
-All user variables are supplied to all config files, so users must be careful to make sure that user variable names do not unintentionally clash.
-
+All user variables are supplied to all config files, so users must be careful
+to make sure that user variable names do not unintentionally clash.
 
 ### Environment Variables
 
 Config item values can be replaced with environment variables:
 
 ```yaml
-iam_role: {% raw %}{{ environment_variable.IAM_ROLE }}{% endraw %}
+profile: {% raw %}{{ environment_variable.PROFILE }}{% endraw %}
 region: eu-west-1
 ```
 
-Where `IAM_ROLE` is the name of an environment variable.
-
+Where `PROFILE` is the name of an environment variable.
 
 ### Environment Path
 
@@ -173,15 +202,15 @@ Config item values can be replaced with parts of the environment path:
 
 ```yaml
 region: {% raw %}{{ environment_path.0 }}{% endraw %}
-iam_role: role
+profile: default
 ```
 
-Where the value is taken from the first part of the environment path from the invoking sceptre command:
+Where the value is taken from the first part of the environment path from the
+invoking sceptre command:
 
 ```shell
-$ sceptre launch-stack eu-west-1/dev vpc
+$ sceptre launch eu-west-1/dev/vpc.yaml
 ```
-
 
 ### Template Defaults
 
@@ -191,11 +220,10 @@ Any templated value can be supplied with a default value with the syntax:
 {% raw %}{{ var.value | default("default_value") }}{% endraw %}
 ```
 
-
 ## Examples
 
 ```yaml
-iam_role: arn:aws:iam::123456789012:role/sceptrerole
+peofile: profile
 project_code: prj
 region: eu-west-1
 template_bucket_name: sceptre-artifacts
@@ -204,7 +232,7 @@ template_key_prefix: my/prefix
 
 ```yaml
 {% raw %}
-iam_role: {{ var.iam_role }}
+profile: {{ var.profile }}
 project_code: {{ var.project_code | default("prj") }}
 region: {{ environment_path.2 }}
 template_bucket_name: {{ environment_variable.TEMPLATE_BUCKET_NAME }}

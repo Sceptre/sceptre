@@ -49,7 +49,7 @@ Sceptre organises Stacks into "Stack Groups". Each Stack is represented by a
 YAML configuration file stored in a directory which represents the Stack Group.
 Here, we have two Stacks, `vpc` and `subnets`, in a Stack Group named `dev`:
 
-```bash
+```
 $ tree
 .
 ├── config
@@ -65,7 +65,7 @@ $ tree
 We can create a Stack with the `create` command. This `vpc` Stack contains
 a VPC.
 
-```bash
+```
 $ sceptre create dev/vpc.yaml
 
 dev/vpc - Creating stack dev/vpc
@@ -79,7 +79,7 @@ this, we need to pass the VPC ID, which is exposed as a Stack output of the
 `vpc` Stack, to a parameter of the `subnets` Stack. Sceptre automatically
 resolves this dependency for us.
 
-```bash
+```
 $ sceptre create dev/subnets.yaml
 dev/subnets - Creating stack
 dev/subnets Subnet AWS::EC2::Subnet CREATE_IN_PROGRESS
@@ -90,7 +90,7 @@ dev/subnets sceptre-demo-dev-subnets AWS::CloudFormation::Stack CREATE_COMPLETE
 Sceptre implements meta-operations, which allow us to find out information
 about our Stacks:
 
-```bash
+```
 $ sceptre list resources dev/subnets.yaml
 
 - LogicalResourceId: Subnet
@@ -104,7 +104,7 @@ Sceptre provides Stack Group level commands. This one deletes the whole `dev`
 Stack Group. The subnet exists within the vpc, so it must be deleted first.
 Sceptre handles this automatically:
 
-```bash
+```
 $ sceptre delete dev
 
 Deleting stack
@@ -122,7 +122,7 @@ dev/vpc - Stack deleted
 Sceptre can also handle cross Stack Group dependencies, take the following
 example project:
 
-```bash
+```
 $ tree
 .
 ├── config
@@ -161,35 +161,37 @@ Sceptre can be used from the CLI, or imported as a Python package.
 
 ## CLI
 
-```bash
+```
 Usage: sceptre [OPTIONS] COMMAND [ARGS]...
 
-Sceptre is a tool to manage your cloud native infrastructure deployments.
+  Sceptre is a tool to manage your cloud native infrastructure deployments.
+
 Options:
- --version Show the version and exit.
- --debug Turn on debug logging.
- --dir TEXT Specify sceptre directory.
- --output [yaml|json] The formatting style for command output.
- --no-colour Turn off output colouring.
- --var TEXT A variable to template into config files.
- --var-file FILENAME A YAML file of variables to template into config
- files.
- --help Show this message and exit.
+  --version              Show the version and exit.
+  --debug                Turn on debug logging.
+  --dir TEXT             Specify sceptre directory.
+  --output [yaml|json]   The formatting style for command output.
+  --no-colour            Turn off output colouring.
+  --var TEXT             A variable to template into config files.
+  --var-file FILENAME    A YAML file of variables to template into config
+                         files.
+  --ignore-dependencies  Ignore dependencies when executing command.
+  --help                 Show this message and exit.
 
 Commands:
-create Creates a Stack or a change set.
-delete Deletes a Stack or a change set.
-describe Commands for describing attributes of Stacks.
-estimate-cost Estimates the cost of the template.
-execute Executes a change set.
-generate Prints the template.
-init Commands for initialising Sceptre projects.
-launch Launch a Stack or Stack_group.
-list Commands for listing attributes of Stacks.
-set-policy Sets Stack policy.
-status Print status of Stack or Stack group.
-update Update a Stack.
-validate Validates the template.
+  create         Creates a stack or a change set.
+  delete         Deletes a stack or a change set.
+  describe       Commands for describing attributes of stacks.
+  estimate-cost  Estimates the cost of the template.
+  execute        Executes a Change Set.
+  generate       Prints the template.
+  launch         Launch a Stack or StackGroup.
+  list           Commands for listing attributes of stacks.
+  new            Commands for initialising Sceptre projects.
+  set-policy     Sets Stack policy.
+  status         Print status of stack or stack_group.
+  update         Update a stack.
+  validate       Validates the template.
 ```
 
 ## Python
@@ -224,4 +226,4 @@ Full API reference documentation can be found in the [Documentation](https://sce
 
 ## Contributing
 
-See our (Contributing Guide)[CONTRIBUTING.md]
+See our [Contributing Guide](CONTRIBUTING.md)

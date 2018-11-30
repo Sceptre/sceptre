@@ -7,9 +7,5 @@
     <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
     <link rel="icon" type="image/png" href="{{ site.baseurl }}/assets/images/favicon.png">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    {% if page.title %}
-    <title>{{ page.title }} | {{ site.title }}</title>
-    {% else %}
-    <title>{{ site.title }}</title>
-    {% endif %}
+    <title>{{ page.title | default: site.title }} | Sceptre</title>
 </head>

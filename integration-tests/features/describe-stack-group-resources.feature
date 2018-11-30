@@ -16,3 +16,9 @@ Feature: Describe stack_group resources
     and stack "2/C" does not exist
     When the user describes resources in stack_group "2"
     Then only resources in stack "2/A" are described
+
+  Scenario: describe resources of a stack_group that already exists with ignore dependencies
+    Given all the stacks in stack_group "2" are in "CREATE_COMPLETE"
+    When the user describes resources in stack_group "2" with ignore dependencies
+    Then only all resources in stack_group "2" are described
+

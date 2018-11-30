@@ -5,12 +5,13 @@ title: Hooks
 
 # Hooks
 
-Hooks allows the ability for custom commands to be run when Sceptre actions occur.
+Hooks allows the ability for custom commands to be run when Sceptre actions
+occur.
 
 A hook is executed at a particular hook point when Sceptre is run.
 
-If required, users can create their own `hooks`, as described in the section [Custom Hooks](#custom-hooks).
-
+If required, users can create their own `hooks`, as described in the section
+[Custom Hooks](#custom-hooks).
 
 ## Hook points
 
@@ -20,41 +21,41 @@ If required, users can create their own `hooks`, as described in the section [Cu
 
 `before_delete` or `after_delete` - run hook before or after stack deletion.
 
-
 Syntax:
 
-Hooks are specified in a stack's config file, using the following syntax:
+Hooks are specified in a Stack's config file, using the following syntax:
 
 ```yaml
 hooks:
-    hook_point:
-        - !command_type command 1
-        - !command_type command 2
+  hook_point:
+    - !command_type command 1
+    - !command_type command 2
 ```
-
 
 ## Available Hooks
 
 ### cmd
+
 Executes the argument string in the shell as a Python subprocess.
 
-For more information about how this works, see the [subprocess documentation](https://docs.python.org/2/library/subprocess.html)
+For more information about how this works, see the [subprocess
+documentation](https://docs.python.org/2/library/subprocess.html)
 
 Syntax:
 
 ```yaml
 <hook_point>:
-    - !cmd <shell_command>
+  - !cmd <shell_command>
 ```
 
 Example:
 
 ```yaml
 before_create:
-    - !cmd "echo hello"
+  - !cmd "echo hello"
 ```
 
-### asg\_scaling_processes
+### asg_scaling_processes
 
 Suspends or resumes autoscaling scaling processes.
 
@@ -62,52 +63,58 @@ Syntax:
 
 ```yaml
 <hook_point>:
-    - !asg_scaling_processes <suspend|resume>::<process-name>
+  - !asg_scaling_processes <suspend|resume>::<process-name>
 ```
 
 Example:
 
 ```yaml
 before_update:
-    - !asg_scaling_processes suspend::ScheduledActions
+  - !asg_scaling_processes suspend::ScheduledActions
 ```
 
-More information on suspend and resume processes can be found in the AWS [documentation](http://docs.aws.amazon.com/autoscaling/latest/userguide/as-suspend-resume-processes.html).
-
+More information on suspend and resume processes can be found in the AWS
+[documentation](http://docs.aws.amazon.com/autoscaling/latest/userguide/as-suspend-resume-processes.html).
 
 ## Examples
 
-A stack's `config.yml` where multiple hooks with multiple commands are specified:
+A Stack's `config.yml` where multiple hooks with multiple commands are
+specified:
 
 ```yaml
 template_path: templates/example.py
 parameters:
-    ExampleParameter: example_value
+  ExampleParameter: example_value
 hooks:
-    before_create:
-        - !cmd "echo creating..."
-    after_create:
-        - !cmd "echo created"
-        - !cmd "echo done"
-    before_update:
-        - !asg_scaling_processes suspend::ScheduledActions
-    after_update:
-        - !cmd "mkdir example"
-        - !cmd "touch example.txt"
-        - !asg_scaling_processes resume::ScheduledActions
+  before_create:
+    - !cmd "echo creating..."
+  after_create:
+    - !cmd "echo created"
+    - !cmd "echo done"
+  before_update:
+    - !asg_scaling_processes suspend::ScheduledActions
+  after_update:
+    - !cmd "mkdir example"
+    - !cmd "touch example.txt"
+    - !asg_scaling_processes resume::ScheduledActions
 ```
 
 ## Custom Hooks
 
-Users can define their own custom hooks, allowing users to extend hooks and integrate additional functionality into Sceptre projects.
+Users can define their own custom hooks, allowing users to extend hooks and
+integrate additional functionality into Sceptre projects.
 
-A hook is a Python class which inherits from abstract base class `Hook` found in the `sceptre.hooks module`.
+A hook is a Python class which inherits from abstract base class `Hook` found
+in the `sceptre.hooks module`.
 
-Hooks are require to implement a `run()` function that takes no parameters and to call the base class initializer.
+Hooks are require to implement a `run()` function that takes no parameters and
+to call the base class initializer.
 
-Hooks may have access to `argument`,  `stack_config`, `environment_config` and `connection_manager` as object attributes. For example `self.stack_config`.
+Hooks may have access to `argument`, `stack_config`, `stack_group_config` and
+`connection_manager` as object attributes. For example `self.stack_config`.
 
-Sceptre uses the `sceptre.hooks` entry point to locate hook classes. Your custom hook can be written anywhere and is installed as Python package.
+Sceptre uses the `sceptre.hooks` entry point to locate hook classes. Your
+custom hook can be written anywhere and is installed as Python package.
 
 ### Example
 
@@ -140,7 +147,7 @@ class CustomHook(Hook):
 
         The following attributes may be available from the base class:
         self.stack_config  (A dict of data from <stack_name>.yaml)
-        self.environment_config  (A dict of data from config.yaml)
+        self.stack.stack_group_config  (A dict of data from config.yaml)
         self.connection_manager (A connection_manager)
         """
         print(self.argument)
@@ -168,6 +175,6 @@ This hook can be used in a stack config file with the following syntax:
 ```yaml
 template_path: <...>
 hooks:
-    before_create:
-        - !custom_hook <argument>  # The argument is accessible via self.argument
+  before_create:
+    - !custom_hook <argument> # The argument is accessible via self.argument
 ```

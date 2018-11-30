@@ -213,14 +213,14 @@ class TestCli(object):
 
     def test_describe_policy_with_existing_policy(self):
         self.mock_stack_actions.get_policy.return_value = {
-            "StackPolicyBody": "Body"
+            "StackPolicyBody": ["Body"]
         }
 
         result = self.runner.invoke(
             cli, ["describe", "policy", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert result.output == "Body\n"
+        assert result.output == "- Body\n\n"
 
     def test_list_group_resources(self):
         response = {
@@ -296,6 +296,21 @@ class TestCli(object):
 
         run_command.assert_called_with()
         assert result.exit_code == exit_code
+
+    @pytest.mark.parametrize(
+        "command, ignore_dependencies", [
+            ("create", True),
+            ("create", False),
+            ("delete", True),
+            ("delete", False),
+        ]
+    )
+    def test_ignore_dependencies_commands(self, command, ignore_dependencies):
+        args = [command, "dev/vpc.yaml", "cs-1", "-y"]
+        if ignore_dependencies:
+            args.insert(0, "--ignore-dependencies")
+        result = self.runner.invoke(cli, args)
+        assert result.exit_code == 0
 
     @pytest.mark.parametrize(
         "command,yes_flag", [
@@ -594,6 +609,49 @@ class TestCli(object):
             mock_mkdir = patcher_mkdir.stop()
             assert str(result.exception) == str(OSError(errno.EINVAL))
 
+    @pytest.mark.parametrize(
+        "cli_module,command,output_format,no_colour", [
+            (
+                'describe',
+                ['describe', 'change-set', 'somepath', 'cs1'],
+                'yaml',
+                True
+            ),
+            (
+                'describe',
+                ['describe', 'change-set', 'somepath', 'cs1'],
+                'json',
+                False
+            ),
+            (
+                'describe',
+                ['describe', 'policy', 'somepolicy'],
+                'yaml',
+                True
+            ),
+            (
+                'describe',
+                ['describe', 'policy', 'somepolicy'],
+                'json',
+                False
+            )
+        ]
+    )
+    def test_write_output_format_flags(
+        self, cli_module, command, output_format, no_colour
+    ):
+        no_colour_flag = ['--no-colour'] if no_colour else []
+        output_format_flag = ['--output', output_format]
+        args = output_format_flag + no_colour_flag + command
+
+        with patch("sceptre.cli." + cli_module + ".write") as mock_write:
+            self.runner.invoke(cli, args)
+            mock_write.assert_called()
+            for call in mock_write.call_args_list:
+                args, _ = call
+                assert args[1] == output_format
+                assert args[2] == no_colour
+
     def test_setup_logging_with_debug(self):
         logger = setup_logging(True, False)
         assert logger.getEffectiveLevel() == logging.DEBUG
@@ -613,14 +671,19 @@ class TestCli(object):
         logger.setLevel(logging.CRITICAL)
 
     @patch("sceptre.cli.click.echo")
-    def test_write_with_yaml_format(self, mock_echo):
-        write({"key": "value"}, "yaml")
-        mock_echo.assert_called_once_with("key: value\n")
-
-    @patch("sceptre.cli.click.echo")
-    def test_write_with_json_format(self, mock_echo):
-        write({"key": "value"}, "json")
-        mock_echo.assert_called_once_with('{"key": "value"}')
+    @pytest.mark.parametrize(
+        "output_format,no_colour,expected_output", [
+            ("json", True, '{"stack": "CREATE_COMPLETE"}'),
+            ("json", False, '{"stack": "\x1b[32mCREATE_COMPLETE\x1b[0m\"}'),
+            ("yaml", True, "stack: CREATE_COMPLETE\n"),
+            ("yaml", False, "stack: \x1b[32mCREATE_COMPLETE\x1b[0m\n")
+        ]
+    )
+    def test_write_formats(
+        self, mock_echo, output_format, no_colour, expected_output
+    ):
+        write({"stack": "CREATE_COMPLETE"}, output_format, no_colour)
+        mock_echo.assert_called_once_with(expected_output)
 
     @patch("sceptre.cli.click.echo")
     def test_write_status_with_colour(self, mock_echo):

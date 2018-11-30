@@ -81,8 +81,6 @@ def write(var, output_format="str", no_colour=True):
         stream = var
     if not no_colour:
         stack_status_colourer = StackStatusColourer()
-        if not isinstance(var, str):
-            stream = str(var)
         stream = stack_status_colourer.colour(stream)
 
     click.echo(stream)
@@ -132,7 +130,7 @@ def setup_logging(debug, no_colour):
     formatter_class = logging.Formatter if no_colour else ColouredFormatter
 
     formatter = formatter_class(
-        fmt="[%(asctime)s] - %(name)s - %(message)s",
+        fmt="[%(asctime)s] - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S"
     )
 
