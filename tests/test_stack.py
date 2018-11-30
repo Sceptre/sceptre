@@ -22,7 +22,8 @@ class TestStack(object):
             tags={"tag1": "val1"}, external_name=sentinel.external_name,
             notifications=[sentinel.notification],
             on_failure=sentinel.on_failure,
-            stack_timeout=sentinel.stack_timeout
+            stack_timeout=sentinel.stack_timeout,
+            stack_group_config={}
         )
         self.stack._template = MagicMock(spec=Template)
 
@@ -53,6 +54,7 @@ class TestStack(object):
         assert stack.tags == {}
         assert stack.notifications == []
         assert stack.on_failure is None
+        assert stack.stack_group_config == {}
 
     def test_repr(self):
         assert self.stack.__repr__() == \
@@ -74,5 +76,6 @@ class TestStack(object):
             "external_name='sentinel.external_name', " \
             "notifications='[sentinel.notification]', " \
             "on_failure='sentinel.on_failure', " \
-            "stack_timeout='sentinel.stack_timeout'" \
+            "stack_timeout='sentinel.stack_timeout', " \
+            "stack_group_config='{}'" \
             ")"
