@@ -29,22 +29,24 @@ from . import strategies
 ConfigAttributes = collections.namedtuple("Attributes", "required optional")
 
 CONFIG_MERGE_STRATEGIES = {
-    'template_path': strategies.child_wins,
-    'profile': strategies.child_wins,
     'dependencies': strategies.list_join,
     'hooks': strategies.child_wins,
+    'notifications': strategies.child_wins,
+    'on_failure': strategies.child_wins,
     'parameters': strategies.child_wins,
+    'profile': strategies.child_wins,
+    'project_code': strategies.child_wins,
     'protect': strategies.child_wins,
+    'region': strategies.child_wins,
+    'required_version': strategies.child_wins,
+    'role_arn': strategies.child_wins,
     'sceptre_user_data': strategies.child_wins,
     'stack_name': strategies.child_wins,
     'stack_tags': strategies.child_wins,
-    'role_arn': strategies.child_wins,
     'stack_timeout': strategies.child_wins,
-    'project_code': strategies.child_wins,
-    'region': strategies.child_wins,
     'template_bucket_name': strategies.child_wins,
     'template_key_value': strategies.child_wins,
-    'required_version': strategies.child_wins
+    'template_path': strategies.child_wins
 }
 
 STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
@@ -64,15 +66,17 @@ STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
         "template_path"
     },
     {
-        "profile",
         "dependencies",
         "hooks",
+        "notifications",
+        "on_failure",
         "parameters",
+        "profile",
         "protect",
+        "role_arn",
         "sceptre_user_data",
         "stack_name",
         "stack_tags",
-        "role_arn",
         "stack_timeout"
     }
 )
