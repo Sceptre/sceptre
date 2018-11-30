@@ -5,7 +5,7 @@ title: StackGroup Config
 
 # StackGroup Config
 
-StackGroup config stores information related to the environment, such as
+StackGroup config stores information related to the StackGroup, such as
 a particular profile to use, the name of the S3 bucket in which to store
 templates, and the target region in which to build resources. StackGroup config
 is stored in various files around the directory structure, all with the name
@@ -59,7 +59,7 @@ A string which is prefixed onto the key used to store templates uploaded to S3.
 Templates are stored using the key:
 
 ```
-<template_key_prefix>/<region>/<environment>/<stack_name>-<timestamp>.<extension>
+<template_key_prefix>/<region>/<stack_group>/<stack_name>-<timestamp>.<extension>
 ```
 
 Template key prefix can contain slashes ("/"), which are displayed as
@@ -100,9 +100,9 @@ In the above directory structure, `config/config.yaml` will be read in first,
 followed by `config/account-1/config.yaml`, followed by
 `config/account-1/dev/config.yaml`.
 
-For example, if you wanted the `dev` environment to build to a different
+For example, if you wanted the `dev` StackGroup to build to a different
 region, this setting could be specified in the `config/dev/config.yaml` file,
-and would only be applied to builds in the `dev` environment.
+and would only be applied to builds in the `dev` StackGroup.
 
 ## Templating
 
