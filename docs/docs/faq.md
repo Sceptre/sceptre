@@ -68,14 +68,14 @@ This second syntax is only able to replace parameter values.
 The difference between these two methods lies in when the value of the
 environment variable is obtained. The templating method obtains the environment
 variable when Sceptre is first invoked. The resolver method obtains the
-environment variable just before the operations `create-stack`, `update-stack`,
-`launch-stack`, `launch-env`, or `create-change-set` operation is executed
+environment variable just before the operations `create`, `update`,
+`launch` operation is executed
 (Note that these are the only commands which require parameters). This
-difference becomes most apparent with the use of the `launch-env` command. As
+difference becomes most apparent with the use of the `launch` command. As
 multiple stacks are launched, early stacks can set environment variables (using
 Hooks) which can then be read in by later stacks. This is only possible using
 resolvers.
 
 In order to use environment variables set by Hooks run by a stack previously
-built in the same `launch-env` command, the environment variable resolver must
+built in the same `launch` command, the environment variable resolver must
 be used.
