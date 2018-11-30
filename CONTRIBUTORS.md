@@ -26,6 +26,8 @@
 
 - Luke Plausin [@lukeplausin](https://github.com/lukeplausin)
 
+- Jan Rotter [@janrotter](https://github.com/janrotter)
+
 - James Routley [@jamesroutley](https://github.com/jamesroutley)
 
 - Sean Rankine [@theseanything](https://github.com/theseanything)
