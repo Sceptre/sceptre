@@ -2,15 +2,43 @@
 
 Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
-## 2.0.0rc1-1 (2018.11.22)
+## 2.0.0 (2018.11.30)
 
-# Fixed
+### Added
+
+- Support for `stack_group_config` via the `Stack()` API.
+
+- Support for accessing `stack_group_config` in Templates
+
+- `--ignore-dependencies` flag to CLI and API.
+
+### Removed
+
+- `write()` from `sceptre.config.graph.StackGraph`
+
+### Fixed
+
+- Describe commands output formatting
+
+- Website Page titles
+
+### Nonfunctional
+
+- Updated Project docs
+
+- Updated Website Documentation
+
+- Removed unnecessary string from CLI output
+
+## 2.0.0rc1-2 (2018.11.22)
+
+### Fixed
 
 - Added missing `stack_group_config` attributes to Stack.
 
 ## 2.0rc1 (2018.11.21)
 
-# Added
+### Added
 
 - StackGraph (5171ae0)
 
@@ -24,11 +52,11 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 - StackActions (e8e34e8)
 
-## Removed
+### Removed
 
 - Environments. Stacks & their relationships are now held in StackGraph (0b104db)
 
-## Changed
+### Changed
 
 - Config.yaml `template_path` attribute. By default Sceptre uses "templates" as the root
   directory for `template_path` so the user should not specify `templates/` as
@@ -38,7 +66,7 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 - Stack class. The functions available to Stacks are stored in StackActions (0b104db)
 
-## Nonfunctional
+### Nonfunctional
 
 - Updated project documentation such as README (0b104db)
 - Changed project cocs to use Markdown format (README, CHANGELOG, CONTRIBUTING) (0b104db)
