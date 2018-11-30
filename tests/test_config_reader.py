@@ -227,7 +227,10 @@ class TestConfigReader(object):
             stack_timeout=0,
             required_version='>1.0',
             template_bucket_name='stack_group_template_bucket_name',
-            template_key_prefix=None
+            template_key_prefix=None,
+            stack_group_config={
+                "custom_key": "custom_value"
+            }
         )
 
         assert stacks == ({sentinel.stack}, {sentinel.stack})
