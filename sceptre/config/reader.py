@@ -411,7 +411,7 @@ class ConfigReader(object):
             pass
 
         self.templating_vars["stack_group_config"] = stack_group_config
-
+        parsed_stack_group_config = self._parsed_stack_group_config(stack_group_config)
         config = self.read(rel_path, stack_group_config)
         stack_name = path.splitext(rel_path)[0]
         abs_template_path = path.join(
@@ -443,8 +443,24 @@ class ConfigReader(object):
             external_name=config.get("stack_name"),
             notifications=config.get("notifications"),
             on_failure=config.get("on_failure"),
-            stack_timeout=config.get("stack_timeout", 0)
+            stack_timeout=config.get("stack_timeout", 0),
+            stack_group_config=parsed_stack_group_config
         )
 
         del self.templating_vars["stack_group_config"]
         return stack
+
+    def _parsed_stack_group_config(self, stack_group_config):
+        """
+        Remove all config items that are supported by Sceptre and
+        remove the `project_path` and `stack_group_path` added by `read()`.
+        Return a dictionary that has only user-specified config items.
+        """
+        parsed_config = {
+            key: stack_group_config[key]
+            for key in
+            set(stack_group_config) - set(CONFIG_MERGE_STRATEGIES)
+        }
+        parsed_config.pop("project_path")
+        parsed_config.pop("stack_group_path")
+        return parsed_config
