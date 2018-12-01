@@ -11,7 +11,7 @@ import collections
 import datetime
 import fnmatch
 import logging
-from os import path, environ, walk
+from os import path, environ, sep, walk
 from pkg_resources import iter_entry_points
 import yaml
 
@@ -330,7 +330,9 @@ class ConfigReader(object):
             template = jinja_env.get_template(basename)
             self.templating_vars.update(stack_group_config)
             rendered_template = template.render(
-                self.templating_vars, environment_variable=environ
+                self.templating_vars,
+                stack_group_path=self.context.command_path.split(sep),
+                environment_variable=environ
             )
 
             config = yaml.safe_load(rendered_template)
@@ -430,7 +432,6 @@ class ConfigReader(object):
         s3_details = self._collect_s3_details(
             stack_name, config
         )
-
         stack = Stack(
             name=stack_name,
             project_code=config["project_code"],
