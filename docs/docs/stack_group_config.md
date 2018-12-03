@@ -201,7 +201,7 @@ Where `PROFILE` is the name of an environment variable.
 Config item values can be replaced with parts of the environment path:
 
 ```yaml
-region: {% raw %}{{ environment_path.0 }}{% endraw %}
+region: {% raw %}{{ stack_group_path.0 }}{% endraw %}
 profile: default
 ```
 
@@ -234,7 +234,7 @@ template_key_prefix: my/prefix
 {% raw %}
 profile: {{ var.profile }}
 project_code: {{ var.project_code | default("prj") }}
-region: {{ environment_path.2 }}
+region: {{ stack_group_path.2 }}
 template_bucket_name: {{ environment_variable.TEMPLATE_BUCKET_NAME }}
 {% endraw %}
 ```
