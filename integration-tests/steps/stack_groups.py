@@ -195,7 +195,8 @@ def step_impl(context, stack_group_name, status):
 @then('no resources are described')
 def step_impl(context):
     for stack_resources in context.response:
-        assert stack_resources == []
+        stack_name = next(iter(stack_resources))
+        assert stack_resources == {stack_name: []}
 
 
 @then('stack "{stack_name}" is described as "{status}"')
@@ -214,8 +215,8 @@ def step_impl(context, stack_group_name):
     expected_resources = {}
     sceptre_response = []
     for stack_resources in context.response:
-        for resource in stack_resources:
-            sceptre_response.append(resource["PhysicalResourceId"])
+        for resource in stack_resources.values():
+            sceptre_response.append(resource[0]["PhysicalResourceId"])
 
     for short_name, full_name in stacks_names.items():
         time.sleep(1)
@@ -237,8 +238,9 @@ def step_impl(context, stack_name):
     expected_resources = {}
     sceptre_response = []
     for stack_resources in context.response:
-        for resource in stack_resources:
-            sceptre_response.append(resource["PhysicalResourceId"])
+        for resource in stack_resources.values():
+            if resource:
+                sceptre_response.append(resource[0].get("PhysicalResourceId"))
 
     response = retry_boto_call(
         context.client.describe_stack_resources,

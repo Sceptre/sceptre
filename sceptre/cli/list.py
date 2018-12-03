@@ -116,6 +116,4 @@ def list_change_sets(ctx, path):
     ]
 
     for response in responses:
-        if response['ResponseMetadata']['HTTPStatusCode'] == 200:
-            del response['ResponseMetadata']
         write(response, context.output_format)

@@ -73,7 +73,7 @@ def write(var, output_format="str", no_colour=True):
     stream = var
 
     if output_format == "json":
-        encoder = CustomJsonEncoder()
+        encoder = CustomJsonEncoder(indent=4)
         stream = encoder.encode(var)
     if output_format == "yaml":
         stream = yaml.safe_dump(var, default_flow_style=False)

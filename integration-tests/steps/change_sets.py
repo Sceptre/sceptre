@@ -281,17 +281,14 @@ def step_impl(context, stack_name):
         context.client.list_change_sets,
         StackName=full_name
     )
-
-    del response["ResponseMetadata"]
     for output in context.output:
-        del output["ResponseMetadata"]
-        assert response == output
+        assert output == {stack_name: response.get("Summaries", {})}
 
 
 @then('no change sets for stack "{stack_name}" are listed')
 def step_impl(context, stack_name):
     for output in context.output:
-        assert output["Summaries"] == []
+        assert output == {stack_name: []}
 
 
 @then('change set "{change_set_name}" for stack "{stack_name}" is described')

@@ -14,6 +14,7 @@ from os import path
 from datetime import datetime, timedelta
 
 import botocore
+import json
 from dateutil.tz import tzutc
 
 from sceptre.connection_manager import ConnectionManager
@@ -328,7 +329,7 @@ class StackActions(object):
             )
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Message"].endswith("does not exist"):
-                return []
+                return {self.stack.name: []}
             raise
 
         self.logger.debug(
@@ -339,10 +340,10 @@ class StackActions(object):
 
         desired_properties = ["LogicalResourceId", "PhysicalResourceId"]
 
-        formatted_response = [
+        formatted_response = {self.stack.name: [
             {k: v for k, v in item.items() if k in desired_properties}
             for item in response["StackResources"]
-        ]
+        ]}
         return formatted_response
 
     def describe_outputs(self):
@@ -359,7 +360,7 @@ class StackActions(object):
         except botocore.exceptions.ClientError:
             return []
 
-        return response["Stacks"][0].get("Outputs", [])
+        return {self.stack.name: response["Stacks"][0].get("Outputs", [])}
 
     def continue_update_rollback(self):
         """
@@ -424,8 +425,9 @@ class StackActions(object):
                 "StackName": self.stack.external_name
             }
         )
-
-        return response
+        json_formatting = json.loads(response.get(
+            "StackPolicyBody", json.dumps("No Policy Information")))
+        return {self.stack.name: json_formatting}
 
     def create_change_set(self, change_set_name):
         """
@@ -544,13 +546,14 @@ class StackActions(object):
         """
         self.logger.debug("%s - Listing change sets", self.stack.name)
         try:
-            return self.connection_manager.call(
+            response = self.connection_manager.call(
                 service="cloudformation",
                 command="list_change_sets",
                 kwargs={
                     "StackName": self.stack.external_name
                 }
             )
+            return {self.stack.name: response.get("Summaries", [])}
         except botocore.exceptions.ClientError:
             return []
 
@@ -592,8 +595,8 @@ class StackActions(object):
         self.logger.debug("%s - Estimating template cost", self.stack.name)
 
         parameters = [
-           {'ParameterKey': key, 'ParameterValue': value}
-           for key, value in self.stack.parameters.items()
+            {'ParameterKey': key, 'ParameterValue': value}
+            for key, value in self.stack.parameters.items()
         ]
 
         kwargs = self.stack.template.get_boto_call_parameter()
