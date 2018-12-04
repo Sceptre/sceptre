@@ -325,14 +325,13 @@ def step_impl(context, stack_name):
         context.client.describe_stack_resources,
         StackName=full_name
     )
-
     properties = {"LogicalResourceId", "PhysicalResourceId"}
     formatted_response = [
         {k: v for k, v in item.items() if k in properties}
         for item in response["StackResources"]
     ]
 
-    assert [formatted_response] == context.output
+    assert [{stack_name: formatted_response}] == context.output
 
 
 @then('stack "{stack_name}" does not exist and stack "{dependant_stack_name}" exists in "{desired_state}"')

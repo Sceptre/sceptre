@@ -213,14 +213,14 @@ class TestCli(object):
 
     def test_describe_policy_with_existing_policy(self):
         self.mock_stack_actions.get_policy.return_value = {
-            "StackPolicyBody": ["Body"]
+            "dev/vpc": {"Statement": ["Body"]}
         }
 
         result = self.runner.invoke(
             cli, ["describe", "policy", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert result.output == "- Body\n\n"
+        assert result.output == "dev/vpc:\n  Statement:\n  - Body\n\n"
 
     def test_list_group_resources(self):
         response = {
@@ -380,9 +380,6 @@ class TestCli(object):
 
     def test_list_change_sets_with_200(self):
         self.mock_stack_actions.list_change_sets.return_value = {
-            "ResponseMetadata": {
-                "HTTPStatusCode": 200
-            },
             "ChangeSets": "Test"
         }
         result = self.runner.invoke(
@@ -393,9 +390,6 @@ class TestCli(object):
 
     def test_list_change_sets_without_200(self):
         response = {
-            "ResponseMetadata": {
-                "HTTPStatusCode": 404
-            },
             "ChangeSets": "Test"
         }
         self.mock_stack_actions.list_change_sets.return_value = response
@@ -673,8 +667,8 @@ class TestCli(object):
     @patch("sceptre.cli.click.echo")
     @pytest.mark.parametrize(
         "output_format,no_colour,expected_output", [
-            ("json", True, '{"stack": "CREATE_COMPLETE"}'),
-            ("json", False, '{"stack": "\x1b[32mCREATE_COMPLETE\x1b[0m\"}'),
+            ("json", True, '{\n    "stack": "CREATE_COMPLETE"\n}'),
+            ("json", False, '{\n    "stack": "\x1b[32mCREATE_COMPLETE\x1b[0m\"\n}'),
             ("yaml", True, "stack: CREATE_COMPLETE\n"),
             ("yaml", False, "stack: \x1b[32mCREATE_COMPLETE\x1b[0m\n")
         ]
