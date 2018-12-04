@@ -50,7 +50,7 @@ def delete_command(ctx, path, change_set_name, yes):
     print("The following stacks in the following order will be deleted:\n{}".format(dependencies))
 
     confirmation(
-        plan.delete_change_set.__name__,
+        plan.delete.__name__,
         yes,
         change_set=change_set_name,
         command_path=path
