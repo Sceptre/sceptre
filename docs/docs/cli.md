@@ -61,7 +61,8 @@ Stack outputs can be exported as environment variables with the command:
 
 ```shell
 $ eval $(sceptre --ignore-dependencies list outputs STACKGROUP/STACK.yaml
---export=envvar) ```
+--export=envvar)
+```
 
 Note that Sceptre prepends the string `SCEPTRE_` to the name of the environment variable:
 
