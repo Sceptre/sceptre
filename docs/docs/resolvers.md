@@ -152,13 +152,12 @@ class CustomResolver(Resolver):
         intended by this resolver. It should return a string to become the
         final value.
 
-        self.argument is available from the base class and contains the
-        argument defined in the sceptre config file (see below)
+        The following parameters are available to Resolvers:
 
-        The following attributes may be available from the base class:
-        self.stack_config  (A dict of data from <stack_name>.yaml)
-        self.stack.stack_group_config  (A dict of data from config.yaml)
-        self.connection_manager (A connection_manager)
+        :param argument: The argument of the resolver.
+        :type argument: str
+        :param stack: The associated stack of the resolver.
+        :type stack: sceptre.stack.Stack
         """
         return self.argument
 ```
