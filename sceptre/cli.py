@@ -6,7 +6,6 @@ sceptre.cli
 This module implements Sceptre's CLI, and should not be directly imported.
 """
 
-import contextlib
 import errno
 from json import JSONEncoder
 import os
@@ -515,33 +514,25 @@ def update_with_change_set(ctx, environment, stack, verbose):
     """
     env = get_env(ctx.obj["sceptre_dir"], environment, ctx.obj["options"])
     change_set_name = "-".join(["change-set", uuid1().hex])
-    with change_set(env.stacks[stack], change_set_name):
-        status = env.stacks[stack].wait_for_cs_completion(change_set_name)
-        description = env.stacks[stack].describe_change_set(change_set_name)
-        if not verbose:
-            description = _simplify_change_set_description(description)
-        write(description, ctx.obj["output_format"])
-        if status != StackChangeSetStatus.READY:
-            exit(1)
-        if click.confirm("Proceed with stack update?"):
+    env.stacks[stack].create_change_set(change_set_name)
+    status = env.stacks[stack].wait_for_cs_completion(change_set_name)
+    if status != StackChangeSetStatus.READY:
+        env.stacks[stack].delete_change_set(change_set_name)
+        exit(1)
+    description = env.stacks[stack].describe_change_set(change_set_name)
+    if not verbose:
+        description = _simplify_change_set_description(description)
+    write(description, ctx.obj["output_format"])
+    if click.confirm("Proceed with stack update?"):
+        try:
             env.stacks[stack].execute_change_set(change_set_name)
-
-
-@contextlib.contextmanager
-def change_set(stack, name):
-    """
-    Creates and yields and deletes a change set.
-
-    :param stack: The stack to create the change set for.
-    :type stack: sceptre.stack.Stack
-    :param name: The name of the change set.
-    :type name: str
-    """
-    stack.create_change_set(name)
-    try:
-        yield
-    finally:
-        stack.delete_change_set(name)
+        finally:
+            env.stacks[stack].delete_change_set(change_set_name)
+        status = env.stacks[stack].get_status()
+        if status != StackStatus.COMPLETE:
+            exit(1)
+    else:
+        env.stacks[stack].delete_change_set(change_set_name)
 
 
 @cli.command(name="describe-stack-outputs")

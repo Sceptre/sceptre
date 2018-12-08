@@ -527,6 +527,58 @@ class TestCli(object):
         assert result.exit_code == 1
 
     @patch("sceptre.cli.os.getcwd")
+    @patch("sceptre.cli.uuid1")
+    @patch("sceptre.cli.get_env")
+    def test_update_with_change_set_with_stack_status_complete(
+        self, mock_get_env, mock_uuid1, mock_getcwd
+    ):
+        mock_getcwd.return_value = sentinel.cwd
+        mock_get_env.return_value.stacks["vpc"].wait_for_cs_completion\
+            .return_value = StackChangeSetStatus.READY
+        mock_get_env.return_value.stacks["vpc"].get_status\
+            .return_value = StackStatus.COMPLETE
+        mock_get_env.return_value.stacks["vpc"].describe_change_set\
+            .return_value = "description"
+        mock_uuid1().hex = "1"
+        result = self.runner.invoke(
+            cli, ["update-stack-cs", "dev", "vpc", "--verbose"], input="y"
+        )
+        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
+        mock_get_env.return_value.stacks["vpc"].create_change_set\
+            .assert_called_with("change-set-1")
+        mock_get_env.return_value.stacks["vpc"].wait_for_cs_completion\
+            .assert_called_with("change-set-1")
+        mock_get_env.return_value.stacks["vpc"].execute_change_set\
+            .assert_called_with("change-set-1")
+        assert result.exit_code == 0
+
+    @patch("sceptre.cli.os.getcwd")
+    @patch("sceptre.cli.uuid1")
+    @patch("sceptre.cli.get_env")
+    def test_update_with_change_set_with_stack_status_failed(
+        self, mock_get_env, mock_uuid1, mock_getcwd
+    ):
+        mock_getcwd.return_value = sentinel.cwd
+        mock_get_env.return_value.stacks["vpc"].wait_for_cs_completion\
+            .return_value = StackChangeSetStatus.READY
+        mock_get_env.return_value.stacks["vpc"].get_status\
+            .return_value = StackStatus.FAILED
+        mock_get_env.return_value.stacks["vpc"].describe_change_set\
+            .return_value = "description"
+        mock_uuid1().hex = "1"
+        result = self.runner.invoke(
+            cli, ["update-stack-cs", "dev", "vpc", "--verbose"], input="y"
+        )
+        mock_get_env.assert_called_with(sentinel.cwd, "dev", {})
+        mock_get_env.return_value.stacks["vpc"].create_change_set\
+            .assert_called_with("change-set-1")
+        mock_get_env.return_value.stacks["vpc"].wait_for_cs_completion\
+            .assert_called_with("change-set-1")
+        mock_get_env.return_value.stacks["vpc"].execute_change_set\
+            .assert_called_with("change-set-1")
+        assert result.exit_code == 1
+
+    @patch("sceptre.cli.os.getcwd")
     @patch("sceptre.cli.get_env")
     def test_describe_stack_outputs(self, mock_get_env, mock_getcwd):
         mock_getcwd.return_value = sentinel.cwd
