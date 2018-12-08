@@ -112,9 +112,9 @@ docs-clean:
 	$(MAKE) -C docs clean
 
 dist: clean
-	python setup.py check -r -s
 	python setup.py sdist
 	python setup.py bdist_wheel
+	twine check dist/*
 	ls -l dist
 
 install: clean
