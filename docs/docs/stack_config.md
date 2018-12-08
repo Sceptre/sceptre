@@ -79,8 +79,8 @@ type as defined in the template.
 
 > Note that Boto3 throws an exception if parameters are supplied to a template
 > that are not required by that template. Resolvers can be used to add
-> functionality to this key. Find out more in the [Resolvers]({{ site.baseurl
-> }}/docs/resolvers.html) section.
+> functionality to this key. Find out more in the
+> [Resolvers]({{site.baseurl}}/docs/resolvers.html) section.
 
 A parameter can be specified either as a single value/resolver or a list of
 values/resolvers. Lists of values/resolvers will be formatted into an AWS
