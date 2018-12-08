@@ -88,21 +88,21 @@ from.
 Fetches the value of an output from a different Stack in the same account and
 region.
 
-If the Stack whose output is being fetched is in the same environment, the
+If the Stack whose output is being fetched is in the same StackGroup, the
 basename of that Stack can be used.
 
 Syntax:
 
 ```yaml
 parameters/sceptre_user_data:
-  <name>: !stack_output_external <full_stack_name>.yaml::<output_name>
+  <name>: !stack_output_external <full_stack_name>::<output_name> <optional-aws-profile-name>
 ```
 
 Example:
 
 ```yaml
 parameters:
-  VpcIdParameter: !stack_output_external prj-network-vpc.yaml::VpcIdOutput
+  VpcIdParameter: !stack_output_external prj-network-vpc::VpcIdOutput prod
 ```
 
 ## Custom Resolvers
@@ -175,9 +175,10 @@ from setuptools import setup
 
 setup(
     name='custom_resolver',
+    py_modules=['<custom_resolver_name>'],
     entry_points={
         'sceptre.resolvers': [
-            'custom_resolver = custom_resolver:CustomResolver',
+            '<custom_resolver_name> = <custom_resolver_name>:CustomResolver',
         ],
     }
 )
@@ -190,5 +191,5 @@ This resolver can be used in a Stack config file with the following syntax:
 ```yaml
 template_path: <...>
 parameters:
-  param1: !<your_resolver_name> <value>
+  param1: !<your_resolver_name> <value> <optional-aws-profile>
 ```
