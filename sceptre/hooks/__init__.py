@@ -2,6 +2,8 @@ import abc
 import logging
 from functools import wraps
 
+from ..resolvers import ResolvableProperty
+
 
 class Hook(object):
     """
@@ -21,6 +23,8 @@ class Hook(object):
     :type connection_manager: sceptre.connection_manager.ConnectionManager
     """
     __metaclass__ = abc.ABCMeta
+    argument = ResolvableProperty("argument")
+    config = {}
 
     def __init__(
             self, argument=None, connection_manager=None,

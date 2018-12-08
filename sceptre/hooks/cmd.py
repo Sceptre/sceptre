@@ -1,6 +1,7 @@
 import subprocess
 from sceptre.hooks import Hook
 from sceptre.exceptions import InvalidHookArgumentTypeError
+from six import string_types
 
 
 class Cmd(Hook):
@@ -18,10 +19,9 @@ class Cmd(Hook):
         :raises: sceptre.exceptions.InvalidTaskArgumentTypeException
         :raises: subprocess.CalledProcessError
         """
-        try:
-            subprocess.check_call(self.argument, shell=True)
-        except TypeError:
+        if not isinstance(self.argument, string_types):
             raise InvalidHookArgumentTypeError(
                 'The argument "{0}" is the wrong type - cmd hooks require '
                 'arguments of type string.'.format(self.argument)
             )
+        subprocess.check_call(self.argument, shell=True)
