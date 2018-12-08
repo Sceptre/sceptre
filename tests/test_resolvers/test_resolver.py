@@ -263,3 +263,20 @@ class TestResolvablePropertyDescriptor(object):
         self.mock_object._resolvable_property = complex_data_structure
         property = self.mock_object.resolvable_property
         assert property == resolved_complex_data_structure
+
+    def test_getting_nonscalar_argument(self):
+        mock_resolver = MagicMock(spec=MockResolver)
+        mock_resolver.resolve.return_value = "Resolved"
+
+        nonscalar_resolver = MockResolver()
+        nonscalar_resolver.argument = {
+            "String": "String",
+            "Resolver": mock_resolver
+        }
+
+        resolved_argument = {
+            "String": "String",
+            "Resolver": "Resolved"
+        }
+
+        assert nonscalar_resolver.argument == resolved_argument

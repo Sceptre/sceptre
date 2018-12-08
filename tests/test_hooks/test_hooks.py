@@ -2,6 +2,7 @@
 from mock import MagicMock
 
 from sceptre.hooks import Hook, add_stack_hooks, execute_hooks
+from sceptre.resolvers import Resolver
 
 
 class MockHook(Hook):
@@ -9,6 +10,11 @@ class MockHook(Hook):
         super(MockHook, self).__init__(*args, **kwargs)
 
     def run(self):
+        pass
+
+
+class MockResolver(Resolver):
+    def resolve(self):
         pass
 
 
@@ -66,3 +72,20 @@ class TestHook(object):
 
     def test_hook_inheritance(self):
         assert isinstance(self.hook, Hook)
+
+    def test_getting_nonscalar_argument(self):
+        mock_resolver = MagicMock(spec=MockResolver)
+        mock_resolver.resolve.return_value = "Resolved"
+
+        nonscalar_hook = MockHook()
+        nonscalar_hook.argument = {
+            "String": "String",
+            "Resolver": mock_resolver
+        }
+
+        resolved_argument = {
+            "String": "String",
+            "Resolver": "Resolved"
+        }
+
+        assert nonscalar_hook.argument == resolved_argument

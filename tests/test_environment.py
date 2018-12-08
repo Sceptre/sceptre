@@ -662,7 +662,8 @@ class TestEnvironment(object):
         assert sorted(response) == sorted([
             "account/environment/region/vpc",
             "account/environment/region/subnets",
-            "account/environment/region/security_groups"
+            "account/environment/region/security_groups",
+            "account/environment/region/nested_stack_output"
         ])
 
     @patch("sceptre.environment.Stack")
