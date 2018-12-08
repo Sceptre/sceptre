@@ -150,6 +150,19 @@ parameters:
 ```
 
 
+### Display resolved stack config
+
+You can use the `generate-stack-config` COMMAND to have Sceptre resolve all standard/custom resolvers and templated variables and print the final Stack configuration as YAML to stdout.
+
+This can be useful for debugging or inspection if you need to test how templating and/or resolvers changes the final Stack configuration.
+
+Note that this command will not display `parameters`, `sceptre_user_data` or `hooks` configurations since they use resolvers.
+
+```shell
+sceptre generate-stack-config path/to/environment some-stack
+```
+
+
 Environment Variables
 ---------------------
 
@@ -157,7 +170,7 @@ It is possible to replace values in stack config files with environment variable
 
 ## Sceptre User Data
 
-Python or Jinja templates can contain data which should be parameterised, but can't be parameterised using CloudFormation parameters. An example of this is if a Python template which creates an IAM Role reads in the policy from a JSON file. The file path must be hardcoded in the Python template.
+Python or Jinja templates can contain data which should be parameterized, but can't be parameterized using CloudFormation parameters. An example of this is if a Python template which creates an IAM Role reads in the policy from a JSON file. The file path must be hardcoded in the Python template.
 
 Sceptre user data allows users to store arbitrary key-value pairs in their `<stack-name>.yaml` file. This data is then passed as a Python `dict` to the `sceptre_handler(sceptre_user_data)` function in Python templates.
 
