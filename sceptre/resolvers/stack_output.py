@@ -3,7 +3,6 @@
 import abc
 import six
 import logging
-import os
 import shlex
 
 from botocore.exceptions import ClientError
@@ -109,11 +108,6 @@ class StackOutput(StackOutputBase):
         Adds dependency to a Stack.
         """
         self.dependency_stack_name, self.output_key = self.argument.split("::")
-        if "/" not in self.dependency_stack_name:
-            self.dependency_stack_name = "/".join([
-                os.path.split(self.stack.name)[0],
-                self.dependency_stack_name
-            ])
 
         self.stack.dependencies.append(self.dependency_stack_name)
 
