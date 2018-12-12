@@ -83,10 +83,13 @@ and builds that Stack before the current one.
 This resolver will add a dependency for the Stack in which needs the output
 from.
 
+With `!stack_output` you can reference any stack within a Sceptre project.
+
 ### stack_output_external
 
 Fetches the value of an output from a different Stack in the same account and
-region.
+region. You can specify a optional AWS profile to connect to a differnt
+account/region.
 
 If the Stack whose output is being fetched is in the same StackGroup, the
 basename of that Stack can be used.
