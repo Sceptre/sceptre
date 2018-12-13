@@ -32,11 +32,11 @@ class TestStackOutputResolver(object):
         mock_get_output_value.return_value = "output_value"
 
         stack_output_resolver = StackOutput(
-            "account/dev/vpc::VpcId", stack
+            "account/dev/vpc.yaml::VpcId", stack
         )
 
         stack_output_resolver.setup()
-        assert stack.dependencies == ["account/dev/vpc"]
+        assert stack.dependencies == ["account/dev/vpc.yaml"]
 
         stack.dependencies = [dependency]
         result = stack_output_resolver.resolve()
@@ -63,11 +63,11 @@ class TestStackOutputResolver(object):
         mock_get_output_value.return_value = "output_value"
 
         stack_output_resolver = StackOutput(
-            "account/dev/vpc::VpcId", stack
+            "account/dev/vpc.yaml::VpcId", stack
         )
 
         stack_output_resolver.setup()
-        assert stack.dependencies == ["existing", "account/dev/vpc"]
+        assert stack.dependencies == ["existing", "account/dev/vpc.yaml"]
 
         stack.dependencies = [MagicMock(), dependency]
         result = stack_output_resolver.resolve()
@@ -96,16 +96,48 @@ class TestStackOutputResolver(object):
 
         mock_get_output_value.return_value = "output_value"
 
-        stack_output_resolver = StackOutput("vpc::VpcId", stack)
+        stack_output_resolver = StackOutput("account/dev/vpc.yaml::VpcId", stack)
 
         stack_output_resolver.setup()
-        assert stack.dependencies == ["account/dev/vpc"]
+        assert stack.dependencies == ["account/dev/vpc.yaml"]
 
         stack.dependencies = [dependency]
         result = stack_output_resolver.resolve()
         assert result == "output_value"
         mock_get_output_value.assert_called_once_with(
             "project-code-account-dev-vpc", "VpcId",
+            profile='dependency_profile', region='dependency_region'
+        )
+
+    @patch(
+        "sceptre.resolvers.stack_output.StackOutput._get_output_value"
+    )
+    def test_resolve_with_implicit_stack_reference_top_level(
+        self, mock_get_output_value
+    ):
+        stack = MagicMock(spec=Stack)
+        stack.dependencies = []
+        stack.project_code = "project-code"
+        stack.name = "stack"
+        stack.template.connection_manager = MagicMock(spec=ConnectionManager)
+
+        dependency = MagicMock()
+        dependency.name = "vpc"
+        dependency.profile = 'dependency_profile'
+        dependency.region = 'dependency_region'
+
+        mock_get_output_value.return_value = "output_value"
+
+        stack_output_resolver = StackOutput("vpc.yaml::VpcId", stack)
+
+        stack_output_resolver.setup()
+        assert stack.dependencies == ["vpc.yaml"]
+
+        stack.dependencies = [dependency]
+        result = stack_output_resolver.resolve()
+        assert result == "output_value"
+        mock_get_output_value.assert_called_once_with(
+            "project-code-vpc", "VpcId",
             profile='dependency_profile', region='dependency_region'
         )
 
@@ -137,6 +169,7 @@ class MockStackOutputBase(StackOutputBase):
     to allow testing on StackOutputBaseResolver, which is not otherwise
     instantiable.
     """
+
     def __init__(self, *args, **kwargs):
         super(MockStackOutputBase, self).__init__(*args, **kwargs)
 
