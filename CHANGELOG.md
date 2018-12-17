@@ -2,6 +2,32 @@
 
 Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
+## 2.0.1 (2018.12.17)
+
+### Fixed
+
+- Fix `list` and `describe` cli output 
+
+- Fix circleci and Makefile config
+
+- Fix accessing `command_path` as list in templates
+
+- Fix adding implicit dependencies for `stack_output` resolver
+
+### Nonfunctional
+
+- Improve delete stack confirmation message
+
+- Improve delete change set message
+
+- Add newline in `cli.md` docs to format code block correctly
+
+- Update docs for Custom Resolver `setup.py`
+
+- Update Custom Resolver docs
+
+- Clarify docs on stack_output resolver 
+
 ## 2.0.0 (2018.11.30)
 
 ### Added

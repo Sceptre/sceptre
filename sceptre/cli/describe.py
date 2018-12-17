@@ -82,7 +82,7 @@ def describe_policy(ctx, path):
     responses = plan.get_policy()
     for response in responses.values():
         write(
-            response.get('StackPolicyBody', {}),
+            response,
             context.output_format,
             context.no_colour
         )

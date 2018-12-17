@@ -481,12 +481,12 @@ class TestStackActions(object):
             command="describe_stack_resources",
             kwargs={"StackName": sentinel.external_name}
         )
-        assert response == [
+        assert response == {self.stack.name: [
             {
                 "LogicalResourceId": sentinel.logical_resource_id,
                 "PhysicalResourceId": sentinel.physical_resource_id
             }
-        ]
+        ]}
 
     @patch("sceptre.plan.actions.StackActions._describe")
     def test_describe_outputs_sends_correct_request(self, mock_describe):
@@ -497,7 +497,7 @@ class TestStackActions(object):
         }
         response = self.actions.describe_outputs()
         mock_describe.assert_called_once_with()
-        assert response == sentinel.outputs
+        assert response == {self.stack.name: sentinel.outputs}
 
     @patch("sceptre.plan.actions.StackActions._describe")
     def test_describe_outputs_handles_stack_with_no_outputs(
@@ -507,7 +507,7 @@ class TestStackActions(object):
             "Stacks": [{}]
         }
         response = self.actions.describe_outputs()
-        assert response == []
+        assert response == {self.stack.name: []}
 
     def test_continue_update_rollback_sends_correct_request(self):
         self.actions.continue_update_rollback()
@@ -541,8 +541,11 @@ class TestStackActions(object):
             }
         )
 
-    def test_get_stack_policy_sends_correct_request(self):
-        self.actions.get_policy()
+    @patch("sceptre.plan.actions.json")
+    def test_get_stack_policy_sends_correct_request(self, mock_Json):
+        mock_Json.loads.return_value = '{}'
+        mock_Json.dumps.return_value = '{}'
+        response = self.actions.get_policy()
         self.actions.connection_manager.call.assert_called_with(
             service="cloudformation",
             command="get_stack_policy",
@@ -550,6 +553,8 @@ class TestStackActions(object):
                 "StackName": sentinel.external_name
             }
         )
+
+        assert response == {sentinel.stack_name: '{}'}
 
     def test_create_change_set_sends_correct_request(self):
         self.template._body = sentinel.template
