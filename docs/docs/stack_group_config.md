@@ -223,7 +223,7 @@ Any templated value can be supplied with a default value with the syntax:
 ## Examples
 
 ```yaml
-peofile: profile
+profile: profile
 project_code: prj
 region: eu-west-1
 template_bucket_name: sceptre-artifacts
