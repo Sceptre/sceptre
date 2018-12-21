@@ -83,26 +83,29 @@ and builds that Stack before the current one.
 This resolver will add a dependency for the Stack in which needs the output
 from.
 
+With `!stack_output` you can reference any stack within a Sceptre project.
+
 ### stack_output_external
 
 Fetches the value of an output from a different Stack in the same account and
-region.
+region. You can specify a optional AWS profile to connect to a differnt
+account/region.
 
-If the Stack whose output is being fetched is in the same environment, the
+If the Stack whose output is being fetched is in the same StackGroup, the
 basename of that Stack can be used.
 
 Syntax:
 
 ```yaml
 parameters/sceptre_user_data:
-  <name>: !stack_output_external <full_stack_name>.yaml::<output_name>
+  <name>: !stack_output_external <full_stack_name>::<output_name> <optional-aws-profile-name>
 ```
 
 Example:
 
 ```yaml
 parameters:
-  VpcIdParameter: !stack_output_external prj-network-vpc.yaml::VpcIdOutput
+  VpcIdParameter: !stack_output_external prj-network-vpc::VpcIdOutput prod
 ```
 
 ## Custom Resolvers
@@ -152,13 +155,12 @@ class CustomResolver(Resolver):
         intended by this resolver. It should return a string to become the
         final value.
 
-        self.argument is available from the base class and contains the
-        argument defined in the sceptre config file (see below)
+        The following parameters are available to Resolvers:
 
-        The following attributes may be available from the base class:
-        self.stack_config  (A dict of data from <stack_name>.yaml)
-        self.stack.stack_group_config  (A dict of data from config.yaml)
-        self.connection_manager (A connection_manager)
+        :param argument: The argument of the resolver.
+        :type argument: str
+        :param stack: The associated stack of the resolver.
+        :type stack: sceptre.stack.Stack
         """
         return self.argument
 ```
@@ -175,9 +177,10 @@ from setuptools import setup
 
 setup(
     name='custom_resolver',
+    py_modules=['<custom_resolver_name>'],
     entry_points={
         'sceptre.resolvers': [
-            'custom_resolver = custom_resolver:CustomResolver',
+            '<custom_resolver_name> = <custom_resolver_name>:CustomResolver',
         ],
     }
 )
@@ -190,5 +193,5 @@ This resolver can be used in a Stack config file with the following syntax:
 ```yaml
 template_path: <...>
 parameters:
-  param1: !<your_resolver_name> <value>
+  param1: !<your_resolver_name> <value> <optional-aws-profile>
 ```

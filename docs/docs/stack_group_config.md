@@ -108,7 +108,7 @@ and would only be applied to builds in the `dev` StackGroup.
 
 Sceptre supports the use of templating in config files. Templating allows
 config files to be further configured using values from the command line,
-environment variables, files or parts of the environment path.
+environment variables, files or parts of the `command_path`.
 
 Internally, Sceptre uses Jinja2 for templating, so any valid Jinja2 syntax
 should work with Sceptre templating.
@@ -196,16 +196,16 @@ region: eu-west-1
 
 Where `PROFILE` is the name of an environment variable.
 
-### Environment Path
+### Command Path
 
-Config item values can be replaced with parts of the environment path:
+Config item values can be replaced with parts of the `command_path`:
 
 ```yaml
-region: {% raw %}{{ environment_path.0 }}{% endraw %}
+region: {% raw %}{{ command_path.0 }}{% endraw %}
 profile: default
 ```
 
-Where the value is taken from the first part of the environment path from the
+Where the value is taken from the first part of the `command_path` from the
 invoking sceptre command:
 
 ```shell
@@ -234,7 +234,7 @@ template_key_prefix: my/prefix
 {% raw %}
 profile: {{ var.profile }}
 project_code: {{ var.project_code | default("prj") }}
-region: {{ environment_path.2 }}
+region: {{ command_path.2 }}
 template_bucket_name: {{ environment_variable.TEMPLATE_BUCKET_NAME }}
 {% endraw %}
 ```
