@@ -277,7 +277,7 @@ Examples
        param_4:
            {{ var.value4 }}
        param_5:
-           {{ environment_path.3 }}
+           {{ command_path.3 }}
        param_6:
            {{ environment_variable.VALUE_6 }}
    sceptre_user_data:

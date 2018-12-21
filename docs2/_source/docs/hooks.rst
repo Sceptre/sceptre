@@ -12,13 +12,11 @@ If required, users can create their own ``hooks``, as described in the section
 Hook points
 -----------
 
-``before_create`` or ``after_create`` - run hook before or after stack
-creation.
+``before_create`` or ``after_create`` - run hook before or after Stack creation.
 
-``before_update`` or ``after_update`` - run hook before or after stack update.
+``before_update`` or ``after_update`` - run hook before or after Stack update.
 
-``before_delete`` or ``after_delete`` - run hook before or after stack
-deletion.
+``before_delete`` or ``after_delete`` - run hook before or after Stack deletion.
 
 Syntax:
 
@@ -136,28 +134,42 @@ custom_hook.py
 
 .. code-block:: python
 
-   from sceptre.hooks import Hook
+    from sceptre.hooks import Hook
 
+    class CustomHook(Hook):
+        """
+        The following instance attributes are inherited from the parent class Hook.
 
-   class CustomHook(Hook):
+        Parameters
+        ----------
+        argument: str
+            The argument is available from the base class and contains the
+            argument defined in the Sceptre config file (see below)
+        stack_config: dict
+             A dict of data from <stack_name>.yaml
+        stack.stack_group_config: dict
+            A dict of data from config.yaml
+        connection_manager: sceptre.connection_manager.ConnectionManager
+            Boto3 Connection Manager - can be used to call boto3 api.
 
-       def __init__(self, *args, **kwargs):
-           super(CustomHook, self).__init__(*args, **kwargs)
+        """
+        def __init__(self, *args, **kwargs):
+            super(CustomHook, self).__init__(*args, **kwargs)
 
-       def run(self):
-           """
-           run is the method called by Sceptre. It should carry out the work
-           intended by this hook.
+        def run(self):
+            """
+            run is the method called by Sceptre. It should carry out the work
+            intended by this hook.
 
-           self.argument is available from the base class and contains the
-           argument defined in the Sceptre config file (see below)
+            To use instance attribute self.<attribute_name>.
 
-           The following attributes may be available from the base class:
-           self.stack_config  (A dict of data from <stack_name>.yaml)
-           self.stack.stack_group_config  (A dict of data from config.yaml)
-           self.connection_manager (A connection_manager)
-           """
-           print(self.argument)
+            Examples
+            --------
+            self.argument
+            self.stack_config
+
+            """
+            print(self.argument)
 
 setup.py
 ^^^^^^^^
@@ -170,14 +182,14 @@ setup.py
        name='custom_hook',
        entry_points={
            'sceptre.hooks': [
-               'custom_hook = custom_hook:CustomHook',
+               '<custom_hook_name> = <custom_hook_name>:CustomHook',
            ],
        }
    )
 
 Then install using ``python setup.py install`` or ``pip install .`` commands.
 
-This hook can be used in a stack config file with the following syntax:
+This hook can be used in a Stack config file with the following syntax:
 
 .. code-block:: yaml
 

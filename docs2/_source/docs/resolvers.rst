@@ -87,9 +87,10 @@ stack_output_external
 ~~~~~~~~~~~~~~~~~~~~~
 
 Fetches the value of an output from a different Stack in the same account and
-region.
+region. You can specify a optional AWS profile to connect to a different
+account/region.
 
-If the Stack whose output is being fetched is in the same environment, the
+If the Stack whose output is being fetched is in the same StackGroup, the
 basename of that Stack can be used.
 
 Syntax:
@@ -97,14 +98,14 @@ Syntax:
 .. code-block:: yaml
 
    parameters/sceptre_user_data:
-     <name>: !stack_output_external <full_stack_name>.yaml::<output_name>
+     <name>: !stack_output_external <full_stack_name>::<output_name> <optional-aws-profile-name>
 
 Example:
 
 .. code-block:: yaml
 
    parameters:
-     VpcIdParameter: !stack_output_external prj-network-vpc.yaml::VpcIdOutput
+     VpcIdParameter: !stack_output_external prj-network-vpc::VpcIdOutput prod
 
 Custom Resolvers
 ----------------
@@ -144,28 +145,44 @@ custom_resolver.py
 
 .. code-block:: python
 
-   from sceptre.resolvers import Resolver
+        from sceptre.resolvers import Resolver
 
-   class CustomResolver(Resolver):
 
-       def __init__(self, *args, **kwargs):
-           super(CustomResolver, self).__init__(*args, **kwargs)
+        class CustomResolver(Resolver):
+            """
+            The following instance attributes are inherited from the parent class Resolver.
 
-       def resolve(self):
-           """
-           resolve is the method called by Sceptre. It should carry out the work
-           intended by this resolver. It should return a string to become the
-           final value.
+            Parameters
+            ----------
+            argument: str
+                The argument of the resolver.
+            stack: sceptre.stack.Stack
+                The associated stack of the resolver.
 
-           self.argument is available from the base class and contains the
-           argument defined in the sceptre config file (see below)
+            """
 
-           The following attributes may be available from the base class:
-           self.stack_config  (A dict of data from <stack_name>.yaml)
-           self.stack.stack_group_config  (A dict of data from config.yaml)
-           self.connection_manager (A connection_manager)
-           """
-           return self.argument
+            def __init__(self, *args, **kwargs):
+                super(CustomResolver, self).__init__(*args, **kwargs)
+
+            def resolve(self):
+                """
+                resolve is the method called by Sceptre. It should carry out the work
+                intended by this resolver. It should return a string to become the
+                final value.
+
+                To use instance attribute self.<attribute_name>.
+
+                Examples
+                --------
+                self.argument
+                self.stack
+
+                Returns
+                -------
+                str
+                    Resolved value
+                """
+                return self.argument
 
 The resolver name is the lower snake-case version of the class name. The
 argument of the resolver (``<value>``) will be available inside the resolver as
@@ -183,7 +200,7 @@ setup.py
        name='custom_resolver',
        entry_points={
            'sceptre.resolvers': [
-               'custom_resolver = custom_resolver:CustomResolver',
+               '<custom_resolver_name> = <custom_resolver_name>:CustomResolver',
            ],
        }
    )
@@ -196,6 +213,6 @@ This resolver can be used in a Stack config file with the following syntax:
 
    template_path: <...>
    parameters:
-     param1: !<your_resolver_name> <value>
+     param1: !<your_resolver_name> <value> <optional-aws-profile>
 
 .. _Custom Resolvers: #custom-resolvers

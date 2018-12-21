@@ -43,25 +43,24 @@ Config file, Sceptre passes an empty ``dict``.
 Example
 ~~~~~~~
 
+This example is using `troposphere`_
+to generate CloudFormation Template as a `json` string.
+
 .. code-block:: python
 
-   from troposphere import Template, Parameter, Ref
-   from troposphere.ec2 import VPC
+    from troposphere import Template
+    from troposphere.ec2 import VPC
 
+    def vpc(sceptre_user_data):
+        """AWS VPC CloudFormationTemplate"""
+        template = Template()
+        template.add_resource(VPC(
+                "VirtualPrivateCloud",
+                CidrBlock=sceptre_user_data["cidr_block"]
+            ))
+        return template.to_yaml()
 
-   class Vpc(object):
-       def __init__(self, sceptre_user_data):
-           self.template = Template()
-           self.sceptre_user_data = sceptre_user_data
-           self.add_vpc()
+    def sceptre_handler(sceptre_user_data):
+        return vpc(sceptre_user_data)
 
-       def add_vpc(self):
-           self.vpc = self.template.add_resource(VPC(
-               "VirtualPrivateCloud",
-               CidrBlock=self.sceptre_user_data["cidr_block"]
-           ))
-
-
-   def sceptre_handler(sceptre_user_data):
-       vpc = Vpc(sceptre_user_data)
-       return vpc.template.to_json()
+.. _troposphere: https://github.com/cloudtools/troposphere/

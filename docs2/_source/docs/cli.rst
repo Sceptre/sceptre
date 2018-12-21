@@ -5,6 +5,16 @@ Sceptre can be used as a command line tool.
 Running Sceptre without a sub-command will display help, showing a list of the
 available commands.
 
+Running Sceptre without a subcommand will display help, showing a list of the
+available commands.
+
+Autocomplete
+------------
+
+If you are using Bash you can enable autocomplete by entering the following
+command ``eval "$(_SCEPTRE_COMPLETE=source sceptre)"``. Autocomplete will work
+for subcommands and parameters.
+
 Export Stack Outputs to Environment Variables
 ---------------------------------------------
 
