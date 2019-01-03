@@ -856,7 +856,6 @@ class Stack(object):
         ]
         for event in new_events:
             self.logger.info(" ".join([
-                event["Timestamp"].replace(microsecond=0).isoformat(),
                 self.name,
                 event["LogicalResourceId"],
                 event["ResourceType"],
