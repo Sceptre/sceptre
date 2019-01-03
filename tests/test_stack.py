@@ -388,6 +388,41 @@ environment_config={'key': 'val'}, connection_manager=connection_manager)"
         )
         mock_wait_for_completion.assert_called_once_with()
 
+    @patch("sceptre.stack.Stack._format_parameters")
+    @patch("sceptre.stack.Stack._wait_for_completion")
+    @patch("sceptre.stack.Stack._get_template_details")
+    def test_update_raises_no_updates_to_perform_client_error(
+        self, mock_get_template_details,
+        mock_wait_for_completion, mock_format_params
+    ):
+        mock_format_params.return_value = sentinel.parameters
+        mock_get_template_details.return_value = {
+            "Template": sentinel.template
+        }
+        self.stack.environment_config = {
+            "template_bucket_name": sentinel.template_bucket_name,
+            "template_key_prefix": sentinel.template_key_prefix
+        }
+        self.stack._config = {"stack_tags": {
+            "tag1": "val1"
+        }}
+        self.stack._hooks = {}
+        self.stack.config["role_arn"] = sentinel.role_arn
+        self.stack.config["notifications"] = [sentinel.notification]
+        mock_wait_for_completion.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": "NoUpdatesToPerformError",
+                    "Message": "An error occurred (ValidationError) \
+                                when calling the UpdateStack operation: \
+                                No updates are to be performed."
+                }
+            },
+            sentinel.operation
+        )
+        status = self.stack.update()
+        assert status == StackStatus.COMPLETE
+
     @patch("sceptre.stack.Stack.hooks")
     @patch("sceptre.stack.Stack.create")
     @patch("sceptre.stack.Stack.get_status")

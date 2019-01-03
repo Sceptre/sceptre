@@ -32,6 +32,7 @@ from .exceptions import UnknownStackStatusError
 from .exceptions import UnknownStackChangeSetStatusError
 from .exceptions import StackDoesNotExistError
 from .exceptions import ProtectedStackError
+from .exceptions import NoUpdatesToPerformError
 
 
 class Stack(object):
@@ -222,7 +223,8 @@ class Stack(object):
     @add_stack_hooks
     def update(self):
         """
-        Updates the stack.
+        Updates the stack. If there are no updates to be
+        performed, update exits gracefully.
 
         :returns: The stack's status.
         :rtype: sceptre.stack_status.StackStatus
@@ -241,16 +243,28 @@ class Stack(object):
         }
         update_stack_kwargs.update(self._get_template_details())
         update_stack_kwargs.update(self._get_role_arn())
-        response = self.connection_manager.call(
-            service="cloudformation",
-            command="update_stack",
-            kwargs=update_stack_kwargs
-        )
-        self.logger.debug(
-            "%s - Update stack response: %s", self.name, response
-        )
 
-        status = self._wait_for_completion()
+        try:
+            response = self.connection_manager.call(
+                service="cloudformation",
+                command="update_stack",
+                kwargs=update_stack_kwargs
+            )
+            self.logger.debug(
+                "%s - Update stack response: %s", self.name, response
+            )
+            status = self._wait_for_completion()
+        except NoUpdatesToPerformError:
+            status = StackStatus.COMPLETE
+        except botocore.exceptions.ClientError as exp:
+            if "No updates are to be performed." \
+                    in exp.response["Error"]["Message"]:
+                self.logger.info(
+                    "%s - No updates to perform.", self.name
+                )
+                status = StackStatus.COMPLETE
+            else:
+                raise
 
         return status
 
@@ -640,12 +654,16 @@ class Stack(object):
 
         :returns: The stack's status.
         :rtype: sceptre.stack_status.StackStatus
-        :raises: sceptre.exceptions.StackDoesNotExistError
+        :raises: sceptre.exceptions.StackDoesNotExistError,
+                 sceptre.exceptions.NoUpdatesToPerformError
         """
         try:
             status = self.describe()["Stacks"][0]["StackStatus"]
         except botocore.exceptions.ClientError as exp:
             if exp.response["Error"]["Message"].endswith("does not exist"):
+                raise StackDoesNotExistError(exp.response["Error"]["Message"])
+            elif exp.response["Error"]["Message"] \
+                    .endswith("No updates to perform."):
                 raise StackDoesNotExistError(exp.response["Error"]["Message"])
             else:
                 raise exp

@@ -149,6 +149,13 @@ class StackDoesNotExistError(SceptreException):
     pass
 
 
+class NoUpdatesToPerformError(SceptreException):
+    """
+    Error raised when there are no stack updates to perform.
+    """
+    pass
+
+
 class StackConfigurationDoesNotExistError(SceptreException):
     """
     Error raised when a stack configuration does not exist.
