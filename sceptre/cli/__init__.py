@@ -35,7 +35,7 @@ from sceptre.cli.helpers import setup_logging, catch_exceptions
 @click.option("--debug", is_flag=True, help="Turn on debug logging.")
 @click.option("--dir", "directory", help="Specify sceptre directory.")
 @click.option(
-    "--output", type=click.Choice(["yaml", "json"]), default="yaml",
+    "--output", type=click.Choice(["text", "yaml", "json"]), default="text",
     help="The formatting style for command output.")
 @click.option("--no-colour", is_flag=True, help="Turn off output colouring.")
 @click.option(
