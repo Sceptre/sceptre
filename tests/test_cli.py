@@ -134,7 +134,7 @@ class TestCli(object):
         self.mock_stack_actions.validate.assert_called_with()
 
         assert result.output == "Template mock-stack is valid. Template details:\n\n" \
-            "Parameters: Example\n\n"
+            "{'Parameters': 'Example'}\n"
 
     def test_validate_template_with_invalid_template(self):
         client_error = ClientError(
@@ -220,7 +220,7 @@ class TestCli(object):
             cli, ["describe", "policy", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert result.output == "dev/vpc:\n  Statement:\n  - Body\n\n"
+        assert result.output == "{'dev/vpc': {'Statement': ['Body']}}\n"
 
     def test_list_group_resources(self):
         response = {
@@ -669,8 +669,8 @@ class TestCli(object):
         "output_format,no_colour,expected_output", [
             ("json", True, '{\n    "stack": "CREATE_COMPLETE"\n}'),
             ("json", False, '{\n    "stack": "\x1b[32mCREATE_COMPLETE\x1b[0m\"\n}'),
-            ("yaml", True, "stack: CREATE_COMPLETE\n"),
-            ("yaml", False, "stack: \x1b[32mCREATE_COMPLETE\x1b[0m\n")
+            ("yaml", True, {'stack': 'CREATE_COMPLETE'}),
+            ("yaml", False, '{\'stack\': \'\x1b[32mCREATE_COMPLETE\x1b[0m\'}')
         ]
     )
     def test_write_formats(
