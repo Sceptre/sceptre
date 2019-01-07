@@ -99,7 +99,9 @@ class TestStackActions(object):
                     "ParameterKey": "key1",
                     "ParameterValue": "val1"
                 }],
-                "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                "Capabilities": ['CAPABILITY_IAM',
+                                 'CAPABILITY_NAMED_IAM',
+                                 'CAPABILITY_AUTO_EXPAND'],
                 "RoleARN": sentinel.role_arn,
                 "NotificationARNs": [sentinel.notification],
                 "Tags": [
@@ -132,7 +134,9 @@ class TestStackActions(object):
                     "ParameterKey": "key1",
                     "ParameterValue": "val1"
                 }],
-                "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                "Capabilities": ['CAPABILITY_IAM',
+                                 'CAPABILITY_NAMED_IAM',
+                                 'CAPABILITY_AUTO_EXPAND'],
                 "RoleARN": sentinel.role_arn,
                 "NotificationARNs": [],
                 "Tags": [
@@ -164,7 +168,9 @@ class TestStackActions(object):
                     "ParameterKey": "key1",
                     "ParameterValue": "val1"
                 }],
-                "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                "Capabilities": ['CAPABILITY_IAM',
+                                 'CAPABILITY_NAMED_IAM',
+                                 'CAPABILITY_AUTO_EXPAND'],
                 "RoleARN": sentinel.role_arn,
                 "NotificationARNs": [sentinel.notification],
                 "Tags": [
@@ -192,7 +198,9 @@ class TestStackActions(object):
                     "ParameterKey": "key1",
                     "ParameterValue": "val1"
                 }],
-                "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                "Capabilities": ['CAPABILITY_IAM',
+                                 'CAPABILITY_NAMED_IAM',
+                                 'CAPABILITY_AUTO_EXPAND'],
                 "RoleARN": sentinel.role_arn,
                 "NotificationARNs": [sentinel.notification],
                 "Tags": [
@@ -224,7 +232,9 @@ class TestStackActions(object):
                         "ParameterKey": "key1",
                         "ParameterValue": "val1"
                     }],
-                    "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                    "Capabilities": ['CAPABILITY_IAM',
+                                     'CAPABILITY_NAMED_IAM',
+                                     'CAPABILITY_AUTO_EXPAND'],
                     "RoleARN": sentinel.role_arn,
                     "NotificationARNs": [sentinel.notification],
                     "Tags": [
@@ -262,7 +272,9 @@ class TestStackActions(object):
                     "ParameterKey": "key1",
                     "ParameterValue": "val1"
                 }],
-                "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                "Capabilities": ['CAPABILITY_IAM',
+                                 'CAPABILITY_NAMED_IAM',
+                                 'CAPABILITY_AUTO_EXPAND'],
                 "RoleARN": sentinel.role_arn,
                 "NotificationARNs": [],
                 "Tags": [
@@ -570,7 +582,9 @@ class TestStackActions(object):
                     "ParameterKey": "key1",
                     "ParameterValue": "val1"
                 }],
-                "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                "Capabilities": ['CAPABILITY_IAM',
+                                 'CAPABILITY_NAMED_IAM',
+                                 'CAPABILITY_AUTO_EXPAND'],
                 "ChangeSetName": sentinel.change_set_name,
                 "RoleARN": sentinel.role_arn,
                 "NotificationARNs": [sentinel.notification],
@@ -598,7 +612,9 @@ class TestStackActions(object):
                     "ParameterKey": "key1",
                     "ParameterValue": "val1"
                 }],
-                "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                "Capabilities": ['CAPABILITY_IAM',
+                                 'CAPABILITY_NAMED_IAM',
+                                 'CAPABILITY_AUTO_EXPAND'],
                 "ChangeSetName": sentinel.change_set_name,
                 "RoleARN": sentinel.role_arn,
                 "NotificationARNs": [],
