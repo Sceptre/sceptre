@@ -59,7 +59,7 @@ class StackActions(object):
         create_stack_kwargs = {
             "StackName": self.stack.external_name,
             "Parameters": self._format_parameters(self.stack.parameters),
-            "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+            "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'],
             "NotificationARNs": self.stack.notifications,
             "Tags": [
                 {"Key": str(k), "Value": str(v)}
@@ -111,7 +111,7 @@ class StackActions(object):
         update_stack_kwargs = {
             "StackName": self.stack.external_name,
             "Parameters": self._format_parameters(self.stack.parameters),
-            "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+            "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'],
             "NotificationARNs": self.stack.notifications,
             "Tags": [
                 {"Key": str(k), "Value": str(v)}
@@ -438,7 +438,7 @@ class StackActions(object):
         create_change_set_kwargs = {
             "StackName": self.stack.external_name,
             "Parameters": self._format_parameters(self.stack.parameters),
-            "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+            "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'],
             "ChangeSetName": change_set_name,
             "NotificationARNs": self.stack.notifications,
             "Tags": [

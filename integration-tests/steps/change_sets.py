@@ -16,7 +16,7 @@ def step_impl(context, stack_name, change_set_name, filename):
     retry_boto_call(
         context.client.create_change_set,
         StackName=full_name,
-        Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+        Capabilities=['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'],
         ChangeSetName=change_set_name,
         TemplateBody=read_template_file(context, filename)
     )
