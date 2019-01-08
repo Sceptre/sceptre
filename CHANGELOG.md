@@ -1,6 +1,31 @@
-# History
+# CHANGELOG
 
 Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
+
+## Unreleased
+
+
+## 2.0.2 (2019.01.10)
+
+### Fixed
+
+- Fix `write` method in `sceptre.cli.helpers` to better handle `yaml` and `json` output format.
+
+- Fix `sceptre generate` in CLI so that it respects `--output` flag.
+
+- Update `PyYaml` dependency version to fix `CVE-2017-18342`.
+
+- Fix `--export` option for `sceptre list outputs` for setting environment variables.
+
+### Nonfunctional
+
+- Improve `sceptre.stack.Stack.__repr__()` so that objects and lists are not contained in strings.
+
+- Remove duplicate timestamp from logging in `plan.actions`.
+
+- Fix minor documentation typo in `stack_group_config.md` stack example.
+
+- Remove redundant `status` self-assignment in `sceptre.plan.actions.launch()`
 
 ## 2.0.1 (2018.12.17)
 
