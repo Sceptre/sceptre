@@ -79,12 +79,13 @@ def list_outputs(ctx, path, export):
     ]
 
     if export == "envvar":
-        write("\n".join(
-            "export SCEPTRE_{0}={1}".format(
-                output["OutputKey"], output["OutputValue"]
-            )
-            for response in responses for output in response
-        ))
+        for response in responses:
+            for stack in response.values():
+                for output in stack:
+                    write("export SCEPTRE_{0}={1}".format(
+                                output.get("OutputKey"),
+                                output.get("OutputValue")
+                            ), 'str')
     else:
         write(responses, context.output_format)
 

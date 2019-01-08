@@ -410,7 +410,7 @@ class TestCli(object):
         assert yaml.safe_load(result.output) == [outputs]
 
     def test_list_outputs_with_export(self):
-        outputs = [{"OutputKey": "Key", "OutputValue": "Value"}]
+        outputs = {'stack': [{"OutputKey": "Key", "OutputValue": "Value"}]}
         self.mock_stack_actions.describe_outputs.return_value = outputs
         result = self.runner.invoke(
             cli, ["list", "outputs", "dev/vpc.yaml", "-e", "envvar"]
