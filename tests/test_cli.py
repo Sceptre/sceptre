@@ -244,7 +244,7 @@ class TestCli(object):
         self.mock_stack_actions.describe_resources.return_value = response
         result = self.runner.invoke(cli, ["list", "resources", "dev"])
 
-        assert yaml.load(result.output) == [response]
+        assert yaml.safe_load(result.output) == [response]
         assert result.exit_code == 0
 
     def test_list_stack_resources(self):
@@ -258,7 +258,7 @@ class TestCli(object):
         }
         self.mock_stack_actions.describe_resources.return_value = response
         result = self.runner.invoke(cli, ["list", "resources", "dev/vpc.yaml"])
-        assert yaml.load(result.output) == [response]
+        assert yaml.safe_load(result.output) == [response]
         assert result.exit_code == 0
 
     @pytest.mark.parametrize(
@@ -375,7 +375,7 @@ class TestCli(object):
         if not verbose_flag:
             del response["VerboseProperty"]
             del response["Changes"][0]["ResourceChange"]["VerboseProperty"]
-        assert yaml.load(result.output) == response
+        assert yaml.safe_load(result.output) == response
         assert result.exit_code == 0
 
     def test_list_change_sets_with_200(self):
@@ -386,7 +386,7 @@ class TestCli(object):
             cli, ["list", "change-sets", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert yaml.load(result.output) == {"ChangeSets": "Test"}
+        assert yaml.safe_load(result.output) == {"ChangeSets": "Test"}
 
     def test_list_change_sets_without_200(self):
         response = {
@@ -398,7 +398,7 @@ class TestCli(object):
             cli, ["list", "change-sets", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert yaml.load(result.output) == response
+        assert yaml.safe_load(result.output) == response
 
     def test_list_outputs(self):
         outputs = [{"OutputKey": "Key", "OutputValue": "Value"}]
@@ -407,7 +407,7 @@ class TestCli(object):
             cli, ["list", "outputs", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert yaml.load(result.output) == [outputs]
+        assert yaml.safe_load(result.output) == [outputs]
 
     def test_list_outputs_with_export(self):
         outputs = [{"OutputKey": "Key", "OutputValue": "Value"}]
@@ -416,7 +416,7 @@ class TestCli(object):
             cli, ["list", "outputs", "dev/vpc.yaml", "-e", "envvar"]
         )
         assert result.exit_code == 0
-        assert yaml.load(result.output) == "export SCEPTRE_Key=Value"
+        assert yaml.safe_load(result.output) == "export SCEPTRE_Key=Value"
 
     def test_status_with_group(self):
         self.mock_stack_actions.get_status.return_value = {
@@ -451,7 +451,7 @@ class TestCli(object):
             assert os.path.isdir(template_dir)
 
             with open(os.path.join(config_dir, "config.yaml")) as config_file:
-                config = yaml.load(config_file)
+                config = yaml.safe_load(config_file)
 
             assert config == defaults
 
@@ -477,7 +477,7 @@ class TestCli(object):
             assert os.path.isdir(template_dir)
 
             with open(os.path.join(config_dir, "config.yaml")) as config_file:
-                config = yaml.load(config_file)
+                config = yaml.safe_load(config_file)
             assert existing_config == config
 
     def test_new_project_another_exception(self):
@@ -559,7 +559,7 @@ class TestCli(object):
             if result:
                 with open(os.path.join(stack_group_dir, "config.yaml"))\
                         as config_file:
-                    config = yaml.load(config_file)
+                    config = yaml.safe_load(config_file)
                 assert config == result
             else:
                 assert cmd_result.output.endswith(
@@ -585,7 +585,7 @@ class TestCli(object):
             )
             with open(os.path.join(
                     stack_group_dir, "config.yaml")) as config_file:
-                config = yaml.load(config_file)
+                config = yaml.safe_load(config_file)
             assert config == {"project_code": "", "region": ""}
 
     def test_new_stack_group_folder_with_another_exception(self):
