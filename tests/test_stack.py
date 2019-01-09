@@ -67,15 +67,15 @@ class TestStack(object):
             "template_key_prefix='sentinel.template_key_prefix', "\
             "required_version='sentinel.required_version', "\
             "profile='sentinel.profile', " \
-            "sceptre_user_data='sentinel.sceptre_user_data', " \
-            "parameters='{'key1': 'val1'}', "\
-            "hooks='{}', s3_details='None', " \
-            "dependencies='sentinel.dependencies', "\
+            "sceptre_user_data=sentinel.sceptre_user_data, " \
+            "parameters={'key1': 'val1'}, "\
+            "hooks={}, s3_details='None', " \
+            "dependencies=sentinel.dependencies, "\
             "role_arn='sentinel.role_arn', " \
-            "protected='False', tags='{'tag1': 'val1'}', " \
+            "protected='False', tags={'tag1': 'val1'}, " \
             "external_name='sentinel.external_name', " \
-            "notifications='[sentinel.notification]', " \
+            "notifications=[sentinel.notification], " \
             "on_failure='sentinel.on_failure', " \
             "stack_timeout='sentinel.stack_timeout', " \
-            "stack_group_config='{}'" \
+            "stack_group_config={}" \
             ")"

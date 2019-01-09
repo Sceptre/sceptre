@@ -151,15 +151,15 @@ class Stack(object):
             "template_key_prefix='{template_key_prefix}', "
             "required_version='{required_version}', "
             "profile='{profile}', "
-            "sceptre_user_data='{sceptre_user_data}', "
-            "parameters='{parameters}', "
-            "hooks='{hooks}', s3_details='{s3_details}', "
-            "dependencies='{dependencies}', role_arn='{role_arn}', "
-            "protected='{protected}', tags='{tags}', "
+            "sceptre_user_data={sceptre_user_data}, "
+            "parameters={parameters}, "
+            "hooks={hooks}, s3_details='{s3_details}', "
+            "dependencies={dependencies}, role_arn='{role_arn}', "
+            "protected='{protected}', tags={tags}, "
             "external_name='{external_name}', "
-            "notifications='{notifications}', on_failure='{on_failure}', "
+            "notifications={notifications}, on_failure='{on_failure}', "
             "stack_timeout='{stack_timeout}', "
-            "stack_group_config='{stack_group_config}'"
+            "stack_group_config={stack_group_config}"
             ")".format(
                 name=self.name,
                 project_code=self.project_code,
