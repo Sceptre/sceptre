@@ -43,7 +43,7 @@ def list_resources(ctx, path):
         in plan.describe_resources().values() if response
     ]
 
-    write(list(responses), context.output_format)
+    write(responses, context.output_format)
 
 
 @list_group.command(name="outputs")
@@ -68,7 +68,7 @@ def list_outputs(ctx, path, export):
         project_path=ctx.obj.get("project_path", None),
         user_variables=ctx.obj.get("user_variables", {}),
         options=ctx.obj.get("options", {}),
-        output_format=ctx.obj.get("output_format", {}),
+        output_format=ctx.obj.get("output_format"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies")
     )
 
@@ -86,7 +86,7 @@ def list_outputs(ctx, path, export):
             for response in responses for output in response
         ))
     else:
-        write(list(responses), context.output_format)
+        write(responses, context.output_format)
 
 
 @list_group.command(name="change-sets")
