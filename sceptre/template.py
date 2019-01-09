@@ -7,11 +7,11 @@ This module implements a Template class, which stores a CloudFormation template
 and implements methods for uploading it to S3.
 """
 
-import imp
 import logging
 import os
 import sys
 import threading
+from importlib.machinery import SourceFileLoader
 
 import botocore
 import jinja2
@@ -123,7 +123,7 @@ class Template(object):
         if not os.path.isfile(self.path):
             raise IOError("No such file or directory: '%s'", self.path)
 
-        module = imp.load_source(self.name, self.path)
+        module = SourceFileLoader(self.name, self.path).load_module()
 
         try:
             body = module.sceptre_handler(self.sceptre_user_data)
