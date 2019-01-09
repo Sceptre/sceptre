@@ -145,21 +145,27 @@ class Stack(object):
     def __repr__(self):
         return (
             "sceptre.stack.Stack("
-            "name='{name}', project_code='{project_code}', "
-            "template_path='{template_path}', region='{region}', "
-            "template_bucket_name='{template_bucket_name}', "
-            "template_key_prefix='{template_key_prefix}', "
-            "required_version='{required_version}', "
-            "profile='{profile}', "
-            "sceptre_user_data='{sceptre_user_data}', "
-            "parameters='{parameters}', "
-            "hooks='{hooks}', s3_details='{s3_details}', "
-            "dependencies='{dependencies}', role_arn='{role_arn}', "
-            "protected='{protected}', tags='{tags}', "
-            "external_name='{external_name}', "
-            "notifications='{notifications}', on_failure='{on_failure}', "
-            "stack_timeout='{stack_timeout}', "
-            "stack_group_config='{stack_group_config}'"
+            "name={name}, "
+            "project_code={project_code}, "
+            "template_path={template_path}, "
+            "region={region}, "
+            "template_bucket_name={template_bucket_name}, "
+            "template_key_prefix={template_key_prefix}, "
+            "required_version={required_version}, "
+            "profile={profile}, "
+            "sceptre_user_data={sceptre_user_data}, "
+            "parameters={parameters}, "
+            "hooks={hooks}, "
+            "s3_details={s3_details}, "
+            "dependencies={dependencies}, "
+            "role_arn={role_arn}, "
+            "protected={protected}, "
+            "tags={tags}, "
+            "external_name={external_name}, "
+            "notifications={notifications}, "
+            "on_failure={on_failure}, "
+            "stack_timeout={stack_timeout}, "
+            "stack_group_config={stack_group_config}"
             ")".format(
                 name=self.name,
                 project_code=self.project_code,
@@ -187,6 +193,34 @@ class Stack(object):
 
     def __str__(self):
         return self.name
+
+    def __eq__(self, stack):
+        return (
+            self.name == stack.name and
+            self.project_code == stack.project_code and
+            self.template_path == stack.template_path and
+            self.region == stack.region and
+            self.template_bucket_name == stack.template_bucket_name and
+            self.template_key_prefix == stack.template_key_prefix and
+            self.required_version == stack.required_version and
+            self.profile == stack.profile and
+            self.sceptre_user_data == stack.sceptre_user_data and
+            self.parameters == stack.parameters and
+            self.hooks == stack.hooks and
+            self.s3_details == stack.s3_details and
+            self.dependencies == stack.dependencies and
+            self.role_arn == stack.role_arn and
+            self.protected == stack.protected and
+            self.tags == stack.tags and
+            self.external_name == stack.external_name and
+            self.notifications == stack.notifications and
+            self.on_failure == stack.on_failure and
+            self.stack_timeout == stack.stack_timeout and
+            self.stack_group_config == stack.stack_group_config
+        )
+
+    def __hash__(self):
+        return hash(str(self))
 
     @property
     def template(self):

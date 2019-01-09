@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import importlib
 from mock import sentinel, MagicMock
 
 from sceptre.stack import Stack
@@ -59,23 +60,38 @@ class TestStack(object):
     def test_repr(self):
         assert self.stack.__repr__() == \
             "sceptre.stack.Stack(" \
-            "name='sentinel.stack_name', " \
-            "project_code='sentinel.project_code', " \
-            "template_path='sentinel.template_path', " \
-            "region='sentinel.region', " \
-            "template_bucket_name='sentinel.template_bucket_name', "\
-            "template_key_prefix='sentinel.template_key_prefix', "\
-            "required_version='sentinel.required_version', "\
-            "profile='sentinel.profile', " \
-            "sceptre_user_data='sentinel.sceptre_user_data', " \
-            "parameters='{'key1': 'val1'}', "\
-            "hooks='{}', s3_details='None', " \
-            "dependencies='sentinel.dependencies', "\
-            "role_arn='sentinel.role_arn', " \
-            "protected='False', tags='{'tag1': 'val1'}', " \
-            "external_name='sentinel.external_name', " \
-            "notifications='[sentinel.notification]', " \
-            "on_failure='sentinel.on_failure', " \
-            "stack_timeout='sentinel.stack_timeout', " \
-            "stack_group_config='{}'" \
+            "name=sentinel.stack_name, " \
+            "project_code=sentinel.project_code, " \
+            "template_path=sentinel.template_path, " \
+            "region=sentinel.region, " \
+            "template_bucket_name=sentinel.template_bucket_name, "\
+            "template_key_prefix=sentinel.template_key_prefix, "\
+            "required_version=sentinel.required_version, "\
+            "profile=sentinel.profile, " \
+            "sceptre_user_data=sentinel.sceptre_user_data, " \
+            "parameters={'key1': 'val1'}, "\
+            "hooks={}, "\
+            "s3_details=None, " \
+            "dependencies=sentinel.dependencies, "\
+            "role_arn=sentinel.role_arn, "\
+            "protected=False, "\
+            "tags={'tag1': 'val1'}, "\
+            "external_name=sentinel.external_name, " \
+            "notifications=[sentinel.notification], " \
+            "on_failure=sentinel.on_failure, " \
+            "stack_timeout=sentinel.stack_timeout, " \
+            "stack_group_config={}" \
             ")"
+
+    def test_repr_can_eval_correctly(self):
+        sceptre = importlib.import_module('sceptre')
+        mock = importlib.import_module('mock')
+        evaluated_stack = eval(
+                repr(self.stack),
+                {
+                    'sceptre': sceptre,
+                    'sentinel': mock.mock.sentinel
+                }
+            )
+        assert isinstance(evaluated_stack, Stack)
+        assert evaluated_stack.__eq__(self.stack)
