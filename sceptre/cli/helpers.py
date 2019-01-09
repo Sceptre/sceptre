@@ -70,18 +70,19 @@ def write(var, output_format="text", no_colour=True):
     :param no_colour: Whether to colour stack statuses
     :type no_colour: bool
     """
-    stream = var
+    output = var
+
     if output_format == "json":
-        stream = _generate_json(stream)
+        output = _generate_json(var)
     if output_format == "yaml":
-        stream = _generate_yaml(stream)
+        output = _generate_yaml(var)
     if output_format == "text":
-        stream = var
+        output = var
     if not no_colour:
         stack_status_colourer = StackStatusColourer()
-        stream = stack_status_colourer.colour(str(stream))
+        output = stack_status_colourer.colour(str(output))
 
-    click.echo(stream)
+    click.echo(output)
 
 
 def _generate_json(stream):
@@ -110,16 +111,20 @@ def _generate_yaml(stream):
         for item in stream:
             try:
                 if isinstance(item, dict):
-                    items.append(yaml.dump(item, default_flow_style=False, explicit_start=True))
+                    items.append(
+                            yaml.dump(item, default_flow_style=False, explicit_start=True)
+                    )
                 else:
                     items.append(
                             yaml.dump(
-                                json.loads(item), default_flow_style=False, explicit_start=True
-                                )
-                            )
+                                yaml.load(item), default_flow_style=False, explicit_start=True)
+                    )
             except Exception:
                 print("An error occured whilst writing the YAML object.")
-        return items
+        return yaml.dump(
+                    [yaml.load(item) for item in items],
+                    default_flow_style=False, explicit_start=True
+                )
     else:
         try:
             return yaml.safe_loads(stream)
