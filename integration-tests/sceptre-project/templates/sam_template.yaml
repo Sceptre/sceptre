@@ -1,6 +1,9 @@
 Transform: 'AWS::Serverless-2016-10-31'
 
 Resources:
-    WaitConditionHandle:
-      Type: "AWS::CloudFormation::WaitConditionHandle"
-      Properties:
+  TestFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: index.handler
+      Runtime: python3.6
+      InlineCode: "print('Hello World!')"
