@@ -187,7 +187,7 @@ class TestTemplate(object):
             "tests/fixtures/templates/vpc.yaml"
         )
         output = self.template.body
-        output_dict = yaml.load(output)
+        output_dict = yaml.safe_load(output)
         with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
             expected_output_dict = json.loads(f.read())
         assert output_dict == expected_output_dict

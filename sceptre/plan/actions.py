@@ -198,7 +198,6 @@ class StackActions(object):
                     status = StackStatus.COMPLETE
                 else:
                     raise
-            status = status
         elif existing_status.endswith("IN_PROGRESS"):
             self.logger.info(
                 "%s - Stack action is already in progress state and cannot "
@@ -777,7 +776,6 @@ class StackActions(object):
         ]
         for event in new_events:
             self.logger.info(" ".join([
-                event["Timestamp"].replace(microsecond=0).isoformat(),
                 self.stack.name,
                 event["LogicalResourceId"],
                 event["ResourceType"],

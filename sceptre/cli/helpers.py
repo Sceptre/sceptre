@@ -1,8 +1,8 @@
 import logging
 import sys
 from functools import wraps
-from json import JSONEncoder
 
+import json
 import click
 import yaml
 
@@ -57,7 +57,7 @@ def confirmation(
         click.confirm(msg, abort=True)
 
 
-def write(var, output_format="str", no_colour=True):
+def write(var, output_format="text", no_colour=True):
     """
     Writes ``var`` to stdout. If output_format is set to "json" or "yaml",
     write ``var`` as a JSON or YAML string.
@@ -65,25 +65,71 @@ def write(var, output_format="str", no_colour=True):
     :param var: The object to print
     :type var: obj
     :param output_format: The format to print the output as. Allowed values: \
-    "str", "json", "yaml"
+    "text", "json", "yaml"
     :type output_format: str
     :param no_colour: Whether to colour stack statuses
     :type no_colour: bool
     """
-    stream = var
+    output = var
 
     if output_format == "json":
-        encoder = CustomJsonEncoder(indent=4)
-        stream = encoder.encode(var)
+        output = _generate_json(var)
     if output_format == "yaml":
-        stream = yaml.safe_dump(var, default_flow_style=False)
-    if output_format == "str":
-        stream = var
+        output = _generate_yaml(var)
+    if output_format == "text":
+        output = var
     if not no_colour:
         stack_status_colourer = StackStatusColourer()
-        stream = stack_status_colourer.colour(stream)
+        output = stack_status_colourer.colour(str(output))
 
-    click.echo(stream)
+    click.echo(output)
+
+
+def _generate_json(stream):
+    encoder = CustomJsonEncoder(indent=4)
+    if isinstance(stream, list):
+        items = []
+        for item in stream:
+            try:
+                if isinstance(item, dict):
+                    items.append(item)
+                else:
+                    items.append(json.loads(item))
+            except Exception:
+                print("An error occured writing the JSON object.")
+        return encoder.encode(items)
+    else:
+        try:
+            return encoder.encode(json.loads(stream))
+        except Exception:
+            return encoder.encode(stream)
+
+
+def _generate_yaml(stream):
+    if isinstance(stream, list):
+        items = []
+        for item in stream:
+            try:
+                if isinstance(item, dict):
+                    items.append(
+                            yaml.dump(item, default_flow_style=False, explicit_start=True)
+                    )
+                else:
+                    items.append(
+                            yaml.dump(
+                                yaml.load(item), default_flow_style=False, explicit_start=True)
+                    )
+            except Exception:
+                print("An error occured whilst writing the YAML object.")
+        return yaml.dump(
+                    [yaml.load(item) for item in items],
+                    default_flow_style=False, explicit_start=True
+                )
+    else:
+        try:
+            return yaml.safe_loads(stream)
+        except Exception:
+            return stream
 
 
 def stack_status_exit_code(statuses):
@@ -206,7 +252,7 @@ class ColouredFormatter(logging.Formatter):
         return coloured_response
 
 
-class CustomJsonEncoder(JSONEncoder):
+class CustomJsonEncoder(json.JSONEncoder):
     """
     CustomJsonEncoder is a JSONEncoder which encodes all items as JSON by
     calling their __str__() method.

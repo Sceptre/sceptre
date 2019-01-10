@@ -32,6 +32,10 @@
 
 - Sean Rankine [@theseanything](https://github.com/theseanything)
 
+- Stig Brautaset [@stig](https://github.com/stig)
+
 - Matthew Taylor [@matalo33](https://github.com/matalo33)
+
+- Michael Sverdlik [@m1keil](https://github.com/m1keil)
 
 - Olivier Van Goethem [@oliviervg1](https://github.com/oliviervg1)
