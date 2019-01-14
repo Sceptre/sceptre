@@ -17,7 +17,7 @@ install_requirements = [
     "Jinja2>=2.8,<3",
     "packaging==16.8",
     "colorama==0.3.7",
-    "six==1.11.0",
+    "six>=1.11.0,<2.0.0",
     "networkx==2.1"
 ]
 
