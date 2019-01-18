@@ -18,16 +18,15 @@ def new_group():
     pass
 
 
-@new_group.command("group")
+@new_group.command("group", short_help="Creates a new Stack Group directory in a project.")
 @click.argument('stack_group')
 @catch_exceptions
 @click.pass_context
 def new_stack_group(ctx, stack_group):
     """
-    Creates a new Stack Group directory in a project.
-
     Creates StackGroup folder in the project and a config.yaml with any
     required properties.
+    \f
 
     :param stack_group: Name of the StackGroup directory to create.
     :type stack_group: str
@@ -40,15 +39,15 @@ def new_stack_group(ctx, stack_group):
             _create_new_stack_group(config_dir, stack_group)
 
 
-@new_group.command("project")
+@new_group.command("project", short_help="Creates a new project.")
 @catch_exceptions
 @click.argument('project_name')
 @click.pass_context
 def new_project(ctx, project_name):
     """
-    Creates a new project.
     Creates PROJECT_NAME project folder and a config.yaml with any
     required properties.
+    \f
 
     :param project_name: The name of the Sceptre Project to create.
     :type project_name: str

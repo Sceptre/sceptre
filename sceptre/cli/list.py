@@ -24,6 +24,7 @@ def list_group():
 def list_resources(ctx, path):
     """
     List resources for stack or stack_group.
+    \f
 
     :param path: Path to execute the command on.
     :type path: str
@@ -57,6 +58,7 @@ def list_resources(ctx, path):
 def list_outputs(ctx, path, export):
     """
     List outputs for stack.
+    \f
 
     :param path: Path to execute the command on.
     :type path: str
@@ -97,6 +99,7 @@ def list_outputs(ctx, path, export):
 def list_change_sets(ctx, path):
     """
     List change sets for stack.
+    \f
 
     :param path: Path to execute the command on.
     :type path: str

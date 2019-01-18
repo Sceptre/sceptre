@@ -12,7 +12,7 @@ with open("CHANGELOG.md") as history_file:
 
 install_requirements = [
     "boto3>=1.3,<2.0",
-    "click==6.7",
+    "click==7.0",
     "PyYaml>=4.2b1,<5.0",
     "Jinja2>=2.8,<3",
     "packaging==16.8",
