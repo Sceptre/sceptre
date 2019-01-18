@@ -8,16 +8,15 @@ from sceptre.cli.helpers import (
 from sceptre.plan.plan import SceptrePlan
 
 
-@click.command(name="status")
+@click.command(name="status", short_help="Print status of stack or stack_group.")
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
 def status_command(ctx, path):
     """
-    Print status of stack or stack_group.
-
     Prints the stack status or the status of the stacks within a
     stack_group for a given config PATH.
+    \f
 
     :param path: Path to execute the command on.
     :type path: str

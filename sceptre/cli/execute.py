@@ -16,6 +16,7 @@ from sceptre.plan.plan import SceptrePlan
 def execute_command(ctx, path, change_set_name, yes):
     """
     Executes a Change Set.
+    \f
 
     :param path: Path to execute the command on.
     :type path: str

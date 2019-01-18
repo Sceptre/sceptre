@@ -9,7 +9,7 @@ from sceptre.plan.plan import SceptrePlan
 from colorama import Fore, Style
 
 
-@click.command(name="delete")
+@click.command(name="delete", short_help="Deletes a stack or a change set.")
 @click.argument("path")
 @click.argument("change-set-name", required=False)
 @click.option(
@@ -19,10 +19,9 @@ from colorama import Fore, Style
 @catch_exceptions
 def delete_command(ctx, path, change_set_name, yes):
     """
-    Deletes a stack or a change set.
-
     Deletes a stack for a given config PATH. Or if CHANGE_SET_NAME is specified
     deletes a change set for stack in PATH.
+    \f
 
     :param path: Path to execute command on.
     :type path: str

@@ -10,7 +10,7 @@ from sceptre.stack_status import StackChangeSetStatus
 from sceptre.plan.plan import SceptrePlan
 
 
-@click.command(name="update")
+@click.command(name="update", short_help="Update a stack.")
 @click.argument("path")
 @click.option(
     "-c", "--change-set", is_flag=True,
@@ -26,10 +26,9 @@ from sceptre.plan.plan import SceptrePlan
 @catch_exceptions
 def update_command(ctx, path, change_set, verbose, yes):
     """
-    Update a stack.
-
     Updates a stack for a given config PATH. Or perform an update via
     change-set when the change-set flag is set.
+    \f
 
     :param path: Path to execute the command on.
     :type path: str

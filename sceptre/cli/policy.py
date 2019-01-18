@@ -5,7 +5,7 @@ from sceptre.cli.helpers import catch_exceptions
 from sceptre.plan.plan import SceptrePlan
 
 
-@click.command(name="set-policy")
+@click.command(name="set-policy", short_help="Sets Stack policy.")
 @click.argument("path")
 @click.argument("policy-file", required=False)
 @click.option(
@@ -16,16 +16,15 @@ from sceptre.plan.plan import SceptrePlan
 @catch_exceptions
 def set_policy_command(ctx, path, policy_file, built_in):
     """
-    Sets Stack policy.
-
     Sets a specific Stack policy for either a file or using a built-in policy.
+    \f
 
     :param path: Path to execute the command on.
     :type path: str
     :param policy_file: path to the AWS Policy file to use.
     :type policy_file: str
     :param built_in: the name of the built-in policy file to use.
-    :type built-in: str
+    :type built_in: str
     """
     context = SceptreContext(
         command_path=path,
