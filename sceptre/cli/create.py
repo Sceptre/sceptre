@@ -6,7 +6,7 @@ from sceptre.plan.plan import SceptrePlan
 from sceptre.cli.helpers import stack_status_exit_code
 
 
-@click.command(name="create")
+@click.command(name="create", short_help="Creates a stack or a change set.")
 @click.argument("path")
 @click.argument("change-set-name", required=False)
 @click.option(
@@ -16,10 +16,9 @@ from sceptre.cli.helpers import stack_status_exit_code
 @catch_exceptions
 def create_command(ctx, path, change_set_name, yes):
     """
-    Creates a stack or a change set.
-
     Creates a stack for a given config PATH. Or if CHANGE_SET_NAME is specified
     creates a change set for stack in PATH.
+    \f
 
     :param path: Path to a Stack or StackGroup
     :type path: str
