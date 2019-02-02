@@ -39,3 +39,5 @@
 - Michael Sverdlik [@m1keil](https://github.com/m1keil)
 
 - Olivier Van Goethem [@oliviervg1](https://github.com/oliviervg1)
+
+- Brendan Devenney [@devenney](https://github.com/devenney)
