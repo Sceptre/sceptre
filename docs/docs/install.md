@@ -15,12 +15,19 @@ and setting up `virtualenv` can be found
 
 Install Sceptre:
 
-`shell $ pip install sceptre`
+```shell
+$ pip install sceptre
+```
 
 Validate installation by printing out Sceptre's version number:
 
-`shell $ sceptre --version Sceptre, version <x.x.x>`
+```shell
+$ sceptre --version
+Sceptre, version <x.x.x>
+```
 
 Update Sceptre:
 
-`shell $ pip install sceptre -U`
+```shell
+$ pip install sceptre -U
+```

@@ -18,20 +18,21 @@ available commands.
 
 If you are using Bash you can enable autocomplete by entering the following
 command `eval "$(_SCEPTRE_COMPLETE=source sceptre)"`. Autocomplete will work
-for subcommands and parameters. 
+for subcommands and parameters.
 
 ## Options
 
 ```
-  --version             Show the version and exit.
-  --debug               Turn on debug logging.
-  --dir TEXT            Specify sceptre directory.
-  --output [yaml|json]  The formatting style for command output.
-  --no-colour           Turn off output colouring.
-  --var TEXT            A variable to template into config files.
-  --var-file FILENAME   A YAML file of variables to template into config
-                        files.
-  --help                Show this message and exit.
+  --version                  Show the version and exit.
+  --debug                    Turn on debug logging.
+  --dir TEXT                 Specify sceptre directory.
+  --output [yaml|json]       The formatting style for command output.
+  --no-colour                Turn off output colouring.
+  --var TEXT                 A variable to template into config files.
+  --var-file FILENAME        A YAML file of variables to template into config
+                             files.
+  --ignore-dependencies      Ignore dependencies when executing command.
+  --help                     Show this message and exit.
 ```
 
 ## Commands
@@ -67,19 +68,14 @@ $ sceptre COMMAND --help
 Stack outputs can be exported as environment variables with the command:
 
 ```shell
-
-$ eval $(sceptre --ignore-dependencies list outputs STACKGROUP/STACK.yaml
---export=envvar)
-
+$ eval $(sceptre --ignore-dependencies list outputs STACKGROUP/STACK.yaml --export=envvar)
 ```
 
 Note that Sceptre prepends the string `SCEPTRE_` to the name of the environment
 variable:
 
 ```shell
-
 $ env | grep SCEPTRE
 
 SCEPTRE_<output_name>=<output_value>
-
 ```

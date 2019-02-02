@@ -13,8 +13,7 @@ site.baseurl }}/docs/install.html).
 
 ## Directory Structure
 
-Sceptre provides a quick and easy way to setup a Sceptre project with the
-`sceptre new` command.
+`sceptre new` provides a quick and easy way to setup a Sceptre project.
 
 To setup a fresh project run:
 
@@ -28,7 +27,7 @@ Please enter a project_code [my-sceptre-project]:
 This will produce the following directory structure:
 
 ```shell
-tree
+$ tree
 .
 my-sceptre-project
     ├── config
@@ -46,7 +45,7 @@ in it.
 
 On \*nix systems:
 
-```
+```shell
 $ mkdir config/dev
 $ touch config/dev/config.yaml config/dev/vpc.yaml templates/vpc.json
 ```
@@ -57,7 +56,7 @@ config.
 
 ### Our First Template - vpc.json
 
-Add the following CloudFormation to `vpc.json`:
+Add the following CloudFormation to `templates/vpc.json`:
 
 ```json
 {
@@ -91,7 +90,7 @@ For more information on CloudFormation, see the AWS documentation on
 
 ### Our First StackGroup config - config.yaml
 
-Add the following configuration to `config.yaml`:
+Add the following configuration to `config/dev/config.yaml`:
 
 ```yaml
 project_code: sceptre-example
@@ -103,7 +102,7 @@ StackGroup will be built in the AWS region `region`.
 
 ### Our First Stack config - vpc.yaml
 
-Add the following configuration to `vpc.yaml`:
+Add the following configuration to `config/dev/vpc.yaml`:
 
 ```yaml
 template_path: vpc.json
@@ -121,7 +120,7 @@ directory as the root templates directory to base your `template_path` from.
 You should now have a Sceptre project that looks a bit like:
 
 ```
-tree
+$ tree
 .
 ├── config
 │   ├── config.yaml
@@ -182,7 +181,7 @@ $ sceptre delete dev/vpc.yaml
 
 ## Next Steps
 
-We have created our first Sceptre project, added a Template and Stack config
+We have created our first Sceptre project, added a Template and Stack config,
 and used the CLI to create, update and delete the Stack. You can find a full
 reference to the CLI [in our CLI guide]({{ site.url }}{{ site.baseurl
 }}/docs/cli.html)
