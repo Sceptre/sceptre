@@ -61,7 +61,7 @@ class StackOutputBase(Resolver):
         self.logger.debug("Collecting outputs from '{0}'...".format(
             stack_name
         ))
-        connection_manager = self.stack.template.connection_manager
+        connection_manager = self.stack.connection_manager
 
         try:
             response = connection_manager.call(
