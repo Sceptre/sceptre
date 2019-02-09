@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import os
 import pytest
 from mock import Mock, patch, sentinel, ANY
 from moto import mock_s3
@@ -21,6 +22,10 @@ class TestConnectionManager(object):
         ConnectionManager._boto_sessions = {}
         ConnectionManager._clients = {}
         ConnectionManager._stack_keys = {}
+
+        # Temporary workaround for https://github.com/spulec/moto/issues/1924
+        os.environ.setdefault("AWS_ACCESS_KEY_ID", "sceptre_test_key_id")
+        os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "sceptre_test_access_key")
 
         self.connection_manager = ConnectionManager(
             region=self.region,

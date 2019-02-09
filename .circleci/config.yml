@@ -1,14 +1,14 @@
 aliases:
   - &docs-job
     docker:
-      - image: cloudreach/sceptre-circleci:0.3
+      - image: cloudreach/sceptre-circleci:0.4
         environment:
-          REPOSITORY_PATH: "/home/circleci/docs"
-          DEPLOYMENT_GIT_SSH: "git@github.com:Sceptre/docs.git"
+          REPOSITORY_PATH: '/home/circleci/docs'
+          DEPLOYMENT_GIT_SSH: 'git@github.com:Sceptre/docs.git'
     steps:
       - add_ssh_keys:
           fingerprints:
-            - "80:24:c0:40:28:36:f1:80:7f:fd:15:c3:09:cf:86:fc"
+            - '80:24:c0:40:28:36:f1:80:7f:fd:15:c3:09:cf:86:fc'
       - attach_workspace:
           at: /home/circleci
       - run:
@@ -24,14 +24,16 @@ version: 2
 jobs:
   build:
     docker:
-      - image: cloudreach/sceptre-circleci:0.3
+      - image: cloudreach/sceptre-circleci:0.4
     steps:
       - checkout
       - run:
           name: 'Creating Virtualenv'
           command: virtualenv venv
       - restore_cache:
-          key: sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{ checksum "requirements.txt" }}
+          key:
+            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
+            checksum "requirements.txt" }}
       - run:
           name: 'Installing Requirements'
           command: |
@@ -39,7 +41,9 @@ jobs:
             pip install -r requirements.txt
             pip install awscli
       - save_cache:
-          key: sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{ checksum "requirements.txt" }}
+          key:
+            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
+            checksum "requirements.txt" }}
           paths:
             - venv
       - run:
@@ -53,12 +57,14 @@ jobs:
             - project
   lint-and-unit-tests:
     docker:
-      - image: cloudreach/sceptre-circleci:0.3
+      - image: cloudreach/sceptre-circleci:0.4
     steps:
       - attach_workspace:
           at: /home/circleci
       - restore_cache:
-          key: sceptre-{{ .Environment.CACHE_VERSION }}-tox-requirements-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "tox.ini" }}
+          key:
+            sceptre-{{ .Environment.CACHE_VERSION }}-tox-requirements-{{ arch
+            }}-{{ checksum "requirements.txt" }}-{{ checksum "tox.ini" }}
       - run:
           name: 'Linting'
           command: |
@@ -77,13 +83,15 @@ jobs:
       - store_artifacts:
           path: build/pytest
       - save_cache:
-          key: sceptre-{{ .Environment.CACHE_VERSION }}-tox-requirements-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "tox.ini" }}
+          key:
+            sceptre-{{ .Environment.CACHE_VERSION }}-tox-requirements-{{ arch
+            }}-{{ checksum "requirements.txt" }}-{{ checksum "tox.ini" }}
           paths:
             - .tox
   integration-tests:
     parallelism: 2
     docker:
-      - image: cloudreach/sceptre-circleci:0.3
+      - image: cloudreach/sceptre-circleci:0.4
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
@@ -101,14 +109,12 @@ jobs:
       - store_artifacts:
           path: build/behave
 
-  deploy-docs-branch:
-    *docs-job
-  deploy-docs-tag:
-    *docs-job
+  deploy-docs-branch: *docs-job
+  deploy-docs-tag: *docs-job
 
   deploy-pypi:
     docker:
-      - image: cloudreach/sceptre-circleci:0.3
+      - image: cloudreach/sceptre-circleci:0.4
     steps:
       - attach_workspace:
           at: /home/circleci
