@@ -10,6 +10,7 @@ from sceptre.context import SceptreContext
 from sceptre.exceptions import VersionIncompatibleError
 from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.exceptions import InvalidSceptreDirectoryError
+from sceptre.exceptions import InvalidConfigFileError
 
 from freezegun import freeze_time
 from click.testing import CliRunner
@@ -276,3 +277,55 @@ class TestConfigReader(object):
             config_reader = ConfigReader(self.context)
             all_stacks, command_stacks = config_reader.construct_stacks()
             assert {str(stack) for stack in all_stacks} == expected_stacks
+
+    @pytest.mark.parametrize("filepaths,target,del_key", [
+        (["A/1.yaml"], "A/1.yaml", "project_code"),
+        (["A/1.yaml"], "A/1.yaml", "region"),
+        (["A/1.yaml"], "A/1.yaml", "template_path"),
+    ])
+    def test_missing_attr(
+        self, filepaths, target, del_key
+    ):
+        with self.runner.isolated_filesystem():
+            project_path = os.path.abspath('./example')
+            config_dir = os.path.join(project_path, "config")
+            os.makedirs(config_dir)
+
+            self.context.project_path = project_path
+
+            for rel_path in filepaths:
+                abs_path = os.path.join(config_dir, rel_path)
+                dir_path = abs_path
+                if abs_path.endswith(".yaml"):
+                    dir_path = os.path.split(abs_path)[0]
+                if not os.path.exists(dir_path):
+                    try:
+                        os.makedirs(dir_path)
+                    except OSError as exc:
+                        if exc.errno != errno.EEXIST:
+                            raise
+
+                config = {
+                    "project_code": "project_code",
+                    "region": "region",
+                    "template_path": rel_path
+                }
+
+                # Delete the mandatory key to be tested.
+                del config[del_key]
+
+                with open(abs_path, 'w') as config_file:
+                    yaml.safe_dump(
+                        config, stream=config_file, default_flow_style=False
+                    )
+
+            try:
+                config_reader = ConfigReader(self.context)
+                all_stacks, command_stacks = config_reader.construct_stacks()
+            except InvalidConfigFileError as e:
+                # Test that the missing key is reported.
+                assert del_key in str(e)
+            except Exception:
+                raise
+            else:
+                assert False
