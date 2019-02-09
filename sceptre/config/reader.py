@@ -20,6 +20,7 @@ from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
 from sceptre import __version__
+from sceptre.exceptions import InvalidConfigFileError
 from sceptre.exceptions import InvalidSceptreDirectoryError
 from sceptre.exceptions import VersionIncompatibleError
 from sceptre.exceptions import ConfigFileNotFoundError
@@ -79,6 +80,19 @@ STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
         "stack_tags",
         "stack_timeout"
     }
+)
+
+INTERNAL_CONFIG_ATTRIBUTES = ConfigAttributes(
+    {
+        "project_path",
+        "stack_group_path",
+    },
+    {
+    }
+)
+
+REQUIRED_KEYS = STACK_GROUP_CONFIG_ATTRIBUTES.required.union(
+    STACK_CONFIG_ATTRIBUTES.required
 )
 
 
@@ -162,7 +176,7 @@ class ConfigReader(object):
         """
         Traverses the files under the command path.
         For each file encountered, a Stack is constructed
-        using the correct config. Depependencies are traversed
+        using the correct config. Dependencies are traversed
         and a final set of Stacks is returned.
 
         :returns: A set of Stacks.
@@ -424,6 +438,16 @@ class ConfigReader(object):
         parsed_stack_group_config = self._parsed_stack_group_config(stack_group_config)
         config = self.read(rel_path, stack_group_config)
         stack_name = path.splitext(rel_path)[0]
+
+        # Check for missing mandatory attributes
+        for required_key in REQUIRED_KEYS:
+            if required_key not in config:
+                raise InvalidConfigFileError(
+                    "Required attribute '{0}' not found in configuration of '{1}'.".format(
+                        required_key, stack_name
+                    )
+                )
+
         abs_template_path = path.join(
             self.context.project_path, self.context.templates_path,
             config["template_path"]
