@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import warnings
 
 
 __author__ = 'Cloudreach'
@@ -14,5 +15,8 @@ class NullHandler(logging.Handler):  # pragma: no cover
     def emit(self, record):
         pass
 
+
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 logging.getLogger('sceptre').addHandler(NullHandler())
