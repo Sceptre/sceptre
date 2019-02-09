@@ -57,17 +57,6 @@ test-results.xml
 # Sphinx documentation
 docs/_build/
 
-# TODO remove this once PR is approved
-# Sphinx docs
-/docs/docs/api
-/docs/_api/_build/
-/docs/_api/modules.rst
-/docs/_api/sceptre.rst
-/docs/_api/sceptre.hooks.rst
-/docs/_api/sceptre.resolvers.rst
-
-docs2/_build/
-
 # PyBuilder
 target/
 
@@ -121,4 +110,29 @@ _site/
 .sass-cache/
 .jekyll-metadata
 
+# Sphinx docs
+/docs/docs/api
+/docs/_api/_build/
+/docs/_api/modules.rst
+/docs/_api/sceptre.rst
+/docs/_api/sceptre.hooks.rst
+/docs/_api/sceptre.resolvers.rst
 
+### Vim ###
+# Swap
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Session
+Session.vim
+
+# Temporary
+.netrwhist
+*~
+# Auto-generated tag files
+tags
+# Persistent undo
+[._]*.un~
