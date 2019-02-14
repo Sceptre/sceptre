@@ -122,7 +122,7 @@ def _get_nested_config(config_dir, path):
     :rtype: dict
     """
     config = {}
-    for root, _, files in os.walk(config_dir):
+    for root, _, files in os.walk(config_dir, followlinks=True):
         # Check that folder is within the final stack_group path
         if path.startswith(root) and "config.yaml" in files:
             config_path = os.path.join(root, "config.yaml")
