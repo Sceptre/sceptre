@@ -41,3 +41,7 @@
 - Olivier Van Goethem [@oliviervg1](https://github.com/oliviervg1)
 
 - Brendan Devenney [@devenney](https://github.com/devenney)
+
+- David Taddei [@davidtaddei](https://github.com/davidtaddei)
+
+- Dennis Conrad [@dennisconrad](https://github.com/dennisconrad)
