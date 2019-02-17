@@ -7,7 +7,7 @@ from sceptre.cli.helpers import stack_status_exit_code
 from sceptre.plan.plan import SceptrePlan
 
 
-@click.command(name="launch")
+@click.command(name="launch", short_help="Launch a Stack or StackGroup.")
 @click.argument("path")
 @click.option(
     "-y", "--yes", is_flag=True, help="Assume yes to all questions."
@@ -16,9 +16,8 @@ from sceptre.plan.plan import SceptrePlan
 @catch_exceptions
 def launch_command(ctx, path, yes):
     """
-    Launch a Stack or StackGroup.
-
     Launch a Stack or StackGroup for a given config PATH.
+    \f
 
     :param path: The path to launch. Can be a Stack or StackGroup.
     :type path: str
