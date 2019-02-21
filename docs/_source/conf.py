@@ -194,3 +194,8 @@ intersphinx_mapping = {
 # other configuration
 
 nitpicky = True
+
+nitpick_ignore = [
+    ('py:class', 'json.encoder.JSONEncoder'),
+    ('py:class', 'sceptre.config.reader.Attributes')
+]

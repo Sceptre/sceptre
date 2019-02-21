@@ -240,7 +240,7 @@ Examples
 
 .. code-block:: yaml
 
-   peofile: profile
+   profile: profile
    project_code: prj
    region: eu-west-1
    template_bucket_name: sceptre-artifacts

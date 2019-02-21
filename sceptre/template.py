@@ -278,7 +278,7 @@ class Template(object):
         :param jinja_vars: Dict of variables to render into the template.
         :type jinja_vars: dict
         :returns: The body of the CloudFormation template.
-        :rtype: string
+        :rtype: str
         """
         logger = logging.getLogger(__name__)
         logger.debug("%s Rendering CloudFormation template", filename)
