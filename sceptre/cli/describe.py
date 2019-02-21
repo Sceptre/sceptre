@@ -29,6 +29,7 @@ def describe_group(ctx):
 def describe_change_set(ctx, path, change_set_name, verbose):
     """
     Describes the change set.
+    \f
 
     :param path: Path to execute the command on.
     :type path: str
@@ -64,6 +65,7 @@ def describe_change_set(ctx, path, change_set_name, verbose):
 def describe_policy(ctx, path):
     """
     Displays the stack policy used.
+    \f
 
     :param path: Path to execute the command on.
     :type path: str

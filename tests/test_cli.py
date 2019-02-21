@@ -134,7 +134,7 @@ class TestCli(object):
         self.mock_stack_actions.validate.assert_called_with()
 
         assert result.output == "Template mock-stack is valid. Template details:\n\n" \
-            "Parameters: Example\n\n"
+            "{'Parameters': 'Example'}\n"
 
     def test_validate_template_with_invalid_template(self):
         client_error = ClientError(
@@ -220,7 +220,7 @@ class TestCli(object):
             cli, ["describe", "policy", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert result.output == "dev/vpc:\n  Statement:\n  - Body\n\n"
+        assert result.output == "{'dev/vpc': {'Statement': ['Body']}}\n"
 
     def test_list_group_resources(self):
         response = {
@@ -244,7 +244,7 @@ class TestCli(object):
         self.mock_stack_actions.describe_resources.return_value = response
         result = self.runner.invoke(cli, ["list", "resources", "dev"])
 
-        assert yaml.load(result.output) == [response]
+        assert yaml.safe_load(result.output) == [response]
         assert result.exit_code == 0
 
     def test_list_stack_resources(self):
@@ -258,7 +258,7 @@ class TestCli(object):
         }
         self.mock_stack_actions.describe_resources.return_value = response
         result = self.runner.invoke(cli, ["list", "resources", "dev/vpc.yaml"])
-        assert yaml.load(result.output) == [response]
+        assert yaml.safe_load(result.output) == [response]
         assert result.exit_code == 0
 
     @pytest.mark.parametrize(
@@ -375,7 +375,7 @@ class TestCli(object):
         if not verbose_flag:
             del response["VerboseProperty"]
             del response["Changes"][0]["ResourceChange"]["VerboseProperty"]
-        assert yaml.load(result.output) == response
+        assert yaml.safe_load(result.output) == response
         assert result.exit_code == 0
 
     def test_list_change_sets_with_200(self):
@@ -386,7 +386,7 @@ class TestCli(object):
             cli, ["list", "change-sets", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert yaml.load(result.output) == {"ChangeSets": "Test"}
+        assert yaml.safe_load(result.output) == {"ChangeSets": "Test"}
 
     def test_list_change_sets_without_200(self):
         response = {
@@ -398,7 +398,7 @@ class TestCli(object):
             cli, ["list", "change-sets", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert yaml.load(result.output) == response
+        assert yaml.safe_load(result.output) == response
 
     def test_list_outputs(self):
         outputs = [{"OutputKey": "Key", "OutputValue": "Value"}]
@@ -407,16 +407,16 @@ class TestCli(object):
             cli, ["list", "outputs", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert yaml.load(result.output) == [outputs]
+        assert yaml.safe_load(result.output) == [outputs]
 
     def test_list_outputs_with_export(self):
-        outputs = [{"OutputKey": "Key", "OutputValue": "Value"}]
+        outputs = {'stack': [{"OutputKey": "Key", "OutputValue": "Value"}]}
         self.mock_stack_actions.describe_outputs.return_value = outputs
         result = self.runner.invoke(
             cli, ["list", "outputs", "dev/vpc.yaml", "-e", "envvar"]
         )
         assert result.exit_code == 0
-        assert yaml.load(result.output) == "export SCEPTRE_Key=Value"
+        assert yaml.safe_load(result.output) == "export SCEPTRE_Key=Value"
 
     def test_status_with_group(self):
         self.mock_stack_actions.get_status.return_value = {
@@ -451,7 +451,7 @@ class TestCli(object):
             assert os.path.isdir(template_dir)
 
             with open(os.path.join(config_dir, "config.yaml")) as config_file:
-                config = yaml.load(config_file)
+                config = yaml.safe_load(config_file)
 
             assert config == defaults
 
@@ -477,7 +477,7 @@ class TestCli(object):
             assert os.path.isdir(template_dir)
 
             with open(os.path.join(config_dir, "config.yaml")) as config_file:
-                config = yaml.load(config_file)
+                config = yaml.safe_load(config_file)
             assert existing_config == config
 
     def test_new_project_another_exception(self):
@@ -559,7 +559,7 @@ class TestCli(object):
             if result:
                 with open(os.path.join(stack_group_dir, "config.yaml"))\
                         as config_file:
-                    config = yaml.load(config_file)
+                    config = yaml.safe_load(config_file)
                 assert config == result
             else:
                 assert cmd_result.output.endswith(
@@ -585,7 +585,7 @@ class TestCli(object):
             )
             with open(os.path.join(
                     stack_group_dir, "config.yaml")) as config_file:
-                config = yaml.load(config_file)
+                config = yaml.safe_load(config_file)
             assert config == {"project_code": "", "region": ""}
 
     def test_new_stack_group_folder_with_another_exception(self):
@@ -669,8 +669,8 @@ class TestCli(object):
         "output_format,no_colour,expected_output", [
             ("json", True, '{\n    "stack": "CREATE_COMPLETE"\n}'),
             ("json", False, '{\n    "stack": "\x1b[32mCREATE_COMPLETE\x1b[0m\"\n}'),
-            ("yaml", True, "stack: CREATE_COMPLETE\n"),
-            ("yaml", False, "stack: \x1b[32mCREATE_COMPLETE\x1b[0m\n")
+            ("yaml", True, {'stack': 'CREATE_COMPLETE'}),
+            ("yaml", False, '{\'stack\': \'\x1b[32mCREATE_COMPLETE\x1b[0m\'}')
         ]
     )
     def test_write_formats(

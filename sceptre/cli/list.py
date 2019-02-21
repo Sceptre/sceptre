@@ -24,6 +24,7 @@ def list_group():
 def list_resources(ctx, path):
     """
     List resources for stack or stack_group.
+    \f
 
     :param path: Path to execute the command on.
     :type path: str
@@ -43,7 +44,7 @@ def list_resources(ctx, path):
         in plan.describe_resources().values() if response
     ]
 
-    write(list(responses), context.output_format)
+    write(responses, context.output_format)
 
 
 @list_group.command(name="outputs")
@@ -57,6 +58,7 @@ def list_resources(ctx, path):
 def list_outputs(ctx, path, export):
     """
     List outputs for stack.
+    \f
 
     :param path: Path to execute the command on.
     :type path: str
@@ -68,7 +70,7 @@ def list_outputs(ctx, path, export):
         project_path=ctx.obj.get("project_path", None),
         user_variables=ctx.obj.get("user_variables", {}),
         options=ctx.obj.get("options", {}),
-        output_format=ctx.obj.get("output_format", {}),
+        output_format=ctx.obj.get("output_format"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies")
     )
 
@@ -79,14 +81,15 @@ def list_outputs(ctx, path, export):
     ]
 
     if export == "envvar":
-        write("\n".join(
-            "export SCEPTRE_{0}={1}".format(
-                output["OutputKey"], output["OutputValue"]
-            )
-            for response in responses for output in response
-        ))
+        for response in responses:
+            for stack in response.values():
+                for output in stack:
+                    write("export SCEPTRE_{0}={1}".format(
+                                output.get("OutputKey"),
+                                output.get("OutputValue")
+                            ), 'str')
     else:
-        write(list(responses), context.output_format)
+        write(responses, context.output_format)
 
 
 @list_group.command(name="change-sets")
@@ -96,6 +99,7 @@ def list_outputs(ctx, path, export):
 def list_change_sets(ctx, path):
     """
     List change sets for stack.
+    \f
 
     :param path: Path to execute the command on.
     :type path: str

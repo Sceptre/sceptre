@@ -1,12 +1,56 @@
-# History
+# CHANGELOG
 
 Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
+
+## Unreleased
+
+## 2.0.3 (2019.02.15)
+
+### Fixed
+
+- Fix ConfigReader to follow symbolic links.
+
+- Fix output of `--output yaml` with Python objects.
+
+- Fix CLI `update change-set` command.
+
+### Nonfunctional
+
+- Improve Documentation.
+
+- Fix Migration Guide documentation on `tags` vs `stack_tags`.
+
+- Improve formatting of CLI `--help` command.
+
+- Update `six` dependency version.
+
+## 2.0.2 (2019.01.10)
+
+### Fixed
+
+- Fix `write` method in `sceptre.cli.helpers` to better handle `yaml` and `json` output format.
+
+- Fix `sceptre generate` in CLI so that it respects `--output` flag.
+
+- Update `PyYaml` dependency version to fix `CVE-2017-18342`.
+
+- Fix `--export` option for `sceptre list outputs` for setting environment variables.
+
+### Nonfunctional
+
+- Improve `sceptre.stack.Stack.__repr__()` so that objects and lists are not contained in strings.
+
+- Remove duplicate timestamp from logging in `plan.actions`.
+
+- Fix minor documentation typo in `stack_group_config.md` stack example.
+
+- Remove redundant `status` self-assignment in `sceptre.plan.actions.launch()`
 
 ## 2.0.1 (2018.12.17)
 
 ### Fixed
 
-- Fix `list` and `describe` cli output 
+- Fix `list` and `describe` cli output
 
 - Fix circleci and Makefile config
 
@@ -26,7 +70,7 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 - Update Custom Resolver docs
 
-- Clarify docs on stack_output resolver 
+- Clarify docs on stack_output resolver
 
 ## 2.0.0 (2018.11.30)
 
@@ -437,7 +481,7 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 ## 0.23.0 (2016.06.30)
 
 - Adding support for the cascading of <stack_name>.yaml files.
-- Moved --debug flag to be after sceptre keyword ($ sceptre --debug <command>).
+- Moved --debug flag to be after sceptre keyword (\$ sceptre --debug <command>).
 - Refactor how config is handled internally.
 - Lazy load stack config and templates.
 

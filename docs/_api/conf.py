@@ -17,6 +17,8 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
 
+import datetime
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -43,8 +45,9 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'sceptre'
-copyright = u'2017, Cloudreach'
+year = datetime.datetime.now().year
 author = u'Cloudreach'
+copyright = u'{0}, {1}'.format(year, author)
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
