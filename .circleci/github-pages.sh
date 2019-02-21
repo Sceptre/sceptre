@@ -46,6 +46,7 @@ echo "Building docs in" ${VERSION_BUILD_DIR}
 rm -rf ${VERSION_BUILD_DIR}
 
 # build docs in correct dir
+sphinxs-apidoc sphinx-apidoc -fM -o "${CODE_DIR}/docs/_source/apidoc" ${CODE_DIR}/sceptre
 sphinx-build ${CODE_DIR}/docs/_source ${VERSION_BUILD_DIR} -q -d /tmp -b html -A GHPAGES=True -A version=${VERSION}
 
 # remove old versions
