@@ -27,6 +27,7 @@ def launch_command(ctx, path, yes):
     context = SceptreContext(
         command_path=path,
         project_path=ctx.obj.get("project_path"),
+        config_path=ctx.obj.get("config_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies")

@@ -25,7 +25,8 @@ class TestConfigReader(object):
         )
         self.context = SceptreContext(
             project_path=self.test_project_path,
-            command_path="A"
+            command_path="A",
+            config_path="config"
         )
 
     def test_config_reader_correctly_initialised(self):
@@ -34,7 +35,7 @@ class TestConfigReader(object):
 
     def test_config_reader_with_invalid_path(self):
         with pytest.raises(InvalidSceptreDirectoryError):
-            ConfigReader(SceptreContext("/path/does/not/exist", "example"))
+            ConfigReader(SceptreContext("/path/does/not/exist", "example", "example"))
 
     @pytest.mark.parametrize("filepaths,target", [
         (

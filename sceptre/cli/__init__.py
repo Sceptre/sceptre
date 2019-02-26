@@ -35,6 +35,9 @@ from sceptre.cli.helpers import setup_logging, catch_exceptions
 @click.option("--debug", is_flag=True, help="Turn on debug logging.")
 @click.option("--dir", "directory", help="Specify sceptre directory.")
 @click.option(
+    "--config-dir", "config_directory", default="config",
+    help="Specify sceptre config directory.")
+@click.option(
     "--output", type=click.Choice(["text", "yaml", "json"]), default="text",
     help="The formatting style for command output.")
 @click.option("--no-colour", is_flag=True, help="Turn off output colouring.")
@@ -48,7 +51,7 @@ from sceptre.cli.helpers import setup_logging, catch_exceptions
 @click.pass_context
 @catch_exceptions
 def cli(
-        ctx, debug, directory, output, no_colour, var, var_file, ignore_dependencies
+        ctx, debug, directory, config_directory, output, no_colour, var, var_file, ignore_dependencies
 ):
     """
     Sceptre is a tool to manage your cloud native infrastructure deployments.
@@ -63,7 +66,8 @@ def cli(
         "output_format": output,
         "no_colour": no_colour,
         "ignore_dependencies": ignore_dependencies,
-        "project_path": directory if directory else os.getcwd()
+        "project_path": directory if directory else os.getcwd(),
+        "config_path": config_directory if config_directory else "config"
     }
     if var_file:
         for fh in var_file:
