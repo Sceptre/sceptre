@@ -4,6 +4,25 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.0.3 (2019.02.15)
+
+### Fixed
+
+- Fix ConfigReader to follow symbolic links.
+
+- Fix output of `--output yaml` with Python objects.
+
+- Fix CLI `update change-set` command.
+
+### Nonfunctional
+
+- Improve Documentation.
+
+- Fix Migration Guide documentation on `tags` vs `stack_tags`.
+
+- Improve formatting of CLI `--help` command.
+
+- Update `six` dependency version.
 
 ## 2.0.2 (2019.01.10)
 
@@ -31,7 +50,7 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ### Fixed
 
-- Fix `list` and `describe` cli output 
+- Fix `list` and `describe` cli output
 
 - Fix circleci and Makefile config
 
@@ -51,7 +70,7 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 - Update Custom Resolver docs
 
-- Clarify docs on stack_output resolver 
+- Clarify docs on stack_output resolver
 
 ## 2.0.0 (2018.11.30)
 
@@ -462,7 +481,7 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 ## 0.23.0 (2016.06.30)
 
 - Adding support for the cascading of <stack_name>.yaml files.
-- Moved --debug flag to be after sceptre keyword ($ sceptre --debug <command>).
+- Moved --debug flag to be after sceptre keyword (\$ sceptre --debug <command>).
 - Refactor how config is handled internally.
 - Lazy load stack config and templates.
 

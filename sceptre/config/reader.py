@@ -179,7 +179,7 @@ class ConfigReader(object):
             todo = {root}
         else:
             todo = set()
-            for directory_name, sub_directories, files in walk(root):
+            for directory_name, sub_directories, files in walk(root, followlinks=True):
                 for filename in fnmatch.filter(files, '*.yaml'):
                     if filename.startswith('config.'):
                         continue
