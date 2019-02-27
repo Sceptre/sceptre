@@ -12,6 +12,8 @@ RUN apk add --update \
     python2 \
     python3 \
     py2-pip \
+    python2-dev \
+    python3-dev \
     libffi-dev \
     ruby \
     ruby-dev \

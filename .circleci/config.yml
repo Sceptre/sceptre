@@ -1,21 +1,3 @@
-aliases:
-- &docs-job
-  docker:
-  - image: cloudreach/sceptre-circleci:0.2
-    environment:
-      CONTAINER_DEST_REPO_DIR: "/home/circleci/docs"
-      # TODO Use real repository when live
-      DEST_REPO: "https://github.com/cicd-organisation/docs.git"
-  steps:
-  - attach_workspace:
-      at: /home/circleci
-  - run:
-      name: 'Build and deploy docs'
-      command: |
-        . ./venv/bin/activate
-        chmod +x .circleci/github-pages.sh
-        ./.circleci/github-pages.sh
-
 version: 2
 jobs:
   build:
@@ -96,12 +78,40 @@ jobs:
           path: build/behave
       - store_artifacts:
           path: build/behave
-
-  deploy-docs-branch:
-    *docs-job
-  deploy-docs-tag:
-    *docs-job
-
+  deploy-docs:
+    docker:
+      - image: cloudreach/sceptre-circleci:0.3
+        environment:
+          AWS_DEFAULT_REGION: eu-west-1
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - restore_cache:
+          key: sceptre-{{ .Environment.CACHE_VERSION }}-documentation-tools-{{ arch }}-{{ checksum "docs/Gemfile.lock" }}
+      - run:
+          name: 'Installing Documentation Tools'
+          command: |
+            . ./venv/bin/activate
+            cd docs && make install
+      - save_cache:
+          key: sceptre-{{ .Environment.CACHE_VERSION }}-documentation-tools-{{ arch }}-{{ checksum "docs/Gemfile.lock" }}
+          paths:
+            - docs/vendor
+      - deploy:
+          command: |
+            SHORT_SHA1=$(echo $CIRCLE_SHA1 | cut -c -7)
+            GIT_TAG=$(git describe --abbrev=0 --tags | sed 's/\./-/g')
+            . ./venv/bin/activate
+            if [[ "${CIRCLE_TAG}" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$ ]]; then
+              make docs-latest
+              aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/latest/ --delete
+              
+              make docs-build-tag
+              aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/$GIT_TAG/ --delete
+            elif [[ "${CIRCLE_BRANCH}" == "master" ]]; then
+              make docs-build-dev
+              aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/dev/ --delete
+            fi
   deploy-pypi:
     docker:
       - image: cloudreach/sceptre-circleci:0.3
@@ -127,53 +137,42 @@ workflows:
           filters:
             tags:
               only: /.*/
-#      - lint-and-unit-tests:
-#          requires:
-#            - build
-#          filters:
-#            tags:
-#              only: /.*/
-#      - integration-tests:
-#          requires:
-#            - build
-#          filters:
-#            tags:
-#              only: /.*/
-#            branches:
-#              ignore: /^pull\/.*/
-      # Deploy docs when commit to master
-      - deploy-docs-branch:
+      - lint-and-unit-tests:
           requires:
-          - build
-          filters:
-            branches:
-  #            only: master
-              # TODO change to master when live
-              only: feature/rst-doc2
-      # Deploy docs when commit is tagged
-      - deploy-docs-tag:
-          requires:
-          - build
+            - build
           filters:
             tags:
-              only: /^v.*/
+              only: /.*/
+      - integration-tests:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /^pull\/.*/
+      - deploy-docs:
+          requires:
+            - lint-and-unit-tests
+            - integration-tests
+          filters:
+            branches:
+              only: master
+      - deploy-pypi-approval:
+          type: approval
+          requires:
+            - lint-and-unit-tests
+            - integration-tests
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*/
             branches:
               ignore: /.*/
-#      - deploy-pypi-approval:
-#          type: approval
-#          requires:
-#            - lint-and-unit-tests
-#            - integration-tests
-#          filters:
-#            tags:
-#              only: /^v[0-9]+(\.[0-9]+)*/
-#            branches:
-#              ignore: /.*/
-#      - deploy-pypi:
-#          requires:
-#            - deploy-pypi-approval
-#          filters:
-#            tags:
-#              only: /^v[0-9]+(\.[0-9]+)*/
-#            branches:
-#              ignore: /.*/
+      - deploy-pypi:
+          requires:
+            - deploy-pypi-approval
+          filters:
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/
