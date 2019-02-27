@@ -2,16 +2,16 @@ version: 2
 jobs:
   build:
     docker:
-      - image: cloudreach/sceptre-circleci:0.2
+      - image: cloudreach/sceptre-circleci:0.3
     steps:
       - checkout
       - run:
-          name: "Creating Virtualenv"
+          name: 'Creating Virtualenv'
           command: virtualenv venv
       - restore_cache:
           key: v3-requirements-{{ arch }}-{{ checksum "requirements.txt" }}
       - run:
-          name: "Installing Requirements"
+          name: 'Installing Requirements'
           command: |
             . ./venv/bin/activate
             pip install -r requirements.txt
@@ -21,7 +21,7 @@ jobs:
           paths:
             - venv
       - run:
-          name: "Installing Sceptre"
+          name: 'Installing Sceptre'
           command: |
             . ./venv/bin/activate
             pip install .
@@ -31,19 +31,19 @@ jobs:
             - project
   lint-and-unit-tests:
     docker:
-      - image: cloudreach/sceptre-circleci:0.2
+      - image: cloudreach/sceptre-circleci:0.3
     steps:
       - attach_workspace:
           at: /home/circleci
       - restore_cache:
           key: v4-tox-requirements-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "tox.ini" }}
       - run:
-          name: "Linting"
+          name: 'Linting'
           command: |
             . ./venv/bin/activate
             make lint
       - run:
-          name: "Unit Test and Coverage"
+          name: 'Unit Test and Coverage'
           command: |
             tox
       - store_test_results:
@@ -61,14 +61,14 @@ jobs:
   integration-tests:
     parallelism: 2
     docker:
-      - image: cloudreach/sceptre-circleci:0.2
+      - image: cloudreach/sceptre-circleci:0.3
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
       - attach_workspace:
           at: /home/circleci
       - run:
-          name: "Integration Testing"
+          name: 'Integration Testing'
           command: |
             . ./venv/bin/activate
             behave --junit \
@@ -80,7 +80,7 @@ jobs:
           path: build/behave
   deploy-docs:
     docker:
-      - image: cloudreach/sceptre-circleci:0.2
+      - image: cloudreach/sceptre-circleci:0.3
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
@@ -89,7 +89,7 @@ jobs:
       - restore_cache:
           key: v1-documentation-tools-{{ arch }}-{{ checksum "docs/Gemfile.lock" }}
       - run:
-          name: "Installing Documentation Tools"
+          name: 'Installing Documentation Tools'
           command: |
             . ./venv/bin/activate
             cd docs && make install
@@ -114,17 +114,17 @@ jobs:
             fi
   deploy-pypi:
     docker:
-      - image: cloudreach/sceptre-circleci:0.2
+      - image: cloudreach/sceptre-circleci:0.3
     steps:
       - attach_workspace:
           at: /home/circleci
       - run:
-          name: "Create Distributions"
+          name: 'Create Distributions'
           command: |
             . ./venv/bin/activate
             make dist
       - run:
-          name: "Upload Distributions"
+          name: 'Upload Distributions'
           command: |
             . ./venv/bin/activate
             pip install twine
