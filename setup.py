@@ -16,7 +16,7 @@ install_requirements = [
     "PyYaml>=4.2b1,<5.0",
     "Jinja2>=2.8,<3",
     "packaging==16.8",
-    "colorama==0.3.7",
+    "colorama==0.3.9",
     "six>=1.11.0,<2.0.0",
     "networkx==2.1"
 ]
