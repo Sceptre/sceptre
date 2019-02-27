@@ -23,8 +23,9 @@ class SceptreContext(object):
     :param command_path: The relative path to either StackGroup or Stack.
     :type command_path: str
 
-    :param config_path: The path relative to project_path for the config folder
-    :type config_path: str
+    :param config_directory: The path relative to project_path for the config\
+            folder
+    :type config_directory: str
 
     :param user_variables: Used to replace the value of anyvitem in a Config\
             file with a value defined by the CLI flag or in a YAML variable\
@@ -43,23 +44,23 @@ class SceptreContext(object):
     :type no_colour: bool
     """
 
-    def __init__(self, project_path, command_path, config_path="config",
+    def __init__(self, project_path, command_path, config_directory="config",
                  user_variables=None, options=None, output_format=None,
                  no_colour=False, ignore_dependencies=False):
         # project_path: absolute path to the base sceptre project folder
         # e.g. absolute_path/to/sceptre_directory
         self.project_path = project_path
 
-        # config_path: holds the project stack_groups
+        # config_directory: holds the project stack_groups
         # e.g {project_path}/config
-        self.config_path = config_path
+        self.config_directory = config_directory
 
         # command_path path to either stack group or stack
-        # e.g. {project_path/config_path}/command_path
+        # e.g. {project_path/config_directory}/command_path
         self.command_path = command_path
 
         # config_file: stack group config. User definable later in v2
-        # e.g. {project_path/config_path/command_path}/config_file
+        # e.g. {project_path/config_directory/command_path}/config_file
         self.config_file = "config.yaml"
 
         # templates_path: holds tempaltes. User definable later in v2
@@ -76,22 +77,23 @@ class SceptreContext(object):
 
     def full_config_path(self):
         """
-        Returns the config path in the format: ``project_path/config_path``.
+        Returns the config path in the format:
+        ``project_path/config_directory``.
 
         :returns: The absolute path to the config directory
         :rtype: str
         """
-        return path.join(self.project_path, self.config_path)
+        return path.join(self.project_path, self.config_directory)
 
     def full_command_path(self):
         """
         Returns the command path in the format:
-        ``project_path/config_path/command_path``.
+        ``project_path/config_directory/command_path``.
 
         :returns: The absolute path to the path that will be executed
         :rtype: str
         """
-        return path.join(self.project_path, self.config_path,
+        return path.join(self.project_path, self.config_directory,
                          self.command_path)
 
     def full_templates_path(self):
@@ -113,7 +115,7 @@ class SceptreContext(object):
         return path.isfile(
             path.join(
                 self.project_path,
-                self.config_path,
+                self.config_directory,
                 self.command_path
             )
         )

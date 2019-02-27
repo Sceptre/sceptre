@@ -34,8 +34,8 @@ def new_stack_group(ctx, stack_group):
     cwd = ctx.obj.get("project_path")
     for item in os.listdir(cwd):
         # If already a config folder create a sub stack_group
-        if os.path.isdir(item) and item == ctx.obj.get('config_path'):
-            config_dir = os.path.join(os.getcwd(), ctx.obj.get('config_path'))
+        if os.path.isdir(item) and item == ctx.obj.get('config_directory'):
+            config_dir = os.path.join(os.getcwd(), ctx.obj.get('config_directory'))
             _create_new_stack_group(config_dir, stack_group)
 
 
@@ -53,7 +53,7 @@ def new_project(ctx, project_name):
     :type project_name: str
     """
     cwd = os.getcwd()
-    sceptre_folders = {ctx.obj.get('config_path'), "templates"}
+    sceptre_folders = {ctx.obj.get('config_directory'), "templates"}
     project_folder = os.path.join(cwd, project_name)
     try:
         os.mkdir(project_folder)
@@ -75,7 +75,9 @@ def new_project(ctx, project_name):
         "region": os.environ.get("AWS_DEFAULT_REGION", "")
     }
 
-    config_path = os.path.join(cwd, project_name, ctx.obj.get('config_path'))
+    config_path = os.path.join(cwd,
+                               project_name,
+                               ctx.obj.get('config_directory'))
     _create_config_file(config_path, config_path, defaults)
 
 

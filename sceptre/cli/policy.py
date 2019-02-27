@@ -29,7 +29,7 @@ def set_policy_command(ctx, path, policy_file, built_in):
     context = SceptreContext(
         command_path=path,
         project_path=ctx.obj.get("project_path"),
-        config_path=ctx.obj.get("config_path"),
+        config_directory=ctx.obj.get("config_directory"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies")

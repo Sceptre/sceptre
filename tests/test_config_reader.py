@@ -25,8 +25,7 @@ class TestConfigReader(object):
         )
         self.context = SceptreContext(
             project_path=self.test_project_path,
-            command_path="A",
-            config_path="config"
+            command_path="A"
         )
 
     def test_config_reader_correctly_initialised(self):

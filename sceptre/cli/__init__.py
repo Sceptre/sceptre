@@ -47,11 +47,13 @@ from sceptre.cli.helpers import setup_logging, catch_exceptions
     "--var-file", multiple=True, type=click.File("rb"),
     help="A YAML file of variables to template into config files.")
 @click.option(
-    "--ignore-dependencies", is_flag=True, help="Ignore dependencies when executing command.")
+    "--ignore-dependencies", is_flag=True,
+    help="Ignore dependencies when executing command.")
 @click.pass_context
 @catch_exceptions
 def cli(
-        ctx, debug, directory, config_directory, output, no_colour, var, var_file, ignore_dependencies
+        ctx, debug, directory, config_directory, output, no_colour, var,
+        var_file, ignore_dependencies
 ):
     """
     Sceptre is a tool to manage your cloud native infrastructure deployments.
@@ -67,7 +69,7 @@ def cli(
         "no_colour": no_colour,
         "ignore_dependencies": ignore_dependencies,
         "project_path": directory if directory else os.getcwd(),
-        "config_path": config_directory if config_directory else "config"
+        "config_directory": config_directory if config_directory else "config"
     }
     if var_file:
         for fh in var_file:

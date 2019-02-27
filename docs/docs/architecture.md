@@ -122,3 +122,50 @@ to demonstrate ways of organising different projects.
           - iam-role-admin.yaml
           - iam-role-developer.yaml
   ```
+
+- Per project configurations sharing the same templates. This is useful if you
+  have common shared templates that are shared between many projects and would
+  like to encourage template reuse. In this example, vpc.yaml and database.yaml
+  are common templates, and each deployed environment should have its own
+  configured VPC and database.
+
+  ```
+  - templates
+      - application_1
+          - application_1.yaml
+      - application_2
+          - application_2.yaml
+      - shared
+          - vpc.yaml
+          - database.yaml
+  - config
+      - project_1
+          - dev
+              - vpc.yaml        
+              - database.yaml      
+              - application_1.yaml
+          - qa
+              - vpc.yaml        
+              - database.yaml      
+              - application_1.yaml
+          - prod
+              - vpc.yaml        
+              - database.yaml      
+              - application_1.yaml
+      - project_2
+          - dev
+              - vpc.yaml        
+              - database.yaml      
+              - application_2.yaml
+          - qa
+              - vpc.yaml        
+              - database.yaml      
+              - application_2.yaml
+          - prod
+              - vpc.yaml        
+              - database.yaml      
+              - application_2.yaml              
+  ```
+
+To deploy project_1 to dev, you would run
+`sceptre --config-dir config/project_1 launch dev`
