@@ -4,6 +4,20 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.1.0 (2019.03.01)
+
+### Added
+
+- Support for SAM templates.
+
+- Improve handling of missing config attributes.
+
+### Nonfunctional
+
+- Update colorama dependency version.
+
+- Fix circleci build
+
 ## 2.0.3 (2019.02.15)
 
 ### Fixed
