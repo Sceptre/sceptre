@@ -17,7 +17,10 @@ try:
 except IndexError:
     sys.exit("Missing build dir path: python /path/docs")
 
-dirs = [item for item in os.scandir(build_dir) if item.is_dir()]
+ignored_dirs = {
+    ".git"
+}
+dirs = [item for item in os.scandir(build_dir) if item.is_dir() and item.name not in ignored_dirs]
 sorted_dirs = sorted(dirs, reverse=True, key=attrgetter('name'))
 with open(build_dir + "/version-helper.js", "w+") as outf:
     # select 7 latest versions

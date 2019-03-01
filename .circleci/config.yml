@@ -3,9 +3,9 @@ aliases:
   docker:
   - image: cloudreach/sceptre-circleci:0.2
     environment:
-      DOCS_DIR: "/home/circleci/docs"
+      CONTAINER_DEST_REPO_DIR: "/home/circleci/docs"
       # TODO Use real repository when live
-      WEBSITE_REPO: "https://github.com/cicd-organisation/project-docs.git"
+      DEST_REPO: "https://github.com/cicd-organisation/docs.git"
   steps:
   - attach_workspace:
       at: /home/circleci
@@ -127,20 +127,20 @@ workflows:
           filters:
             tags:
               only: /.*/
-      - lint-and-unit-tests:
-          requires:
-            - build
-          filters:
-            tags:
-              only: /.*/
-      - integration-tests:
-          requires:
-            - build
-          filters:
-            tags:
-              only: /.*/
-            branches:
-              ignore: /^pull\/.*/
+#      - lint-and-unit-tests:
+#          requires:
+#            - build
+#          filters:
+#            tags:
+#              only: /.*/
+#      - integration-tests:
+#          requires:
+#            - build
+#          filters:
+#            tags:
+#              only: /.*/
+#            branches:
+#              ignore: /^pull\/.*/
       # Deploy docs when commit to master
       - deploy-docs-branch:
           requires:
@@ -159,21 +159,21 @@ workflows:
               only: /^v.*/
             branches:
               ignore: /.*/
-      - deploy-pypi-approval:
-          type: approval
-          requires:
-            - lint-and-unit-tests
-            - integration-tests
-          filters:
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
-      - deploy-pypi:
-          requires:
-            - deploy-pypi-approval
-          filters:
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
+#      - deploy-pypi-approval:
+#          type: approval
+#          requires:
+#            - lint-and-unit-tests
+#            - integration-tests
+#          filters:
+#            tags:
+#              only: /^v[0-9]+(\.[0-9]+)*/
+#            branches:
+#              ignore: /.*/
+#      - deploy-pypi:
+#          requires:
+#            - deploy-pypi-approval
+#          filters:
+#            tags:
+#              only: /^v[0-9]+(\.[0-9]+)*/
+#            branches:
+#              ignore: /.*/

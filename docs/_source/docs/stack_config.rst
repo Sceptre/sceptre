@@ -53,7 +53,7 @@ notifications
 
 List of SNS topic ARNs to publish Stack related events to. A maximum of 5 ARNs
 can be specified per Stack. This configuration will be used by the ``create``,
-``update``, and ``create`` commands. More information about Stack notifications
+``update``, and ``delete`` commands. More information about Stack notifications
 can found under the relevant section in the `AWS CloudFormation API
 documentation`_.
 
@@ -148,7 +148,7 @@ key within Jinja2 templates.
 stack_name
 ~~~~~~~~~~
 
-A custom name name to use instead of the Sceptre default.
+A custom name to use instead of the Sceptre default.
 
 .. container:: alert alert-warning
 
