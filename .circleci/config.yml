@@ -20,14 +20,14 @@ version: 2
 jobs:
   build:
     docker:
-      - image: cloudreach/sceptre-circleci:0.2
+      - image: cloudreach/sceptre-circleci:0.3
     steps:
       - checkout
       - run:
           name: 'Creating Virtualenv'
           command: virtualenv venv
       - restore_cache:
-          key: v3-requirements-{{ arch }}-{{ checksum "requirements.txt" }}
+          key: sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{ checksum "requirements.txt" }}
       - run:
           name: 'Installing Requirements'
           command: |
@@ -35,7 +35,7 @@ jobs:
             pip install -r requirements.txt
             pip install awscli
       - save_cache:
-          key: v3-requirements-{{ arch }}-{{ checksum "requirements.txt" }}
+          key: sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{ checksum "requirements.txt" }}
           paths:
             - venv
       - run:
@@ -49,12 +49,12 @@ jobs:
             - project
   lint-and-unit-tests:
     docker:
-      - image: cloudreach/sceptre-circleci:0.2
+      - image: cloudreach/sceptre-circleci:0.3
     steps:
       - attach_workspace:
           at: /home/circleci
       - restore_cache:
-          key: v4-tox-requirements-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "tox.ini" }}
+          key: sceptre-{{ .Environment.CACHE_VERSION }}-tox-requirements-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "tox.ini" }}
       - run:
           name: 'Linting'
           command: |
@@ -73,13 +73,13 @@ jobs:
       - store_artifacts:
           path: build/pytest
       - save_cache:
-          key: v4-tox-requirements-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "tox.ini" }}
+          key: sceptre-{{ .Environment.CACHE_VERSION }}-tox-requirements-{{ arch }}-{{ checksum "requirements.txt" }}-{{ checksum "tox.ini" }}
           paths:
             - .tox
   integration-tests:
     parallelism: 2
     docker:
-      - image: cloudreach/sceptre-circleci:0.2
+      - image: cloudreach/sceptre-circleci:0.3
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
@@ -104,7 +104,7 @@ jobs:
 
   deploy-pypi:
     docker:
-      - image: cloudreach/sceptre-circleci:0.2
+      - image: cloudreach/sceptre-circleci:0.3
     steps:
       - attach_workspace:
           at: /home/circleci
