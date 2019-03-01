@@ -26,6 +26,7 @@ for subcommands and parameters.
   --version                  Show the version and exit.
   --debug                    Turn on debug logging.
   --dir TEXT                 Specify sceptre directory.
+  --config-dir TEXT          Specify sceptre config directory.
   --output [yaml|json]       The formatting style for command output.
   --no-colour                Turn off output colouring.
   --var TEXT                 A variable to template into config files.

@@ -45,3 +45,5 @@
 - David Taddei [@davidtaddei](https://github.com/davidtaddei)
 
 - Dennis Conrad [@dennisconrad](https://github.com/dennisconrad)
+
+- Paul Miller [@pwrsmiller](https://github.com/pwrmiller)

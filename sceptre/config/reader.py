@@ -348,9 +348,7 @@ class ConfigReader(object):
                 command_path=self.context.command_path.split("/"),
                 environment_variable=environ
             )
-
             config = yaml.safe_load(rendered_template)
-
             return config
 
     @staticmethod
