@@ -11,18 +11,20 @@
                 <dt>Versions</dt>
             </dl>
             <dl>
+                {% set links = {
+                'Cloudreach':'https://www.cloudreach.com',
+                'Sceptre Home': 'https://www.sceptre.cloudreach.com'
+                } %}
                 <dt>Other Links</dt>
-                <dd>
-                    <a href="///projects//?fromdocs=">Project Home(TODO)</a>
-                </dd>
-                <dd>
-                    <a href="///builds//?fromdocs=">Builds(TODO)</a>
-                </dd>
+                {% for title, url in links.items() %}
+
+                    <dd>
+                        <a href="{{ url }}">{{ title }}</a>
+                    </dd>
+                {% endfor %}
             </dl>
             <hr/>
-            Free document hosting provided by <a href="http://www.readthedocs.org">Read the Docs</a>
-                .
-
+            Free document hosting provided by <a href="http://www.readthedocs.org">Read the Docs</a>.
         </div>
         <script>
             document.addEventListener("DOMContentLoaded", function () {
