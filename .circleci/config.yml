@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: cloudreach/sceptre-circleci:0.3
+      - image: cloudreach/sceptre-circleci:0.4
     steps:
       - checkout
       - run:
@@ -31,7 +31,7 @@ jobs:
             - project
   lint-and-unit-tests:
     docker:
-      - image: cloudreach/sceptre-circleci:0.3
+      - image: cloudreach/sceptre-circleci:0.4
     steps:
       - attach_workspace:
           at: /home/circleci
@@ -61,7 +61,7 @@ jobs:
   integration-tests:
     parallelism: 2
     docker:
-      - image: cloudreach/sceptre-circleci:0.3
+      - image: cloudreach/sceptre-circleci:0.4
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
@@ -80,7 +80,7 @@ jobs:
           path: build/behave
   deploy-docs:
     docker:
-      - image: cloudreach/sceptre-circleci:0.3
+      - image: cloudreach/sceptre-circleci:0.4
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
@@ -105,7 +105,7 @@ jobs:
             if [[ "${CIRCLE_TAG}" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$ ]]; then
               make docs-latest
               aws s3 sync ~/project/docs/_site s3://sceptre.cloudreach.com/latest/ --delete
-              
+
               make docs-build-tag
               aws s3 sync ~/sceptre/docs/_site s3://sceptre.cloudreach.com/$GIT_TAG/ --delete
             elif [[ "${CIRCLE_BRANCH}" == "master" ]]; then
@@ -114,7 +114,7 @@ jobs:
             fi
   deploy-pypi:
     docker:
-      - image: cloudreach/sceptre-circleci:0.3
+      - image: cloudreach/sceptre-circleci:0.4
     steps:
       - attach_workspace:
           at: /home/circleci
