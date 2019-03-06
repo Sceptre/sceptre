@@ -145,3 +145,10 @@ class InvalidConfigFileError(SceptreException):
     Error raised when a config file lacks mandatory keys.
     """
     pass
+
+
+class InvalidAWSCredentialsError(SceptreException):
+    """
+    Error raised when AWS credentials are invalid.
+    """
+    pass

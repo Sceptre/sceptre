@@ -17,7 +17,7 @@ from os import environ
 from botocore.exceptions import ClientError
 
 from .helpers import mask_key
-from .exceptions import RetryLimitExceededError
+from .exceptions import InvalidAWSCredentialsError, RetryLimitExceededError
 
 
 def _retry_boto_call(func):
@@ -130,6 +130,13 @@ class ConnectionManager(object):
 
                 session = boto3.session.Session(**config)
                 self._boto_sessions[key] = session
+
+                if session.get_credentials() is None:
+                    raise InvalidAWSCredentialsError(
+                        "Session credentials were not found. Profile: {0}. Region: {1}.".format(
+                            config["profile_name"], config["region_name"]
+                        )
+                    )
 
                 self.logger.debug(
                     "Using credential set from %s: %s",
