@@ -12,6 +12,7 @@ import time
 
 from os import path
 from datetime import datetime, timedelta
+from uuid import uuid1
 
 import botocore
 import json
@@ -97,6 +98,25 @@ class StackActions(object):
                 raise
 
         return status
+
+    def update_is_noop(self):
+        change_set_name = "-".join(["change-set", uuid1().hex])
+        self.create_change_set(change_set_name)
+
+        try:
+            # Wait for change set to be created
+            status = self.wait_for_cs_completion(change_set_name)
+
+            # Describe changes
+            description = self.describe_change_set(change_set_name)
+
+            # Test for no-op
+            if len(description['Changes']) == 0 and status == StackChangeSetStatus.DEFUNCT:
+                return True
+
+            return False
+        finally:
+            self.delete_change_set(change_set_name)
 
     @add_stack_hooks
     def update(self):

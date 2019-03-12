@@ -180,8 +180,12 @@ class TestStackActions(object):
         )
         mock_wait_for_completion.assert_called_once_with()
 
+    @patch("sceptre.plan.actions.StackActions.update_is_noop")
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
-    def test_update_sends_correct_request(self, mock_wait_for_completion):
+    def test_update_sends_correct_request(self, mock_wait_for_completion, mock_update_is_noop):
+        # Emulate changes
+        mock_update_is_noop.return_value = False
+
         self.actions.stack._template = Mock(spec=Template)
         self.actions.stack._template.get_boto_call_parameter.return_value = {
             "Template": sentinel.template
@@ -212,8 +216,12 @@ class TestStackActions(object):
             sentinel.stack_timeout
         )
 
+    @patch("sceptre.plan.actions.StackActions.update_is_noop")
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
-    def test_update_cancels_after_timeout(self, mock_wait_for_completion):
+    def test_update_cancels_after_timeout(self, mock_wait_for_completion, mock_update_is_noop):
+        # Emulate changes
+        mock_update_is_noop.return_value = False
+
         self.actions.stack._template = Mock(spec=Template)
         self.actions.stack._template.get_boto_call_parameter.return_value = {
             "Template": sentinel.template
@@ -251,10 +259,14 @@ class TestStackActions(object):
             [call(sentinel.stack_timeout), call()]
         )
 
+    @patch("sceptre.plan.actions.StackActions.update_is_noop")
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
     def test_update_sends_correct_request_no_notification(
-            self, mock_wait_for_completion
+            self, mock_wait_for_completion, mock_update_is_noop
     ):
+        # Emulate changes
+        mock_update_is_noop.return_value = False
+
         self.actions.stack._template = Mock(spec=Template)
         self.actions.stack._template.get_boto_call_parameter.return_value = {
             "Template": sentinel.template

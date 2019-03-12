@@ -190,9 +190,9 @@ def setup_logging(debug, no_colour):
 
 def simplify_change_set_description(response):
     """
-    Simplies the response from the AWS describe change set API.
+    Simplifies the response from the AWS describe change set API.
 
-    :param response: The original api response.
+    :param response: The original API response.
     :type response: dict
     :returns: A more concise description of the change set.
     :rtype: dict

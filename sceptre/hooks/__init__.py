@@ -3,6 +3,7 @@ import logging
 from functools import wraps
 
 from sceptre.helpers import _call_func_on_values
+from sceptre.stack_status import StackStatus
 
 
 class Hook(object):
@@ -100,6 +101,13 @@ def add_stack_hooks(func):
     """
     @wraps(func)
     def decorated(self, *args, **kwargs):
+        if func.__name__ == "update":
+            if self.update_is_noop():
+                self.logger.info(
+                    "%s - No updates to perform.", self.stack.name
+                )
+                return StackStatus.COMPLETE
+
         execute_hooks(self.stack.hooks.get("before_" + func.__name__))
         response = func(self, *args, **kwargs)
         execute_hooks(self.stack.hooks.get("after_" + func.__name__))
