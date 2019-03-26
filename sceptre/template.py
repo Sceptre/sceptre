@@ -159,6 +159,7 @@ class Template(object):
         # Remove any leading or trailing slashes the user may have added.
         bucket_name = self.s3_details["bucket_name"]
         bucket_key = self.s3_details["bucket_key"]
+        bucket_region = self.s3_details["bucket_region"]
 
         self.logger.debug(
             "%s - Uploading template to: 's3://%s/%s'",
@@ -175,9 +176,14 @@ class Template(object):
             }
         )
 
-        url = "https://{0}.s3.amazonaws.com/{1}".format(
-            bucket_name, bucket_key
-        )
+        if bucket_region in ["cn-north-1", "cn-northwest-1"]:
+            url = "https://{0}.s3.{1}.amazonaws.com.cn/{2}".format(
+                bucket_name, bucket_region, bucket_key
+            )
+        else:
+            url = "https://{0}.s3.amazonaws.com/{1}".format(
+                bucket_name, bucket_key
+            )
 
         self.logger.debug("%s - Template URL: '%s'", self.name, url)
 
