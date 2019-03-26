@@ -1,11 +1,13 @@
-##### Required evn variables
+##### Required env variables
 
-* `CONTAINER_DEST_REPO_DIR` - directory in container where dest repo is initialized within container
-* `DEST_REPO` - destination repository for rendered pages
-* `GITHUB_EMAIL`
-* `GITHUB_TOKEN`
-* `CIRCLE_USERNAME`
+* `REPOSITORY_PATH` - directory in container where dest repo is initialized within container
+* `DEPLOYMENT_GIT_URL` - destination repository for rendered pages
+* `GITHUB_EMAIL` - email which is associated with commit message and github account
+* `GITHUB_TOKEN` - access token with push rights to the target repository `/docs`
+* `CIRCLE_USERNAME` - built in variable in CIRCLE CI - should be same as user who pushes to repository
 
 ##### Optional evn variables
 
 * `RENDERED_DOCS_DIR` - directory where rendered pages are stored within `DEST_REPO` - default is repository root
+* `DOCS_DEV_VERSION` - directory name where latest version of docs are published,
+   default value is `dev` will result in path `../docs/dev`

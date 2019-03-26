@@ -20,7 +20,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..' + os.path.sep + '..'))
-import sceptre
+import sceptre  # noqa
 
 # The short X.Y version
 version = sceptre.__version__

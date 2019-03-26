@@ -1,19 +1,19 @@
 aliases:
-- &docs-job
-  docker:
-  - image: cloudreach/sceptre-circleci:0.3
-    environment:
-      CONTAINER_DEST_REPO_DIR: "/home/circleci/docs"
-      DEST_REPO: "https://github.com/sceptre/docs.git"
-  steps:
-  - attach_workspace:
-      at: /home/circleci
-  - run:
-      name: 'Build and deploy docs'
-      command: |
-        . ./venv/bin/activate
-        chmod +x .circleci/github-pages.sh
-        ./.circleci/github-pages.sh
+  - &docs-job
+    docker:
+      - image: cloudreach/sceptre-circleci:0.3
+        environment:
+          CONTAINER_DEST_REPO_DIR: "/home/circleci/docs"
+          DEST_REPO: "https://github.com/sceptre/docs.git"
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - run:
+          name: 'Build and deploy docs'
+          command: |
+            . ./venv/bin/activate
+            chmod +x .circleci/github-pages.sh
+            ./.circleci/github-pages.sh
 
 version: 2
 jobs:
@@ -143,14 +143,16 @@ workflows:
       # Deploy docs when commit to master
       - deploy-docs-branch:
           requires:
-          - build
+            - lint-and-unit-tests
+            - integration-tests
           filters:
             branches:
               only: master
       # Deploy docs when commit is tagged
       - deploy-docs-tag:
           requires:
-          - build
+            - lint-and-unit-tests
+            - integration-tests
           filters:
             tags:
               only: /^v.*/
