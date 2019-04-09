@@ -196,31 +196,56 @@ class Stack(object):
 
     def __eq__(self, stack):
         return (
-            self.name == stack.name and
-            self.project_code == stack.project_code and
-            self.template_path == stack.template_path and
-            self.region == stack.region and
-            self.template_bucket_name == stack.template_bucket_name and
-            self.template_key_prefix == stack.template_key_prefix and
-            self.required_version == stack.required_version and
-            self.profile == stack.profile and
-            self.sceptre_user_data == stack.sceptre_user_data and
-            self.parameters == stack.parameters and
-            self.hooks == stack.hooks and
-            self.s3_details == stack.s3_details and
-            self.dependencies == stack.dependencies and
-            self.role_arn == stack.role_arn and
-            self.protected == stack.protected and
-            self.tags == stack.tags and
-            self.external_name == stack.external_name and
-            self.notifications == stack.notifications and
-            self.on_failure == stack.on_failure and
-            self.stack_timeout == stack.stack_timeout and
-            self.stack_group_config == stack.stack_group_config
+            self.name == stack.name
+            and self.project_code == stack.project_code
+            and self.template_path == stack.template_path
+            and self.region == stack.region
+            and self.template_bucket_name == stack.template_bucket_name
+            and self.template_key_prefix == stack.template_key_prefix
+            and self.required_version == stack.required_version
+            and self.profile == stack.profile
+            and self.sceptre_user_data == stack.sceptre_user_data
+            and self.parameters == stack.parameters
+            and self.hooks == stack.hooks
+            and self.s3_details == stack.s3_details
+            and self.dependencies == stack.dependencies
+            and self.role_arn == stack.role_arn
+            and self.protected == stack.protected
+            and self.tags == stack.tags
+            and self.external_name == stack.external_name
+            and self.notifications == stack.notifications
+            and self.on_failure == stack.on_failure
+            and self.stack_timeout == stack.stack_timeout
+            and self.stack_group_config == stack.stack_group_config
         )
 
     def __hash__(self):
         return hash(str(self))
+
+    def return_dict(self):
+
+        return {
+            "name": self.name,
+            "project_code": self.project_code,
+            "template_path": self.template_path,
+            "region": self.region,
+            "template_bucket_name": self.template_bucket_name,
+            "template_key_prefix": self.template_key_prefix,
+            "required_version": self.required_version,
+            "profile": self.profile,
+            "parameters": self.parameters,
+            "hooks": self.hooks,
+            "s3_details": self.s3_details,
+            "dependencies": self.dependencies,
+            "role_arn": self.role_arn,
+            "protected": self.protected,
+            "tags": self.tags,
+            "external_name": self.external_name,
+            "notifications": self.notifications,
+            "on_failure": self.on_failure,
+            "stack_timeout": self.stack_timeout,
+            "stack_group_config": self.stack_group_config
+        }
 
     @property
     def template(self):
@@ -237,6 +262,7 @@ class Stack(object):
             self._template = Template(
                 path=self.template_path,
                 sceptre_user_data=self.sceptre_user_data,
+                stack_configuration=self.return_dict(),
                 s3_details=self.s3_details,
                 connection_manager=self.connection_manager
             )
