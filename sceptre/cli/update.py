@@ -50,7 +50,7 @@ def update_command(ctx, path, change_set, verbose, yes):
     )
 
     plan = SceptrePlan(context)
-
+    context.output_format = ctx.obj.get("output_format", plan.cli_defaults.get('output', ""))
     if change_set:
         change_set_name = "-".join(["change-set", uuid1().hex])
         plan.create_change_set(change_set_name)

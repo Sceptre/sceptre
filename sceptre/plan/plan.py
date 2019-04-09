@@ -31,6 +31,11 @@ class SceptrePlan(object):
 
         config_reader = ConfigReader(context)
         all_stacks, command_stacks = config_reader.construct_stacks()
+        # self.cli_defaults = all_stacks[0].cli_defaults
+        for first_stack in command_stacks:
+            self.cli_defaults = first_stack.cli_defaults
+            break
+
         self.graph = StackGraph(all_stacks)
         self.command_stacks = command_stacks
 
@@ -59,9 +64,9 @@ class SceptrePlan(object):
 
         if not launch_order:
             raise ConfigFileNotFoundError(
-                    "No stacks detected from the given path '{}'. Valid stack paths are: {}"
-                    .format(self.context.command_path, self._valid_stack_paths())
-                    )
+                "No stacks detected from the given path '{}'. Valid stack paths are: {}"
+                .format(self.context.command_path, self._valid_stack_paths())
+            )
 
         return launch_order
 
@@ -348,8 +353,8 @@ class SceptrePlan(object):
 
     def _valid_stack_paths(self):
         return [
-                path.relpath(path.join(dirpath, f), self.context.config_path)
-                for dirpath, dirnames, files in walk(self.context.config_path)
-                for f in files
-                if not f.endswith(self.context.config_file)
-            ]
+            path.relpath(path.join(dirpath, f), self.context.config_path)
+            for dirpath, dirnames, files in walk(self.context.config_path)
+            for f in files
+            if not f.endswith(self.context.config_file)
+        ]

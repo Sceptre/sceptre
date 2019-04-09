@@ -61,6 +61,9 @@ class Stack(object):
     :param s3_details:
     :type s3_details: dict
 
+    :param cli_defaults:
+    :type cli_defaults: dict
+
     :param dependencies: The relative path to the Stack, including the file\
             extension of the Stack.
     :type dependencies: list
@@ -109,7 +112,7 @@ class Stack(object):
     def __init__(
         self, name, project_code, template_path, region, template_bucket_name=None,
         template_key_prefix=None, required_version=None, parameters=None,
-        sceptre_user_data=None, hooks=None, s3_details=None,
+        sceptre_user_data=None, hooks=None, s3_details=None, cli_defaults=None,
         dependencies=None, role_arn=None, protected=False, tags=None,
         external_name=None, notifications=None, on_failure=None, profile=None,
         stack_timeout=0, stack_group_config={}
@@ -127,6 +130,7 @@ class Stack(object):
 
         self.template_path = template_path
         self.s3_details = s3_details
+        self.cli_defaults = cli_defaults
         self._template = None
 
         self.protected = protected
@@ -157,6 +161,7 @@ class Stack(object):
             "parameters={parameters}, "
             "hooks={hooks}, "
             "s3_details={s3_details}, "
+            "cli_defaults={cli_defaults}, "
             "dependencies={dependencies}, "
             "role_arn={role_arn}, "
             "protected={protected}, "
@@ -179,6 +184,7 @@ class Stack(object):
                 parameters=self.parameters,
                 hooks=self.hooks,
                 s3_details=self.s3_details,
+                cli_defaults=self.cli_defaults,
                 dependencies=self.dependencies,
                 role_arn=self.role_arn,
                 protected=self.protected,
@@ -208,6 +214,7 @@ class Stack(object):
             self.parameters == stack.parameters and
             self.hooks == stack.hooks and
             self.s3_details == stack.s3_details and
+            self.cli_defaults == stack.cli_defaults and
             self.dependencies == stack.dependencies and
             self.role_arn == stack.role_arn and
             self.protected == stack.protected and

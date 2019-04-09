@@ -114,7 +114,6 @@ class ConfigReader(object):
 
         # Check is valid sceptre project folder
         self._check_valid_project_path(self.full_config_path)
-
         # Add Resolver and Hook classes to PyYAML loader
         self._add_yaml_constructors(
             ["sceptre.hooks", "sceptre.resolvers"]
@@ -386,6 +385,26 @@ class ConfigReader(object):
                 )
 
     @staticmethod
+    def _collect_cli_defaults(config):
+        """
+        Collects and constructs defaults for the CLI
+
+        :param stack_name: Stack name.
+        :type stack_name: str
+        :param config: Config with details.
+        :type config: dict
+        :returns: CLI defaults.
+        :rtype: dict
+        """
+        cli_defaults = {}
+        if "output" in config:
+            cli_defaults = {
+                "output": config['output']
+
+            }
+        return cli_defaults
+
+    @staticmethod
     def _collect_s3_details(stack_name, config):
         """
         Collects and constructs details for where to store the Template in S3.
@@ -456,6 +475,8 @@ class ConfigReader(object):
         s3_details = self._collect_s3_details(
             stack_name, config
         )
+
+        cli_defaults = self._collect_cli_defaults(config)
         stack = Stack(
             name=stack_name,
             project_code=config["project_code"],
@@ -469,6 +490,7 @@ class ConfigReader(object):
             sceptre_user_data=config.get("sceptre_user_data", {}),
             hooks=config.get("hooks", {}),
             s3_details=s3_details,
+            cli_defaults=cli_defaults,
             dependencies=config.get("dependencies", []),
             role_arn=config.get("role_arn"),
             protected=config.get("protect", False),
