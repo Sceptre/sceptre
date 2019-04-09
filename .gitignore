@@ -98,6 +98,7 @@ Temporary Items
 
 # User-specific stuff:
 .idea/
+.vscode/
 
 ## File-based project format:
 *.iws

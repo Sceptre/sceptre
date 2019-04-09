@@ -42,7 +42,14 @@ the CloudFormation Template as a `string`. Sceptre User Data is passed to this
 function as an argument. If Sceptre User Data is not defined in the Stack
 Config file, Sceptre passes an empty `dict`.
 
-### Example
+### Stack Configuration
+In addition to `sceptre_user_data`, you can also accept a argument called `stack_configuration` which will provide your Python code with a rendered version of the current Stack being built. This can be very useful for projects that have a requirement to process more than just the `sceptre_user_data` and can be used for validation before a template is even created.
+
+For example, if you wanted to check that the Stack Tags being applied are compliant with an organisation tagging policy you would be able to access these values directly
+
+It can also allow you to programatically create the Parameters that you have specified in a Stack
+
+### Example with sceptre_user_data (required)
 
 ```python
 from troposphere import Template, Parameter, Ref
@@ -64,5 +71,39 @@ class Vpc(object):
 
 def sceptre_handler(sceptre_user_data):
     vpc = Vpc(sceptre_user_data)
+    return vpc.template.to_json()
+```
+
+### Example with sceptre_user_data and stack_configuration (optional)
+
+```python
+from troposphere import Template, Parameter, Ref
+from troposphere.ec2 import VPC
+
+
+class Vpc(object):
+    def __init__(self, sceptre_user_data, stack_configuration):
+        self.template = Template()
+        self.sceptre_user_data = sceptre_user_data
+        self.stack_configuration = stack_configuration
+        self.add_vpc()
+
+    def add_parameters(self):
+
+        for parameter in self.stack_configuration['parameters'].keys():
+            self.template.add_parameter(Parameter(
+                parameter,
+                Type="String"
+            ))
+
+    def add_vpc(self):
+        self.vpc = self.template.add_resource(VPC(
+            "VirtualPrivateCloud",
+            CidrBlock=self.sceptre_user_data["cidr_block"]
+        ))
+
+
+def sceptre_handler(sceptre_user_data, stack_configuration):
+    vpc = Vpc(sceptre_user_data, stack_configuration)
     return vpc.template.to_json()
 ```

@@ -12,7 +12,6 @@ import logging
 import os
 import sys
 import threading
-
 import botocore
 import jinja2
 from .exceptions import UnsupportedTemplateFileTypeError
@@ -43,12 +42,13 @@ class Template(object):
     _boto_s3_lock = threading.Lock()
 
     def __init__(
-        self, path, sceptre_user_data, connection_manager=None, s3_details=None
+        self, path, sceptre_user_data, stack_configuration=None, connection_manager=None, s3_details=None
     ):
         self.logger = logging.getLogger(__name__)
 
         self.path = path
         self.sceptre_user_data = sceptre_user_data
+        self.stack_configuration = stack_configuration
         self.connection_manager = connection_manager
         self.s3_details = s3_details
 
@@ -92,6 +92,7 @@ class Template(object):
                     ".template, .json and .j2 are supported.",
                     os.path.splitext(self.path)[1]
                 )
+
         return self._body
 
     def _call_sceptre_handler(self):
@@ -109,7 +110,7 @@ class Template(object):
         # NB: this is a horrible hack...
         relpath = os.path.relpath(self.path, os.getcwd()).split(os.path.sep)
         relpaths_to_add = [
-            os.path.sep.join(relpath[:i+1])
+            os.path.sep.join(relpath[:i + 1])
             for i in range(len(relpath[:-1]))
         ]
         # Add any directory between the current working directory and where
@@ -126,15 +127,20 @@ class Template(object):
         module = imp.load_source(self.name, self.path)
 
         try:
+            body = module.sceptre_handler(
+                self.sceptre_user_data,
+                stack_configuration=self.stack_configuration
+            )
+        except TypeError:
             body = module.sceptre_handler(self.sceptre_user_data)
-        except AttributeError as e:
-            if 'sceptre_handler' in str(e):
+        except AttributeError as error:
+            if 'sceptre_handler' in str(error):
                 raise TemplateSceptreHandlerError(
                     "The template does not have the required "
                     "'sceptre_handler(sceptre_user_data)' function."
                 )
             else:
-                raise e
+                raise error
         for directory in relpaths_to_add:
             sys.path.remove(os.path.join(os.getcwd(), directory))
         return body

@@ -560,6 +560,7 @@ class StackActions(object):
         """
         Returns the Template for the Stack
         """
+        self.stack.template.stack_configuration['formatted_parameters'] = self._format_parameters(self.stack.parameters)
         return self.stack.template.body
 
     def validate(self):
@@ -637,12 +638,17 @@ class StackActions(object):
             if value is None:
                 continue
             if isinstance(value, list):
-                value = ",".join(value)
+                value_list = []
+                for item in value:
+                    if isinstance(item, list):
+                        value_list.append(",".join(item))
+                    else:
+                        value_list.append(item)
+                value = ",".join(value_list)
             formatted_parameters.append({
                 "ParameterKey": name,
                 "ParameterValue": value
             })
-
         return formatted_parameters
 
     def _get_role_arn(self):
