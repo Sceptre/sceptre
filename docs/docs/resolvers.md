@@ -23,6 +23,39 @@ sceptre_user_data:
 
 ## Available Resolvers
 
+### aws_secrets_manager
+
+Fetches the secret's value from AWS Secret Mananger. Returns JSON string or specific JSON
+key's value string. Requires IAM permissions:
+
+* secretsmanager:GetSecretValue
+* kms:Decrypt - required only if you use a customer-managed AWS KMS key to encrypt the
+  secret. You do not need this permission to use the account's default AWS managed CMK
+  for Secrets Manager.
+
+Syntax:
+
+```yaml
+parameter|sceptre_user_data:
+  <name>: !aws_secrets_mananger <secret_id>::SecretBinary|SecretString::<optional-secret_value_json_key>
+```
+
+Example:
+
+Secret JSON:
+```json
+{
+  "password": "my_user",
+  "username": "my_password"
+}
+```
+```
+parameters:
+    database_password: !aws_secrets_mananger my-database::SecretString::password
+    database_username: !aws_secrets_mananger my-database::SecretString::username
+    database_credentials_json: !aws_secrets_mananger my-database::SecretString
+```
+
 ### environment_variable
 
 Fetches the value from an environment variable.
