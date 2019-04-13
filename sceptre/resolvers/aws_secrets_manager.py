@@ -52,5 +52,6 @@ class AwsSecretsManager(Resolver):
                 print("The request had invalid params:", e)
         else:
             secret_value_json = json.loads(secret_value_response[secret_string])
-            secret_value = secret_value_json[secret_value_key] if secret_value_key else secret_value_json
+            secret_value = (secret_value_json[secret_value_key] if secret_value_key
+                            else secret_value_json)
             return secret_value
