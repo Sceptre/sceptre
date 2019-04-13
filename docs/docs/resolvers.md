@@ -45,8 +45,8 @@ Example:
 Secret JSON:
 ```json
 {
-  "password": "my_user",
-  "username": "my_password"
+  "password": "my_password",
+  "username": "my_user"
 }
 ```
 ```
