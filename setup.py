@@ -59,6 +59,8 @@ setup(
             "cmd = sceptre.hooks.cmd:Cmd"
         ],
         "sceptre.resolvers": [
+            "aws_secrets_mananger ="
+            "sceptre.resolvers.aws_secrets_manager:AwsSecretsManager",
             "environment_variable ="
             "sceptre.resolvers.environment_variable:EnvironmentVariable",
             "file_contents = sceptre.resolvers.file_contents:FileContents",
