@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import boto3
 import json
 
 from botocore.exceptions import ClientError
@@ -38,18 +37,20 @@ class AwsSecretsManager(Resolver):
         :rtype: str
         """
         secret_id, secret_string, secret_value_key = (self.argument.split("::") + [None] * 3)[:3]
-        client = boto3.client('secretsmanager')
+        connection_manager = self.stack.template.connection_manager
         try:
-            secret_value_response = client.get_secret_value(
-                SecretId=secret_id
+            secret_value_response = connection_manager.call(
+                service='secretsmanager',
+                command='get_secret_value',
+                kwargs={'SecretId': secret_id}
             )
-        except ClientError as e:
-            if e.response['Error']['Code'] == 'ResourceNotFoundException':
+        except ClientError as exception:
+            if exception.response['Error']['Code'] == 'ResourceNotFoundException':
                 print("The requested secret " + secret_id + " was not found")
-            elif e.response['Error']['Code'] == 'InvalidRequestException':
-                print("The request was invalid due to:", e)
-            elif e.response['Error']['Code'] == 'InvalidParameterException':
-                print("The request had invalid params:", e)
+            elif exception.response['Error']['Code'] == 'InvalidRequestException':
+                print("The request was invalid due to:", exception)
+            elif exception.response['Error']['Code'] == 'InvalidParameterException':
+                print("The request had invalid params:", exception)
         else:
             secret_value_json = json.loads(secret_value_response[secret_string])
             secret_value = (secret_value_json[secret_value_key] if secret_value_key
