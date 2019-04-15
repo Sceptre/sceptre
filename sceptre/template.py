@@ -176,7 +176,9 @@ class Template(object):
             }
         )
 
-        if bucket_region in ["cn-north-1", "cn-northwest-1"]:
+        china_regions = ["cn-north-1", "cn-northwest-1"]
+
+        if bucket_region in china_regions:
             url = "https://{0}.s3.{1}.amazonaws.com.cn/{2}".format(
                 bucket_name, bucket_region, bucket_key
             )
