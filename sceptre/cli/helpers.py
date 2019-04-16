@@ -112,19 +112,21 @@ def _generate_yaml(stream):
             try:
                 if isinstance(item, dict):
                     items.append(
-                            yaml.safe_dump(item, default_flow_style=False, explicit_start=True)
+                        yaml.safe_dump(item, default_flow_style=False, explicit_start=True)
                     )
                 else:
                     items.append(
-                            yaml.safe_dump(
-                                yaml.load(item), default_flow_style=False, explicit_start=True)
+                        yaml.safe_dump(
+                            yaml.load(item, Loader=yaml.FullLoader),
+                            default_flow_style=False, explicit_start=True
+                        )
                     )
             except Exception:
                 print("An error occured whilst writing the YAML object.")
         return yaml.safe_dump(
-                    [yaml.load(item) for item in items],
-                    default_flow_style=False, explicit_start=True
-                )
+            [yaml.load(item, Loader=yaml.FullLoader) for item in items],
+            default_flow_style=False, explicit_start=True
+        )
     else:
         try:
             return yaml.safe_loads(stream)
