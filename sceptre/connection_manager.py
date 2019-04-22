@@ -14,10 +14,10 @@ import time
 import boto3
 
 from os import environ
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, ProfileNotFound, PartialCredentialsError
 
 from .helpers import mask_key
-from .exceptions import RetryLimitExceededError
+from .exceptions import RetryLimitExceededError, CredentialsError
 
 
 def _retry_boto_call(func):
@@ -128,9 +128,18 @@ class ConnectionManager(object):
                     "aws_session_token": environ.get("AWS_SESSION_TOKEN")
                 }
 
-                session = boto3.session.Session(**config)
-                self._boto_sessions[key] = session
+                try:
+                    session = boto3.session.Session(**config)
+                except ProfileNotFound:
+                    raise CredentialsError("Profile not found and no envars")
 
+                try:
+                    if session.get_credentials() is None:
+                        raise CredentialsError("No profile was provided and no envars")
+                except PartialCredentialsError:
+                    raise CredentialsError("Profile partially configured")
+
+                self._boto_sessions[key] = session
                 self.logger.debug(
                     "Using credential set from %s: %s",
                     session.get_credentials().method,
@@ -201,4 +210,12 @@ class ConnectionManager(object):
         if kwargs is None:  # pragma: no cover
             kwargs = {}
         client = self._get_client(service, region, profile, stack_name)
-        return getattr(client, command)(**kwargs)
+        try:
+            return getattr(client, command)(**kwargs)
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ExpiredToken":
+                raise CredentialsError("Credentials expired")
+            elif e.response["Error"]["Code"] == "InvalidClientTokenId":
+                raise CredentialsError("Credentials invalid")
+            else:
+                raise

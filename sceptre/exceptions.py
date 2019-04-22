@@ -145,3 +145,10 @@ class InvalidConfigFileError(SceptreException):
     Error raised when a config file lacks mandatory keys.
     """
     pass
+
+
+class CredentialsError(SceptreException):
+    """
+    Error raised when no credentials were found.
+    """
+    pass

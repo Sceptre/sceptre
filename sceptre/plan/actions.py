@@ -358,7 +358,6 @@ class StackActions(object):
             response = self._describe()
         except botocore.exceptions.ClientError:
             return []
-
         return {self.stack.name: response["Stacks"][0].get("Outputs", [])}
 
     def continue_update_rollback(self):
