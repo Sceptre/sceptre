@@ -110,8 +110,7 @@ in the `sceptre.hooks module`.
 Hooks are require to implement a `run()` function that takes no parameters and
 to call the base class initializer.
 
-Hooks may have access to `argument`, `stack_config`, `stack_group_config` and
-`connection_manager` as object attributes. For example `self.stack_config`.
+Hooks may have access to `argument`, and `stack` as object attributes. For example `self.stack`.
 
 Sceptre uses the `sceptre.hooks` entry point to locate hook classes. Your
 custom hook can be written anywhere and is installed as Python package.
@@ -145,10 +144,12 @@ class CustomHook(Hook):
         self.argument is available from the base class and contains the
         argument defined in the Sceptre config file (see below)
 
-        The following attributes may be available from the base class:
-        self.stack_config  (A dict of data from <stack_name>.yaml)
-        self.stack.stack_group_config  (A dict of data from config.yaml)
-        self.connection_manager (A connection_manager)
+        The following parameters may be available to Hooks:
+        
+        :param argument: The argument of the hook.
+        :type argument: str
+        :param stack: The associated stack of the hook.
+        :type stack: sceptre.stack.Stack
         """
         print(self.argument)
 ```
