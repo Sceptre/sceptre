@@ -9,6 +9,8 @@ paths used in a Sceptre project.
 
 from os import path
 
+from sceptre.helpers import normalise_path
+
 
 class SceptreContext(object):
     """
@@ -45,7 +47,7 @@ class SceptreContext(object):
                  no_colour=False, ignore_dependencies=False):
         # project_path: absolute path to the base sceptre project folder
         # e.g. absolute_path/to/sceptre_directory
-        self.project_path = project_path
+        self.project_path = normalise_path(project_path)
 
         # config_path: holds the project stack_groups
         # e.g {project_path}/config
@@ -53,7 +55,9 @@ class SceptreContext(object):
 
         # command_path path to either stack group or stack
         # e.g. {project_path/config_path}/command_path
-        self.command_path = command_path
+        self.command_path = normalise_path(command_path)
+
+        self.normal_command_path = normalise_path(command_path)
 
         # config_file: stack group config. User definable later in v2
         # e.g. {project_path/config/command_path}/config_file

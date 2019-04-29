@@ -7,6 +7,7 @@ import shlex
 
 from botocore.exceptions import ClientError
 
+from sceptre.helpers import normalise_path
 from sceptre.resolvers import Resolver
 from sceptre.exceptions import DependencyStackMissingOutputError
 from sceptre.exceptions import StackDoesNotExistError
@@ -107,8 +108,8 @@ class StackOutput(StackOutputBase):
         """
         Adds dependency to a Stack.
         """
-        self.dependency_stack_name, self.output_key = self.argument.split("::")
-
+        dep_stack_name, self.output_key = self.argument.split("::")
+        self.dependency_stack_name = normalise_path(dep_stack_name)
         self.stack.dependencies.append(self.dependency_stack_name)
 
     def resolve(self):

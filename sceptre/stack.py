@@ -14,6 +14,7 @@ from sceptre.template import Template
 from sceptre.helpers import get_external_stack_name
 from sceptre.hooks import HookProperty
 from sceptre.resolvers import ResolvableProperty
+from sceptre.helpers import sceptreise_path
 
 
 class Stack(object):
@@ -116,14 +117,13 @@ class Stack(object):
     ):
         self.logger = logging.getLogger(__name__)
 
-        self.name = name
+        self.name = sceptreise_path(name)
         self.project_code = project_code
         self.region = region
         self.template_bucket_name = template_bucket_name
         self.template_key_prefix = template_key_prefix
         self.required_version = required_version
-        self.external_name = external_name or \
-            get_external_stack_name(self.project_code, self.name)
+        self.external_name = external_name or get_external_stack_name(self.project_code, self.name)
 
         self.template_path = template_path
         self.s3_details = s3_details
@@ -145,7 +145,7 @@ class Stack(object):
     def __repr__(self):
         return (
             "sceptre.stack.Stack("
-            "name={name}, "
+            "name='{name}', "
             "project_code={project_code}, "
             "template_path={template_path}, "
             "region={region}, "

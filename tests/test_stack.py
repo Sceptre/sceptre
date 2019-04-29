@@ -11,7 +11,7 @@ class TestStack(object):
 
     def setup_method(self, test_method):
         self.stack = Stack(
-            name=sentinel.stack_name, project_code=sentinel.project_code,
+            name='dev/app/stack', project_code=sentinel.project_code,
             template_bucket_name=sentinel.template_bucket_name,
             template_key_prefix=sentinel.template_key_prefix,
             required_version=sentinel.required_version,
@@ -30,14 +30,14 @@ class TestStack(object):
 
     def test_initiate_stack(self):
         stack = Stack(
-            name=sentinel.stack_name, project_code=sentinel.project_code,
+            name='dev/stack/app', project_code=sentinel.project_code,
             template_path=sentinel.template_path,
             template_bucket_name=sentinel.template_bucket_name,
             template_key_prefix=sentinel.template_key_prefix,
             required_version=sentinel.required_version,
             region=sentinel.region, external_name=sentinel.external_name
         )
-        assert stack.name == sentinel.stack_name
+        assert stack.name == 'dev/stack/app'
         assert stack.project_code == sentinel.project_code
         assert stack.template_bucket_name == sentinel.template_bucket_name
         assert stack.template_key_prefix == sentinel.template_key_prefix
@@ -57,10 +57,10 @@ class TestStack(object):
         assert stack.on_failure is None
         assert stack.stack_group_config == {}
 
-    def test_repr(self):
+    def test_stack_repr(self):
         assert self.stack.__repr__() == \
             "sceptre.stack.Stack(" \
-            "name=sentinel.stack_name, " \
+            "name='dev/app/stack', " \
             "project_code=sentinel.project_code, " \
             "template_path=sentinel.template_path, " \
             "region=sentinel.region, " \
@@ -87,11 +87,11 @@ class TestStack(object):
         sceptre = importlib.import_module('sceptre')
         mock = importlib.import_module('mock')
         evaluated_stack = eval(
-                repr(self.stack),
-                {
-                    'sceptre': sceptre,
-                    'sentinel': mock.mock.sentinel
-                }
-            )
+            repr(self.stack),
+            {
+                'sceptre': sceptre,
+                'sentinel': mock.mock.sentinel
+            }
+        )
         assert isinstance(evaluated_stack, Stack)
         assert evaluated_stack.__eq__(self.stack)
