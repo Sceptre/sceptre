@@ -3,6 +3,7 @@
 
 from sceptre import __version__
 from setuptools import setup, find_packages
+from os import path
 
 with open("README.md") as readme_file:
     readme = readme_file.read()
@@ -68,9 +69,9 @@ setup(
         ]
     },
     data_files=[
-        ("sceptre/stack_policies", [
-            "sceptre/stack_policies/lock.json",
-            "sceptre/stack_policies/unlock.json"
+        (path.join("sceptre", "stack_policies"), [
+            path.join("sceptre", "stack_policies", "lock.json"),
+            path.join("sceptre", "stack_policies", "unlock.json")
         ])
     ],
     include_package_data=True,
