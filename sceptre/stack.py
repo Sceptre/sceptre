@@ -128,6 +128,7 @@ class Stack(object):
         self.template_path = template_path
         self.s3_details = s3_details
         self._template = None
+        self._connection_manager = None
 
         self.protected = protected
         self.role_arn = role_arn
@@ -223,6 +224,20 @@ class Stack(object):
         return hash(str(self))
 
     @property
+    def connection_manager(self):
+        """
+        Returns ConnectionManager.
+         :returns: ConnectionManager.
+        :rtype: ConnectionManager
+        """
+        if self._connection_manager is None:
+            self._connection_manager = ConnectionManager(
+                self.region, self.profile, self.external_name
+            )
+
+        return self._connection_manager
+
+    @property
     def template(self):
         """
         Returns the CloudFormation Template used to create the Stack.
@@ -230,9 +245,6 @@ class Stack(object):
         :returns: The Stack's template.
         :rtype: str
         """
-        self.connection_manager = ConnectionManager(
-            self.region, self.profile, self.external_name
-        )
         if self._template is None:
             self._template = Template(
                 path=self.template_path,
