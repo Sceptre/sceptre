@@ -44,7 +44,7 @@ class HookProperty(object):
     nested dictionary and lists.
 
     :param name: Attribute suffix used to store the property in the instance.
-    :type name: string
+    :type name: str
     """
 
     def __init__(self, name):
