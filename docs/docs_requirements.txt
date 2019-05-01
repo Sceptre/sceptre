@@ -1,0 +1,3 @@
+sphinx>=1.8.2<2.0
+sphinx_click>=1.4.1<=3.0
+sphinx_rtd_theme==0.4.3

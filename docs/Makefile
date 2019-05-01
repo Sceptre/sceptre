@@ -1,64 +1,22 @@
-.PHONY: clean
+# Minimal makefile for Sphinx documentation
+#
 
-SHA1 = $(shell git rev-parse --short HEAD)
+# You can set these variables from the command line.
+SPHINXOPTS    =
+SPHINXBUILD   = sphinx-build
+SOURCEDIR     = _source
+BUILDDIR      = _build
 
-GIT_TAG = $(shell git describe --abbrev=0 --tags | sed 's/\./-/g')
-
+# Put it first so that "make" without argument is like "make help".
 help:
-	@echo "docs Makefile (if called from parent directory must be prefixed with docs)"
-	@echo "e.g docs-serve-latest"
-	@echo ""
-	@echo "install - install jekyll and it's dependencies"
-	@echo "build-{latest,dev,tag,commit} - build the latest docs using a baseurl of {latest,dev,tag,commit}"
-	@echo "serve-{latest,dev,tag,commit} - build and locally serve the latest docs on a baseurl of localhost:400/{latest,dev,tag,commit}"
-	@echo ""
-	@echo "baseurls:"
-	@echo "- latest - static"
-	@echo "- dev -static"
-	@echo "- tag - dynamic based on the current git tag"
-	@echo "- commit - dynamic based on the current git sha1"
-	@echo ""
-	@echo "note: There is also a makefile in docs/_api (cd to docs/api and run make help for more info)"
+	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-install:
-	bundle install --path vendor
+.PHONY: help Makefile
 
-clean: clean-api
-	rm -rf _site/
-	rm -rf .sass-cache/
+# Catch-all target: route all unknown targets to Sphinx using the new
+# "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
+%: Makefile
+	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
-clean-api:
-	rm -f _api/sceptre.rst
-	rm -f _api/modules.rst
-	sphinx-apidoc -o _api ../sceptre
-	$(MAKE) -C _api clean
-
-build-api: clean-api
-	$(MAKE) -C _api html
-	rm -rf docs/api/
-	cp -r _api/_build/html docs/
-	mv docs/html docs/api
-
-build-latest: clean build-api
-	bundle exec jekyll build --baseurl /latest
-
-build-tag: clean build-api
-	bundle exec jekyll build --baseurl /$(GIT_TAG)
-
-build-dev: clean build-api
-	bundle exec jekyll build --baseurl /dev
-
-build-commit: clean build-api
-	bundle exec jekyll build --baseurl /$(SHA1)
-
-serve-latest: clean build-latest
-	bundle exec jekyll serve --baseurl /latest
-
-serve-tag: clean build-tag
-	bundle exec jekyll serve --baseurl /$(GIT_TAG)
-
-serve-dev: clean build-dev
-	bundle exec jekyll serve --baseurl /dev
-
-serve-commit: clean build-commit
-	bundle exec jekyll serve --baseurl /$(SHA1)
+apidoc:
+	@sphinx-apidoc -fM -o "$(SOURCEDIR)/apidoc" ../sceptre

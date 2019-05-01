@@ -57,7 +57,7 @@ class Stack(object):
 
     :param hooks: A list of arbitrary shell or python commands or scripts to\
             run.
-    :type hooks: sceptre.hooks.hook
+    :type hooks: sceptre.hooks.Hook
 
     :param s3_details:
     :type s3_details: dict

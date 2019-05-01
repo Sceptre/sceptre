@@ -23,9 +23,7 @@ def catch_exceptions(func):
 
     :param func: The function which may throw exceptions which should be
         simplified.
-    :type func: func
     :returns: The decorated function.
-    :rtype: func
     """
     @wraps(func)
     def decorated(*args, **kwargs):
@@ -63,7 +61,7 @@ def write(var, output_format="text", no_colour=True):
     write ``var`` as a JSON or YAML string.
 
     :param var: The object to print
-    :type var: obj
+    :type var: object
     :param output_format: The format to print the output as. Allowed values: \
     "text", "json", "yaml"
     :type output_format: str
@@ -265,7 +263,7 @@ class CustomJsonEncoder(json.JSONEncoder):
         Returns stringified version of item.
 
         :param item: An arbitrary object to stringify.
-        :type item: obj
+        :type item: object
         :returns: The stringified object.
         :rtype: str
         """
