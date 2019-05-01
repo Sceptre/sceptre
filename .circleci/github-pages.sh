@@ -4,7 +4,6 @@ set -e
 # required env vars
 declare -a vars=(
     REPOSITORY_PATH # directory in container where dest repo is initialized within container
-    DEPLOYMENT_GIT_URL  # destination repository for rendered pages
     GITHUB_EMAIL  # email which is associated with commit message and github account
     GITHUB_TOKEN  # access token with push rights to the target repository /docs
     CIRCLE_USERNAME  # built in variable in CIRCLE CI - should be same as user who pushes to repository
@@ -22,14 +21,21 @@ mkdir -p ${REPOSITORY_PATH}
 #### go to docs dir, setup git and upload the results #####
 cd ${REPOSITORY_PATH}
 
-# strip directory from repo path
-DEPLOYMENT_GIT_URL_DIR_NAME=$(basename ${DEPLOYMENT_GIT_URL%.*})
+
+if [[ -n "${DEPLOYMENT_GIT_HTTPS}" ]]; then
+    CLONE_URL="https://${GITHUB_NAME}:${GITHUB_TOKEN}@${DEPLOYMENT_GIT_HTTPS#*"https://"}"
+else
+    CLONE_URL=${DEPLOYMENT_GIT_SSH}
+fi
+
+# strip directory from repo url
+DEPLOY_DIR_NAME=$(basename ${CLONE_URL%.*})
 
 # clone web site
-git clone ${DEPLOYMENT_GIT_URL}
+git clone ${CLONE_URL}
 
 # ensure sceptre-docs exist in destination directory
-BUILD_DIR=${REPOSITORY_PATH}/${DEPLOYMENT_GIT_URL_DIR_NAME}${RENDERED_DOCS_DIR:+"/${RENDERED_DOCS_DIR}"}
+BUILD_DIR=${REPOSITORY_PATH}/${DEPLOY_DIR_NAME}${RENDERED_DOCS_DIR:+"/${RENDERED_DOCS_DIR}"}
 
 mkdir -p ${BUILD_DIR}
 
@@ -69,7 +75,7 @@ rm -rf ${OLD_VERSIONS}
 IFS=${OIFS}
 
 # go to site/docs
-cd ${DEPLOYMENT_GIT_URL_DIR_NAME}
+cd ${DEPLOY_DIR_NAME}
 
 # setup git user
 git config --global user.email "${GITHUB_EMAIL}" > /dev/null 2>&1
@@ -79,7 +85,13 @@ git add -A
 
 COMMIT_MESSAGE="Update docs version ${VERSION}" # commit sha: ${}
 
-GH_PAGES_URL="https://${GITHUB_NAME}:${GITHUB_TOKEN}@${DEPLOYMENT_GIT_URL#*"https://"}"
+
+if [[ -n "${DEPLOYMENT_GIT_HTTPS}" ]]; then
+    GH_PAGES_URL="https://${GITHUB_NAME}:${GITHUB_TOKEN}@${DEPLOYMENT_GIT_HTTPS#*"https://"}"
+else
+    GH_PAGES_URL=${DEPLOYMENT_GIT_SSH}
+fi
+
 git remote add website ${GH_PAGES_URL}
 
 git commit -am "${COMMIT_MESSAGE}"

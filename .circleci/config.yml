@@ -3,14 +3,19 @@ aliases:
     docker:
       - image: cloudreach/sceptre-circleci:0.3
         environment:
-          CONTAINER_DEST_REPO_DIR: "/home/circleci/docs"
-          DEST_REPO: "https://github.com/sceptre/docs.git"
+          REPOSITORY_PATH: "/home/circleci/docs"
+          DEPLOYMENT_GIT_SSH: "git@github.com:Sceptre/docs.git"
     steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "80:24:c0:40:28:36:f1:80:7f:fd:15:c3:09:cf:86:fc"
       - attach_workspace:
           at: /home/circleci
       - run:
           name: 'Build and deploy docs'
           command: |
+            chmod +x .circleci/add-known-hosts.sh
+            ./.circleci/add-known-hosts.sh
             . ./venv/bin/activate
             chmod +x .circleci/github-pages.sh
             ./.circleci/github-pages.sh
