@@ -126,6 +126,7 @@ For example ``self.stack_config``.
 Sceptre uses the ``sceptre.resolvers`` entry point to locate resolver classes.
 Your custom resolver can be written anywhere and is installed as Python
 package.
+In case you are not familiar with python packaging, `this is great place to start`_.
 
 Example
 ~~~~~~~
@@ -184,10 +185,6 @@ custom_resolver.py
                 """
                 return self.argument
 
-The resolver name is the lower snake-case version of the class name. The
-argument of the resolver (``<value>``) will be available inside the resolver as
-``self.argument``. The resolver subclass above can be used in a Stack config
-file with the following syntax:
 
 setup.py
 ^^^^^^^^
@@ -197,10 +194,11 @@ setup.py
    from setuptools import setup
 
    setup(
-       name='custom_resolver',
+       name='<custom_resolver_package_name>',
+       py_modules=['<custom_resolver_module_name>'],
        entry_points={
            'sceptre.resolvers': [
-               '<custom_resolver_name> = <custom_resolver_name>:CustomResolver',
+               '<custom_resolver_command_name> = <custom_resolver_module_namef>:CustomResolver',
            ],
        }
    )
@@ -213,6 +211,7 @@ This resolver can be used in a Stack config file with the following syntax:
 
    template_path: <...>
    parameters:
-     param1: !<your_resolver_name> <value> <optional-aws-profile>
+     param1: !<custom_resolver_command_name> <value> <optional-aws-profile>
 
 .. _Custom Resolvers: #custom-resolvers
+.. _this is great place to start: https://docs.python.org/3/distributing/

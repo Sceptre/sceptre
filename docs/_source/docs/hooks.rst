@@ -111,12 +111,11 @@ in the ``sceptre.hooks module``.
 Hooks are require to implement a ``run()`` function that takes no parameters
 and to call the base class initializer.
 
-Hooks may have access to ``argument``, ``stack_config``, ``stack_group_config``
-and ``connection_manager`` as object attributes. For example
-``self.stack_config``.
+Hooks may have access to ``argument``, and ``stack`` as object attributes. For example ``self.stack``.
 
 Sceptre uses the ``sceptre.hooks`` entry point to locate hook classes. Your
 custom hook can be written anywhere and is installed as Python package.
+In case you are not familiar with python packaging, `this is great place to start`_.
 
 Example
 ~~~~~~~
@@ -145,10 +144,8 @@ custom_hook.py
         argument: str
             The argument is available from the base class and contains the
             argument defined in the Sceptre config file (see below)
-        stack_config: dict
-             A dict of data from <stack_name>.yaml
-        stack.stack_group_config: dict
-            A dict of data from config.yaml
+        stack: sceptre.stack.Stack
+             The associated stack of the hook.
         connection_manager: sceptre.connection_manager.ConnectionManager
             Boto3 Connection Manager - can be used to call boto3 api.
 
@@ -179,10 +176,11 @@ setup.py
    from setuptools import setup
 
    setup(
-       name='custom_hook',
+       name='custom_hook_package',
+       py_modules=['<custom_hook_module_name>'],
        entry_points={
            'sceptre.hooks': [
-               '<custom_hook_name> = <custom_hook_name>:CustomHook',
+               '<custom_hook_command_name> = <custom_hook_module_name>:CustomHook',
            ],
        }
    )
@@ -196,8 +194,9 @@ This hook can be used in a Stack config file with the following syntax:
    template_path: <...>
    hooks:
      before_create:
-       - !custom_hook <argument> # The argument is accessible via self.argument
+       - !custom_hook_command_name <argument> # The argument is accessible via self.argument
 
 .. _Custom Hooks: #custom-hooks
-.. _subprocess documentation: https://docs.python.org/2/library/subprocess.html
+.. _subprocess documentation: https://docs.python.org/3/library/subprocess.html
 .. _documentation: http://docs.aws.amazon.com/autoscaling/latest/userguide/as-suspend-resume-processes.html
+.. _this is great place to start: https://docs.python.org/3/distributing/
