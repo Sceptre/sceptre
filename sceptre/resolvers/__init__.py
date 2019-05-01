@@ -7,7 +7,7 @@ from sceptre.helpers import _call_func_on_values
 
 
 @six.add_metaclass(abc.ABCMeta)
-class Resolver():
+class Resolver:
     """
     Resolver is an abstract base class that should be inherited by all
     Resolvers.
@@ -52,7 +52,7 @@ class ResolvableProperty(object):
     type. Supports nested dictionary and lists.
 
     :param name: Attribute suffix used to store the property in the instance.
-    :type name: string
+    :type name: str
     """
 
     def __init__(self, name):

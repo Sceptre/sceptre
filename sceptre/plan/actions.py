@@ -540,7 +540,7 @@ class StackActions(object):
         Lists the Stack's Change Sets.
 
         :returns: The Stack's Change Sets.
-        :rtype: dict | list
+        :rtype: dict or list
         """
         self.logger.debug("%s - Listing change sets", self.stack.name)
         try:

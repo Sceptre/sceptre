@@ -1,0 +1,42 @@
+{% if GHPAGES %}
+    <div class="rst-versions" data-toggle="rst-versions" role="note" aria-label="versions">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      <span class="fa fa-book"> Read the Docs</span>
+      v: {{ version }}
+      <span class="fa fa-caret-down"></span>
+    </span>
+
+        <div class="rst-other-versions">
+            <dl id="other-versions">
+                <dt>Versions</dt>
+            </dl>
+            <dl>
+                {% set links = {
+                'Cloudreach':'https://www.cloudreach.com',
+                'Sceptre Home': 'https://www.sceptre.cloudreach.com'
+                } %}
+                <dt>Other Links</dt>
+                {% for title, url in links.items() %}
+
+                    <dd>
+                        <a href="{{ url }}">{{ title }}</a>
+                    </dd>
+                {% endfor %}
+            </dl>
+            <hr/>
+            Original template provided by <a href="http://www.readthedocs.org">Read the Docs</a>.
+        </div>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                $.getScript("{{ pathto("../version-helper.js", 1) }}").done(
+                    function () {
+                        versions.forEach(function (item, index) {
+                            if (item !== "{{ version }}") {
+                                $('#other-versions').append('<dd><a href="../' + item + '">' + item + "<a/></dd>");
+                            }
+                        })
+                    });
+            });
+        </script>
+    </div>
+{% endif %}
