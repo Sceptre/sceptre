@@ -13,7 +13,7 @@ class TestSceptreContext(object):
     def test_context_with_path(self):
         self.context = SceptreContext(
             project_path="project_path/to/sceptre",
-            command_path=sentinel.command_path,
+            command_path="command-path",
             user_variables=sentinel.user_variables,
             options=sentinel.options,
             output_format=sentinel.output_format,
@@ -27,7 +27,7 @@ class TestSceptreContext(object):
     def test_full_config_path_returns_correct_path(self):
         context = SceptreContext(
             project_path="project_path",
-            command_path=sentinel.command_path,
+            command_path="command-path",
             user_variables=sentinel.user_variables,
             options=sentinel.options,
             output_format=sentinel.output_format,

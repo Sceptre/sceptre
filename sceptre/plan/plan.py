@@ -12,6 +12,7 @@ from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.config.graph import StackGraph
 from sceptre.config.reader import ConfigReader
 from sceptre.plan.executor import SceptrePlanExecutor
+from sceptre.helpers import sceptreise_path
 
 
 class SceptrePlan(object):
@@ -59,9 +60,9 @@ class SceptrePlan(object):
 
         if not launch_order:
             raise ConfigFileNotFoundError(
-                    "No stacks detected from the given path '{}'. Valid stack paths are: {}"
-                    .format(self.context.command_path, self._valid_stack_paths())
-                    )
+                "No stacks detected from the given path '{}'. Valid stack paths are: {}"
+                .format(sceptreise_path(self.context.command_path), self._valid_stack_paths())
+            )
 
         return launch_order
 
@@ -348,8 +349,8 @@ class SceptrePlan(object):
 
     def _valid_stack_paths(self):
         return [
-                path.relpath(path.join(dirpath, f), self.context.config_path)
-                for dirpath, dirnames, files in walk(self.context.config_path)
-                for f in files
-                if not f.endswith(self.context.config_file)
-            ]
+            sceptreise_path(path.relpath(path.join(dirpath, f), self.context.config_path))
+            for dirpath, dirnames, files in walk(self.context.config_path)
+            for f in files
+            if not f.endswith(self.context.config_file)
+        ]

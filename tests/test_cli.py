@@ -416,7 +416,7 @@ class TestCli(object):
             cli, ["list", "outputs", "dev/vpc.yaml", "-e", "envvar"]
         )
         assert result.exit_code == 0
-        assert yaml.safe_load(result.output) == "export SCEPTRE_Key=Value"
+        assert yaml.safe_load(result.output) == "export SCEPTRE_Key='Value'"
 
     def test_status_with_group(self):
         self.mock_stack_actions.get_status.return_value = {
