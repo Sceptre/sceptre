@@ -4,6 +4,12 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.1.2 (2019.05.07)
+
+### Fixed
+
+- Fix `stack_output` resolver recursion error
+
 ## 2.1.1 (2019.05.01)
 
 ### Fixed
