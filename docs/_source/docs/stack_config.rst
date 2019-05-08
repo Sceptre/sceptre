@@ -18,7 +18,7 @@ particular Stack. The available keys are listed below.
 -  `notifications`_ *(optional)*
 -  `on_failure`_ *(optional)*
 -  `parameters`_ *(optional)*
--  `protected`_ *(optional)*
+-  `protect`_ *(optional)*
 -  `role_arn`_ *(optional)*
 -  `sceptre_user_data`_ *(optional)*
 -  `stack_name`_ *(optional)*
@@ -118,8 +118,8 @@ Example:
        - !stack_output security-groups::BaseSecurityGroupId
        - !file_contents /file/with/security_group_id.txt
 
-protected
-~~~~~~~~~
+protect
+~~~~~~~
 
 Stack protection against execution of the following commands:
 
@@ -131,6 +131,12 @@ Stack protection against execution of the following commands:
 
 If a user tries to run one of these commands on a protected Stack, Sceptre will
 throw an error.
+
+Example:
+
+.. code-block:: yaml
+
+  protect: true
 
 role_arn
 ~~~~~~~~
@@ -294,7 +300,7 @@ Examples
 .. _notifications: #notifications
 .. _on_failure: #on_failure
 .. _parameters: #parameters
-.. _protected: #protected
+.. _protect: #protect
 .. _role_arn: #role_arn
 .. _sceptre_user_data: #sceptre_user_data
 .. _stack_name: #stack_name
