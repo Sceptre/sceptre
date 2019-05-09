@@ -2,6 +2,15 @@
 History
 =======
 
+1.5.0 (2019.05.09)
+------------------
+
+* Fix CLI return for update-stack-cs.
+* Add New commands generate-env-config, generate-stack-config.
+* Support non-scalar arguments for hooks and resolvers.
+* Auto create changeset.
+* Fix Remove duplication of timestamp.
+
 1.4.2 (2018.09.11)
 ------------------
 
@@ -36,13 +45,13 @@ History
 1.3.4 (2018-02-19)
 ------------------
 
-* Fixed CircleCi PyPi Deployment 
+* Fixed CircleCi PyPi Deployment
 * Update Boto3 requirements
 
 1.3.3 (2018-02-19)
 ------------------
 
-* Released in Error. Contained breaking changes from v2. Fixed in 1.3.4. 
+* Released in Error. Contained breaking changes from v2. Fixed in 1.3.4.
 
 1.3.2 (2017.11.28)
 ------------------
