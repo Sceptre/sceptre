@@ -401,7 +401,7 @@ class ConfigReader(object):
         s3_details = None
         if "template_bucket_name" in config:
             template_key = "/".join([
-                stack_name.replace("\\", "/"), "{time_stamp}.json".format(
+                sceptreise_path(stack_name), "{time_stamp}.json".format(
                     time_stamp=datetime.datetime.utcnow().strftime(
                         "%Y-%m-%d-%H-%M-%S-%fZ"
                     )
