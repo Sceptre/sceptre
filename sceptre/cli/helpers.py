@@ -55,7 +55,7 @@ def confirmation(
         click.confirm(msg, abort=True)
 
 
-def write(var, output_format="text", no_colour=True):
+def write(var, output_format="json", no_colour=True):
     """
     Writes ``var`` to stdout. If output_format is set to "json" or "yaml",
     write ``var`` as a JSON or YAML string.

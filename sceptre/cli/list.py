@@ -85,9 +85,9 @@ def list_outputs(ctx, path, export):
             for stack in response.values():
                 for output in stack:
                     write("export SCEPTRE_{0}='{1}'".format(
-                                output.get("OutputKey"),
-                                output.get("OutputValue")
-                            ), 'str')
+                        output.get("OutputKey"),
+                        output.get("OutputValue")
+                    ), 'text')
     else:
         write(responses, context.output_format)
 
