@@ -4,11 +4,17 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.1.3 (2019.05.14)
+
+### Fixed
+
+- Fix `stack_name` for s3 upload in Windows environment.
+
 ## 2.1.2 (2019.05.09)
 
 ### Fixed
 
-- Fix `stack_output` resolver recursion error
+- Fix `stack_output` resolver recursion error.
 
 ## 2.1.1 (2019.05.01)
 
