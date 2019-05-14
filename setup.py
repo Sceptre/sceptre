@@ -3,6 +3,7 @@
 
 from sceptre import __version__
 from setuptools import setup, find_packages
+from os import path
 
 with open("README.md") as readme_file:
     readme = readme_file.read()
@@ -13,7 +14,7 @@ with open("CHANGELOG.md") as history_file:
 install_requirements = [
     "boto3>=1.3,<2.0",
     "click==7.0",
-    "PyYaml>=4.2b1,<5.0",
+    "PyYaml>=5.1,<6.0",
     "Jinja2>=2.8,<3",
     "packaging==16.8",
     "colorama==0.3.9",
@@ -68,9 +69,9 @@ setup(
         ]
     },
     data_files=[
-        ("sceptre/stack_policies", [
-            "sceptre/stack_policies/lock.json",
-            "sceptre/stack_policies/unlock.json"
+        (path.join("sceptre", "stack_policies"), [
+            path.join("sceptre", "stack_policies", "lock.json"),
+            path.join("sceptre", "stack_policies", "unlock.json")
         ])
     ],
     include_package_data=True,
