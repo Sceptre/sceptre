@@ -33,17 +33,20 @@ jobs:
       - restore_cache:
           key:
             sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
-            checksum "requirements.txt" }}
+            checksum "requirements/prod.txt" }}-{{ checksum
+            "requirements/dev.txt" }}
       - run:
           name: 'Installing Requirements'
           command: |
             . ./venv/bin/activate
-            pip install -r requirements.txt
+            pip install -r requirements/prod.txt
+            pip install -r requirements/dev.txt
             pip install awscli
       - save_cache:
           key:
             sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
-            checksum "requirements.txt" }}
+            checksum "requirements/prod.txt" }}-{{ checksum
+            "requirements/dev.txt" }}
           paths:
             - venv
       - run:
@@ -64,7 +67,8 @@ jobs:
       - restore_cache:
           key:
             sceptre-{{ .Environment.CACHE_VERSION }}-tox-requirements-{{ arch
-            }}-{{ checksum "requirements.txt" }}-{{ checksum "tox.ini" }}
+            }}-{{ checksum "requirements/prod.txt" }}-{{ checksum
+            "requirements/dev.txt" }} -{{ checksum "tox.ini" }}
       - run:
           name: 'Linting'
           command: |
@@ -85,7 +89,8 @@ jobs:
       - save_cache:
           key:
             sceptre-{{ .Environment.CACHE_VERSION }}-tox-requirements-{{ arch
-            }}-{{ checksum "requirements.txt" }}-{{ checksum "tox.ini" }}
+            }}-{{ checksum "requirements/prod.txt" }}-{{ checksum
+            "requirements/dev.txt" }}-{{ checksum "tox.ini" }}
           paths:
             - .tox
   integration-tests:
