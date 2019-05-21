@@ -121,6 +121,7 @@ install: clean
 	pip install .
 
 install-dev: clean
-	pip install -r requirements.txt
+	pip install -r requirements/prod.txt
+	pip install -r requirements/dev.txt
 	pip install -e .
 	@echo "To install the documentation dependencies, run:\ncd docs\nmake install"
