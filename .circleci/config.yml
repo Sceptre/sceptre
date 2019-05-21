@@ -20,7 +20,13 @@ aliases:
             chmod +x .circleci/github-pages.sh
             ./.circleci/github-pages.sh
 
-version: 2
+version: 2.1
+executors:
+  docker-publisher:
+    environment:
+      IMAGE_NAME: cloudreach/sceptre
+    docker:
+      - image: circleci/buildpack-deps:stretch
 jobs:
   build:
     docker:
@@ -134,20 +140,72 @@ jobs:
             . ./venv/bin/activate
             pip install twine
             twine upload -u $PYPI_USERNAME -p $PYPI_PASSWORD dist/*
+
+  build-docker-image:
+    executor: docker-publisher
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build Docker Image
+          command: |
+            docker build -t $IMAGE_NAME:latest .
+      - run:
+          name: Archive Docker Image
+          command: docker save -o image.tar $IMAGE_NAME
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./image.tar
+
+  publish-latest-dockerhub:
+    executor: docker-publisher
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - setup_remote_docker
+      - run:
+          name: Load Docker image archive
+          command: docker load -i /tmp/workspace/image.tar
+      - run:
+          name: Publish Image to Docker Hub
+          command: |
+            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin docker push $IMAGE_NAME:latest
+
+  deploy-dockerhub-tagged:
+    executor: docker-publisher
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - setup_remote_docker
+      - run:
+          name: Load archived Docker image
+          command: docker load -i /tmp/workspace/image.tar
+      - run:
+          name: Publish Tagged Image to Docker Hub
+          command: |
+            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            IMAGE_TAG=${CIRCLE_TAG/v/''}
+            docker tag $IMAGE_NAME:latest $IMAGE_NAME:$IMAGE_TAG
+            docker push $IMAGE_NAME:latest
+            docker push $IMAGE_NAME:$IMAGE_TAG
+
 workflows:
-  version: 2
+  version: 2.1
   build-test-and-deploy:
     jobs:
       - build:
           filters:
             tags:
               only: /.*/
+
       - lint-and-unit-tests:
           requires:
             - build
           filters:
             tags:
               only: /.*/
+
       - integration-tests:
           requires:
             - build
@@ -156,7 +214,7 @@ workflows:
               only: /.*/
             branches:
               ignore: /^pull\/.*/
-      # Deploy docs when commit to master
+
       - deploy-docs-branch:
           requires:
             - lint-and-unit-tests
@@ -164,7 +222,7 @@ workflows:
           filters:
             branches:
               only: master
-      # Deploy docs when commit is tagged
+
       - deploy-docs-tag:
           requires:
             - lint-and-unit-tests
@@ -174,6 +232,7 @@ workflows:
               only: /^v.*/
             branches:
               ignore: /.*/
+
       - deploy-pypi-approval:
           type: approval
           requires:
@@ -184,11 +243,34 @@ workflows:
               only: /^v[0-9]+(\.[0-9]+)*/
             branches:
               ignore: /.*/
+
       - deploy-pypi:
           requires:
             - deploy-pypi-approval
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*/
+            branches:
+              ignore: /.*/
+
+      - build-docker-image:
+          requires:
+            - lint-and-unit-tests
+            - integration-tests
+
+      - deploy-latest-dockerhub:
+          requires:
+            - build-docker-image
+          filters:
+            branches:
+              only: master
+
+      - deploy-dockerhub-tagged:
+          requires:
+            - deploy-pypi
+            - build-docker-image
+          filters:
+            tags:
+              only: /^v.*/
             branches:
               ignore: /.*/
