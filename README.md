@@ -1,23 +1,30 @@
 # Sceptre
 
-![image](https://circleci.com/gh/cloudreach/sceptre.png?style=shield) ![image](https://badge.fury.io/py/sceptre.svg)
+![image](https://circleci.com/gh/cloudreach/sceptre.png?style=shield)
+![image](https://badge.fury.io/py/sceptre.svg)
 
 # About
 
-Sceptre is a tool to drive [AWS CloudFormation](https://aws.amazon.com/cloudformation).
-It automates the mundane, repetitive and error-prone tasks, enabling you to concentrate
-on building better infrastructure.
+Sceptre is a tool to drive
+[AWS CloudFormation](https://aws.amazon.com/cloudformation). It automates the
+mundane, repetitive and error-prone tasks, enabling you to concentrate on
+building better infrastructure.
 
 # Features
 
 - Code reuse by separating a Stack's template and its configuration
-- Support for templates written in JSON, YAML, Jinja2 or Python DSLs such as Troposphere
-- Dependency resolution by passing of Stack outputs to parameters of dependent Stacks
-- Stack Group support by bundling related Stacks into logical groups (e.g. dev and prod)
-- Stack Group-level commands, such as creating multiple Stacks with a single command
+- Support for templates written in JSON, YAML, Jinja2 or Python DSLs such as
+  Troposphere
+- Dependency resolution by passing of Stack outputs to parameters of dependent
+  Stacks
+- Stack Group support by bundling related Stacks into logical groups (e.g. dev
+  and prod)
+- Stack Group-level commands, such as creating multiple Stacks with a single
+  command
 - Fast, highly parallelised builds
 - Built in support for working with Stacks in multiple AWS accounts and regions
-- Infrastructure visibility with meta-operations such as Stack querying protection
+- Infrastructure visibility with meta-operations such as Stack querying
+  protection
 - Support for inserting dynamic values in templates via customisable Resolvers
 - Support for running arbitrary code as Hooks before/after Stack builds
 
@@ -35,18 +42,38 @@ on building better infrastructure.
 
 `$ pip install sceptre`
 
-More information on installing sceptre can be found in our [Installation Guide](https://sceptre.cloudreach.com/latest/docs/install.html)
+More information on installing sceptre can be found in our
+[Installation Guide](https://sceptre.cloudreach.com/latest/docs/install.html)
+
+# Use Docker Image
+
+To use our Docker image follow these instructions:
+
+1. Pull the image `docker pull cloudreach/sceptre:[SCEPTRE_VERSION_NUMBER]` e.g.
+   `docker pull cloudreach/sceptre:2.1.3`. Leave out the version number if you
+   wish to run `latest`.
+
+2. Run the image. You will need to mount the working directory where your
+   project resides to a directory called `project`. You will also need to mount
+   a volume with your AWS config to your docker container. E.g.
+
+`docker run -v $(pwd):/project -v /Users/user1/.aws/:/root/.aws/:ro -it cloudreach/sceptre:2.1.3 /bin/sh`
+
+If you have any other environment variables in your non-docker shell you will
+need to pass these in on the Docker CLI using the `-e` flag. See Docker
+documentation on how to achieve this.
 
 # Migrate v1 to v2
 
 We have tried to make the migration to Sceptre v2 as simple as possible. For
-information about how to migration your v1 project please see our [Migration
-Guide](https://github.com/cloudreach/sceptre/wiki/Migration-Guide:-V1-to-V2)
+information about how to migration your v1 project please see our
+[Migration Guide](https://github.com/cloudreach/sceptre/wiki/Migration-Guide:-V1-to-V2)
 
 # V1 End of Life Notice
 
-Support for Version 1 will [end on June 1 2019](https://github.com/cloudreach/sceptre/issues/593).
-For new projects we recommend using Version 2.
+Support for Version 1 will
+[end on June 1 2019](https://github.com/cloudreach/sceptre/issues/593). For new
+projects we recommend using Version 2.
 
 # Example
 
@@ -67,8 +94,8 @@ $ tree
     └── vpc.py
 ```
 
-We can create a Stack with the `create` command. This `vpc` Stack contains
-a VPC.
+We can create a Stack with the `create` command. This `vpc` Stack contains a
+VPC.
 
 ```
 $ sceptre create dev/vpc.yaml
@@ -92,8 +119,8 @@ dev/subnets Subnet AWS::EC2::Subnet CREATE_COMPLETE
 dev/subnets sceptre-demo-dev-subnets AWS::CloudFormation::Stack CREATE_COMPLETE
 ```
 
-Sceptre implements meta-operations, which allow us to find out information
-about our Stacks:
+Sceptre implements meta-operations, which allow us to find out information about
+our Stacks:
 
 ```
 $ sceptre list resources dev/subnets.yaml
@@ -120,8 +147,8 @@ dev/vpc VirtualPrivateCloud AWS::EC2::VPC DELETE_IN_PROGRESS
 dev/vpc - Stack deleted
 ```
 
-> Note: Deleting Stacks will _only_ delete a given Stack, or the Stacks that
-> are directly in a given StackGroup. By default Stack dependencies that are
+> Note: Deleting Stacks will _only_ delete a given Stack, or the Stacks that are
+> directly in a given StackGroup. By default Stack dependencies that are
 > external to the StackGroup are not deleted.
 
 Sceptre can also handle cross Stack Group dependencies, take the following
@@ -156,9 +183,9 @@ $ tree
 ```
 
 In this project `staging/eu/stack.yaml` has a dependency on the output of
-`dev/users/iam.yaml`. If you wanted to create the Stack
-`staging/eu/stack.yaml`, Sceptre will resolve all of it's dependencies,
-including `dev/users/iam.yaml`, before attempting to create the Stack.
+`dev/users/iam.yaml`. If you wanted to create the Stack `staging/eu/stack.yaml`,
+Sceptre will resolve all of it's dependencies, including `dev/users/iam.yaml`,
+before attempting to create the Stack.
 
 ## Usage
 
@@ -201,17 +228,16 @@ Commands:
 
 ## Python
 
-Using Sceptre as a Python module is very straightforward. You need to create
-a SceptreContext, which tells Sceptre where your project path is and which path
+Using Sceptre as a Python module is very straightforward. You need to create a
+SceptreContext, which tells Sceptre where your project path is and which path
 you want to execute on, we call this the "command path".
 
-After you have created a SceptreContext you need to pass this into
-a SceptrePlan. On instantiation the SceptrePlan will handle all the required
-steps to make sure the action you wish to take on the command path are
-resolved.
+After you have created a SceptreContext you need to pass this into a
+SceptrePlan. On instantiation the SceptrePlan will handle all the required steps
+to make sure the action you wish to take on the command path are resolved.
 
-After you have instantiated a SceptrePlan you can access all the actions you
-can take on a Stack, such as `validate()`, `launch()`, `list()` and `delete()`.
+After you have instantiated a SceptrePlan you can access all the actions you can
+take on a Stack, such as `validate()`, `launch()`, `list()` and `delete()`.
 
 ```python
 from sceptre.context import SceptreContext
@@ -222,7 +248,8 @@ plan = SceptrePlan(context)
 plan.launch()
 ```
 
-Full API reference documentation can be found in the [Documentation](https://sceptre.cloudreach.com/latest/docs/index.html)
+Full API reference documentation can be found in the
+[Documentation](https://sceptre.cloudreach.com/latest/docs/index.html)
 
 ## Tutorial and Documentation
 
