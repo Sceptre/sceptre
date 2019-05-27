@@ -1,7 +1,7 @@
 Terminology
 ===========
 
-The following terms will be used though the rest of the Sceptre documentation:
+The following terms will be used through the rest of the Sceptre documentation:
 
 Sceptre Project:
 ----------------
