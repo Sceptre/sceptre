@@ -4,6 +4,36 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.1.3 (2019.05.14)
+
+### Fixed
+
+- Fix `stack_name` for s3 upload in Windows environment.
+
+## 2.1.2 (2019.05.09)
+
+### Fixed
+
+- Fix `stack_output` resolver recursion error.
+
+## 2.1.1 (2019.05.01)
+
+### Fixed
+
+- Fix CLI list output export issue.
+
+- Fix path separators between operating systems.
+
+- Fix S3 uploads to support China regions.
+
+### Nonfunctional
+
+- Upgrade to PyYaml 5.1.
+
+- Update custom hook docs.
+
+- Improve documentation site.
+
 ## 2.1.0 (2019.03.01)
 
 ### Added
@@ -42,17 +72,20 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ### Fixed
 
-- Fix `write` method in `sceptre.cli.helpers` to better handle `yaml` and `json` output format.
+- Fix `write` method in `sceptre.cli.helpers` to better handle `yaml` and `json`
+  output format.
 
 - Fix `sceptre generate` in CLI so that it respects `--output` flag.
 
 - Update `PyYaml` dependency version to fix `CVE-2017-18342`.
 
-- Fix `--export` option for `sceptre list outputs` for setting environment variables.
+- Fix `--export` option for `sceptre list outputs` for setting environment
+  variables.
 
 ### Nonfunctional
 
-- Improve `sceptre.stack.Stack.__repr__()` so that objects and lists are not contained in strings.
+- Improve `sceptre.stack.Stack.__repr__()` so that objects and lists are not
+  contained in strings.
 
 - Remove duplicate timestamp from logging in `plan.actions`.
 
@@ -138,22 +171,25 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ### Removed
 
-- Environments. Stacks & their relationships are now held in StackGraph (0b104db)
+- Environments. Stacks & their relationships are now held in StackGraph
+  (0b104db)
 
 ### Changed
 
-- Config.yaml `template_path` attribute. By default Sceptre uses "templates" as the root
-  directory for `template_path` so the user should not specify `templates/` as
-  part of the `template_path` attribute (0b104db)
+- Config.yaml `template_path` attribute. By default Sceptre uses "templates" as
+  the root directory for `template_path` so the user should not specify
+  `templates/` as part of the `template_path` attribute (0b104db)
 
 - Update docstrings (0b104db)
 
-- Stack class. The functions available to Stacks are stored in StackActions (0b104db)
+- Stack class. The functions available to Stacks are stored in StackActions
+  (0b104db)
 
 ### Nonfunctional
 
 - Updated project documentation such as README (0b104db)
-- Changed project cocs to use Markdown format (README, CHANGELOG, CONTRIBUTING) (0b104db)
+- Changed project cocs to use Markdown format (README, CHANGELOG, CONTRIBUTING)
+  (0b104db)
 
 ## 1.4.2 (2018.09.11)
 
@@ -211,13 +247,15 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 - Re-adding the ability to specify credential profile in the environment config.
 - Adding init project command to help initialize a new Sceptre project.
 - Adding init env command to help initialize a new Environment config.
-- Adding diff command to display differences between the local and deployed stack template.
+- Adding diff command to display differences between the local and deployed
+  stack template.
 - Fixed error message displayed for empty environments.
 - Adding `environment_config` to config template rendering.
 - Adding `on_failure` parameter to stack config.
 - Adding automatic renewal of expired credentials when assuming IAM Roles.
 - Deprecating use of `bash` hook in favour of `cmd` hook.
-- Deprecating use of `asg_scheduled_actions` hook in favour of `asg_scaling_processes` hook.
+- Deprecating use of `asg_scheduled_actions` hook in favour of
+  `asg_scaling_processes` hook.
 - Adding status colouring for output of describe-env command.
 - Fix spelling mistakes in documentation.
 
@@ -231,7 +269,8 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 - Increasing maximum number of boto call retires from 5 to 30.
 - Adding support Jinja rendering for stack templates.
-- Adding stricter requirements for existing stack state when launch environments.
+- Adding stricter requirements for existing stack state when launch
+  environments.
 - Adding `cmd` hook for better cross platform support.
 - Adding documentation around architecture of Sceptre projects.
 - Adding versioned documentation.
@@ -261,11 +300,14 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 - Changing syntax used for resolvers and hooks in config files.
 - Deprecating use of `sceptre_get_template` function in Troposphere templates.
-- Deprecating the accessing of Troposphere templates returned from `sceptre_get_template`.
-- Deprecating the accessing of Troposphere templates from the global variable `t`.
+- Deprecating the accessing of Troposphere templates returned from
+  `sceptre_get_template`.
+- Deprecating the accessing of Troposphere templates from the global variable
+  `t`.
 - Deprecating the global variable `SCEPTRE_USER_DATA`.
 - Adding support for `sceptre_handler` function in Troposphere templates.
-- Adding support for pure CloudFormation JSON strings returned by `sceptre_handler`.
+- Adding support for pure CloudFormation JSON strings returned by
+  `sceptre_handler`.
 - Adding support for `sceptre_user_data` passed to `sceptre_handler`.
 - Fixing bug in update-stack-cs.
 - Adding project-variables resolver.
@@ -290,7 +332,8 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 - Adding more intuitive delete stack message.
 - Removing profile.
 - Fixing a multithreading bug.
-- Improve CLI UX by printing only an exception's message, not the whole stack trace.
+- Improve CLI UX by printing only an exception's message, not the whole stack
+  trace.
 - Adding environment path check.
 - Refactoring out code that fetches stack status.
 
@@ -298,19 +341,23 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 - Fixing StackStatusColourer: UPDATE_FAILED wan't coloured.
 - Fixing bug from uploading templates to S3 from Windows.
-- Improving exception thrown when a user tries to use the stack output resolve on a stack with no outputs.
+- Improving exception thrown when a user tries to use the stack output resolve
+  on a stack with no outputs.
 
 ## 0.47.0 (2016.12.1)
 
-- Launch now deletes stacks in the CREATE_FAILED or ROLLBACK_COMPLETE states before re-creating them.
+- Launch now deletes stacks in the CREATE_FAILED or ROLLBACK_COMPLETE states
+  before re-creating them.
 - Adding support for Troposphere<1.10.0.
 
 ## 0.46.0 (2016.11.11)
 
 - Adding support for multiple environments.
 - Speeding up integration tests.
-- Switching to CircleCI for continuous integration and deployment of documentation.
-- Changing template S3 key to use a UTC timestamp rather than seconds since epoch.
+- Switching to CircleCI for continuous integration and deployment of
+  documentation.
+- Changing template S3 key to use a UTC timestamp rather than seconds since
+  epoch.
 - Changing update-stack-cs to delete the change set by default.
 - Stopping appending region to template bucket name.
 - Refactoring logger.
@@ -321,7 +368,8 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 - Adding support for Troposphere 1.8.
 - Adding stack protection support.
-- Adding support for allowing Troposphere templates to import modules from parent directories.
+- Adding support for allowing Troposphere templates to import modules from
+  parent directories.
 - Adding documentation section for IAM role setup.
 - Fixing bug in update-wth-cs command.
 
@@ -382,7 +430,8 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## 0.38.3 (2016.07.14)
 
-- Combining account_id and iam_role into a single parameter, iam_role, which is now the ARN of the IAM Role to assume.
+- Combining account_id and iam_role into a single parameter, iam_role, which is
+  now the ARN of the IAM Role to assume.
 - Fixing bug in integration tests.
 
 ## 0.38.2 (2016.07.14)
@@ -600,7 +649,8 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## 0.12.0 (2016.04.6)
 
-- Adding support for reading in environment variables for use as CloudFormation parameters.
+- Adding support for reading in environment variables for use as CloudFormation
+  parameters.
 
 ## 0.11.0 (2016.03.31)
 
@@ -652,7 +702,8 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## 0.6.2 (2016.03.16)
 
-- Adding improved error handling for when users enter incorrect environment paths.
+- Adding improved error handling for when users enter incorrect environment
+  paths.
 - Refactoring config_reader
 
 ## 0.6.1 (2016.03.15)
@@ -665,7 +716,8 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## 0.5.1 (2016.03.10)
 
-- Sceptre waits after checking a stack's status. This update drops the wait time from 3s to 1s.
+- Sceptre waits after checking a stack's status. This update drops the wait time
+  from 3s to 1s.
 
 ## 0.5.0 (2016.03.10)
 
@@ -673,7 +725,8 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## 0.4.0 (2016.03.10)
 
-- Sceptre now creates, updates and launches stacks from a template it uploads to s3.
+- Sceptre now creates, updates and launches stacks from a template it uploads to
+  s3.
 
 ## 0.3.2 (2016.03.10)
 

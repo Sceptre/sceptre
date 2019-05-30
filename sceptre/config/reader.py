@@ -11,7 +11,7 @@ import collections
 import datetime
 import fnmatch
 import logging
-from os import path, environ, walk
+from os import environ, path, walk
 from pkg_resources import iter_entry_points
 import yaml
 
@@ -24,8 +24,9 @@ from sceptre.exceptions import InvalidConfigFileError
 from sceptre.exceptions import InvalidSceptreDirectoryError
 from sceptre.exceptions import VersionIncompatibleError
 from sceptre.exceptions import ConfigFileNotFoundError
+from sceptre.helpers import sceptreise_path
 from sceptre.stack import Stack
-from . import strategies
+from sceptre.config import strategies
 
 ConfigAttributes = collections.namedtuple("Attributes", "required optional")
 
@@ -116,9 +117,7 @@ class ConfigReader(object):
         self._check_valid_project_path(self.full_config_path)
 
         # Add Resolver and Hook classes to PyYAML loader
-        self._add_yaml_constructors(
-            ["sceptre.hooks", "sceptre.resolvers"]
-        )
+        self._add_yaml_constructors(["sceptre.hooks", "sceptre.resolvers"])
         if not self.context.user_variables:
             self.context.user_variables = {}
 
@@ -204,8 +203,8 @@ class ConfigReader(object):
 
         while todo:
             abs_path = todo.pop()
-            rel_path = path.relpath(abs_path,
-                                    start=self.context.full_config_path())
+            rel_path = path.relpath(
+                abs_path, start=self.context.full_config_path())
             directory, filename = path.split(rel_path)
 
             if directory in stack_group_configs:
@@ -215,7 +214,7 @@ class ConfigReader(object):
                     self.read(path.join(directory, self.context.config_file))
 
             stack = self._construct_stack(rel_path, stack_group_config)
-            stack_map[rel_path] = stack
+            stack_map[sceptreise_path(rel_path)] = stack
 
             if abs_path.startswith(self.context.full_command_path()):
                 command_stacks.add(stack)
@@ -223,7 +222,10 @@ class ConfigReader(object):
         stacks = set()
         for stack in stack_map.values():
             if not self.context.ignore_dependencies:
-                stack.dependencies = [stack_map[dep] for dep in stack.dependencies]
+                stack.dependencies = [
+                    stack_map[sceptreise_path(dep)]
+                    for dep in stack.dependencies
+                ]
             else:
                 stack.dependencies = []
             stacks.add(stack)
@@ -334,8 +336,7 @@ class ConfigReader(object):
         :rtype: dict
         """
         config = {}
-        abs_directory_path = path.join(
-            self.full_config_path, directory_path)
+        abs_directory_path = path.join(self.full_config_path, directory_path)
         if path.isfile(path.join(abs_directory_path, basename)):
             jinja_env = jinja2.Environment(
                 loader=jinja2.FileSystemLoader(abs_directory_path),
@@ -345,7 +346,7 @@ class ConfigReader(object):
             self.templating_vars.update(stack_group_config)
             rendered_template = template.render(
                 self.templating_vars,
-                command_path=self.context.command_path.split("/"),
+                command_path=self.context.command_path.split(path.sep),
                 environment_variable=environ
             )
 
@@ -400,12 +401,14 @@ class ConfigReader(object):
         s3_details = None
         if "template_bucket_name" in config:
             template_key = "/".join([
-                stack_name, "{time_stamp}.json".format(
+                sceptreise_path(stack_name), "{time_stamp}.json".format(
                     time_stamp=datetime.datetime.utcnow().strftime(
                         "%Y-%m-%d-%H-%M-%S-%fZ"
                     )
                 )
             ])
+
+            bucket_region = config.get("region", None)
 
             if "template_key_prefix" in config:
                 prefix = config["template_key_prefix"]
@@ -413,7 +416,8 @@ class ConfigReader(object):
 
             s3_details = {
                 "bucket_name": config["template_bucket_name"],
-                "bucket_key": template_key
+                "bucket_key": template_key,
+                "bucket_region": bucket_region
             }
         return s3_details
 
@@ -450,7 +454,7 @@ class ConfigReader(object):
 
         abs_template_path = path.join(
             self.context.project_path, self.context.templates_path,
-            config["template_path"]
+            sceptreise_path(config["template_path"])
         )
 
         s3_details = self._collect_s3_details(

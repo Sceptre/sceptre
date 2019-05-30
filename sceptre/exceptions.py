@@ -147,8 +147,14 @@ class InvalidConfigFileError(SceptreException):
     pass
 
 
+class PathConversionError(SceptreException):
+    """
+    Error raised when a path is unable to be converted.
+    """
+    pass
+
+
 class InvalidAWSCredentialsError(SceptreException):
     """
     Error raised when AWS credentials are invalid.
-    """
     pass

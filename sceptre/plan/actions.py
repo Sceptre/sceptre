@@ -262,7 +262,7 @@ class StackActions(object):
         policy_path = path.join(
             # need to get to the base install path. __file__ will take us into
             # sceptre/actions so need to walk up the path.
-            path.abspath(path.join(__file__, "../..")),
+            path.abspath(path.join(__file__, "..", "..")),
             "stack_policies/lock.json"
         )
         self.set_policy(policy_path)
@@ -275,7 +275,7 @@ class StackActions(object):
         policy_path = path.join(
             # need to get to the base install path. __file__ will take us into
             # sceptre/actions so need to walk up the path.
-            path.abspath(path.join(__file__, "../..")),
+            path.abspath(path.join(__file__, "..", "..")),
             "stack_policies/unlock.json"
         )
         self.set_policy(policy_path)
@@ -367,10 +367,9 @@ class StackActions(object):
         UPDATE_ROLLBACK_COMPLETE.
         """
         self.logger.debug("%s - Continuing update rollback", self.stack.name)
-        continue_update_rollback_kwargs = \
-            {
-                "StackName": self.stack.external_name
-            }
+        continue_update_rollback_kwargs = {
+            "StackName": self.stack.external_name
+        }
         continue_update_rollback_kwargs.update(self._get_role_arn())
         self.connection_manager.call(
             service="cloudformation",
@@ -541,7 +540,7 @@ class StackActions(object):
         Lists the Stack's Change Sets.
 
         :returns: The Stack's Change Sets.
-        :rtype: dict | list
+        :rtype: dict or list
         """
         self.logger.debug("%s - Listing change sets", self.stack.name)
         try:

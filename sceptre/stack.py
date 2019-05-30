@@ -14,6 +14,7 @@ from sceptre.template import Template
 from sceptre.helpers import get_external_stack_name
 from sceptre.hooks import HookProperty
 from sceptre.resolvers import ResolvableProperty
+from sceptre.helpers import sceptreise_path
 
 
 class Stack(object):
@@ -56,7 +57,7 @@ class Stack(object):
 
     :param hooks: A list of arbitrary shell or python commands or scripts to\
             run.
-    :type hooks: sceptre.hooks.hook
+    :type hooks: sceptre.hooks.Hook
 
     :param s3_details:
     :type s3_details: dict
@@ -116,18 +117,18 @@ class Stack(object):
     ):
         self.logger = logging.getLogger(__name__)
 
-        self.name = name
+        self.name = sceptreise_path(name)
         self.project_code = project_code
         self.region = region
         self.template_bucket_name = template_bucket_name
         self.template_key_prefix = template_key_prefix
         self.required_version = required_version
-        self.external_name = external_name or \
-            get_external_stack_name(self.project_code, self.name)
+        self.external_name = external_name or get_external_stack_name(self.project_code, self.name)
 
         self.template_path = template_path
         self.s3_details = s3_details
         self._template = None
+        self._connection_manager = None
 
         self.protected = protected
         self.role_arn = role_arn
@@ -145,7 +146,7 @@ class Stack(object):
     def __repr__(self):
         return (
             "sceptre.stack.Stack("
-            "name={name}, "
+            "name='{name}', "
             "project_code={project_code}, "
             "template_path={template_path}, "
             "region={region}, "
@@ -223,6 +224,20 @@ class Stack(object):
         return hash(str(self))
 
     @property
+    def connection_manager(self):
+        """
+        Returns ConnectionManager.
+         :returns: ConnectionManager.
+        :rtype: ConnectionManager
+        """
+        if self._connection_manager is None:
+            self._connection_manager = ConnectionManager(
+                self.region, self.profile, self.external_name
+            )
+
+        return self._connection_manager
+
+    @property
     def template(self):
         """
         Returns the CloudFormation Template used to create the Stack.
@@ -230,9 +245,6 @@ class Stack(object):
         :returns: The Stack's template.
         :rtype: str
         """
-        self.connection_manager = ConnectionManager(
-            self.region, self.profile, self.external_name
-        )
         if self._template is None:
             self._template = Template(
                 path=self.template_path,

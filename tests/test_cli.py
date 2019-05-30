@@ -3,6 +3,7 @@ import yaml
 import datetime
 import os
 import errno
+import json
 
 from click.testing import CliRunner
 from mock import MagicMock, patch, sentinel
@@ -130,11 +131,12 @@ class TestCli(object):
                 "HTTPStatusCode": 200
             }
         }
+
+        result_json = json.dumps({'Parameters': 'Example'}, indent=4)
         result = self.runner.invoke(cli, ["validate", "dev/vpc.yaml"])
         self.mock_stack_actions.validate.assert_called_with()
-
-        assert result.output == "Template mock-stack is valid. Template details:\n\n" \
-            "{'Parameters': 'Example'}\n"
+        assert result.output == "Template mock-stack is valid. Template details:\n\n{}\n".format(
+            result_json)
 
     def test_validate_template_with_invalid_template(self):
         client_error = ClientError(
@@ -151,7 +153,7 @@ class TestCli(object):
 
         expected_result = str(client_error) + "\n"
         result = self.runner.invoke(cli, ["validate", "dev/vpc.yaml"])
-        assert expected_result in result.output
+        assert expected_result in result.output.replace("\"", "")
 
     def test_estimate_template_cost_with_browser(self):
         self.mock_stack_actions.estimate_cost.return_value = {
@@ -182,13 +184,12 @@ class TestCli(object):
             "Webbrowser"
         )
         self.mock_stack_actions.estimate_cost.side_effect = client_error
-
-        expected_result = str(client_error) + "\n"
+        expected_result = "{}\n".format(client_error)
         result = self.runner.invoke(
             cli,
             ["estimate-cost", "dev/vpc.yaml"]
         )
-        assert expected_result in result.output
+        assert expected_result in result.output.replace("\"", "")
 
     def test_lock_stack(self):
         self.runner.invoke(
@@ -220,7 +221,8 @@ class TestCli(object):
             cli, ["describe", "policy", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert result.output == "{'dev/vpc': {'Statement': ['Body']}}\n"
+        assert result.output == "{}\n".format(json.dumps(
+            {'dev/vpc': {'Statement': ['Body']}}, indent=4))
 
     def test_list_group_resources(self):
         response = {
@@ -401,22 +403,22 @@ class TestCli(object):
         assert yaml.safe_load(result.output) == response
 
     def test_list_outputs(self):
-        outputs = [{"OutputKey": "Key", "OutputValue": "Value"}]
+        outputs = {"OutputKey": "Key", "OutputValue": "Value"}
         self.mock_stack_actions.describe_outputs.return_value = outputs
         result = self.runner.invoke(
             cli, ["list", "outputs", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert yaml.safe_load(result.output) == [outputs]
+        assert json.loads(result.output) == [outputs]
 
     def test_list_outputs_with_export(self):
-        outputs = {'stack': [{"OutputKey": "Key", "OutputValue": "Value"}]}
+        outputs = {'stack': [{'OutputKey': 'Key', 'OutputValue': 'Value'}]}
         self.mock_stack_actions.describe_outputs.return_value = outputs
         result = self.runner.invoke(
             cli, ["list", "outputs", "dev/vpc.yaml", "-e", "envvar"]
         )
         assert result.exit_code == 0
-        assert yaml.safe_load(result.output) == "export SCEPTRE_Key=Value"
+        assert result.output == "export SCEPTRE_Key='Value'\n"
 
     def test_status_with_group(self):
         self.mock_stack_actions.get_status.return_value = {
@@ -425,13 +427,13 @@ class TestCli(object):
 
         result = self.runner.invoke(cli, ["status", "dev"])
         assert result.exit_code == 0
-        assert result.output == "mock-stack: {'stack': 'status'}\n"
+        assert result.output == '"mock-stack: {\'stack\': \'status\'}"\n'
 
     def test_status_with_stack(self):
         self.mock_stack_actions.get_status.return_value = "status"
         result = self.runner.invoke(cli, ["status", "dev/vpc.yaml"])
         assert result.exit_code == 0
-        assert result.output == "mock-stack: status\n"
+        assert result.output == '"mock-stack: status"\n'
 
     def test_new_project_non_existant(self):
         with self.runner.isolated_filesystem():
@@ -472,7 +474,7 @@ class TestCli(object):
 
             result = self.runner.invoke(cli, ["new", "project", "example"])
             assert result.exit_code == 1
-            assert result.output == 'Folder \"example\" already exists.\n'
+            assert result.output == '"Folder \\"example\\" already exists."\n'
             assert os.path.isdir(config_dir)
             assert os.path.isdir(template_dir)
 
@@ -683,13 +685,13 @@ class TestCli(object):
     def test_write_status_with_colour(self, mock_echo):
         write("stack: CREATE_COMPLETE", no_colour=False)
         mock_echo.assert_called_once_with(
-            "stack: \x1b[32mCREATE_COMPLETE\x1b[0m"
+            '"stack: \x1b[32mCREATE_COMPLETE\x1b[0m"'
         )
 
     @patch("sceptre.cli.click.echo")
     def test_write_status_without_colour(self, mock_echo):
         write("stack: CREATE_COMPLETE", no_colour=True)
-        mock_echo.assert_called_once_with("stack: CREATE_COMPLETE")
+        mock_echo.assert_called_once_with('"stack: CREATE_COMPLETE"')
 
     @patch("sceptre.cli.helpers.StackStatusColourer.colour")
     @patch("sceptre.cli.helpers.logging.Formatter.format")
