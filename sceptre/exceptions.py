@@ -157,4 +157,5 @@ class PathConversionError(SceptreException):
 class InvalidAWSCredentialsError(SceptreException):
     """
     Error raised when AWS credentials are invalid.
+    """
     pass
