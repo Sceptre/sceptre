@@ -5,4 +5,4 @@ COPY setup.cfg setup.py README.md CHANGELOG.md ./
 COPY sceptre/ ./sceptre
 RUN python setup.py install
 WORKDIR /project
-CMD ["sceptre"]
+ENTRYPOINT ["sceptre"]
