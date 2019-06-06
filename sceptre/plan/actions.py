@@ -141,8 +141,15 @@ class StackActions(object):
                 status = self.cancel_stack_update()
 
             return status
-        except Exception:
-            self.logger.info("{} - no updates to be performed.".format(self.stack.name))
+        except botocore.exceptions.ClientError as exp:
+            error_message = exp.response["Error"]["Message"]
+            if error_message == "No updates are to be performed.":
+                self.logger.info(
+                    "%s - No updates to perform.", self.stack.name
+                )
+                return StackStatus.COMPLETE
+            else:
+                raise
 
     def cancel_stack_update(self):
         """
@@ -194,17 +201,7 @@ class StackActions(object):
             self.delete()
             status = self.create()
         elif existing_status.endswith("COMPLETE"):
-            try:
-                status = self.update()
-            except botocore.exceptions.ClientError as exp:
-                error_message = exp.response["Error"]["Message"]
-                if error_message == "No updates are to be performed.":
-                    self.logger.info(
-                        "%s - No updates to perform.", self.stack.name
-                    )
-                    status = StackStatus.COMPLETE
-                else:
-                    raise
+            status = self.update()
         elif existing_status.endswith("IN_PROGRESS"):
             self.logger.info(
                 "%s - Stack action is already in progress state and cannot "

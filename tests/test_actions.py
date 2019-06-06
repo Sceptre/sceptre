@@ -287,6 +287,26 @@ class TestStackActions(object):
         )
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
+    def test_update_with_complete_stack_with_no_updates_to_perform(
+            self, mock_wait_for_completion
+    ):
+        self.actions.stack._template = Mock(spec=Template)
+        self.actions.stack._template.get_boto_call_parameter.return_value = {
+            "Template": sentinel.template
+        }
+        mock_wait_for_completion.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": "NoUpdateToPerformError",
+                    "Message": "No updates are to be performed."
+                }
+            },
+            sentinel.operation
+        )
+        response = self.actions.update()
+        assert response == StackStatus.COMPLETE
+
+    @patch("sceptre.plan.actions.StackActions._wait_for_completion")
     def test_cancel_update_sends_correct_request(
             self, mock_wait_for_completion
     ):
@@ -339,15 +359,7 @@ class TestStackActions(object):
             self, mock_get_status, mock_update
     ):
         mock_get_status.return_value = "CREATE_COMPLETE"
-        mock_update.side_effect = ClientError(
-            {
-                "Error": {
-                    "Code": "NoUpdateToPerformError",
-                    "Message": "No updates are to be performed."
-                }
-            },
-            sentinel.operation
-        )
+        mock_update.return_value = StackStatus.COMPLETE
         response = self.actions.launch()
         mock_update.assert_called_once_with()
         assert response == StackStatus.COMPLETE
