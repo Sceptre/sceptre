@@ -25,6 +25,7 @@ class TestStackOutputResolver(object):
         stack._connection_manager = MagicMock(spec=ConnectionManager)
 
         dependency = MagicMock()
+        dependency.project_code = "meh"
         dependency.name = "account/dev/vpc"
         dependency.profile = 'dependency_profile'
         dependency.region = 'dependency_region'
@@ -42,7 +43,7 @@ class TestStackOutputResolver(object):
         result = stack_output_resolver.resolve()
         assert result == "output_value"
         mock_get_output_value.assert_called_once_with(
-            "project-code-account-dev-vpc", "VpcId",
+            "meh-account-dev-vpc", "VpcId",
             profile='dependency_profile', region='dependency_region'
         )
 
@@ -56,6 +57,7 @@ class TestStackOutputResolver(object):
         stack._connection_manager = MagicMock(spec=ConnectionManager)
 
         dependency = MagicMock()
+        dependency.project_code = "meh"
         dependency.name = "account/dev/vpc"
         dependency.profile = 'dependency_profile'
         dependency.region = 'dependency_region'
@@ -73,7 +75,7 @@ class TestStackOutputResolver(object):
         result = stack_output_resolver.resolve()
         assert result == "output_value"
         mock_get_output_value.assert_called_once_with(
-            "project-code-account-dev-vpc", "VpcId",
+            "meh-account-dev-vpc", "VpcId",
             profile='dependency_profile', region='dependency_region'
         )
 
@@ -90,6 +92,7 @@ class TestStackOutputResolver(object):
         stack._connection_manager = MagicMock(spec=ConnectionManager)
 
         dependency = MagicMock()
+        dependency.project_code = "meh"
         dependency.name = "account/dev/vpc"
         dependency.profile = 'dependency_profile'
         dependency.region = 'dependency_region'
@@ -105,7 +108,7 @@ class TestStackOutputResolver(object):
         result = stack_output_resolver.resolve()
         assert result == "output_value"
         mock_get_output_value.assert_called_once_with(
-            "project-code-account-dev-vpc", "VpcId",
+            "meh-account-dev-vpc", "VpcId",
             profile='dependency_profile', region='dependency_region'
         )
 
@@ -122,6 +125,7 @@ class TestStackOutputResolver(object):
         stack._connection_manager = MagicMock(spec=ConnectionManager)
 
         dependency = MagicMock()
+        dependency.project_code = "meh"
         dependency.name = "vpc"
         dependency.profile = 'dependency_profile'
         dependency.region = 'dependency_region'
@@ -137,7 +141,7 @@ class TestStackOutputResolver(object):
         result = stack_output_resolver.resolve()
         assert result == "output_value"
         mock_get_output_value.assert_called_once_with(
-            "project-code-vpc", "VpcId",
+            "meh-vpc", "VpcId",
             profile='dependency_profile', region='dependency_region'
         )
 
