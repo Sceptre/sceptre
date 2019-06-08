@@ -226,7 +226,7 @@ class Template(object):
 
     def _create_bucket(self):
         """
-        Create the s3 bucket ``bucket_name``.
+        Create the private s3 bucket ``bucket_name``.
 
         :raises: botocore.exception.ClientError
 
@@ -234,7 +234,7 @@ class Template(object):
         bucket_name = self.s3_details["bucket_name"]
 
         self.logger.debug(
-            "%s - Creating new bucket '%s'", self.name, bucket_name
+            "%s - Creating new private bucket '%s'", self.name, bucket_name
         )
 
         if self.connection_manager.region == "us-east-1":
@@ -254,6 +254,20 @@ class Template(object):
                     }
                 }
             )
+
+        self.connection_manager.call(
+            service="s3",
+            command="put_public_access_block",
+            kwargs={
+                "Bucket": bucket_name,
+                "PublicAccessBlockConfiguration": {
+                    "BlockPublicAcls": True,
+                    "IgnorePublicAcls": True,
+                    "BlockPublicPolicy": True,
+                    "RestrictPublicBuckets": True,
+                },
+            }
+        )
 
     def get_boto_call_parameter(self):
         """
