@@ -99,4 +99,4 @@ def estimate_cost_command(ctx, path):
             click.echo("View the estimated cost for {} at:".format(stack.name))
             response = response["Url"]
             webbrowser.open(response, new=2)
-        write(response + "\n", 'str')
+        write(response + "\n", 'text')
