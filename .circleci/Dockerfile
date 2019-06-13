@@ -18,7 +18,11 @@ RUN apk add --update \
     ruby \
     ruby-dev \
     ruby-bundler \
-    ruby-json
+    ruby-json \
+    readline-dev \
+    openssl-dev \
+    sqlite-dev \
+    zlib-dev
 
 RUN pip install virtualenv \
  && pip install tox \
@@ -28,7 +32,17 @@ RUN pip install virtualenv \
 USER circleci
 WORKDIR /home/circleci
 
+ARG PYENV_HOME=/home/circleci/.pyenv
+
 ENV LANG=C.UTF-8 \
-    HOME=/home/circleci
+    HOME=/home/circleci \
+    PATH=$PYENV_HOME/shims:$PYENV_HOME/bin:$PATH
+
+RUN git clone --depth 1 https://github.com/pyenv/pyenv.git $PYENV_HOME \
+ && rm -rfv $PYENV_HOME/.git
+
+RUN pyenv install 2.7-dev \
+ && pyenv install 3.6-dev \
+ && pyenv install 3.7-dev
 
 CMD ["/bin/sh"]
