@@ -4,6 +4,8 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+- Fix recursion in sceptre_user_data becoming infinite
+
 ## 2.1.5 (2019.06.28)
 
 ### Fixed
