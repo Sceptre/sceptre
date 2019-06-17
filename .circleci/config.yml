@@ -4,7 +4,7 @@ aliases:
       - image: cloudreach/sceptre-circleci:0.4
         environment:
           REPOSITORY_PATH: '/home/circleci/docs'
-          DEPLOYMENT_GIT_SSH: 'git@github.com:Sceptre/docs.git'
+          DEPLOYMENT_GIT_SSH: 'git@github.com:Sceptre/sceptre.github.io.git'
     steps:
       - add_ssh_keys:
           fingerprints:
