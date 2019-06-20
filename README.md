@@ -227,7 +227,7 @@ Full API reference documentation can be found in the [Documentation](https://sce
 ## Tutorial and Documentation
 
 - [Get Started](https://sceptre.cloudreach.com/latest/docs/get_started.html)
-- [Documentation](https://sceptre.cloudreach.com/latest/docs/index.html)
+- [Documentation](https://sceptre.cloudreach.com/latest/index.html)
 
 ## Contributing
 
