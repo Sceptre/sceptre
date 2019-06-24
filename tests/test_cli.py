@@ -77,6 +77,31 @@ class TestCli(object):
             {},
             {"a": "1", "b": "2"}
         ),
+        # multiple --var options same key
+        (
+            ["--var", "a=1", "--var", "a=2", "noop"],
+            {},
+            {"a": "2"}
+        ),
+        (
+            ["--var-file", "foo.yaml", "--var", "key3.subkey1.id=id2", "noop"],
+            {
+                "foo.yaml": {
+                    "key1": "val1",
+                    "key2": "val2",
+                    "key3": {
+                        "subkey1": {
+                            "id": "id1"
+                        }
+                    }
+                }
+            },
+            {
+                "key1": "val1",
+                "key2": "val2",
+                "key3": {"subkey1": {"id": "id2"}}
+            }
+        ),
         # one --var-file option
         (
             ["--var-file", "foo.yaml", "noop"],
