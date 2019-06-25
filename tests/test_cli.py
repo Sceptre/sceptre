@@ -427,13 +427,13 @@ class TestCli(object):
 
         result = self.runner.invoke(cli, ["status", "dev"])
         assert result.exit_code == 0
-        assert result.output == '"mock-stack: {\'stack\': \'status\'}"\n'
+        assert result.output == '{\n    "mock-stack": {\n        \"stack\": \"status\"\n    }\n}\n'
 
     def test_status_with_stack(self):
         self.mock_stack_actions.get_status.return_value = "status"
         result = self.runner.invoke(cli, ["status", "dev/vpc.yaml"])
         assert result.exit_code == 0
-        assert result.output == '"mock-stack: status"\n'
+        assert result.output == '{\n    "mock-stack": "status"\n}\n'
 
     def test_new_project_non_existant(self):
         with self.runner.isolated_filesystem():
@@ -685,13 +685,13 @@ class TestCli(object):
     def test_write_status_with_colour(self, mock_echo):
         write("stack: CREATE_COMPLETE", no_colour=False)
         mock_echo.assert_called_once_with(
-            '"stack: \x1b[32mCREATE_COMPLETE\x1b[0m"'
+            '{\n    "stack": "\x1b[32mCREATE_COMPLETE\x1b[0m"\n}'
         )
 
     @patch("sceptre.cli.click.echo")
     def test_write_status_without_colour(self, mock_echo):
         write("stack: CREATE_COMPLETE", no_colour=True)
-        mock_echo.assert_called_once_with('"stack: CREATE_COMPLETE"')
+        mock_echo.assert_called_once_with('{\n    "stack": "CREATE_COMPLETE"\n}')
 
     @patch("sceptre.cli.helpers.StackStatusColourer.colour")
     @patch("sceptre.cli.helpers.logging.Formatter.format")
