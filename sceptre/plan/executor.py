@@ -32,7 +32,9 @@ class SceptrePlanExecutor(object):
         self.command = command
         self.launch_order = launch_order
 
-        self.num_threads = len(max(launch_order, key=len))
+        # TODO weird patch
+        print('xxx', launch_order)
+        self.num_threads = len(max(launch_order, key=len)) if launch_order else 1
         self.stack_statuses = {stack: StackStatus.PENDING
                                for batch in launch_order for stack in batch}
 
@@ -45,7 +47,7 @@ class SceptrePlanExecutor(object):
                 StackAction being called.
         """
         responses = {}
-
+        print(self.num_threads)
         with ThreadPoolExecutor(max_workers=self.num_threads) as executor:
             for batch in self.launch_order:
                 futures = [executor.submit(self._execute, stack, *args)

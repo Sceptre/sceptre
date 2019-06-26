@@ -36,6 +36,9 @@ class StackGraph(object):
     def __iter__(self):
         return self.graph.__iter__()
 
+    def as_dict_of_dicts(self):
+        return nx.convert.to_dict_of_dicts(self.graph)
+
     def filtered(self, source_stacks, reverse=False):
         graph = (nx.reverse if reverse else nx.DiGraph)(self.graph)
 
@@ -102,3 +105,49 @@ class StackGraph(object):
 
         if not dependencies:
             self.graph.add_node(stack)
+
+
+# TODO remove this
+# sceptre.stack.Stack(name='lab/iam-managed-policies', project_code='CR-Vault',
+#                     template_path='project/templates/iam_managed_policies.py',
+#                     region='eu-west-1', template_bucket_name='None', template_key_prefix='None',
+#                     required_version='None', profile='None', sceptre_user_data={'ManagedPolicies': {'ConsulPolicy': {
+#         'PolicyDocument': {'Version': '2012-10-17',
+#                            'Statement': [{'Effect': 'Allow', 'Action': ['ec2:Describe*'], 'Resource': ['*']},
+#                                          {'Effect': 'Allow', 'Action': ['s3:ListBucket*'],
+#                                           'Resource': ['arn:aws:s3:::cr-lab-jan']},
+#                                          {'Effect': 'Allow', 'Action': ['s3:PutObject', 's3:GetObject'],
+#                                           'Resource': ['arn:aws:s3:::lab-jan/consul-snapshot/*']}]},
+#         'Description': 'This is the Consul IAM policy'}, 'VaultPolicy': {'PolicyDocument': {'Version': '2012-10-17',
+#                                                                                             'Statement': [
+#                                                                                                 {'Effect': 'Allow',
+#                                                                                                  'Action': [
+#                                                                                                      'ec2:Describe*'],
+#                                                                                                  'Resource': ['*']},
+#                                                                                                 {'Effect': 'Allow',
+#                                                                                                  'Action': [
+#                                                                                                      'dynamodb:CreateTable',
+#                                                                                                      'dynamodb:BatchWriteItem',
+#                                                                                                      'dynamodb:UpdateItem',
+#                                                                                                      'dynamodb:BatchGetItem',
+#                                                                                                      'dynamodb:DescribeTable',
+#                                                                                                      'dynamodb:GetItem',
+#                                                                                                      'dynamodb:ListTables',
+#                                                                                                      'dynamodb:Query',
+#                                                                                                      'dynamodb:Scan',
+#                                                                                                      'dynamodb:DescribeReservedCapacity',
+#                                                                                                      'dynamodb:DescribeReservedCapacityOfferings',
+#                                                                                                      'dynamodb:ListTagsOfResource',
+#                                                                                                      'dynamodb:DescribeTimeToLive',
+#                                                                                                      'dynamodb:DescribeLimits'],
+#                                                                                                  'Resource': [
+#                                                                                                      'arn:aws:dynamodb:*:*:table/vault-data']}]},
+#                                                                          'Description': 'This is the Vault IAM policy'}}},
+#                     parameters='{}', hooks='{}', s3_details='None', dependencies='[]', role_arn='None',
+#                     protected='False', tags='{}', external_name='lab-iam-managed-policies', notifications='[]',
+#                     on_failure='None', stack_timeout='0',
+#                     stack_group_config={'consul_backup_prefix': 'consul-backup', 'consul_backup_bucket': 'cr-lab-jan',
+#                                         'instance_ssh_key_pair_name': 'access-mgmt',
+#                                         'dynamodb_vault_table': 'vault-data', 'account_id': '333639628900',
+#                                         }
+#                     )

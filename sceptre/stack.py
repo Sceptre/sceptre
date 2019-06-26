@@ -16,6 +16,27 @@ from sceptre.hooks import HookProperty
 from sceptre.resolvers import ResolvableProperty
 from sceptre.helpers import sceptreise_path
 
+import inspect
+
+
+def _find_attrs(obj):
+    """Iterate over all attributes of objects."""
+    visited = set()
+
+    if hasattr(obj, "__dict__"):
+        for attr in sorted(obj.__dict__):
+            if attr not in visited:
+                yield attr
+                visited.add(attr)
+
+    for cls in reversed(inspect.getmro(obj.__class__)):
+        if hasattr(cls, "__slots__"):
+            for attr in cls.__slots__:
+                if hasattr(obj, attr):
+                    if attr not in visited:
+                        yield attr
+                        visited.add(attr)
+
 
 class Stack(object):
     """
@@ -108,12 +129,28 @@ class Stack(object):
     hooks = HookProperty("hooks")
 
     def __init__(
-        self, name, project_code, template_path, region, template_bucket_name=None,
-        template_key_prefix=None, required_version=None, parameters=None,
-        sceptre_user_data=None, hooks=None, s3_details=None,
-        dependencies=None, role_arn=None, protected=False, tags=None,
-        external_name=None, notifications=None, on_failure=None, profile=None,
-        stack_timeout=0, stack_group_config={}
+        self,
+        name,
+        project_code,
+        template_path,
+        region,
+        template_bucket_name=None,
+        template_key_prefix=None,
+        required_version=None,
+        parameters=None,
+        sceptre_user_data=None,
+        hooks=None,
+        s3_details=None,
+        dependencies=None,
+        role_arn=None,
+        protected=False,
+        tags=None,
+        external_name=None,
+        notifications=None,
+        on_failure=None,
+        profile=None,
+        stack_timeout=0,
+        stack_group_config={},
     ):
         self.logger = logging.getLogger(__name__)
 
@@ -123,7 +160,12 @@ class Stack(object):
         self.template_bucket_name = template_bucket_name
         self.template_key_prefix = template_key_prefix
         self.required_version = required_version
-        self.external_name = external_name or get_external_stack_name(self.project_code, self.name)
+        self.external_name = external_name or get_external_stack_name(
+            self.project_code, self.name
+        )
+        self.external_name = external_name or get_external_stack_name(
+            self.project_code, self.name
+        )
 
         self.template_path = template_path
         self.s3_details = s3_details
@@ -188,7 +230,7 @@ class Stack(object):
                 notifications=self.notifications,
                 on_failure=self.on_failure,
                 stack_timeout=self.stack_timeout,
-                stack_group_config=self.stack_group_config
+                stack_group_config=self.stack_group_config,
             )
         )
 
@@ -197,27 +239,27 @@ class Stack(object):
 
     def __eq__(self, stack):
         return (
-            self.name == stack.name and
-            self.project_code == stack.project_code and
-            self.template_path == stack.template_path and
-            self.region == stack.region and
-            self.template_bucket_name == stack.template_bucket_name and
-            self.template_key_prefix == stack.template_key_prefix and
-            self.required_version == stack.required_version and
-            self.profile == stack.profile and
-            self.sceptre_user_data == stack.sceptre_user_data and
-            self.parameters == stack.parameters and
-            self.hooks == stack.hooks and
-            self.s3_details == stack.s3_details and
-            self.dependencies == stack.dependencies and
-            self.role_arn == stack.role_arn and
-            self.protected == stack.protected and
-            self.tags == stack.tags and
-            self.external_name == stack.external_name and
-            self.notifications == stack.notifications and
-            self.on_failure == stack.on_failure and
-            self.stack_timeout == stack.stack_timeout and
-            self.stack_group_config == stack.stack_group_config
+            self.name == stack.name
+            and self.project_code == stack.project_code
+            and self.template_path == stack.template_path
+            and self.region == stack.region
+            and self.template_bucket_name == stack.template_bucket_name
+            and self.template_key_prefix == stack.template_key_prefix
+            and self.required_version == stack.required_version
+            and self.profile == stack.profile
+            and self.sceptre_user_data == stack.sceptre_user_data
+            and self.parameters == stack.parameters
+            and self.hooks == stack.hooks
+            and self.s3_details == stack.s3_details
+            and self.dependencies == stack.dependencies
+            and self.role_arn == stack.role_arn
+            and self.protected == stack.protected
+            and self.tags == stack.tags
+            and self.external_name == stack.external_name
+            and self.notifications == stack.notifications
+            and self.on_failure == stack.on_failure
+            and self.stack_timeout == stack.stack_timeout
+            and self.stack_group_config == stack.stack_group_config
         )
 
     def __hash__(self):
@@ -250,6 +292,23 @@ class Stack(object):
                 path=self.template_path,
                 sceptre_user_data=self.sceptre_user_data,
                 s3_details=self.s3_details,
-                connection_manager=self.connection_manager
+                connection_manager=self.connection_manager,
             )
         return self._template
+
+
+def build_repr(obj):
+    # return '{0}({1})'.format(
+    #     self.__class__.__name__,
+    #     ', '.join('{0}={1}'.format(attr, repr(getattr(self, attr)))
+    #               for attr in _find_attrs(self)
+    #               if not attr.startswith('_')))
+
+    return "{0}({1})".format(
+        obj.__class__.__name__,
+        ", ".join(
+            "{0}={1}".format(attr, repr(getattr(obj, attr)))
+            for attr in _find_attrs(obj)
+            if not attr.startswith("_") and attr not in ("logger",)
+        ),
+    )

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
-
+import sceptre.stack
 
 __author__ = 'Cloudreach'
 __email__ = 'sceptre@cloudreach.com'

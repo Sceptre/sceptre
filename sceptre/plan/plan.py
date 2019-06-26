@@ -354,3 +354,11 @@ class SceptrePlan(object):
             for f in files
             if not f.endswith(self.context.config_file)
         ]
+
+    def debug(self, *args):
+        """
+        Generate debug log to the file
+        """
+        print('yo yo from debug command')
+        self.resolve(command=self.debug.__name__)
+        return self._execute(*args)

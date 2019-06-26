@@ -7,7 +7,6 @@ This module implements Sceptre's CLI, and should not be directly imported.
 """
 
 import os
-
 import warnings
 
 import click
@@ -15,19 +14,20 @@ import colorama
 import yaml
 
 from sceptre import __version__
-from sceptre.cli.new import new_group
 from sceptre.cli.create import create_command
-from sceptre.cli.update import update_command
 from sceptre.cli.delete import delete_command
-from sceptre.cli.launch import launch_command
-from sceptre.cli.execute import execute_command
 from sceptre.cli.describe import describe_group
+from sceptre.cli.execute import execute_command
+from sceptre.cli.helpers import setup_logging, catch_exceptions
+from sceptre.cli.launch import launch_command
 from sceptre.cli.list import list_group
+from sceptre.cli.new import new_group
 from sceptre.cli.policy import set_policy_command
 from sceptre.cli.status import status_command
 from sceptre.cli.template import (validate_command, generate_command,
                                   estimate_cost_command)
-from sceptre.cli.helpers import setup_logging, catch_exceptions
+from sceptre.cli.update import update_command
+from sceptre.cli.debug import debug_command
 
 
 @click.group()
@@ -109,3 +109,4 @@ cli.add_command(set_policy_command)
 cli.add_command(status_command)
 cli.add_command(list_group)
 cli.add_command(describe_group)
+cli.add_command(debug_command)
