@@ -30,6 +30,43 @@ environment variable:
    env | grep SCEPTRE
    SCEPTRE_<output_name>=<output_value>
 
+Variable Handling
+-----------------
+
+You can pass variables into your project using ``--var-file`` and ``--var``.
+
+Varibles passed in with ``--var`` will overwrite any matching variables specified in
+``--var-file``. If you use multiple ``--var`` flags then the right-most ``--var`` will
+overwrite any matching ``--vars`` to the left. For example, in the following command
+
+``sceptre --var var1=one --var var2=two --var var1=three launch stack``
+
+``var1`` will equal ``three``.
+
+You can also use ``--var`` to overwrite nested keys in a ``--var-file``. For example,
+given a variable file "vars.yaml":
+
+.. code-block:: yaml
+
+  # vars.yaml
+  ---
+  top:
+    middle:
+      nested: hello
+    middle2:
+      nested: world
+
+we could overwrite ``nested: hello`` to ``nested: hi`` using:
+
+``sceptre --var-file vars.yaml --var top.middle2.nested=hi launch stack``
+
+.. note::
+  Sceptre will load your entire project to build a full dependency graph.
+  This means that all stacks that use variables will need to have a value
+  provided to them - even if they are not in your ``command_path`` or are not
+  a dependency. Using a --var-file with all variables set can help meet this
+  requirement.
+
 Command reference
 -----------------
 
@@ -45,4 +82,3 @@ Command options differ depending on the command, and can be found by running:
 .. click:: sceptre.cli:cli
   :prog: sceptre
   :show-nested:
-
