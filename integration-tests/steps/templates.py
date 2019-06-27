@@ -6,6 +6,7 @@ import yaml
 from botocore.exceptions import ClientError
 from sceptre.plan.plan import SceptrePlan
 from sceptre.context import SceptreContext
+from sceptre.cli.helpers import CfnYamlLoader
 
 
 def set_template_path(context, stack_name, template_name):
@@ -102,7 +103,7 @@ def step_impl(context, filename):
     with open(filepath) as template:
         body = template.read()
     for template in context.output.values():
-        assert yaml.safe_load(body) == yaml.safe_load(template)
+        assert yaml.load(body, Loader=CfnYamlLoader) == yaml.load(template, CfnYamlLoader)
 
 
 @then('the output is the same as the string returned by "{filename}"')

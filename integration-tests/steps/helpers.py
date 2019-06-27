@@ -23,7 +23,7 @@ def step_impl(context, message):
             assert status["ResponseMetadata"]["HTTPStatusCode"] == 200
     elif message == "the template is malformed":
         msg = context.error.response['Error']['Message']
-        assert msg.endswith("[Malformed]")
+        assert msg.startswith("Template format error")
     else:
         raise Exception("Step has incorrect message")
 

@@ -3,7 +3,7 @@ include CONTRIBUTING.md
 include CHANGELOG.md
 include LICENSE
 include README.md
-include requirements.txt
+include requirements/prod.txt
 include sceptre/stack_policies/lock.json
 include sceptre/stack_policies/unlock.json
 

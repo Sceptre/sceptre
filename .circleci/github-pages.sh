@@ -93,7 +93,7 @@ fi
 
 git remote add website ${GH_PAGES_URL}
 
-git commit -am "${COMMIT_MESSAGE}"
+git commit --allow-empty  -am "${COMMIT_MESSAGE}"
 git push -f website master
 
 echo "Finished Deployment!"
