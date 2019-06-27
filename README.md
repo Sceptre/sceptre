@@ -47,11 +47,14 @@ More information on installing sceptre can be found in our
 
 # Use Docker Image
 
+View our [Docker repository](https://hub.docker.com/r/cloudreach/sceptre).
+Images available from version 2.0.0 onward.
+
 To use our Docker image follow these instructions:
 
 1. Pull the image `docker pull cloudreach/sceptre:[SCEPTRE_VERSION_NUMBER]` e.g.
-   `docker pull cloudreach/sceptre:2.1.3`. Leave out the version number if you
-   wish to run `latest`.
+   `docker pull cloudreach/sceptre:2.1.4`. Leave out the version number if you
+   wish to run `latest` or run `docker pull cloudreach/sceptre:latest`.
 
 2. Run the image. You will need to mount the working directory where your
    project resides to a directory called `project`. You will also need to mount
@@ -61,7 +64,7 @@ To use our Docker image follow these instructions:
 
 If you want to use a custom ENTRYPOINT simply amend the Docker command:
 
-`docker run -ti --entrypoint='' cloudreach:test sh`
+`docker run -ti --entrypoint='' cloudreach:latest sh`
 
 The above command will enter you into the shell of the Docker container where
 you can execute sceptre commands - useful for development.
