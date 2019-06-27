@@ -256,11 +256,7 @@ plan.launch()
 ```
 
 Full API reference documentation can be found in the
-<<<<<<< HEAD
 [Documentation](https://sceptre.cloudreach.com/)
-=======
-[Documentation](https://sceptre.cloudreach.com/latest/docs/index.html)
->>>>>>> e97f4d6... Update README
 
 ## Tutorial and Documentation
 
