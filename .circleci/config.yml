@@ -258,6 +258,9 @@ workflows:
           requires:
             - lint-and-unit-tests
             - integration-tests
+          filters:
+            tags:
+              only: /.*/
 
       - deploy-latest-dockerhub:
           requires:
@@ -268,8 +271,8 @@ workflows:
 
       - deploy-dockerhub-tagged:
           requires:
-            - deploy-pypi
             - build-docker-image
+            - deploy-pypi
           filters:
             tags:
               only: /^v.*/
