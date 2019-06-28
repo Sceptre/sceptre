@@ -285,6 +285,7 @@ CFN_FNS = [
     'Not',
     'Or',
     'Select',
+    'Split',
     'Sub',
     'Transform',
 ]
