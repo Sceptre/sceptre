@@ -4,6 +4,21 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.1.5 (2019.06.28)
+
+### Fixed
+
+- Fix missing `Fn::Split` from CFN Functions in cli `generate`
+- Fix Docker deploy latest image
+- Fix setup.py supported programming language
+- Fix CircleCI docs deploy to allow empty commits
+- Fix CircleCI workflow to add docker build to tagged docker deployments
+
+### Nonfunctional
+
+- Fix README git conflict issues
+- Add DockerHub repo link in README
+
 ## 2.1.4 (2019.06.26)
 
 ### Fixed
