@@ -1,3 +1,12 @@
+version: 2.1
+
+executors:
+  docker-publisher:
+    environment:
+      IMAGE_NAME: cloudreach/sceptre
+    docker:
+      - image: circleci/buildpack-deps:stretch
+
 aliases:
   - &docs-job
     docker:
@@ -20,13 +29,6 @@ aliases:
             chmod +x .circleci/github-pages.sh
             ./.circleci/github-pages.sh
 
-version: 2.1
-executors:
-  docker-publisher:
-    environment:
-      IMAGE_NAME: cloudreach/sceptre
-    docker:
-      - image: circleci/buildpack-deps:stretch
 jobs:
   build:
     docker:
@@ -64,6 +66,7 @@ jobs:
           root: /home/circleci
           paths:
             - project
+
   lint-and-unit-tests:
     docker:
       - image: cloudreach/sceptre-circleci:0.4
@@ -80,18 +83,40 @@ jobs:
           command: |
             . ./venv/bin/activate
             make lint
+
       - run:
-          name: 'Unit Test and Coverage'
+          name: 'Unit Test'
           command: |
-            tox
+            mkdir test-reports
+            make test-all
+
       - store_test_results:
-          path: htmlcov
-      - store_test_results:
-          path: htmlcov
-      - store_test_results:
-          path: build/pytest
+          path: test-reports
+          destination: test-reports
+
       - store_artifacts:
-          path: build/pytest
+          path: test-reports
+          destination: test-reports
+
+      - run:
+          name: 'Coverage'
+          command: |
+            . venv/bin/activate
+            make coverage
+
+      - store_test_results:
+          path: coverage.xml
+          destination: coverage-reports
+
+      - store_artifacts:
+          path: coverage.xml
+          destination: coverage-reports
+
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - project
+
       - save_cache:
           key:
             sceptre-{{ .Environment.CACHE_VERSION }}-tox-requirements-{{ arch
@@ -99,6 +124,19 @@ jobs:
             "requirements/dev.txt" }}-{{ checksum "tox.ini" }}
           paths:
             - .tox
+
+  sonar:
+    docker:
+      - image: cloudreach/sceptre-circleci-sonarqube:latest
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - run:
+          name: Run Sonarqube
+          command: |
+            . venv/bin/activate
+            make sonar
+
   integration-tests:
     parallelism: 2
     docker:
@@ -117,10 +155,30 @@ jobs:
                    $(circleci tests glob "integration-tests/features/*.feature" | circleci tests split --split-by=timings)
       - store_test_results:
           path: build/behave
+          destination: build/behave
       - store_artifacts:
           path: build/behave
+          destination: build/behave
+
+  build-docker-image:
+    executor: docker-publisher
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build Docker Image
+          command: |
+            docker build -t $IMAGE_NAME:latest .
+      - run:
+          name: Archive Docker Image
+          command: docker save -o image.tar $IMAGE_NAME
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./image.tar
 
   deploy-docs-branch: *docs-job
+
   deploy-docs-tag: *docs-job
 
   deploy-pypi:
@@ -140,23 +198,6 @@ jobs:
             . ./venv/bin/activate
             pip install twine
             twine upload -u $PYPI_USERNAME -p $PYPI_PASSWORD dist/*
-
-  build-docker-image:
-    executor: docker-publisher
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: Build Docker Image
-          command: |
-            docker build -t $IMAGE_NAME:latest .
-      - run:
-          name: Archive Docker Image
-          command: docker save -o image.tar $IMAGE_NAME
-      - persist_to_workspace:
-          root: .
-          paths:
-            - ./image.tar
 
   deploy-latest-dockerhub:
     executor: docker-publisher
@@ -206,6 +247,11 @@ workflows:
           filters:
             tags:
               only: /.*/
+      - sonar:
+          context: sceptre-templates-context
+          requires:
+            - build
+            - lint-and-unit-tests
 
       - integration-tests:
           requires:
@@ -239,6 +285,7 @@ workflows:
           requires:
             - lint-and-unit-tests
             - integration-tests
+            - sonar
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*/
@@ -258,6 +305,7 @@ workflows:
           requires:
             - lint-and-unit-tests
             - integration-tests
+            - sonar
           filters:
             tags:
               only: /.*/
