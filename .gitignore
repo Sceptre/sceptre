@@ -46,6 +46,7 @@ coverage.xml
 *,cover
 .hypothesis/
 test-results.xml
+test-reports/
 
 # Translations
 *.mo
