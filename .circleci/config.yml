@@ -237,23 +237,26 @@ workflows:
   build-test-and-deploy:
     jobs:
       - build:
+          context: sceptre-core
           filters:
             tags:
               only: /.*/
 
       - lint-and-unit-tests:
+          context: sceptre-core
           requires:
             - build
           filters:
             tags:
               only: /.*/
       - sonar:
-          context: sceptre-templates-context
+          context: sceptre-core
           requires:
             - build
             - lint-and-unit-tests
 
       - integration-tests:
+          context: sceptre-core
           requires:
             - build
           filters:
@@ -263,6 +266,7 @@ workflows:
               ignore: /^pull\/.*/
 
       - deploy-docs-branch:
+          context: sceptre-core
           requires:
             - lint-and-unit-tests
             - integration-tests
@@ -271,6 +275,7 @@ workflows:
               only: master
 
       - deploy-docs-tag:
+          context: sceptre-core
           requires:
             - lint-and-unit-tests
             - integration-tests
@@ -281,6 +286,7 @@ workflows:
               ignore: /.*/
 
       - deploy-pypi-approval:
+          context: sceptre-core
           type: approval
           requires:
             - lint-and-unit-tests
@@ -293,6 +299,7 @@ workflows:
               ignore: /.*/
 
       - deploy-pypi:
+          context: sceptre-core
           requires:
             - deploy-pypi-approval
           filters:
@@ -302,6 +309,7 @@ workflows:
               ignore: /.*/
 
       - build-docker-image:
+          context: sceptre-core
           requires:
             - lint-and-unit-tests
             - integration-tests
@@ -311,6 +319,7 @@ workflows:
               only: /.*/
 
       - deploy-latest-dockerhub:
+          context: sceptre-core
           requires:
             - build-docker-image
           filters:
@@ -318,6 +327,7 @@ workflows:
               only: master
 
       - deploy-dockerhub-tagged:
+          context: sceptre-core
           requires:
             - build-docker-image
             - deploy-pypi
