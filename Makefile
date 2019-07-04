@@ -56,7 +56,7 @@ lint:
 	flake8 .
 
 test:
-	pytest --junitxml=test-reports/junit.xml
+	pytest --junitxml=test-results/junit.xml
 
 test-all:
 	tox
