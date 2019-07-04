@@ -87,16 +87,15 @@ jobs:
       - run:
           name: 'Unit Test'
           command: |
-            mkdir test-reports
             make test-all
 
       - store_test_results:
-          path: test-reports
-          destination: test-reports
+          path: test-results
+          destination: test-results
 
       - store_artifacts:
-          path: test-reports
-          destination: test-reports
+          path: test-results
+          destination: test-results
 
       - run:
           name: 'Coverage'
