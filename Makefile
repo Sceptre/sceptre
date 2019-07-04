@@ -70,7 +70,7 @@ coverage-all:
 		coverage xml
 
 coverage: coverage-all
-		coverage report --show-missing
+		coverage report --show-missing --fail-under 92
 
 sonar:
 	    @sonar-scanner \
