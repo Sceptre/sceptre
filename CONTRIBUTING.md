@@ -53,8 +53,9 @@ A good pull request:
   for unintuitive sections of code.
 - Includes documentation for new features.
 - Includes tests cases that demonstrates the previous flaw that now passes with
-  the included patch, or demonstrates the newly added feature. Tests should have
-  100% code coverage.
+  the included patch, or demonstrates the newly added feature.
+- New code should have 100% test coverage. The build will fail if overall
+  code-coverage falls below 92%.
 - Is appropriately licensed (Apache 2.0).
 
 Please keep in mind:
@@ -109,10 +110,10 @@ Note: Sceptre aims to be compatible with Python 2 & 3, please run unit test
 against both versions. You will need the corresponding versions of Python
 installed on your system.
 
-Run unit tests and coverage using tox for Python 2.7 and 3.6:
+Run unit tests and coverage using tox for Python 2.7, 3.6 and 3.7:
 
 ```bash
-$ tox -e py27 $ tox -e py36
+$ tox -e py27 $ tox -e py36 -e py37
 ```
 
 If you use pyenv to manage Python versions, try `pip install tox-pyenv` to make
