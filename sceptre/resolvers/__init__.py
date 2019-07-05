@@ -6,8 +6,13 @@ import logging
 from sceptre.helpers import _call_func_on_values
 
 
+class ResolverData(object):
+    def __init__(self, context):
+        self.context = context
+
+
 @six.add_metaclass(abc.ABCMeta)
-class Resolver:
+class Resolver(ResolverData):
     """
     Resolver is an abstract base class that should be inherited by all
     Resolvers.

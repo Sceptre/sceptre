@@ -75,6 +75,32 @@ class SceptreContext(object):
         self.no_colour = no_colour if no_colour is True else False
         self.ignore_dependencies = ignore_dependencies if ignore_dependencies is True else False
 
+    def __repr__(self):
+        return ("sceptre.context.SceptreContext("
+                "project_path='{project_path}', "
+                "config_path='{config_path}', "
+                "command_path='{command_path}', "
+                "normal_command_path='{normal_command_path}', "
+                "config_file='{config_path}', "
+                "templates_path='{templates_path}', "
+                "user_variables='{user_variables}', "
+                "options='{options}', "
+                "output_format='{output_format}', "
+                "no_colour='{no_colour}', "
+                "ignore_dependencies='{ignore_dependencies}'".format(
+                    project_path=self.project_path,
+                    config_path=self.config_path,
+                    command_path=self.command_path,
+                    normal_command_path=self.normal_command_path,
+                    config_file=self.config_file,
+                    templates_path=self.templates_path,
+                    user_variables=self.user_variables,
+                    options=self.options,
+                    output_format=self.output_format,
+                    no_colour=self.no_colour,
+                    ignore_dependencies=self.ignore_dependencies)
+                )
+
     def full_config_path(self):
         """
         Returns the config path in the format: ``project_path/config_path``.

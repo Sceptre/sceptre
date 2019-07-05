@@ -161,7 +161,7 @@ class ConfigReader(object):
                 # Retrieve name and class from entry point
                 node_tag = u'!' + entry_point.name
                 node_class = entry_point.load()
-
+                node_class.context = self.context
                 # Add constructor to PyYAML loader
                 yaml.SafeLoader.add_constructor(
                     node_tag, constructor_factory(node_class)
