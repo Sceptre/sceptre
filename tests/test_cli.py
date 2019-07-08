@@ -182,7 +182,7 @@ class TestCli(object):
 
     def test_estimate_template_cost_with_browser(self):
         self.mock_stack_actions.estimate_cost.return_value = {
-            "Url": "http://example.com",
+            "Url": "https://sceptre.cloudreach.com",
             "ResponseMetadata": {
                 "HTTPStatusCode": 200
             }
@@ -195,7 +195,7 @@ class TestCli(object):
 
         assert result.output == \
             '{0}{1}'.format("View the estimated cost for mock-stack at:\n",
-                            "http://example.com\n\n")
+                            "https://sceptre.cloudreach.com\n\n")
 
     def test_estimate_template_cost_with_no_browser(self):
         client_error = ClientError(
