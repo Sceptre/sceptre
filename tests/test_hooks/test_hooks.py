@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 from mock import MagicMock
 
-from sceptre.hooks import Hook, HookProperty, add_stack_hooks, execute_hooks
+from sceptre.context import SceptreContext
+from sceptre.hooks import Hook, HookData, HookProperty, add_stack_hooks, execute_hooks
+
+
+class MockHookData(HookData):
+    def __init__(self, context):
+        self.context = context
 
 
 class MockHook(Hook):
@@ -60,11 +66,23 @@ class TestHooksFunctions(object):
         hook_2.run.called_once_with()
 
 
+class TestHookData(object):
+    def setup_method(self):
+        self.mock_context = MagicMock(spec=SceptreContext)
+
+    def test_init(self):
+        self.hook_data = HookData(self.mock_context)
+        assert isinstance(self.hook_data.context, SceptreContext)
+        assert hasattr(self.hook_data, 'context')
+        assert self.hook_data.context == self.mock_context
+
+
 class TestHook(object):
     def setup_method(self, test_method):
         self.hook = MockHook()
 
     def test_hook_inheritance(self):
+        assert issubclass(Hook, HookData)
         assert isinstance(self.hook, Hook)
 
 

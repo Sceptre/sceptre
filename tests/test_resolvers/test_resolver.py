@@ -2,7 +2,24 @@
 
 from mock import sentinel, MagicMock
 
-from sceptre.resolvers import Resolver, ResolvableProperty
+from sceptre.context import SceptreContext
+from sceptre.resolvers import Resolver, ResolverData, ResolvableProperty
+
+
+class MockResolverData(ResolverData):
+    def __init__(self):
+        self.context = MagicMock(spec=SceptreContext)
+
+
+class TestResolverData(object):
+    def setup_method(self, test_method):
+        self.mock_context = MagicMock(SceptreContext)
+
+    def test_resolver_data_has_context(self):
+        self.resolver_data = ResolverData(self.mock_context)
+        assert isinstance(self.resolver_data.context, SceptreContext)
+        assert hasattr(self.resolver_data, 'context')
+        assert self.resolver_data.context == self.mock_context
 
 
 class MockResolver(Resolver):
@@ -29,9 +46,10 @@ class TestResolver(object):
             stack=sentinel.stack
         )
 
-    def test_init(self):
+    def test_resolver_init(self):
         assert self.mock_resolver.stack == sentinel.stack
         assert self.mock_resolver.argument == sentinel.argument
+        assert issubclass(Resolver, ResolverData)
 
 
 class TestResolvablePropertyDescriptor(object):
@@ -131,22 +149,22 @@ class TestResolvablePropertyDescriptor(object):
             "None": None,
             "Resolver": mock_resolver,
             "List": [
-                    [
-                        mock_resolver,
-                        "String",
-                        None
-                    ],
-                    {
-                        "Dictionary": {},
-                        "String": "String",
-                        "None": None,
-                        "Resolver": mock_resolver,
-                        "List": [
-                            mock_resolver
-                        ]
-                    },
+                [
                     mock_resolver,
-                    "String"
+                    "String",
+                    None
+                ],
+                {
+                    "Dictionary": {},
+                    "String": "String",
+                    "None": None,
+                    "Resolver": mock_resolver,
+                    "List": [
+                        mock_resolver
+                    ]
+                },
+                mock_resolver,
+                "String"
             ],
             "Dictionary": {
                 "Resolver": mock_resolver,
@@ -174,22 +192,22 @@ class TestResolvablePropertyDescriptor(object):
             "None": None,
             "Resolver": "Resolved",
             "List": [
-                    [
+                [
                         "Resolved",
                         "String",
                         None
-                    ],
-                    {
-                        "Dictionary": {},
-                        "String": "String",
-                        "None": None,
-                        "Resolver": "Resolved",
-                        "List": [
-                            "Resolved"
-                        ]
-                    },
-                    "Resolved",
-                    "String"
+                ],
+                {
+                    "Dictionary": {},
+                    "String": "String",
+                    "None": None,
+                    "Resolver": "Resolved",
+                    "List": [
+                        "Resolved"
+                    ]
+                },
+                "Resolved",
+                "String"
             ],
             "Dictionary": {
                 "Resolver": "Resolved",

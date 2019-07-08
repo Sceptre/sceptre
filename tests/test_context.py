@@ -75,7 +75,7 @@ class TestSceptreContext(object):
         full_templates_path = path.join("project_path", self.context.templates_path)
         assert context.full_templates_path() == full_templates_path
 
-    def test_stack_repr(self):
+    def test_context_repr(self):
         assert self.context.__repr__() == \
             "sceptre.context.SceptreContext(" \
             "project_path='project_path/to/sceptre', " \
@@ -99,3 +99,16 @@ class TestSceptreContext(object):
         )
         assert isinstance(evaluated_context, SceptreContext)
         assert evaluated_context.__eq__(self.context)
+
+    def test_context_hash(self):
+        assert hash(self.context) == self.context.__hash__()
+
+    def test_command_path_is_stack_with_valid_stack(self):
+        self.context.project_path = "tests/fixtures"
+        self.context.command_path = "account/stack-group/region/vpc.yaml"
+        assert self.context.command_path_is_stack()
+
+    def test_command_path_is_stack_with_directory(self):
+        self.context.project_path = "tests/fixtures"
+        self.context.command_path = "account/stack-group/region"
+        assert self.context.command_path_is_stack() is False

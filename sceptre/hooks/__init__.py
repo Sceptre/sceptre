@@ -2,12 +2,14 @@ import abc
 import logging
 from functools import wraps
 
+from sceptre.context import SceptreContext
 from sceptre.helpers import _call_func_on_values
 
 
 class HookData(object):
     def __init__(self, context):
-        self.context = context
+        if isinstance(context, SceptreContext):
+            self.context = context
 
 
 class Hook(HookData):
