@@ -78,28 +78,38 @@ class SceptreContext(object):
     def __repr__(self):
         return ("sceptre.context.SceptreContext("
                 "project_path='{project_path}', "
-                "config_path='{config_path}', "
                 "command_path='{command_path}', "
-                "normal_command_path='{normal_command_path}', "
-                "config_file='{config_path}', "
-                "templates_path='{templates_path}', "
-                "user_variables='{user_variables}', "
-                "options='{options}', "
+                "user_variables={user_variables}, "
+                "options={options}, "
                 "output_format='{output_format}', "
-                "no_colour='{no_colour}', "
-                "ignore_dependencies='{ignore_dependencies}'".format(
+                "no_colour={no_colour}, "
+                "ignore_dependencies={ignore_dependencies})".format(
                     project_path=self.project_path,
-                    config_path=self.config_path,
                     command_path=self.command_path,
-                    normal_command_path=self.normal_command_path,
-                    config_file=self.config_file,
-                    templates_path=self.templates_path,
                     user_variables=self.user_variables,
                     options=self.options,
                     output_format=self.output_format,
                     no_colour=self.no_colour,
-                    ignore_dependencies=self.ignore_dependencies)
-                )
+                    ignore_dependencies=self.ignore_dependencies
+                ))
+
+    def __eq__(self, context):
+        return (
+            self.project_path == context.project_path
+            and self.config_path == context.config_path
+            and self.command_path == context.command_path
+            and self.normal_command_path == context.normal_command_path
+            and self.config_file == context.config_file
+            and self.templates_path == context.templates_path
+            and self.user_variables == context.user_variables
+            and self.options == context.options
+            and self.output_format == context.output_format
+            and self.no_colour == context.no_colour
+            and self.ignore_dependencies == context.ignore_dependencies
+        )
+
+    def __hash__(self):
+        return hash(str(self))
 
     def full_config_path(self):
         """
