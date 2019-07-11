@@ -1,8 +1,0 @@
-{
-  "Resources": {
-    "WaitConditionHandle": {
-      "Type": "{{ sceptre_user_data.type }}",
-      "Properties": {}
-    }
-  }
-}

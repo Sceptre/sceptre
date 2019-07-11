@@ -9,16 +9,20 @@ from click.testing import CliRunner
 from mock import MagicMock, patch, sentinel
 import pytest
 import click
-
-from sceptre.cli import cli
+from botocore.exceptions import ClientError
 from sceptre.config.reader import ConfigReader
 from sceptre.stack import Stack
 from sceptre.plan.actions import StackActions
 from sceptre.stack_status import StackStatus
-from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
-from sceptre.cli.helpers import CustomJsonEncoder, catch_exceptions
-from botocore.exceptions import ClientError
-from sceptre.exceptions import SceptreException
+from cli.exceptions import SceptreException
+
+
+from cli import cli
+from cli.helpers import CustomJsonEncoder
+from cli.helpers import catch_exceptions
+from cli.helpers import setup_logging
+from cli.helpers import write
+from cli.helpers import ColouredFormatter
 
 
 class TestCli(object):
@@ -499,7 +503,7 @@ class TestCli(object):
 
             result = self.runner.invoke(cli, ["new", "project", "example"])
             assert result.exit_code == 1
-            assert result.output == '"Folder \\"example\\" already exists."\n'
+            assert 'Folder \"example\" already exists.' in result.exception.args
             assert os.path.isdir(config_dir)
             assert os.path.isdir(template_dir)
 
@@ -509,7 +513,7 @@ class TestCli(object):
 
     def test_new_project_another_exception(self):
         with self.runner.isolated_filesystem():
-            patcher_mkdir = patch("sceptre.cli.new.os.mkdir")
+            patcher_mkdir = patch("cli.new.os.mkdir")
             mock_mkdir = patcher_mkdir.start()
             mock_mkdir.side_effect = OSError(errno.EINVAL)
             result = self.runner.invoke(cli, ["new", "project", "example"])
@@ -623,7 +627,7 @@ class TestCli(object):
 
             os.makedirs(stack_group_dir)
             os.chdir(project_path)
-            patcher_mkdir = patch("sceptre.cli.new.os.mkdir")
+            patcher_mkdir = patch("cli.new.os.mkdir")
             mock_mkdir = patcher_mkdir.start()
             mock_mkdir.side_effect = OSError(errno.EINVAL)
             result = self.runner.invoke(cli, ["new", "group", "A"])
@@ -665,7 +669,7 @@ class TestCli(object):
         output_format_flag = ['--output', output_format]
         args = output_format_flag + no_colour_flag + command
 
-        with patch("sceptre.cli." + cli_module + ".write") as mock_write:
+        with patch("cli." + cli_module + ".write") as mock_write:
             self.runner.invoke(cli, args)
             mock_write.assert_called()
             for call in mock_write.call_args_list:
@@ -691,7 +695,7 @@ class TestCli(object):
         # Silence logging for the rest of the tests
         logger.setLevel(logging.CRITICAL)
 
-    @patch("sceptre.cli.click.echo")
+    @patch("cli.click.echo")
     @pytest.mark.parametrize(
         "output_format,no_colour,expected_output", [
             ("json", True, '{\n    "stack": "CREATE_COMPLETE"\n}'),
@@ -706,20 +710,20 @@ class TestCli(object):
         write({"stack": "CREATE_COMPLETE"}, output_format, no_colour)
         mock_echo.assert_called_once_with(expected_output)
 
-    @patch("sceptre.cli.click.echo")
+    @patch("cli.click.echo")
     def test_write_status_with_colour(self, mock_echo):
         write("stack: CREATE_COMPLETE", no_colour=False)
         mock_echo.assert_called_once_with(
             '{\n    "stack": "\x1b[32mCREATE_COMPLETE\x1b[0m"\n}'
         )
 
-    @patch("sceptre.cli.click.echo")
+    @patch("cli.click.echo")
     def test_write_status_without_colour(self, mock_echo):
         write("stack: CREATE_COMPLETE", no_colour=True)
         mock_echo.assert_called_once_with('{\n    "stack": "CREATE_COMPLETE"\n}')
 
-    @patch("sceptre.cli.helpers.StackStatusColourer.colour")
-    @patch("sceptre.cli.helpers.logging.Formatter.format")
+    @patch("cli.helpers.StackStatusColourer.colour")
+    @patch("cli.helpers.logging.Formatter.format")
     def test_ColouredFormatter_format_with_string(
             self, mock_format, mock_colour
     ):

@@ -1,3 +1,0 @@
-template_path: dependencies/dependent_template.json
-parameters:
-  DependentStackName: !stack_output 6/1/B.yaml::StackName

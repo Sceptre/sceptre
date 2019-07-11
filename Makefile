@@ -66,11 +66,11 @@ test-integration: install
 
 coverage-all:
 		coverage erase
-		coverage run --source sceptre -m pytest
+		coverage run --source cli -m pytest
 		coverage xml
 
 coverage: coverage-all
-		coverage report --show-missing --fail-under 92
+		coverage report --show-missing --fail-under 80
 
 sonar:
 	    @sonar-scanner \

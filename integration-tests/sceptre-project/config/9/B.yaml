@@ -1,5 +1,0 @@
-template_path: dependencies/dependent_template_local_export.json
-region: eu-west-1
-parameters:
-  DependentStackName: !stack_output_external {project_code}-9-A::StackName 9-A
-

@@ -1,3 +1,0 @@
-sceptre_user_data:
-  type: AWS::CloudFormation::WaitConditionHandle
-template_path: invalid_template_missing_attr.j2

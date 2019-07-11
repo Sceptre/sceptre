@@ -1,3 +1,0 @@
-template_path: input_output_template.json
-parameters:
-  Input: !stack_output 6/3/B.yaml::Output

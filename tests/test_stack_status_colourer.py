@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from colorama import init, Fore, Style
-from sceptre.stack_status_colourer import StackStatusColourer
+from cli.stack_status_colourer import StackStatusColourer
 
 
 class TestStackStatusColourer(object):

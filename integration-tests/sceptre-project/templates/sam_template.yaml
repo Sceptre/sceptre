@@ -1,9 +1,0 @@
-Transform: 'AWS::Serverless-2016-10-31'
-
-Resources:
-  TestFunction:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: index.handler
-      Runtime: python3.6
-      InlineCode: "print('Hello World!')"

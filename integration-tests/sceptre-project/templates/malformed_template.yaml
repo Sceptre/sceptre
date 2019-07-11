@@ -1,4 +1,0 @@
-Malformed:
-    WaitConditionHandle:
-      Type: "AWS::CloudFormation::WaitConditionHandle"
-      Malformed:

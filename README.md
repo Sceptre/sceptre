@@ -85,12 +85,12 @@ documentation on how to achieve this.
 
 We have tried to make the migration to Sceptre v2 as simple as possible. For
 information about how to migration your v1 project please see our
-[Migration Guide](https://github.com/cloudreach/sceptre/wiki/Migration-Guide:-V1-to-V2)
+[Migration Guide](https://github.com/sceptre/project/wiki/Migration-Guide:-V1-to-V2)
 
 # V1 End of Life Notice
 
 Support for Version 1 will
-[end on June 1 2019](https://github.com/cloudreach/sceptre/issues/593). For new
+[end on June 1 2019](https://github.com/sceptre/sceptre/issues/593). For new
 projects we recommend using Version 2.
 
 # Example

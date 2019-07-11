@@ -1,7 +1,0 @@
-Resources:
-    {% for sg in sceptre_user_data %}
-    {{ sg.name  }}:
-        Type: AWS::EC2::SecurityGroup
-        Properties:
-            InboundIp: {{ sg.inbound_ip  }}
-    {% endfor %}
