@@ -12,7 +12,6 @@ packaging==16.8
 pygments==2.2.0
 pytest-runner>=3.0.0,<3.1.0
 pytest>=3.2.0,<3.3.0
-PyYaml>=3,<6.0
 readme-renderer>=24.0
 setuptools>=40.6.2
 Sphinx==1.6.5
