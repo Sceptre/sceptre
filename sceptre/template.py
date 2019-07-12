@@ -12,6 +12,8 @@ import logging
 import os
 import sys
 import threading
+import traceback
+import re
 
 import botocore
 import jinja2
@@ -288,12 +290,22 @@ class Template(object):
         :returns: The body of the CloudFormation template.
         :rtype: str
         """
-        logger = logging.getLogger(__name__)
-        logger.debug("%s Rendering CloudFormation template", filename)
-        env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(template_dir),
-            undefined=jinja2.StrictUndefined
-        )
-        template = env.get_template(filename)
-        body = template.render(**jinja_vars)
-        return body
+        try:
+            logger = logging.getLogger(__name__)
+            logger.debug("%s Rendering CloudFormation template", filename)
+            env = jinja2.Environment(
+                loader=jinja2.FileSystemLoader(template_dir),
+                undefined=jinja2.StrictUndefined
+            )
+            template = env.get_template(filename)
+            body = template.render(**jinja_vars)
+            return body
+
+        except Exception as e:
+            _, _, tb = sys.exc_info()
+            stack = traceback.extract_tb(tb)
+            for frame in stack:
+                if re.match(r'.*\.j2', frame.filename):
+                    print("Jinja template error in {} - file {}, line {}:".format(frame.name, frame.filename, frame.lineno))
+                    print("\n{}\n".format(frame.line))
+            raise e
