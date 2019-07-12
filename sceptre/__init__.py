@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import warnings
 
 
 __author__ = 'Cloudreach'
 __email__ = 'sceptre@cloudreach.com'
-__version__ = '2.1.3'
+__version__ = '2.1.5'
 
 
 # Set up logging to ``/dev/null`` like a library is supposed to.
@@ -14,5 +15,8 @@ class NullHandler(logging.Handler):  # pragma: no cover
     def emit(self, record):
         pass
 
+
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 logging.getLogger('sceptre').addHandler(NullHandler())

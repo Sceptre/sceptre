@@ -108,34 +108,48 @@ class StackActions(object):
         """
         self._protect_execution()
         self.logger.info("%s - Updating Stack", self.stack.name)
-        update_stack_kwargs = {
-            "StackName": self.stack.external_name,
-            "Parameters": self._format_parameters(self.stack.parameters),
-            "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'],
-            "NotificationARNs": self.stack.notifications,
-            "Tags": [
-                {"Key": str(k), "Value": str(v)}
-                for k, v in self.stack.tags.items()
-            ]
-        }
-        update_stack_kwargs.update(
-            self.stack.template.get_boto_call_parameter())
-        update_stack_kwargs.update(self._get_role_arn())
-        response = self.connection_manager.call(
-            service="cloudformation",
-            command="update_stack",
-            kwargs=update_stack_kwargs
-        )
-        self.logger.debug(
-            "%s - Update Stack response: %s", self.stack.name, response
-        )
+        try:
+            update_stack_kwargs = {
+                "StackName": self.stack.external_name,
+                "Parameters": self._format_parameters(self.stack.parameters),
+                "Capabilities": [
+                    'CAPABILITY_IAM',
+                    'CAPABILITY_NAMED_IAM',
+                    'CAPABILITY_AUTO_EXPAND'
+                ],
+                "NotificationARNs": self.stack.notifications,
+                "Tags": [
+                    {"Key": str(k), "Value": str(v)}
+                    for k, v in self.stack.tags.items()
+                ]
+            }
+            update_stack_kwargs.update(
+                self.stack.template.get_boto_call_parameter())
+            update_stack_kwargs.update(self._get_role_arn())
+            response = self.connection_manager.call(
+                service="cloudformation",
+                command="update_stack",
+                kwargs=update_stack_kwargs
+            )
+            status = self._wait_for_completion(self.stack.stack_timeout)
+            self.logger.debug(
+                "%s - Update Stack response: %s", self.stack.name, response
+            )
 
-        status = self._wait_for_completion(self.stack.stack_timeout)
-        # Cancel update after timeout
-        if status == StackStatus.IN_PROGRESS:
-            status = self.cancel_stack_update()
+            # Cancel update after timeout
+            if status == StackStatus.IN_PROGRESS:
+                status = self.cancel_stack_update()
 
-        return status
+            return status
+        except botocore.exceptions.ClientError as exp:
+            error_message = exp.response["Error"]["Message"]
+            if error_message == "No updates are to be performed.":
+                self.logger.info(
+                    "%s - No updates to perform.", self.stack.name
+                )
+                return StackStatus.COMPLETE
+            else:
+                raise
 
     def cancel_stack_update(self):
         """
@@ -187,17 +201,7 @@ class StackActions(object):
             self.delete()
             status = self.create()
         elif existing_status.endswith("COMPLETE"):
-            try:
-                status = self.update()
-            except botocore.exceptions.ClientError as exp:
-                error_message = exp.response["Error"]["Message"]
-                if error_message == "No updates are to be performed.":
-                    self.logger.info(
-                        "%s - No updates to perform.", self.stack.name
-                    )
-                    status = StackStatus.COMPLETE
-                else:
-                    raise
+            status = self.update()
         elif existing_status.endswith("IN_PROGRESS"):
             self.logger.info(
                 "%s - Stack action is already in progress state and cannot "

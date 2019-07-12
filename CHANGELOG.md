@@ -4,6 +4,41 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.1.5 (2019.06.28)
+
+### Fixed
+
+- Fix missing `Fn::Split` from CFN Functions in cli `generate`
+- Fix Docker deploy latest image
+- Fix setup.py supported programming language
+- Fix CircleCI docs deploy to allow empty commits
+- Fix CircleCI workflow to add docker build to tagged docker deployments
+
+### Nonfunctional
+
+- Fix README git conflict issues
+- Add DockerHub repo link in README
+
+## 2.1.4 (2019.06.26)
+
+### Fixed
+
+- CLI to use correct JSON formatting as default
+- `sceptre generate` for non-trivial JSON and YAML
+- Support for nested dicts in CLI `--var` flag
+- Error handling for missing AWS credentials
+- `stack_output` resolver windows path
+- Stack update error hadnling
+- Overwritten `project_code` in `stack_output` dependencies
+- Typo in terminology documentation
+
+### Nonfunctional
+
+- Add Official Docker image and automatic DockerHub releases
+- Change target git repository to deploy docs
+- Officially support Python 3.7
+- Update README documentation links
+
 ## 2.1.3 (2019.05.14)
 
 ### Fixed

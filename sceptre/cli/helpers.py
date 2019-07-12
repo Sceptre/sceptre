@@ -1,9 +1,10 @@
 import logging
 import sys
-from functools import wraps
+from functools import partial, wraps
 
 import json
 import click
+import six
 import yaml
 
 from boto3.exceptions import Boto3Error
@@ -55,7 +56,7 @@ def confirmation(
         click.confirm(msg, abort=True)
 
 
-def write(var, output_format="text", no_colour=True):
+def write(var, output_format="json", no_colour=True):
     """
     Writes ``var`` to stdout. If output_format is set to "json" or "yaml",
     write ``var`` as a JSON or YAML string.
@@ -92,13 +93,13 @@ def _generate_json(stream):
                 if isinstance(item, dict):
                     items.append(item)
                 else:
-                    items.append(json.loads(item))
+                    items.append(yaml.load(item, Loader=CfnYamlLoader))
             except Exception:
                 print("An error occured writing the JSON object.")
         return encoder.encode(items)
     else:
         try:
-            return encoder.encode(json.loads(stream))
+            return encoder.encode(yaml.load(stream, Loader=CfnYamlLoader))
         except Exception:
             return encoder.encode(stream)
 
@@ -115,14 +116,14 @@ def _generate_yaml(stream):
                 else:
                     items.append(
                         yaml.safe_dump(
-                            yaml.load(item, Loader=yaml.FullLoader),
+                            yaml.load(item, Loader=CfnYamlLoader),
                             default_flow_style=False, explicit_start=True
                         )
                     )
             except Exception:
                 print("An error occured whilst writing the YAML object.")
         return yaml.safe_dump(
-            [yaml.load(item, Loader=yaml.FullLoader) for item in items],
+            [yaml.load(item, Loader=CfnYamlLoader) for item in items],
             default_flow_style=False, explicit_start=True
         )
     else:
@@ -268,3 +269,75 @@ class CustomJsonEncoder(json.JSONEncoder):
         :rtype: str
         """
         return str(item)
+
+
+CFN_FNS = [
+    'And',
+    'Base64',
+    'Cidr',
+    'Equals',
+    'FindInMap',
+    'GetAtt',
+    'GetAZs',
+    'If',
+    'ImportValue',
+    'Join',
+    'Not',
+    'Or',
+    'Select',
+    'Split',
+    'Sub',
+    'Transform',
+]
+
+CFN_TAGS = [
+    'Condition',
+    'Ref',
+]
+
+
+def _getatt_constructor(loader, node):
+    if isinstance(node.value, six.text_type):
+        return node.value.split('.', 1)
+    elif isinstance(node.value, list):
+        seq = loader.construct_sequence(node)
+        for item in seq:
+            if not isinstance(item, six.text_type):
+                raise ValueError(
+                    "Fn::GetAtt does not support complex datastructures")
+        return seq
+    else:
+        raise ValueError("Fn::GetAtt only supports string or list values")
+
+
+def _tag_constructor(loader, tag_suffix, node):
+    if tag_suffix not in CFN_FNS and tag_suffix not in CFN_TAGS:
+        raise ValueError("Bad tag: !{tag_suffix}. Supported tags are: "
+                         "{supported_tags}".format(
+                             tag_suffix=tag_suffix,
+                             supported_tags=", ".join(sorted(CFN_TAGS + CFN_FNS))
+                         ))
+
+    if tag_suffix in CFN_FNS:
+        tag_suffix = "Fn::{tag_suffix}".format(tag_suffix=tag_suffix)
+
+    data = {}
+    yield data
+
+    if tag_suffix == 'Fn::GetAtt':
+        constructor = partial(_getatt_constructor, (loader, ))
+    elif isinstance(node, yaml.ScalarNode):
+        constructor = loader.construct_scalar
+    elif isinstance(node, yaml.SequenceNode):
+        constructor = loader.construct_sequence
+    elif isinstance(node, yaml.MappingNode):
+        constructor = loader.construct_mapping
+
+    data[tag_suffix] = constructor(node)
+
+
+class CfnYamlLoader(yaml.SafeLoader):
+    pass
+
+
+CfnYamlLoader.add_multi_constructor("!", _tag_constructor)

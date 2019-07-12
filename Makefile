@@ -56,7 +56,7 @@ lint:
 	flake8 .
 
 test:
-	pytest
+	pytest --junitxml=test-results/junit.xml
 
 test-all:
 	tox
@@ -64,14 +64,24 @@ test-all:
 test-integration: install
 	behave integration-tests/
 
-coverage-ci:
-	coverage erase
-	coverage run --source sceptre -m pytest
-	coverage html
+coverage-all:
+		coverage erase
+		coverage run --source sceptre -m pytest
+		coverage xml
 
-coverage: coverage-ci
-	coverage report --show-missing
-	$(BROWSER) htmlcov/index.html
+coverage: coverage-all
+		coverage report --show-missing --fail-under 92
+
+sonar:
+	    @sonar-scanner \
+            -Dsonar.projectKey=Sceptre_${CIRCLE_PROJECT_REPONAME} \
+            -Dsonar.organization=sceptre \
+			-Dsonar.projectName=${CIRCLE_PROJECT_REPONAME} \
+            -Dsonar.pullrequest.provider=GitHub\
+			-Dsonar.branch.name=${CIRCLE_BRANCH}\
+            -Dsonar.sources=. \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=${SONAR_LOGIN}
 
 docs:
 	rm -f docs/sceptre.rst
@@ -121,6 +131,7 @@ install: clean
 	pip install .
 
 install-dev: clean
-	pip install -r requirements.txt
+	pip install -r requirements/prod.txt
+	pip install -r requirements/dev.txt
 	pip install -e .
 	@echo "To install the documentation dependencies, run:\ncd docs\nmake install"
