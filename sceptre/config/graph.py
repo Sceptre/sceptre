@@ -90,7 +90,7 @@ class StackGraph(object):
         :type dependencies: list
         """
         self.logger.debug(
-            "Generate edges for graph {0}".format(stack)
+            "Generate dependencies for stack {0}".format(stack)
         )
         for dependency in dependencies:
             self.graph.add_edge(dependency, stack)
@@ -98,7 +98,7 @@ class StackGraph(object):
                 raise CircularDependenciesError(
                     "Dependency cycle detected: {} {}".format(stack,
                                                               dependency))
-            self.logger.debug("Added edge: {}".format(dependency))
+            self.logger.debug("  Added dependency: {}".format(dependency))
 
         if not dependencies:
             self.graph.add_node(stack)
