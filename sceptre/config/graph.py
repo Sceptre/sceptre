@@ -90,15 +90,15 @@ class StackGraph(object):
         :type dependencies: list
         """
         self.logger.debug(
-            "Generate edges for graph {0}".format(self.graph)
+            "Generate dependencies for stack {0}".format(stack)
         )
         for dependency in dependencies:
-            edge = self.graph.add_edge(dependency, stack)
+            self.graph.add_edge(dependency, stack)
             if not nx.is_directed_acyclic_graph(self.graph):
                 raise CircularDependenciesError(
                     "Dependency cycle detected: {} {}".format(stack,
                                                               dependency))
-            self.logger.debug("Added edge: {}".format(edge))
+            self.logger.debug("  Added dependency: {}".format(dependency))
 
         if not dependencies:
             self.graph.add_node(stack)
