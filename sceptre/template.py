@@ -95,17 +95,32 @@ class Template(object):
                         os.path.splitext(self.path)[1]
                     )
             except Exception as e:
-                _, _, tb = sys.exc_info()
-                stack_trace = traceback.extract_tb(tb)
-                template_path = self.path
-                while (not os.path.basename(template_path) == 'templates'):
-                    template_path = os.path.dirname(template_path)
-                for frame in stack_trace:
-                    if template_path in frame.filename:
-                        self.logger.error(
-                            "Template error in %s, file: %s, line: %s\n=> %s",
-                            frame.name, frame.filename, frame.lineno, frame.line
-                        )
+                try:
+                    _, _, tb = sys.exc_info()
+                    stack_trace = traceback.extract_tb(tb)
+                    template_path = self.path
+                    while (not os.path.basename(template_path) == 'templates'):
+                        template_path = os.path.dirname(template_path)
+                    for frame in stack_trace:
+                        if isinstance(frame, tuple):
+                            # Python 2 / Old style stack frame
+                            if template_path in frame[0]:
+                                self.logger.error(
+                                    "Template error in %s, file: %s, line: %s\n=> %s",
+                                    frame[2], frame[0], frame[1], frame[3]
+                                )
+                        else:
+                            if template_path in frame.filename:
+                                self.logger.error(
+                                    "Template error in %s, file: %s, line: %s\n=> %s",
+                                    frame.name, frame.filename, frame.lineno, frame.line
+                                )
+                except Exception as tb_exception:
+                    self.logger.error(
+                        ('A template error occured. ' +
+                        'Additionally, a traceback exception occured. Exception: %s'),
+                        tb_exception
+                    )
                 raise e
 
         return self._body
