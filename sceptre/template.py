@@ -96,12 +96,16 @@ class Template(object):
                     )
             except Exception as e:
                 _, _, tb = sys.exc_info()
-                exception_stack = traceback.extract_tb(tb)
-                for frame in exception_stack:
-                    if self.path in frame.filename:
-                        print("Template error in {} - file {}, line {}:".format(
-                            frame.name, frame.filename, frame.lineno))
-                        print("\n{}\n".format(frame.line))
+                stack_trace = traceback.extract_tb(tb)
+                template_path = self.path
+                while (not os.path.basename(template_path) == 'templates'):
+                    template_path = os.path.dirname(template_path)
+                for frame in stack_trace:
+                    if template_path in frame.filename:
+                        self.logger.error(
+                            "Template error in %s, file: %s, line: %s\n=> %s",
+                            frame.name, frame.filename, frame.lineno, frame.line
+                        )
                 raise e
 
         return self._body
