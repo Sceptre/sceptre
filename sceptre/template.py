@@ -13,7 +13,6 @@ import os
 import sys
 import threading
 import traceback
-import re
 
 import botocore
 import jinja2
@@ -76,24 +75,35 @@ class Template(object):
         if self._body is None:
             file_extension = os.path.splitext(self.path)[1]
 
-            if file_extension in {".json", ".yaml", ".template"}:
-                with open(self.path) as template_file:
-                    self._body = template_file.read()
-            elif file_extension == ".j2":
-                self._body = self._render_jinja_template(
-                    os.path.dirname(self.path),
-                    os.path.basename(self.path),
-                    {"sceptre_user_data": self.sceptre_user_data}
-                )
-            elif file_extension == ".py":
-                self._body = self._call_sceptre_handler()
+            try:
+                if file_extension in {".json", ".yaml", ".template"}:
+                    with open(self.path) as template_file:
+                        self._body = template_file.read()
+                elif file_extension == ".j2":
+                    self._body = self._render_jinja_template(
+                        os.path.dirname(self.path),
+                        os.path.basename(self.path),
+                        {"sceptre_user_data": self.sceptre_user_data}
+                    )
+                elif file_extension == ".py":
+                    self._body = self._call_sceptre_handler()
 
-            else:
-                raise UnsupportedTemplateFileTypeError(
-                    "Template has file extension %s. Only .py, .yaml, "
-                    ".template, .json and .j2 are supported.",
-                    os.path.splitext(self.path)[1]
-                )
+                else:
+                    raise UnsupportedTemplateFileTypeError(
+                        "Template has file extension %s. Only .py, .yaml, "
+                        ".template, .json and .j2 are supported.",
+                        os.path.splitext(self.path)[1]
+                    )
+            except Exception as e:
+                _, _, tb = sys.exc_info()
+                exception_stack = traceback.extract_tb(tb)
+                for frame in exception_stack:
+                    if self.path in frame.filename:
+                        print("Template error in {} - file {}, line {}:".format(
+                            frame.name, frame.filename, frame.lineno))
+                        print("\n{}\n".format(frame.line))
+                raise e
+
         return self._body
 
     def _call_sceptre_handler(self):
@@ -290,22 +300,12 @@ class Template(object):
         :returns: The body of the CloudFormation template.
         :rtype: str
         """
-        try:
-            logger = logging.getLogger(__name__)
-            logger.debug("%s Rendering CloudFormation template", filename)
-            env = jinja2.Environment(
-                loader=jinja2.FileSystemLoader(template_dir),
-                undefined=jinja2.StrictUndefined
-            )
-            template = env.get_template(filename)
-            body = template.render(**jinja_vars)
-            return body
-
-        except Exception as e:
-            _, _, tb = sys.exc_info()
-            stack = traceback.extract_tb(tb)
-            for frame in stack:
-                if re.match(r'.*\.j2', frame.filename):
-                    print("Jinja template error in {} - file {}, line {}:".format(frame.name, frame.filename, frame.lineno))
-                    print("\n{}\n".format(frame.line))
-            raise e
+        logger = logging.getLogger(__name__)
+        logger.debug("%s Rendering CloudFormation template", filename)
+        env = jinja2.Environment(
+            loader=jinja2.FileSystemLoader(template_dir),
+            undefined=jinja2.StrictUndefined
+        )
+        template = env.get_template(filename)
+        body = template.render(**jinja_vars)
+        return body
