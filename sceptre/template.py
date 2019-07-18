@@ -87,8 +87,8 @@ class Template(object):
                         )
         except Exception as tb_exception:
             self.logger.error(
-                ('A template error occured. ' +
-                'Additionally, a traceback exception occured. Exception: %s'),
+                'A template error occured. ' +
+                'Additionally, a traceback exception occured. Exception: %s',
                 tb_exception
             )
 
