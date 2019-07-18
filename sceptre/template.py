@@ -68,9 +68,11 @@ class Template(object):
         try:
             _, _, tb = sys.exc_info()
             stack_trace = traceback.extract_tb(tb)
-            template_path = self.path
-            while (not os.path.basename(template_path) == 'templates'):
-                template_path = os.path.dirname(template_path)
+            search_string = os.path.join('', 'templates', '')
+            if search_string in self.path:
+                template_path = self.path.split(search_string)[0] + search_string
+            else:
+                return
             for frame in stack_trace:
                 if isinstance(frame, tuple):
                     # Python 2 / Old style stack frame
