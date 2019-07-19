@@ -65,6 +65,10 @@ class Template(object):
         )
 
     def _print_template_traceback(self):
+        def _print_frame(filename, line, fcn, line_text):
+            self.logger.error("{}:{}:  Template error in '{}'\n=> `{}`".format(
+                filename, line, fcn, line_text))
+
         try:
             _, _, tb = sys.exc_info()
             stack_trace = traceback.extract_tb(tb)
@@ -77,16 +81,10 @@ class Template(object):
                 if isinstance(frame, tuple):
                     # Python 2 / Old style stack frame
                     if template_path in frame[0]:
-                        self.logger.error(
-                            "Template error in %s, file: %s, line: %s\n=> %s",
-                            frame[2], frame[0], frame[1], frame[3]
-                        )
+                        _print_frame(frame[0], frame[1], frame[2], frame[3])
                 else:
                     if template_path in frame.filename:
-                        self.logger.error(
-                            "Template error in %s, file: %s, line: %s\n=> %s",
-                            frame.name, frame.filename, frame.lineno, frame.line
-                        )
+                        _print_frame(frame.filename, frame.lineno, frame.name, frame.line)
         except Exception as tb_exception:
             self.logger.error(
                 'A template error occured. ' +
