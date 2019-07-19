@@ -65,6 +65,13 @@ class Template(object):
         )
 
     def _print_template_traceback(self):
+        """
+        Prints a stack trace, including only files which are inside a
+        'templates' directory. The function is intended to give the operator
+        instant feedback about why their templates are failing to compile.
+
+        :rtype: None
+        """
         def _print_frame(filename, line, fcn, line_text):
             self.logger.error("{}:{}:  Template error in '{}'\n=> `{}`".format(
                 filename, line, fcn, line_text))
