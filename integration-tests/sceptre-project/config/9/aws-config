@@ -1,2 +1,2 @@
-[profile 9-A]
-region = eu-west-1
+[default]
+region = us-east-1

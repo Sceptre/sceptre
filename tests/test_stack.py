@@ -22,7 +22,7 @@ class TestStack(object):
             role_arn=sentinel.role_arn, protected=False,
             tags={"tag1": "val1"}, external_name=sentinel.external_name,
             notifications=[sentinel.notification],
-            on_failure=sentinel.on_failure,
+            on_failure=sentinel.on_failure, iam_role=sentinel.iam_role,
             stack_timeout=sentinel.stack_timeout,
             stack_group_config={}
         )
@@ -50,6 +50,7 @@ class TestStack(object):
         assert stack.s3_details is None
         assert stack._template is None
         assert stack.protected is False
+        assert stack.iam_role is None
         assert stack.role_arn is None
         assert stack.dependencies == []
         assert stack.tags == {}
@@ -67,6 +68,7 @@ class TestStack(object):
             "template_bucket_name=sentinel.template_bucket_name, "\
             "template_key_prefix=sentinel.template_key_prefix, "\
             "required_version=sentinel.required_version, "\
+            "iam_role=sentinel.iam_role, "\
             "profile=sentinel.profile, " \
             "sceptre_user_data=sentinel.sceptre_user_data, " \
             "parameters={'key1': 'val1'}, "\

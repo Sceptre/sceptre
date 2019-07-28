@@ -66,6 +66,8 @@ class ConnectionManager(object):
 
     :param profile: The AWS credentials profile that should be used.
     :type profile: str
+    :param iam_role: The iam_role that should be assumed in the account.
+    :type iam_role: str
     :param stack_name: The CloudFormation stack name for this connection.
     :type stack_name: str
     :param region: The region to use.
@@ -78,25 +80,26 @@ class ConnectionManager(object):
     _clients = {}
     _stack_keys = {}
 
-    def __init__(self, region, profile=None, stack_name=None):
+    def __init__(self, region, profile=None, stack_name=None, iam_role=None):
         self.logger = logging.getLogger(__name__)
 
         self.region = region
         self.profile = profile
         self.stack_name = stack_name
+        self.iam_role = iam_role
 
         if stack_name:
-            self._stack_keys[stack_name] = (region, profile)
+            self._stack_keys[stack_name] = (region, profile, iam_role)
 
     def __repr__(self):
         return (
             "sceptre.connection_manager.ConnectionManager(region='{0}', "
-            "profile='{1}', stack_name='{2}')".format(
-                self.region, self.profile, self.stack_name
+            "profile='{1}', stack_name='{2}', iam_role='{3}')".format(
+                self.region, self.profile, self.stack_name, self.iam_role
             )
         )
 
-    def _get_session(self, profile, region=None):
+    def _get_session(self, profile, region, iam_role):
         """
         Returns a boto session in the target account.
 
@@ -111,7 +114,7 @@ class ConnectionManager(object):
         """
         with self._session_lock:
             self.logger.debug("Getting Boto3 session")
-            key = (region, profile)
+            key = (region, profile, iam_role)
 
             if self._boto_sessions.get(key) is None:
                 self.logger.debug("No Boto3 session found, creating one...")
@@ -122,9 +125,7 @@ class ConnectionManager(object):
                     "profile_name": profile,
                     "region_name": region,
                     "aws_access_key_id": environ.get("AWS_ACCESS_KEY_ID"),
-                    "aws_secret_access_key": environ.get(
-                        "AWS_SECRET_ACCESS_KEY"
-                    ),
+                    "aws_secret_access_key": environ.get("AWS_SECRET_ACCESS_KEY"),
                     "aws_session_token": environ.get("AWS_SESSION_TOKEN")
                 }
 
@@ -137,6 +138,32 @@ class ConnectionManager(object):
                             config["profile_name"], config["region_name"]
                         )
                     )
+
+                if iam_role:
+                    sts_client = session.client("sts")
+                    sts_response = sts_client.assume_role(
+                        RoleArn=iam_role,
+                        RoleSessionName="{0}-session".format(
+                            iam_role.split("/")[-1]
+                        )
+                    )
+
+                    credentials = sts_response["Credentials"]
+                    session = boto3.session.Session(
+                        aws_access_key_id=credentials["AccessKeyId"],
+                        aws_secret_access_key=credentials["SecretAccessKey"],
+                        aws_session_token=credentials["SessionToken"],
+                        region_name=region
+                    )
+
+                    if session.get_credentials() is None:
+                        raise InvalidAWSCredentialsError(
+                            "Session credentials were not found. Role: {0}. Region: {1}.".format(
+                                iam_role, region
+                            )
+                        )
+
+                    self._boto_sessions[key] = session
 
                 self.logger.debug(
                     "Using credential set from %s: %s",
@@ -156,7 +183,7 @@ class ConnectionManager(object):
 
             return self._boto_sessions[key]
 
-    def _get_client(self, service, region, profile, stack_name):
+    def _get_client(self, service, region, profile, stack_name, iam_role):
         """
         Returns the Boto3 client associated with <service>.
 
@@ -169,20 +196,21 @@ class ConnectionManager(object):
         :rtype: boto3.client.Client
         """
         with self._client_lock:
-            key = (service, region, profile, stack_name)
+            key = (service, region, profile, stack_name, iam_role)
             if self._clients.get(key) is None:
                 self.logger.debug(
                     "No %s client found, creating one...", service
                 )
                 self._clients[key] = self._get_session(
-                    profile, region
+                    profile, region, iam_role
                 ).client(service)
+
             return self._clients[key]
 
     @_retry_boto_call
     def call(
         self, service, command, kwargs=None, profile=None, region=None,
-        stack_name=None
+        stack_name=None, iam_role=None
     ):
         """
         Makes a thread-safe Boto3 client call.
@@ -198,14 +226,16 @@ class ConnectionManager(object):
         :returns: The response from the Boto3 call.
         :rtype: dict
         """
-        if region is None and profile is None:
+        if region is None and profile is None and iam_role is None:
             if stack_name and stack_name in self._stack_keys:
-                region, profile = self._stack_keys[stack_name]
+                region, profile, iam_role = self._stack_keys[stack_name]
             else:
                 region = self.region
                 profile = self.profile
+                iam_role = self.iam_role
 
         if kwargs is None:  # pragma: no cover
             kwargs = {}
-        client = self._get_client(service, region, profile, stack_name)
+
+        client = self._get_client(service, region, profile, stack_name, iam_role)
         return getattr(client, command)(**kwargs)
