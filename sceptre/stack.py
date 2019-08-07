@@ -103,6 +103,7 @@ class Stack(object):
     """
 
     parameters = ResolvableProperty("parameters")
+    tags = ResolvableProperty("tags")
     sceptre_user_data = ResolvableProperty("sceptre_user_data")
     notifications = ResolvableProperty("notifications")
     hooks = HookProperty("hooks")
