@@ -9,6 +9,7 @@ Boto3 calls.
 
 import functools
 import logging
+import random
 import threading
 import time
 import boto3
@@ -24,8 +25,11 @@ def _retry_boto_call(func):
     """
     Retries a Boto3 call up to 30 times if request rate limits are hit.
 
-    The time waited between retries increases linearly. If rate limits are
-    hit 30 times, _retry_boto_call raises a
+    Between each try we wait a random amount with a max of that time being 45 seconds.
+    Specifically we are picking number between a ceiling (delay_cap) of 45 seconds and the last
+    delay multiplied by 2.5, rounding to two decimal places.  You can read more
+    here: https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
+    If rate limits are hit 30 times, _retry_boto_call raises a
     sceptre.exceptions.RetryLimitExceededException.
 
     :param func: A function that uses boto calls
@@ -40,13 +44,21 @@ def _retry_boto_call(func):
     def decorated(*args, **kwargs):
         max_retries = 30
         attempts = 1
+        mdelay = 1
+        delay_cap = 45
         while attempts < max_retries:
             try:
                 return func(*args, **kwargs)
             except ClientError as e:
                 if e.response["Error"]["Code"] == "Throttling":
-                    logger.error("Request limit exceeded, pausing...")
-                    time.sleep(attempts)
+                    logger.error("Request limit exceeded, pausing {}...".format(mdelay))
+                    time.sleep(mdelay)
+
+                    # Using De-correlated Jitter Algorithm
+                    # We are picking number between a ceiling (delay_cap) of 45 seconds and the last
+                    # delay multiplied by 2.5, rounding to two decimal places.
+                    mdelay = min(delay_cap, round((random.uniform(1, mdelay * 2.5)), 2))
+
                     attempts += 1
                 else:
                     raise
