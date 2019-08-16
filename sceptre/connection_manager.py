@@ -55,8 +55,8 @@ def _retry_boto_call(func):
                     time.sleep(mdelay)
 
                     # Using De-correlated Jitter Algorithm
-                    # We are picking number between a ceiling (delay_cap) of 45 seconds and the last
-                    # delay multiplied by 2.5, rounding to two decimal places.
+                    # We are picking number between a ceiling (delay_cap) of 45 seconds and the
+                    # last delay multiplied by 2.5, rounding to two decimal places.
                     mdelay = min(delay_cap, round((random.uniform(1, mdelay * 2.5)), 2))
 
                     attempts += 1
