@@ -4,6 +4,13 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.2.1 (2019.08.19)
+
+### Fixed
+
+- `typing` install dependency for Python version < 3.5
+- Race condition in stacks causing RecurrsiveGet exception
+
 ## 2.2.0 (2019.08.16)
 
 ### Added
