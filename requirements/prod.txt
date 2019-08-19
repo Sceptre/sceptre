@@ -4,3 +4,4 @@ colorama==0.3.9
 Jinja2>=2.8,<3
 networkx==2.1
 PyYaml>=5.1,<6.0
+typing>=3.7,<3.8
