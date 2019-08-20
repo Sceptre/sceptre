@@ -2,6 +2,7 @@
 import abc
 import logging
 from contextlib import contextmanager
+from threading import RLock
 
 import six
 from sceptre.helpers import _call_func_on_values
@@ -64,6 +65,7 @@ class ResolvableProperty(object):
         self.name = "_" + name
         self.logger = logging.getLogger(__name__)
         self._get_in_progress = False
+        self._lock = RLock()
 
     def __get__(self, instance, type):
         """
@@ -73,7 +75,7 @@ class ResolvableProperty(object):
         :return: The attribute stored with the suffix ``name`` in the instance.
         :rtype: dict or list
         """
-        with self._no_recursive_get():
+        with self._lock, self._no_recursive_get():
             def resolve(attr, key, value):
                 try:
                     attr[key] = value.resolve()
@@ -97,8 +99,9 @@ class ResolvableProperty(object):
             value.stack = instance
             value.setup()
 
-        _call_func_on_values(setup, value, Resolver)
-        setattr(instance, self.name, value)
+        with self._lock:
+            _call_func_on_values(setup, value, Resolver)
+            setattr(instance, self.name, value)
 
     class ResolveLater(object):
         """Represents a value that could not yet be resolved but can be resolved in the future."""
