@@ -183,7 +183,11 @@ class ConfigReader(object):
         """
         stack_map = {}
         command_stacks = set()
-        if self.context.ignore_dependencies:
+        localized_dependency_checking = True
+
+        if localized_dependency_checking:
+            root = self.context.full_command_path()
+        elif self.context.ignore_dependencies:
             root = self.context.full_command_path()
         else:
             root = self.context.full_config_path()
