@@ -1,4 +1,4 @@
-# Sceptre
+#  Sceptre
 
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=Sceptre_sceptre&metric=bugs)](https://sonarcloud.io/dashboard?id=Sceptre_sceptre)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Sceptre_sceptre&metric=coverage)](https://sonarcloud.io/dashboard?id=Sceptre_sceptre)
