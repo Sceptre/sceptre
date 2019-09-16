@@ -131,9 +131,9 @@ Var
 User variables are used to replace the value of any item in a config file with
 a value defined by a CLI flag or in a YAML variable file:
 
-.. code-block:: jinja
+.. code-block:: yaml
 
-   profile: {% raw %}{{ var.profile }}{% endraw %}
+   profile: {{ var.profile }}
    region: eu-west-1
 
 This item can be set using either a command line flag:
@@ -162,16 +162,16 @@ will overwrite any value defined in the variable files.
 
 For example if we have the following variable files:
 
-.. TODO split into 2 blocks
-
 .. code-block:: yaml
 
-   ---- default.yaml
+   # default.yaml
    region: eu-west-1
    profile: dev
    project_code: api
 
-   ---- prod.yaml
+.. code-block:: yaml
+
+   # prod.yaml
    profile: prod
 
 The following sceptre command:
@@ -202,9 +202,9 @@ Environment Variables
 
 Config item values can be replaced with environment variables:
 
-.. code-block:: jinja
+.. code-block:: yaml
 
-   profile: {% raw %}{{ environment_variable.PROFILE }}{% endraw %}
+   profile: {{ environment_variable.PROFILE }}
    region: eu-west-1
 
 Where ``PROFILE`` is the name of an environment variable.
@@ -214,9 +214,9 @@ Command Path
 
 Config item values can be replaced with parts of the ``command_path``
 
-.. code-block:: jinja
+.. code-block:: yaml
 
-   region: {% raw %}{{ command_path.0 }}{% endraw %}
+   region: {{ command_path.0 }}
    profile: default
 
 Where the value is taken from the first part of the ``command_path`` from the
@@ -231,9 +231,9 @@ Template Defaults
 
 Any templated value can be supplied with a default value with the syntax:
 
-.. code-block:: jinja
+.. code-block:: text
 
-   {% raw %}{{ var.value | default("default_value") }}{% endraw %}
+   {{ var.value | default("default_value") }}
 
 Examples
 --------
@@ -246,14 +246,12 @@ Examples
    template_bucket_name: sceptre-artifacts
    template_key_prefix: my/prefix
 
-.. code-block:: jinja
+.. code-block:: yaml
 
-   {% raw %}
    profile: {{ var.profile }}
    project_code: {{ var.project_code | default("prj") }}
    region: {{ command_path.2 }}
    template_bucket_name: {{ environment_variable.TEMPLATE_BUCKET_NAME }}
-   {% endraw %}
 
 .. _project_code: #project_code
 .. _region: #region
