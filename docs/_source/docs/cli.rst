@@ -11,9 +11,16 @@ available commands.
 Autocomplete
 ------------
 
-If you are using Bash you can enable autocomplete by entering the following
-command ``eval "$(_SCEPTRE_COMPLETE=source sceptre)"``. Autocomplete will work
-for subcommands and parameters.
+To enable CLI autocomplete for subcommands and parameters execute the
+following command:
+
++----------+------------------------------------------------+
+| shell    | command                                        |
++==========+================================================+
+| bash     | eval "$(_SCEPTRE_COMPLETE=source sceptre)"     |
++----------+------------------------------------------------+
+| zsh      | eval "$(_SCEPTRE_COMPLETE=source_zsh sceptre)" |
++----------+------------------------------------------------+
 
 Export Stack Outputs to Environment Variables
 ---------------------------------------------
