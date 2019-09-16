@@ -211,10 +211,10 @@ StackGroup config
 StackGroup config properties are available via the stack_group_config variable
 when using templating.
 
-.. code-block:: jinja
+.. code-block:: yaml
 
    parameters:
-     sceptre-project-code: {% raw %}{{ stack_group_config.sceptre-project-code }}{% endraw %}
+     sceptre-project-code: {{ stack_group_config.sceptre-project-code }}
 
 Environment Variables
 ---------------------
@@ -255,9 +255,8 @@ Examples
      param_1: value_1
      param_2: value_2
 
-.. code-block:: jinja
+.. code-block:: yaml
 
-   {% raw %}
    template_path: example.json
    dependencies:
        - dev/vpc.yaml
@@ -286,7 +285,6 @@ Examples
    stack_tags:
        tag_1: value_1
        tag_2: value_2
-   {% endraw %}
 
 .. _template_path: #template_path
 .. _dependencies: #dependencies

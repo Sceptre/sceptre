@@ -24,12 +24,12 @@ Templates. They are read in and used without modification.
 Jinja
 -----
 
-{% raw %} Templates with ``.j2`` extensions are treated as Jinja2 Templates.
+Templates with ``.j2`` extensions are treated as Jinja2 Templates.
 These are rendered and should create a raw JSON or YAML CloudFormation
 Template. Sceptre User Data is accessible within Templates as
 ``sceptre_user_data``. For example ``{{ sceptre_user_data.some_variable }}``.
 ``sceptre_user_data`` accesses the ``sceptre_user_data`` key in the Stack
-Config file. {% endraw %}
+Config file.
 
 Python
 ------

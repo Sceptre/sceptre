@@ -11,9 +11,9 @@ substituted out.
 
 In config.yaml:
 
-.. code-block:: jinja
+.. code-block:: yaml
 
-   {% raw %}region: {{ var.region }}{% endraw %}
+   region: {{ var.region }}
 
 On the CLI:
 
@@ -53,7 +53,7 @@ It is possible to replace values in stack config files with environment
 variables in two ways.
 
 The first is by using templating, and the syntax
-``{% raw %}{{ environment_variable.VALUE }}{% endraw %}``. Any value in a
+``{{ environment_variable.VALUE }}``. Any value in a
 config file may be replaced using this method.
 
 The second is by using a resolver, and the syntax:
