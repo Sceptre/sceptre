@@ -20,6 +20,7 @@ from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
 from sceptre import __version__
+from sceptre.exceptions import DependencyDoesNotExistError
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.exceptions import InvalidSceptreDirectoryError
 from sceptre.exceptions import VersionIncompatibleError
@@ -219,18 +220,37 @@ class ConfigReader(object):
             if abs_path.startswith(self.context.full_command_path()):
                 command_stacks.add(stack)
 
+        stacks = self.resolveStacks(stack_map)
+
+        return stacks, command_stacks
+
+    def resolveStacks(self, stack_map):
+        """
+        :param stack_map: Map of stacks, containing dependencies as list of Strings.
+        :type base_config: dict
+        :returns: Set of stacks, containing dependencies as list of Stacks.
+        :rtype: set
+        """
         stacks = set()
         for stack in stack_map.values():
             if not self.context.ignore_dependencies:
-                stack.dependencies = [
-                    stack_map[sceptreise_path(dep)]
-                    for dep in stack.dependencies
-                ]
+                for i, dep in enumerate(stack.dependencies):
+                    try:
+                        stack.dependencies[i] = stack_map[sceptreise_path(dep)]
+                    except KeyError:
+                        raise DependencyDoesNotExistError(
+                            "{stackname}: Dependency {dep} not found. "
+                            "Valid dependency names are: "
+                            "{stackkeys}. "
+                            "Please make sure that your dependencies stack_outputs "
+                            "have their full path from `config` defined."
+                            .format(stackname=stack.name, dep=dep,
+                                    stackkeys=", ".join(stack_map.keys())))
+
             else:
                 stack.dependencies = []
             stacks.add(stack)
-
-        return stacks, command_stacks
+        return stacks
 
     def read(self, rel_path, base_config=None):
         """
