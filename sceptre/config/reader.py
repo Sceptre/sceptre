@@ -11,7 +11,7 @@ import collections
 import datetime
 import fnmatch
 import logging
-from os import environ, path, walk, getcwd, mkdir
+from os import environ, path, walk, getcwd, makedirs
 from pkg_resources import iter_entry_points
 import yaml
 import shutil
@@ -97,8 +97,6 @@ INTERNAL_CONFIG_ATTRIBUTES = ConfigAttributes(
 REQUIRED_KEYS = STACK_GROUP_CONFIG_ATTRIBUTES.required.union(
     STACK_CONFIG_ATTRIBUTES.required
 )
-
-SCEPTRE_CACHE_DIR = ".sceptre"
 
 class ConfigReader(object):
     """
@@ -285,9 +283,12 @@ class ConfigReader(object):
         return config
 
     def clean(self):
-        local_sceptre_cache = self._get_local_sceptre_cache(create_if_absent=False)
-        if path.isdir(local_sceptre_cache):
-            shutil.rmtree(local_sceptre_cache)
+        local_temp_dir = self._get_local_temp_dir(create_if_absent=False)
+        if path.isdir(local_temp_dir):
+            shutil.rmtree(local_temp_dir)
+
+        # For now also delete .sceptre, as it serves no other purpose
+        shutil.rmtree(os.path.join(getcwd(), ".sceptre"))
 
     def _recursive_read(self, directory_path, filename, stack_group_config):
         """
@@ -499,8 +500,8 @@ class ConfigReader(object):
         if isinstance(template_path, Resolver):
             template_path.stack = stack
             body = template_path.resolve()
-            with open(abs_template_path, "wb+") as tmp:
-                tmp.write(body)
+            with open(abs_template_path, "wb+") as temp:
+                temp.write(body)
 
         del self.templating_vars["stack_group_config"]
         return stack
@@ -530,20 +531,20 @@ class ConfigReader(object):
         :rtype: str
         """
         remote_filename = path.basename(resolver.argument)
-        local_sceptre_cache = self._get_local_sceptre_cache(create_if_absent=True)
-        local_template_path = path.join(local_sceptre_cache, remote_filename)
+        local_temp_dir = self._get_local_temp_dir(create_if_absent=True)
+        local_template_path = path.join(local_temp_dir, remote_filename)
         return local_template_path
 
-    def _get_local_sceptre_cache(self, create_if_absent=True):
+    def _get_local_temp_dir(self, create_if_absent=True):
         """
         Return a temporary directory in the current working directory
         where downloaded files can be stored.
-        :param create_if_absent: Create new cache directory if does not exist
+        :param create_if_absent: Create new temporary directory if does not exist
         :type: create_if_absent: bool
         :return: Path of the directory
         :rtype: str
         """
-        local_sceptre_cache = path.join(getcwd(), SCEPTRE_CACHE_DIR)
-        if not path.isdir(local_sceptre_cache) and create_if_absent:
-            mkdir(local_sceptre_cache)
-        return local_sceptre_cache
+        local_temp_dir = path.join(getcwd(), ".sceptre", "tmp")
+        if not path.isdir(local_temp_dir) and create_if_absent:
+            makedirs(local_temp_dir)
+        return local_temp_dir

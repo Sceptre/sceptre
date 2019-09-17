@@ -272,17 +272,19 @@ class TestConfigReader(object):
 
         ConfigReader(self.context).construct_stacks()
 
-        assert os.path.isdir(os.path.join(os.getcwd(), ".sceptre"))
-        assert os.path.isfile(os.path.join(os.getcwd(), ".sceptre", "path.yaml"))
+        temp_dir = os.path.join(os.getcwd(), ".sceptre", "tmp")
+        temp_file = os.path.join(temp_dir, "path.yaml")
+        assert os.path.isdir(temp_dir)
+        assert os.path.isfile(temp_file)
 
-        with open(os.path.join(os.getcwd(), ".sceptre", "path.yaml"), "rb") as f:
+        with open(temp_file, "rb") as f:
             content = f.read()
             assert content == b"my template"
 
         mock_Stack.assert_any_call(
             name="top/level",
             project_code="account_project_code",
-            template_path=os.path.join(os.getcwd(), ".sceptre", "path.yaml"),
+            template_path=temp_file,
             region="account_region",
             template_bucket_name=None,
             template_key_prefix=None,
