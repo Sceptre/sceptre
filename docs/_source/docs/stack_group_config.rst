@@ -78,7 +78,7 @@ A `PEP 440`_ compatible version specifier. If the Sceptre version does not fall
 within the given version requirement it will abort.
 
 
-.. stack_group_config_cascading_config
+.. _stack_group_config_cascading_config:
 
 Cascading Config
 ----------------
