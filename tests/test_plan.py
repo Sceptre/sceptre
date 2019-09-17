@@ -56,3 +56,17 @@ class TestSceptrePlan(object):
             plan = MagicMock(spec=SceptrePlan)
             plan.context = self.mock_context
             plan.invalid_command()
+
+    @patch("sceptre.plan.plan.SceptrePlanExecutor")
+    @patch("sceptre.plan.plan.ConfigReader")
+    def test_should_cleanup_after_execution(self, mock_config_reader_creator, mock_executor):
+        mock_config_reader_creator.return_value = self.mock_config_reader
+        self.mock_config_reader.construct_stacks.return_value = [], []
+
+        self.mock_context.ignore_dependencies = True
+
+        plan = SceptrePlan(self.mock_context)
+        plan.config_reader = self.mock_config_reader
+        plan.launch()
+
+        self.mock_config_reader.clean.assert_called_once()

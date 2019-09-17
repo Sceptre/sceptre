@@ -11,9 +11,10 @@ import collections
 import datetime
 import fnmatch
 import logging
-from os import environ, path, walk
+from os import environ, path, walk, getcwd, mkdir
 from pkg_resources import iter_entry_points
 import yaml
+import shutil
 
 import jinja2
 from packaging.specifiers import SpecifierSet
@@ -27,6 +28,7 @@ from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.helpers import sceptreise_path
 from sceptre.stack import Stack
 from sceptre.config import strategies
+from sceptre.resolvers import Resolver
 
 ConfigAttributes = collections.namedtuple("Attributes", "required optional")
 
@@ -96,6 +98,7 @@ REQUIRED_KEYS = STACK_GROUP_CONFIG_ATTRIBUTES.required.union(
     STACK_CONFIG_ATTRIBUTES.required
 )
 
+SCEPTRE_CACHE_DIR = ".sceptre"
 
 class ConfigReader(object):
     """
@@ -281,6 +284,11 @@ class ConfigReader(object):
         self.logger.debug("Config: %s", config)
         return config
 
+    def clean(self):
+        local_sceptre_cache = self._get_local_sceptre_cache(create_if_absent=False)
+        if path.isdir(local_sceptre_cache):
+            shutil.rmtree(local_sceptre_cache)
+
     def _recursive_read(self, directory_path, filename, stack_group_config):
         """
         Traverses the directory_path, from top to bottom, reading in all
@@ -452,10 +460,14 @@ class ConfigReader(object):
                     )
                 )
 
-        abs_template_path = path.join(
-            self.context.project_path, self.context.templates_path,
-            sceptreise_path(config["template_path"])
-        )
+        template_path = config["template_path"]
+        if isinstance(template_path, Resolver):
+            abs_template_path = self._get_temp_file_for_resolver(template_path)
+        else:
+            abs_template_path = path.join(
+                self.context.project_path, self.context.templates_path,
+                sceptreise_path(template_path)
+            )
 
         s3_details = self._collect_s3_details(
             stack_name, config
@@ -484,6 +496,12 @@ class ConfigReader(object):
             stack_group_config=parsed_stack_group_config
         )
 
+        if isinstance(template_path, Resolver):
+            template_path.stack = stack
+            body = template_path.resolve()
+            with open(abs_template_path, "wb+") as tmp:
+                tmp.write(body)
+
         del self.templating_vars["stack_group_config"]
         return stack
 
@@ -501,3 +519,31 @@ class ConfigReader(object):
         parsed_config.pop("project_path")
         parsed_config.pop("stack_group_path")
         return parsed_config
+
+    def _get_temp_file_for_resolver(self, resolver):
+        """
+        Returns a local path to temporarily store the resolved file content
+        for a resolver.
+        :param resolver: The resolver
+        :type resolver: Resolver
+        :return: Path of temporary file
+        :rtype: str
+        """
+        remote_filename = path.basename(resolver.argument)
+        local_sceptre_cache = self._get_local_sceptre_cache(create_if_absent=True)
+        local_template_path = path.join(local_sceptre_cache, remote_filename)
+        return local_template_path
+
+    def _get_local_sceptre_cache(self, create_if_absent=True):
+        """
+        Return a temporary directory in the current working directory
+        where downloaded files can be stored.
+        :param create_if_absent: Create new cache directory if does not exist
+        :type: create_if_absent: bool
+        :return: Path of the directory
+        :rtype: str
+        """
+        local_sceptre_cache = path.join(getcwd(), SCEPTRE_CACHE_DIR)
+        if not path.isdir(local_sceptre_cache) and create_if_absent:
+            mkdir(local_sceptre_cache)
+        return local_sceptre_cache

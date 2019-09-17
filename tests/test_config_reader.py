@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import os
-from mock import patch, sentinel
+from mock import patch, sentinel, MagicMock
 import pytest
 import yaml
 import errno
+import io
+import shutil
 
+from sceptre.connection_manager import ConnectionManager
 from sceptre.context import SceptreContext
 from sceptre.exceptions import VersionIncompatibleError
 from sceptre.exceptions import ConfigFileNotFoundError
@@ -250,6 +253,57 @@ class TestConfigReader(object):
         )
 
         assert stacks == ({sentinel.stack}, {sentinel.stack})
+
+    @patch("sceptre.config.reader.ConfigReader._collect_s3_details")
+    @patch("sceptre.config.reader.Stack")
+    def test_construct_stacks_resolves_resolvers(
+            self, mock_Stack, mock_collect_s3_details
+    ):
+        mock_Stack.return_value = sentinel.stack
+        sentinel.stack.dependencies = []
+        sentinel.stack.connection_manager = MagicMock(spec=ConnectionManager)
+        sentinel.stack.connection_manager.call.return_value = {
+            "Body": io.BytesIO(b"my template")
+        }
+
+        mock_collect_s3_details.return_value = sentinel.s3_details
+        self.context.project_path = os.path.abspath("tests/fixtures-resolvers")
+        self.context.command_path = "top/level.yaml"
+
+        ConfigReader(self.context).construct_stacks()
+
+        assert os.path.isdir(os.path.join(os.getcwd(), ".sceptre"))
+        assert os.path.isfile(os.path.join(os.getcwd(), ".sceptre", "path.yaml"))
+
+        with open(os.path.join(os.getcwd(), ".sceptre", "path.yaml"), "rb") as f:
+            content = f.read()
+            assert content == b"my template"
+
+        mock_Stack.assert_any_call(
+            name="top/level",
+            project_code="account_project_code",
+            template_path=os.path.join(os.getcwd(), ".sceptre", "path.yaml"),
+            region="account_region",
+            template_bucket_name=None,
+            template_key_prefix=None,
+            required_version=">1.0",
+            profile="account_profile",
+            parameters={},
+            sceptre_user_data={},
+            hooks={},
+            s3_details=sentinel.s3_details,
+            dependencies=[],
+            role_arn=None,
+            protected=False,
+            tags={},
+            external_name=None,
+            notifications=None,
+            on_failure=None,
+            stack_timeout=0,
+            stack_group_config={}
+        )
+
+        shutil.rmtree(os.path.join(os.getcwd(), ".sceptre"))
 
     @pytest.mark.parametrize("filepaths,expected_stacks", [
         (["A/1.yaml"], {"A/1"}),

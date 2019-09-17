@@ -34,10 +34,13 @@ class SceptrePlan(object):
         all_stacks, command_stacks = config_reader.construct_stacks()
         self.graph = StackGraph(all_stacks)
         self.command_stacks = command_stacks
+        self.config_reader = config_reader
 
     def _execute(self, *args):
         executor = SceptrePlanExecutor(self.command, self.launch_order)
-        return executor.execute(*args)
+        result = executor.execute(*args)
+        self.config_reader.clean()
+        return result
 
     def _generate_launch_order(self, reverse=False):
         if self.context.ignore_dependencies:

@@ -1,0 +1,1 @@
+template_path: !s3 path.yaml

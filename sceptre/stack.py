@@ -102,6 +102,7 @@ class Stack(object):
 
     """
 
+    template_path = ResolvableProperty("template_path")
     parameters = ResolvableProperty("parameters")
     _sceptre_user_data = ResolvableProperty("_sceptre_user_data")
     notifications = ResolvableProperty("notifications")
