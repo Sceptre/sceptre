@@ -46,6 +46,8 @@ In general, native CloudFormation parameters should be used in almost all
 cases. Sceptre user data should only be used when the user wants to alter the
 template based on the value of a config value.
 
+.. _faq_stackconfig_env:
+
 Why are there two ways to supply environment variables in stack config files?
 -----------------------------------------------------------------------------
 
