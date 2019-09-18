@@ -259,7 +259,7 @@ Examples
 
 .. code-block:: yaml
 
-   template_path: example.json
+   template_path: example.yaml
    dependencies:
        - dev/vpc.yaml
    hooks:
