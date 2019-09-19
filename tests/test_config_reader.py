@@ -293,13 +293,13 @@ class TestConfigReader(object):
             all_stacks, command_stacks = config_reader.construct_stacks()
             assert {str(stack) for stack in all_stacks} == expected_stacks
 
-    @pytest.mark.parametrize("filepaths,target,del_key", [
-        (["A/1.yaml"], "A/1.yaml", "project_code"),
-        (["A/1.yaml"], "A/1.yaml", "region"),
-        (["A/1.yaml"], "A/1.yaml", "template_path"),
+    @pytest.mark.parametrize("filepaths, del_key", [
+        (["A/1.yaml"], "project_code"),
+        (["A/1.yaml"], "region"),
+        (["A/1.yaml"], "template_path"),
     ])
     def test_missing_attr(
-        self, filepaths, target, del_key
+        self, filepaths, del_key
     ):
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath('./example')
