@@ -1,6 +1,9 @@
 Installation
 ============
 
+Using pip
+---------
+
 This assumes that you have Python installed. A thorough guide on installing
 Python can be found `here <python_install>`_. We highly recommend using Sceptre from within a
 ``virtualenv``. Notes on installing and setting up ``virtualenv`` can be found
@@ -28,7 +31,8 @@ Update Sceptre:
 
 .. _python_install: http://docs.python-guide.org/en/latest/starting/installation/
 
-Use Docker Image
+Using Docker image
+------------------
 
 To use our Docker image follow these instructions:
 
