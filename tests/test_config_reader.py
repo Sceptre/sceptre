@@ -7,6 +7,7 @@ import yaml
 import errno
 
 from sceptre.context import SceptreContext
+from sceptre.exceptions import DependencyDoesNotExistError
 from sceptre.exceptions import VersionIncompatibleError
 from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.exceptions import InvalidSceptreDirectoryError
@@ -340,6 +341,106 @@ class TestConfigReader(object):
             except InvalidConfigFileError as e:
                 # Test that the missing key is reported.
                 assert del_key in str(e)
+            except Exception:
+                raise
+            else:
+                assert False
+
+    @pytest.mark.parametrize("filepaths, dependency", [
+        (["A/1.yaml", "B/1.yaml", "B/2.yaml"], "A/1.yaml"),
+        (["A/1.yaml", "B/1.yaml", "B/2.yaml"], "B/1.yaml"),
+    ])
+    def test_existing_dependency(
+        self, filepaths, dependency
+    ):
+        with self.runner.isolated_filesystem():
+            project_path = os.path.abspath('./example')
+            config_dir = os.path.join(project_path, "config")
+            os.makedirs(config_dir)
+
+            self.context.project_path = project_path
+
+            for rel_path in filepaths:
+                abs_path = os.path.join(config_dir, rel_path)
+                dir_path = abs_path
+                if abs_path.endswith(".yaml"):
+                    dir_path = os.path.split(abs_path)[0]
+                if not os.path.exists(dir_path):
+                    try:
+                        os.makedirs(dir_path)
+                    except OSError as exc:
+                        if exc.errno != errno.EEXIST:
+                            raise
+
+                # Set up config with reference to non-existing stack
+                config = {
+                    "project_code": "project_code",
+                    "region": "region",
+                    "template_path": rel_path,
+                    "dependencies": [dependency]
+                }
+
+                with open(abs_path, 'w') as config_file:
+                    yaml.safe_dump(
+                        config, stream=config_file, default_flow_style=False
+                    )
+
+            try:
+                config_reader = ConfigReader(self.context)
+                all_stacks, command_stacks = config_reader.construct_stacks()
+            except DependencyDoesNotExistError as e:
+                # Test that the missing dependency is reported.
+                assert False
+            except Exception:
+                raise
+            else:
+                assert True
+
+    @pytest.mark.parametrize("filepaths, dependency", [
+        (["A/1.yaml", "B/1.yaml", "B/2.yaml"], "A/2.yaml"),
+        (["A/1.yaml", "B/1.yaml", "B/2.yaml"], "1.yaml"),
+    ])
+    def test_missing_dependency(
+        self, filepaths, dependency
+    ):
+        with self.runner.isolated_filesystem():
+            project_path = os.path.abspath('./example')
+            config_dir = os.path.join(project_path, "config")
+            os.makedirs(config_dir)
+
+            self.context.project_path = project_path
+
+            for rel_path in filepaths:
+                abs_path = os.path.join(config_dir, rel_path)
+                dir_path = abs_path
+                if abs_path.endswith(".yaml"):
+                    dir_path = os.path.split(abs_path)[0]
+                if not os.path.exists(dir_path):
+                    try:
+                        os.makedirs(dir_path)
+                    except OSError as exc:
+                        if exc.errno != errno.EEXIST:
+                            raise
+
+                # Set up config with reference to non-existing stack
+                config = {
+                    "project_code": "project_code",
+                    "region": "region",
+                    "template_path": rel_path,
+                    "dependencies": [dependency]
+                }
+
+                with open(abs_path, 'w') as config_file:
+                    yaml.safe_dump(
+                        config, stream=config_file, default_flow_style=False
+                    )
+
+            try:
+                config_reader = ConfigReader(self.context)
+                all_stacks, command_stacks = config_reader.construct_stacks()
+            except DependencyDoesNotExistError as e:
+                # Test that the missing dependency is reported.
+                assert dependency in str(e)
             except Exception:
                 raise
             else:
