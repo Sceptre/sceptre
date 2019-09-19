@@ -8,13 +8,13 @@ This module implements a Stack class, which stores a Stack's data.
 """
 
 import logging
+from typing import Mapping, Sequence
 
 from sceptre.connection_manager import ConnectionManager
-from sceptre.template import Template
-from sceptre.helpers import get_external_stack_name
+from sceptre.helpers import get_external_stack_name, sceptreise_path
 from sceptre.hooks import HookProperty
 from sceptre.resolvers import ResolvableProperty
-from sceptre.helpers import sceptreise_path
+from sceptre.template import Template
 
 
 class Stack(object):
@@ -103,7 +103,7 @@ class Stack(object):
     """
 
     parameters = ResolvableProperty("parameters")
-    sceptre_user_data = ResolvableProperty("sceptre_user_data")
+    _sceptre_user_data = ResolvableProperty("_sceptre_user_data")
     notifications = ResolvableProperty("notifications")
     hooks = HookProperty("hooks")
 
@@ -139,7 +139,8 @@ class Stack(object):
         self.profile = profile
         self.hooks = hooks or {}
         self.parameters = parameters or {}
-        self.sceptre_user_data = sceptre_user_data or {}
+        self._sceptre_user_data = sceptre_user_data or {}
+        self._sceptre_user_data_is_resolved = False
         self.notifications = notifications or []
         self.stack_group_config = stack_group_config or {}
 
@@ -238,6 +239,17 @@ class Stack(object):
         return self._connection_manager
 
     @property
+    def sceptre_user_data(self):
+        """Returns sceptre_user_data after ensuring that it is fully resolved.
+
+        :rtype: dict or list or None
+        """
+        if not self._sceptre_user_data_is_resolved:
+            self._sceptre_user_data_is_resolved = True
+            self._resolve_sceptre_user_data()
+        return self._sceptre_user_data
+
+    @property
     def template(self):
         """
         Returns the CloudFormation Template used to create the Stack.
@@ -253,3 +265,15 @@ class Stack(object):
                 connection_manager=self.connection_manager
             )
         return self._template
+
+    def _resolve_sceptre_user_data(self):
+        data = self._sceptre_user_data
+        if isinstance(data, Mapping):
+            iterator = data.values()
+        elif isinstance(data, Sequence):
+            iterator = data
+        else:
+            return
+        for value in iterator:
+            if isinstance(value, ResolvableProperty.ResolveLater):
+                value()

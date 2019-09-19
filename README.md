@@ -48,12 +48,14 @@ building better infrastructure.
 
 # Install
 
+## Using pip
+
 `$ pip install sceptre`
 
 More information on installing sceptre can be found in our
 [Installation Guide](https://sceptre.cloudreach.com/latest/docs/install.html)
 
-# Use Docker Image
+## Using Docker Image
 
 View our [Docker repository](https://hub.docker.com/r/cloudreach/sceptre).
 Images available from version 2.0.0 onward.
