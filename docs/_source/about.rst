@@ -29,7 +29,7 @@ Sceptre is used by defining CloudFormation, Jinja2 or Python templates, with
 corresponding YAML configuration files. The configuration files include which
 account and region to use as well as the parameters to supply the templates.
 
-For a tutorial on using Sceptre, see `Get Started`_, or find out more
+For a tutorial on using Sceptre, see :doc:`docs/get_started`, or find out more
 information about Sceptre below.
 
 Code
@@ -39,7 +39,6 @@ Sceptre’s source code can be found on `Github`_.
 
 Bugs and feature requests should be raised via our `Issues`_ page.
 
-.. _Get Started: %7B%7B%20site.baseurl%20%7D%7D/docs/get_started.html
 .. _Github: https://github.com/cloudreach/sceptre/
 .. _Issues: https://github.com/cloudreach/sceptre/issues
 .. _CloudFormation: https://aws.amazon.com/cloudformation/

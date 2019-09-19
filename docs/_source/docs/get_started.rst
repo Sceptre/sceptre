@@ -45,43 +45,33 @@ On \*nix systems:
 .. code-block:: text
 
    mkdir config/dev
-   touch config/dev/config.yaml config/dev/vpc.yaml templates/vpc.json
+   touch config/dev/config.yaml config/dev/vpc.yaml templates/vpc.yaml
 
-``vpc.json`` will contain a CloudFormation template, ``vpc.yaml`` will contain
+``templates/vpc.yaml`` will contain a CloudFormation template, ``config/dev/vpc.yaml`` will contain
 config relevant to that template, and ``config.yaml`` will contain environment
 config.
 
-Our First Template - vpc.json
+Our First Template - vpc.yaml
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Add the following CloudFormation to ``templates/vpc.json``:
+Add the following CloudFormation to ``templates/vpc.yaml``:
 
-.. code-block:: json
+.. code-block:: yaml
 
-   {
-     "Parameters": {
-       "CidrBlock": {
-         "Type": "String"
-       }
-     },
-     "Resources": {
-       "VPC": {
-         "Type": "AWS::EC2::VPC",
-         "Properties": {
-           "CidrBlock": {
-             "Ref": "CidrBlock"
-           }
-         }
-       }
-     },
-     "Outputs": {
-       "VpcId": {
-         "Value": {
-           "Ref": "VPC"
-         }
-       }
-     }
-   }
+  Parameters:
+    CidrBlock:
+      Type: String
+  Resources:
+    VPC:
+      Type: 'AWS::EC2::VPC'
+      Properties:
+        CidrBlock:
+          Ref: CidrBlock
+  Outputs:
+    VpcId:
+      Value:
+        Ref: VPC
+
 
 For more information on CloudFormation, see the AWS documentation on
 `CloudFormation`_.
@@ -106,7 +96,7 @@ Add the following configuration to ``config/dev/vpc.yaml``:
 
 .. code-block:: yaml
 
-   template_path: vpc.json
+   template_path: vpc.yaml
    parameters:
      CidrBlock: 10.0.0.0/16
 
@@ -115,7 +105,7 @@ Jinja2 template to use to launch the Stack. Sceptre will use the ``templates``
 directory as the root templates directory to base your ``template_path`` from.
 
 ``parameters`` lists the parameters which are supplied to the template
-``vpc.json``.
+``vpc.yaml``.
 
 You should now have a Sceptre project that looks a bit like:
 
@@ -129,7 +119,7 @@ You should now have a Sceptre project that looks a bit like:
    │       ├── config.yaml
    │       └── vpc.yaml
    └── templates
-       └── vpc.json
+       └── vpc.yaml
 
 ..
 
