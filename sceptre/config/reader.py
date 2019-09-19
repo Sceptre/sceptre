@@ -220,16 +220,20 @@ class ConfigReader(object):
             if abs_path.startswith(self.context.full_command_path()):
                 command_stacks.add(stack)
 
-        stacks = self.resolveStacks(stack_map)
+        stacks = self.resolve_stacks(stack_map)
 
         return stacks, command_stacks
 
-    def resolveStacks(self, stack_map):
+    def resolve_stacks(self, stack_map):
         """
+        Transforms map of Stacks into a set of Stacks, transforms dependencies
+        from a list of Strings (stack names) to a list of Stacks.
+
         :param stack_map: Map of stacks, containing dependencies as list of Strings.
         :type base_config: dict
         :returns: Set of stacks, containing dependencies as list of Stacks.
         :rtype: set
+        :raises: sceptre.exceptions.DependencyDoesNotExistError
         """
         stacks = set()
         for stack in stack_map.values():
