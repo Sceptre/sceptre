@@ -168,6 +168,7 @@ class StackOutputExternal(StackOutputBase):
             dependency_stack_name, output_key, profile
         )
 
+
 class StackOutputExternalRegion(StackOutputBase):
     """
     Resolver for retrieving the value of an output of any Stack in any region.
