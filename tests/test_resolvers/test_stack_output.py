@@ -186,6 +186,23 @@ class TestStackOutputExternalRegionResolver(object):
         )
         assert stack.dependencies == []
 
+    @patch(
+        "sceptre.resolvers.stack_output.StackOutputExternalRegion._get_output_value"
+    )
+    def test_resolve_with_profile(self, mock_get_output_value):
+        stack = MagicMock(spec=Stack)
+        stack.dependencies = []
+        stack._connection_manager = MagicMock(spec=ConnectionManager)
+        stack_output_external_resolver = StackOutputExternalRegion(
+            "another/account-vpc::VpcId us-east-1 my-other-profile", stack
+        )
+        mock_get_output_value.return_value = "output_value"
+        stack_output_external_resolver.resolve()
+        mock_get_output_value.assert_called_once_with(
+            "another/account-vpc", "VpcId", "my-other-profile", "us-east-1"
+        )
+        assert stack.dependencies == []
+
 
 class MockStackOutputBase(StackOutputBase):
     """
