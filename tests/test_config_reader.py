@@ -352,9 +352,6 @@ class TestConfigReader(object):
         try:
             config_reader = ConfigReader(self.context)
             all_stacks, command_stacks = config_reader.construct_stacks()
-        except DependencyDoesNotExistError as e:
-            # Test that the missing dependency is reported.
-            assert False
         except Exception:
             raise
         else:
@@ -368,7 +365,6 @@ class TestConfigReader(object):
         self, filepaths, dependency
     ):
         project_path, config_dir = self.create_project()
-
 
         for rel_path in filepaths:
             # Set up config with reference to non-existing stack
