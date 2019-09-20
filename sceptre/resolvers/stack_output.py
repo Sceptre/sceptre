@@ -167,3 +167,41 @@ class StackOutputExternal(StackOutputBase):
         return self._get_output_value(
             dependency_stack_name, output_key, profile
         )
+
+class StackOutputExternalRegion(StackOutputBase):
+    """
+    Resolver for retrieving the value of an output of any Stack in any region.
+
+    :param argument: The Stack name, output name, and region to get.
+    :type argument: str in the format ``"<full stack name>::<output key>"``
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(StackOutputExternalRegion, self).__init__(*args, **kwargs)
+
+    def resolve(self):
+        """
+        Retrieves the value of CloudFormation output of the external Stack
+
+        :returns: The value of the Stack output.
+        :rtype: str
+        """
+
+        self.logger.debug(
+            "Resolving external Stack output: {0}".format(self.argument)
+        )
+
+        profile = None
+        arguments = shlex.split(self.argument)
+
+        stack_argument = arguments[0]
+        region = arguments[1]
+
+        # optional profile
+        if len(arguments) > 2:
+            profile = arguments[2]
+
+        dependency_stack_name, output_key = stack_argument.split("::")
+        return self._get_output_value(
+            dependency_stack_name, output_key, profile, region
+        )

@@ -9,7 +9,8 @@ from botocore.exceptions import ClientError
 
 from sceptre.connection_manager import ConnectionManager
 from sceptre.resolvers.stack_output import \
-    StackOutput, StackOutputExternal, StackOutputBase
+    StackOutput, StackOutputExternal, StackOutputBase, \
+    StackOutputExternalRegion
 from sceptre.stack import Stack
 
 
@@ -162,6 +163,26 @@ class TestStackOutputExternalResolver(object):
         stack_output_external_resolver.resolve()
         mock_get_output_value.assert_called_once_with(
             "another/account-vpc", "VpcId", None
+        )
+        assert stack.dependencies == []
+
+
+class TestStackOutputExternalRegionResolver(object):
+
+    @patch(
+        "sceptre.resolvers.stack_output.StackOutputExternalRegion._get_output_value"
+    )
+    def test_resolve(self, mock_get_output_value):
+        stack = MagicMock(spec=Stack)
+        stack.dependencies = []
+        stack._connection_manager = MagicMock(spec=ConnectionManager)
+        stack_output_external_resolver = StackOutputExternalRegion(
+            "another/account-vpc::VpcId us-east-1", stack
+        )
+        mock_get_output_value.return_value = "output_value"
+        stack_output_external_resolver.resolve()
+        mock_get_output_value.assert_called_once_with(
+            "another/account-vpc", "VpcId", None, "us-east-1"
         )
         assert stack.dependencies == []
 
