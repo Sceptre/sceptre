@@ -174,7 +174,7 @@ class StackOutputExternalRegion(StackOutputBase):
     Resolver for retrieving the value of an output of any Stack in any region.
 
     :param argument: The Stack name, output name, and region to get.
-    :type argument: str in the format ``"<full stack name>::<output key>"``
+    :type argument: str in the format ``"<full stack name>::<output key> <region>"``
     """
 
     def __init__(self, *args, **kwargs):
