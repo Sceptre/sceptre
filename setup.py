@@ -66,7 +66,9 @@ setup(
             "file_contents = sceptre.resolvers.file_contents:FileContents",
             "stack_output = sceptre.resolvers.stack_output:StackOutput",
             "stack_output_external ="
-            "sceptre.resolvers.stack_output:StackOutputExternal"
+            "sceptre.resolvers.stack_output:StackOutputExternal",
+            "stack_output_external_region ="
+            "sceptre.resolvers.stack_output:StackOutputExternalRegion",
         ]
     },
     data_files=[
