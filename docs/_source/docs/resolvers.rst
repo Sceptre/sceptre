@@ -213,5 +213,19 @@ This resolver can be used in a Stack config file with the following syntax:
    parameters:
      param1: !<custom_resolver_command_name> <value> <optional-aws-profile>
 
+
+resolver arguments
+^^^^^^^^^^^^^^^^^^
+Resolver arguments can be a simple string or a complex data structure.
+
+.. code-block:: yaml
+
+    template_path: <...>
+    parameters:
+      Param1: !ssm "/dev/DbPassword"
+      Param2: !ssm {"name": "/dev/DbPassword"}
+      Param3: !ssm
+        name: "/dev/DbPassword"
+
 .. _Custom Resolvers: #custom-resolvers
 .. _this is great place to start: https://docs.python.org/3/distributing/

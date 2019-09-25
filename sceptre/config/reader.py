@@ -8,6 +8,7 @@ and constructing Stacks.
 """
 
 import collections
+import copy
 import datetime
 import fnmatch
 import logging
@@ -157,7 +158,7 @@ class ConfigReader(object):
             # This function signture is required by PyYAML
             def class_constructor(loader, node):
                 return node_class(
-                    loader.construct_scalar(node)
+                    loader.construct_object(self.resolve_node_tag(loader, node))
                 )  # pragma: no cover
 
             return class_constructor
@@ -176,6 +177,11 @@ class ConfigReader(object):
                     "Added constructor for %s with node tag %s",
                     str(node_class), node_tag
                 )
+
+    def resolve_node_tag(self, loader, node):
+        node = copy.copy(node)
+        node.tag = loader.resolve(type(node), node.value, (True, False))
+        return node
 
     def construct_stacks(self):
         """
