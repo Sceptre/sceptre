@@ -476,7 +476,7 @@ class ConfigReader(object):
             dependencies=config.get("dependencies", []),
             role_arn=config.get("role_arn"),
             protected=config.get("protect", False),
-            tags=config.get("stack_tags", {}),
+            stack_tags=config.get("stack_tags", {}),
             external_name=config.get("stack_name"),
             notifications=config.get("notifications"),
             on_failure=config.get("on_failure"),

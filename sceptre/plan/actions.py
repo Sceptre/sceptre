@@ -63,7 +63,7 @@ class StackActions(object):
             "NotificationARNs": self.stack.notifications,
             "Tags": [
                 {"Key": str(k), "Value": str(v)}
-                for k, v in self.stack.tags.items()
+                for k, v in self.stack.stack_tags.items()
             ]
         }
 
@@ -120,7 +120,7 @@ class StackActions(object):
                 "NotificationARNs": self.stack.notifications,
                 "Tags": [
                     {"Key": str(k), "Value": str(v)}
-                    for k, v in self.stack.tags.items()
+                    for k, v in self.stack.stack_tags.items()
                 ]
             }
             update_stack_kwargs.update(
@@ -446,7 +446,7 @@ class StackActions(object):
             "NotificationARNs": self.stack.notifications,
             "Tags": [
                 {"Key": str(k), "Value": str(v)}
-                for k, v in self.stack.tags.items()
+                for k, v in self.stack.stack_tags.items()
             ]
         }
         create_change_set_kwargs.update(

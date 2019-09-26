@@ -55,6 +55,12 @@ class Stack(object):
             templates.
     :type sceptre_user_data: dict
 
+    :param stack_tags: Tags passed into\
+            `sceptre_handler(stack_tags)` function in Python templates\
+            or accessible under `stack_tags` variable within Jinja2\
+            templates.
+    :type stack_tags: dict
+
     :param hooks: A list of arbitrary shell or python commands or scripts to\
             run.
     :type hooks: sceptre.hooks.Hook
@@ -106,12 +112,13 @@ class Stack(object):
     _sceptre_user_data = ResolvableProperty("_sceptre_user_data")
     notifications = ResolvableProperty("notifications")
     hooks = HookProperty("hooks")
+    _stack_tags = ResolvableProperty("_stack_tags")
 
     def __init__(
         self, name, project_code, template_path, region, template_bucket_name=None,
         template_key_prefix=None, required_version=None, parameters=None,
         sceptre_user_data=None, hooks=None, s3_details=None,
-        dependencies=None, role_arn=None, protected=False, tags=None,
+        dependencies=None, role_arn=None, protected=False, stack_tags=None,
         external_name=None, notifications=None, on_failure=None, profile=None,
         stack_timeout=0, stack_group_config={}
     ):
@@ -134,7 +141,8 @@ class Stack(object):
         self.role_arn = role_arn
         self.on_failure = on_failure
         self.dependencies = dependencies or []
-        self.tags = tags or {}
+        self._stack_tags = stack_tags or {}
+        self._stack_tags_is_resolved = False
         self.stack_timeout = stack_timeout
         self.profile = profile
         self.hooks = hooks or {}
@@ -162,7 +170,7 @@ class Stack(object):
             "dependencies={dependencies}, "
             "role_arn={role_arn}, "
             "protected={protected}, "
-            "tags={tags}, "
+            "stack_tags={stack_tags}, "
             "external_name={external_name}, "
             "notifications={notifications}, "
             "on_failure={on_failure}, "
@@ -184,7 +192,7 @@ class Stack(object):
                 dependencies=self.dependencies,
                 role_arn=self.role_arn,
                 protected=self.protected,
-                tags=self.tags,
+                stack_tags=self.stack_tags,
                 external_name=self.external_name,
                 notifications=self.notifications,
                 on_failure=self.on_failure,
@@ -213,7 +221,8 @@ class Stack(object):
             self.dependencies == stack.dependencies and
             self.role_arn == stack.role_arn and
             self.protected == stack.protected and
-            self.tags == stack.tags and
+            # self.tags == stack.tags and
+            self.stack_tags == stack.stack_tags and
             self.external_name == stack.external_name and
             self.notifications == stack.notifications and
             self.on_failure == stack.on_failure and
@@ -250,6 +259,17 @@ class Stack(object):
         return self._sceptre_user_data
 
     @property
+    def stack_tags(self):
+        """Returns stack_tags after ensuring that it is fully resolved.
+
+        :rtype: dict or list or None
+        """
+        if not self._stack_tags_is_resolved:
+            self._stack_tags_is_resolved = True
+            self._resolve_stack_tags()
+        return self._stack_tags
+
+    @property
     def template(self):
         """
         Returns the CloudFormation Template used to create the Stack.
@@ -261,6 +281,7 @@ class Stack(object):
             self._template = Template(
                 path=self.template_path,
                 sceptre_user_data=self.sceptre_user_data,
+                stack_tags=self.stack_tags,
                 s3_details=self.s3_details,
                 connection_manager=self.connection_manager
             )
@@ -268,6 +289,18 @@ class Stack(object):
 
     def _resolve_sceptre_user_data(self):
         data = self._sceptre_user_data
+        if isinstance(data, Mapping):
+            iterator = data.values()
+        elif isinstance(data, Sequence):
+            iterator = data
+        else:
+            return
+        for value in iterator:
+            if isinstance(value, ResolvableProperty.ResolveLater):
+                value()
+
+    def _resolve_stack_tags(self):
+        data = self._stack_tags
         if isinstance(data, Mapping):
             iterator = data.values()
         elif isinstance(data, Sequence):

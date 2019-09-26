@@ -182,6 +182,9 @@ stack_tags
 ~~~~~~~~~~
 
 A dictionary of `CloudFormation Tags`_ to be applied to the Stack.
+It is also passed to the ``sceptre_handler(stack_tags)``
+function in Python templates or accessible under ``stack_tags`` variable
+key within Jinja2 templates.
 
 stack_timeout
 ~~~~~~~~~~~~~
@@ -286,7 +289,8 @@ Examples
        thing_2: !file_contents path/to/file.txt
    stack_tags:
        tag_1: value_1
-       tag_2: value_2
+       tag_2: {{ environment_variable.VALUE_2 }}
+       tag_3: !environment_variable VALUE_3
 
 .. _template_path: #template_path
 .. _dependencies: #dependencies

@@ -27,9 +27,9 @@ Jinja
 Templates with ``.j2`` extensions are treated as Jinja2 Templates.
 These are rendered and should create a raw JSON or YAML CloudFormation
 Template. Sceptre User Data is accessible within Templates as
-``sceptre_user_data``. For example ``{{ sceptre_user_data.some_variable }}``.
-``sceptre_user_data`` accesses the ``sceptre_user_data`` key in the Stack
-Config file.
+``sceptre_user_data`` and ``stack_tags``. For example
+``{{ sceptre_user_data.some_variable }}``. ``sceptre_user_data``
+accesses the ``sceptre_user_data`` key in the Stack Config file.
 
 Python
 ------

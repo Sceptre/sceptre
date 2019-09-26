@@ -34,6 +34,10 @@ class Template(object):
             a handler function in an external Python script.
     :type sceptre_user_data: dict
 
+    :param stack_tags: A dictionary of arbitrary tags to be passed to\
+            a handler function in an external Python script.
+    :type stack_tags: dict
+
     :param connection_manager:
     :type connection_manager: sceptre.connection_manager.ConnectionManager
 
@@ -44,12 +48,13 @@ class Template(object):
     _boto_s3_lock = threading.Lock()
 
     def __init__(
-        self, path, sceptre_user_data, connection_manager=None, s3_details=None
+        self, path, sceptre_user_data, stack_tags, connection_manager=None, s3_details=None
     ):
         self.logger = logging.getLogger(__name__)
 
         self.path = path
         self.sceptre_user_data = sceptre_user_data
+        self.stack_tags = stack_tags
         self.connection_manager = connection_manager
         self.s3_details = s3_details
 
@@ -59,8 +64,8 @@ class Template(object):
     def __repr__(self):
         return (
             "sceptre.template.Template(name='{0}', path='{1}', "
-            "sceptre_user_data={2}, s3_details={3})".format(
-                self.name, self.path, self.sceptre_user_data, self.s3_details
+            "sceptre_user_data={2}, stack_tags={3}, s3_details={4})".format(
+                self.name, self.path, self.sceptre_user_data, self.stack_tags, self.s3_details
             )
         )
 
@@ -118,7 +123,8 @@ class Template(object):
                     self._body = self._render_jinja_template(
                         os.path.dirname(self.path),
                         os.path.basename(self.path),
-                        {"sceptre_user_data": self.sceptre_user_data}
+                        {"sceptre_user_data": self.sceptre_user_data},
+                        {"stack_tags": self.stack_tags}
                     )
                 elif file_extension == ".py":
                     self._body = self._call_sceptre_handler()
@@ -167,12 +173,13 @@ class Template(object):
         module = imp.load_source(self.name, self.path)
 
         try:
-            body = module.sceptre_handler(self.sceptre_user_data)
+            body = module.sceptre_handler(self.sceptre_user_data, self.stack_tags)
         except AttributeError as e:
             if 'sceptre_handler' in str(e):
                 raise TemplateSceptreHandlerError(
                     "The template does not have the required "
-                    "'sceptre_handler(sceptre_user_data)' function."
+                    "'sceptre_handler(sceptre_user_data)' or "
+                    "'sceptre_handler(stack_tags)' functions."
                 )
             else:
                 raise e

@@ -2,8 +2,9 @@ Resolvers
 =========
 
 Sceptre implements resolvers, which can be used to resolve a value of a
-CloudFormation ``parameter`` or ``sceptre_user_data`` value at runtime. This is
-most commonly used to chain the outputs of one Stack to the inputs of another.
+CloudFormation ``parameter``, ``sceptre_user_data``, and ``stack_tags`` value
+at runtime. This is most commonly used to chain the outputs of one Stack to
+the inputs of another.
 
 If required, users can create their own resolvers, as described in the section
 on `Custom Resolvers`_.
@@ -16,6 +17,8 @@ Syntax:
      <parameter_name>: !<resolver_name> <resolver_value>
    sceptre_user_data:
      <name>: !<resolver_name> <resolver_value>
+   stack_tags:
+     <tag_name>: !<resolver_name> <resolver_value>
 
 Available Resolvers
 -------------------
@@ -29,7 +32,7 @@ Syntax:
 
 .. code-block:: yaml
 
-   parameter|sceptre_user_data:
+   parameter|sceptre_user_data|stack_tags:
      <name>: !environment_variable ENVIRONMENT_VARIABLE_NAME
 
 Example:
@@ -48,7 +51,7 @@ Syntax:
 
 .. code-block:: yaml
 
-   parameters|sceptre_user_data:
+   parameters|sceptre_user_data|stack_tags:
      <name>: !file_contents /path/to/file.txt
 
 Example:
@@ -67,7 +70,7 @@ Syntax:
 
 .. code-block:: yaml
 
-   parameters | sceptre_user_data:
+   parameters|sceptre_user_data|stack_tags:
      <name>: !stack_output <stack_name>.yaml::<output_name>
 
 Example:
@@ -97,7 +100,7 @@ Syntax:
 
 .. code-block:: yaml
 
-   parameters/sceptre_user_data:
+   parameters|sceptre_user_data|stack_tags:
      <name>: !stack_output_external <full_stack_name>::<output_name> <optional-aws-profile-name>
 
 Example:
