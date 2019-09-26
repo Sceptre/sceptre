@@ -19,20 +19,22 @@ def main():
     except IndexError:
         sys.exit("Missing build dir path: python /path/docs")
 
-    ignored_dirs = {".git"}
+    keep_versions = ['1.5.0']
+    ignored_dirs = {".git", *keep_versions}
     dirs = [
         item
         for item in os.scandir(build_dir)
         if item.is_dir() and item.name not in ignored_dirs
     ]
     sorted_dirs = sorted(dirs, reverse=True, key=attrgetter("name"))
-    active_versions = [item.name for item in sorted_dirs[:7]]
+    active_versions = [item.name for item in sorted_dirs[:7]] + keep_versions
     versions_to_remove = (item.path for item in sorted_dirs[7:])
     with open(build_dir + "/version-helper.js", "w+") as outf:
         # select 7 latest versions
         outf.write("let versions = {};".format(active_versions))
     # print out old versions to be removed
-    print(",".join(versions_to_remove))
+    print("remove")
+    print("\n".join(versions_to_remove))
 
 
 if __name__ == "__main__":
