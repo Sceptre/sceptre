@@ -16,8 +16,8 @@ import traceback
 
 import botocore
 import jinja2
-from .exceptions import UnsupportedTemplateFileTypeError
-from .exceptions import TemplateSceptreHandlerError
+from sceptre.exceptions import UnsupportedTemplateFileTypeError
+from sceptre.exceptions import TemplateSceptreHandlerError
 
 
 class Template(object):
