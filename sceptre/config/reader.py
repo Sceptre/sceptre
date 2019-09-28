@@ -98,6 +98,7 @@ REQUIRED_KEYS = STACK_GROUP_CONFIG_ATTRIBUTES.required.union(
     STACK_CONFIG_ATTRIBUTES.required
 )
 
+
 class ConfigReader(object):
     """
     Parses YAML configuration files and produces Stack objects.
@@ -288,7 +289,7 @@ class ConfigReader(object):
             shutil.rmtree(local_temp_dir)
 
         # For now also delete .sceptre, as it serves no other purpose
-        shutil.rmtree(os.path.join(getcwd(), ".sceptre"))
+        shutil.rmtree(path.join(getcwd(), ".sceptre"))
 
     def _recursive_read(self, directory_path, filename, stack_group_config):
         """
