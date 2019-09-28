@@ -34,10 +34,9 @@ from operator import attrgetter
 import sys
 import re
 
-VERSION_RE = re.compile(r"\d+.\d+.\d+")
-KEEP_SPECIFIC_VERSIONS = ["1.5.0"]  # these versions won't be removed
-# number of active versions to keep, eg. len([2.2.1, 2.2.0, 2.1.9]) == 3
-KEEP_ACTIVE_VERSIONS = 3
+VERSION_REGEX = re.compile(r"\d+.\d+.\d+")
+KEEP_VERSIONS = ["1.5.0"]  # these versions won't be removed
+NUMBER_OF_VERSIONS_TO_KEEP = 3
 
 
 def main():
@@ -46,26 +45,27 @@ def main():
     except IndexError:
         sys.exit("Missing build dir path: python /path/docs")
 
-    # directories which contain docs
-    dirs = [
-        item
-        for item in os.scandir(build_dir)
-        if item.is_dir() and VERSION_RE.match(item.name)
-    ]
+    documentation_directories = sorted(
+        (
+            item
+            for item in os.scandir(build_dir)
+            if item.is_dir() and VERSION_REGEX.match(item.name)
+        ),
+        reverse=True,
+        key=attrgetter("name")
+    )
 
-    sorted_dirs = sorted(dirs, reverse=True, key=attrgetter("name"))
     active_versions = (
-        ["latest", "dev"]
-        + [item.name for item in sorted_dirs[:KEEP_ACTIVE_VERSIONS]]
-        + KEEP_SPECIFIC_VERSIONS
+            ["latest", "dev"]
+            + [item.name for item in documentation_directories[:NUMBER_OF_VERSIONS_TO_KEEP]]
+            + KEEP_VERSIONS
     )
     versions_to_remove = (
         item.path
-        for item in sorted_dirs[KEEP_ACTIVE_VERSIONS:]
-        if item.name not in KEEP_SPECIFIC_VERSIONS
+        for item in documentation_directories[NUMBER_OF_VERSIONS_TO_KEEP:]
+        if item.name not in KEEP_VERSIONS
     )
     with open(build_dir + "/version-helper.js", "w+") as outf:
-        # select 7 latest versions
         outf.write("let versions = {};".format(active_versions))
     # print out old versions to be removed
     print(",".join(versions_to_remove))
