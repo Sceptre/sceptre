@@ -67,7 +67,7 @@ def main():
     )
     with open(build_dir + "/version-helper.js", "w+") as outf:
         outf.write("let versions = {};".format(active_versions))
-    # print out old versions to be removed
+    # print versions_to_remove to stdout for deletion by bash script (github-pages.sh)
     print(",".join(versions_to_remove))
 
 
