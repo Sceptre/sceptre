@@ -7,6 +7,14 @@ Feature: Stack output resolver
     When the user launches stack "6/1/B"
     Then stack "6/1/B" exists in "CREATE_COMPLETE" state
 
+  Scenario: launch a stack referencing an output of existing stack with ignore dependencies
+    Given stack "6/1/A" exists using "dependencies/independent_template.json"
+    and stack "6/1/B" does not exist
+    and stack "6/1/C" does not exist
+    When the user launches stack "6/1/B" with ignore dependencies
+    Then stack "6/1/B" exists in "CREATE_COMPLETE" state
+    And stack "6/1/C" does not exist
+
   Scenario: launch a stack referencing an output of a non-existant stack
     Given stack "6/1/B" does not exist
     and stack "6/1/A" does not exist
