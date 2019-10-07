@@ -35,7 +35,7 @@ import sys
 import re
 
 VERSION_REGEX = re.compile(r"\d+.\d+.\d+")
-KEEP_VERSIONS = ["1.5.0"]  # these versions won't be removed
+KEEP_VERSIONS = ["1.5.0", "1.4.2", "1.3.4"]  # these versions won't be removed
 NUMBER_OF_VERSIONS_TO_KEEP = 3
 
 
