@@ -63,7 +63,7 @@ given a variable file "vars.yaml":
     middle2:
       nested: world
 
-we could overwrite ``nested: hello`` to ``nested: hi`` using:
+we could overwrite ``nested: world`` to ``nested: hi`` using:
 
 ``sceptre --var-file vars.yaml --var top.middle2.nested=hi launch stack``
 
