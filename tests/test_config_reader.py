@@ -234,6 +234,7 @@ class TestConfigReader(object):
             hooks={},
             s3_details=sentinel.s3_details,
             dependencies=["child/level", "top/level"],
+            iam_role=None,
             role_arn=None,
             protected=False,
             tags={},
