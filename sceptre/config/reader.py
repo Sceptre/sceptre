@@ -15,7 +15,10 @@ from os import environ, path, walk
 from pkg_resources import iter_entry_points
 import yaml
 
-import jinja2
+from jinja2 import Environment
+from jinja2 import StrictUndefined
+from jinja2 import FileSystemLoader
+from jinja2 import select_autoescape
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
@@ -340,9 +343,13 @@ class ConfigReader(object):
         config = {}
         abs_directory_path = path.join(self.full_config_path, directory_path)
         if path.isfile(path.join(abs_directory_path, basename)):
-            jinja_env = jinja2.Environment(
-                loader=jinja2.FileSystemLoader(abs_directory_path),
-                undefined=jinja2.StrictUndefined
+            jinja_env = Environment(
+                autoescape=select_autoescape(
+                    disabled_extensions=('yaml',),
+                    default=True,
+                ),
+                loader=FileSystemLoader(abs_directory_path),
+                undefined=StrictUndefined
             )
             template = jinja_env.get_template(basename)
             self.templating_vars.update(stack_group_config)

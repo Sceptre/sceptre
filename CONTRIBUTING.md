@@ -148,8 +148,14 @@ tests will be run, including integration tests.
 You can also (optionally) run the integration tests locally, which is quicker
 during development.
 
-To run integration tests locally `pip install behave` in your sceptre virtualenv
-and run:
+To run integration tests locally:
+* `pip install awscli`
+* Setup [AWS CLI Environment variables](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html)
+  to work with an AWS account that you have access to.  You can use the same user
+  that you use for CircleCi.
+* `pip install behave`
+
+run:
 
 ```bash
 $ behave integration-tests
@@ -158,12 +164,12 @@ $ behave integration-tests
 or to run a specific tests:
 
 ```bash
-$ behave-integration-tests -n "scenario-name"
+$ behave integration-tests -n "scenario-name"
 ```
 
-Note: you will need to make sure you have installed and configured `awscli` to
-work with an AWS account that you have access to. You can use the same user that
-you use for CircleCi.
+_Note_: All integration tests are setup to run in `eu-west-*` region.  If you prefer
+to run in a different region you must update the region in each test before running it.
+
 
 6. Make sure the changes comply with the pull request guidelines in the section
    on `Contributing Code`.

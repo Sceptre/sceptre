@@ -190,15 +190,15 @@ class TestConfigReader(object):
             }
         ),
         (
-                "name",
-                {
-                    "template_bucket_name": "bucket-name",
-                },
-                {
-                    "bucket_name": "bucket-name",
-                    "bucket_key": "name/2012-01-01-00-00-00-000000Z.json",
-                    "bucket_region": None,
-                }
+            "name",
+            {
+                "template_bucket_name": "bucket-name",
+            },
+            {
+                "bucket_name": "bucket-name",
+                "bucket_key": "name/2012-01-01-00-00-00-000000Z.json",
+                "bucket_region": None,
+            }
         ),
         (
             "name", {}, None

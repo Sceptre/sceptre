@@ -20,3 +20,8 @@ help:
 
 apidoc:
 	@sphinx-apidoc -fM -o "$(SOURCEDIR)/apidoc" ../sceptre
+
+clean:
+	rm -f sceptre*rst
+	rm -f modules.rst
+	rm -rf _build

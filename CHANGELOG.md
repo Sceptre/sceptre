@@ -4,6 +4,36 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.2.1 (2019.08.19)
+
+### Fixed
+
+- `typing` install dependency for Python version < 3.5
+- Race condition in stacks causing RecurrsiveGet exception
+
+## 2.2.0 (2019.08.16)
+
+### Added
+
+- Meaningful Jinja Template exception output handling
+
+### Fixed
+
+- Recursion in `sceptre_user_data` becoming infinite
+- AWS `rate_exceeded` error when hitting AWS API too frequently
+- Readme links
+- StackGraph debugging output
+
+### Nonfunctional
+
+- Moved CircleCI Dockerfile to its own repository
+- Add SonarQube analysis
+- Change CircleCI setup to use context over environment variables
+- Removed redundant test code
+- Add badges to README
+- Adjust Coverage fail-level to 92%
+- Update CONTRIBUTING Guide
+
 ## 2.1.5 (2019.06.28)
 
 ### Fixed
