@@ -16,6 +16,7 @@ install_requirements = [
     "click==7.0",
     "PyYaml>=5.1,<6.0",
     "Jinja2>=2.8,<3",
+    "jsonschema==3.1.1",
     "colorama==0.3.9",
     "packaging==16.8",
     "six>=1.11.0,<2.0.0",
@@ -67,6 +68,9 @@ setup(
             "stack_output = sceptre.resolvers.stack_output:StackOutput",
             "stack_output_external ="
             "sceptre.resolvers.stack_output:StackOutputExternal"
+        ],
+        "sceptre.template_handlers": [
+            "s3 = sceptre.template_handlers.s3:S3"
         ]
     },
     data_files=[
