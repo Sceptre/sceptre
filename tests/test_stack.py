@@ -16,6 +16,7 @@ def stack_factory(**kwargs):
         'template_key_prefix': sentinel.template_key_prefix,
         'required_version': sentinel.required_version,
         'template_path': sentinel.template_path,
+        'template_handler_config': sentinel.template_handler_config,
         'region': sentinel.region,
         'profile': sentinel.profile,
         'parameters': {"key1": "val1"},
@@ -44,7 +45,9 @@ class TestStack(object):
             template_bucket_name=sentinel.template_bucket_name,
             template_key_prefix=sentinel.template_key_prefix,
             required_version=sentinel.required_version,
-            template_path=sentinel.template_path, region=sentinel.region,
+            template_path=sentinel.template_path,
+            template_handler_config=sentinel.template_handler_config,
+            region=sentinel.region,
             profile=sentinel.profile, parameters={"key1": "val1"},
             sceptre_user_data=sentinel.sceptre_user_data, hooks={},
             s3_details=None, dependencies=sentinel.dependencies,
@@ -61,6 +64,7 @@ class TestStack(object):
         stack = Stack(
             name='dev/stack/app', project_code=sentinel.project_code,
             template_path=sentinel.template_path,
+            template_handler_config=sentinel.template_handler_config,
             template_bucket_name=sentinel.template_bucket_name,
             template_key_prefix=sentinel.template_key_prefix,
             required_version=sentinel.required_version,
@@ -76,6 +80,7 @@ class TestStack(object):
         assert stack.parameters == {}
         assert stack.sceptre_user_data == {}
         assert stack.template_path == sentinel.template_path
+        assert stack.template_handler_config == sentinel.template_handler_config
         assert stack.s3_details is None
         assert stack._template is None
         assert stack.protected is False
@@ -93,6 +98,7 @@ class TestStack(object):
             "name='dev/app/stack', " \
             "project_code=sentinel.project_code, " \
             "template_path=sentinel.template_path, " \
+            "template_handler_config=sentinel.template_handler_config, " \
             "region=sentinel.region, " \
             "template_bucket_name=sentinel.template_bucket_name, "\
             "template_key_prefix=sentinel.template_key_prefix, "\

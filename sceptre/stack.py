@@ -8,6 +8,7 @@ This module implements a Stack class, which stores a Stack's data.
 """
 
 import logging
+import os
 from typing import Mapping, Sequence
 
 from sceptre.connection_manager import ConnectionManager
@@ -29,8 +30,14 @@ class Stack(object):
     :type project_code: str
 
     :param template_path: The relative path to the CloudFormation, Jinja2\
-            or Python template to build the Stack from.
+            or Python template to build the Stack from. Takes precedence over
+            `template` if it is specified.
     :type template_path: str
+
+    :param template_handler_config: Configuration for a Template Handler that can resolve
+            its arguments to a template string. Should contain the `type` property to specify
+            the type of template handler to load
+    :type template_handler_config: dict
 
     :param region: The AWS region to build Stacks in.
     :type region: str
@@ -113,10 +120,10 @@ class Stack(object):
     hooks = HookProperty("hooks")
 
     def __init__(
-        self, name, project_code, template_path, region, template_bucket_name=None,
-        template_key_prefix=None, required_version=None, parameters=None,
-        sceptre_user_data=None, hooks=None, s3_details=None, iam_role=None,
-        dependencies=None, role_arn=None, protected=False, tags=None,
+        self, name, project_code, region, template_path=None, template_handler_config=None,
+        template_bucket_name=None, template_key_prefix=None, required_version=None,
+        parameters=None, sceptre_user_data=None, hooks=None, s3_details=None,
+        iam_role=None, dependencies=None, role_arn=None, protected=False, tags=None,
         external_name=None, notifications=None, on_failure=None, profile=None,
         stack_timeout=0, stack_group_config={}
     ):
@@ -129,8 +136,8 @@ class Stack(object):
         self.template_key_prefix = template_key_prefix
         self.required_version = required_version
         self.external_name = external_name or get_external_stack_name(self.project_code, self.name)
-
         self.template_path = template_path
+        self.template_handler_config = template_handler_config
         self.s3_details = s3_details
         self._template = None
         self._connection_manager = None
@@ -156,6 +163,7 @@ class Stack(object):
             "name='{name}', "
             "project_code={project_code}, "
             "template_path={template_path}, "
+            "template_handler_config={template_handler_config}, "
             "region={region}, "
             "template_bucket_name={template_bucket_name}, "
             "template_key_prefix={template_key_prefix}, "
@@ -179,6 +187,7 @@ class Stack(object):
                 name=self.name,
                 project_code=self.project_code,
                 template_path=self.template_path,
+                template_handler_config=self.template_handler_config,
                 region=self.region,
                 template_bucket_name=self.template_bucket_name,
                 template_key_prefix=self.template_key_prefix,
@@ -209,6 +218,7 @@ class Stack(object):
             self.name == stack.name and
             self.project_code == stack.project_code and
             self.template_path == stack.template_path and
+            self.template_handler_config == stack.template_handler_config and
             self.region == stack.region and
             self.template_bucket_name == stack.template_bucket_name and
             self.template_key_prefix == stack.template_key_prefix and
@@ -267,8 +277,19 @@ class Stack(object):
         :rtype: str
         """
         if self._template is None:
+            if self.template_path:
+                name = os.path.basename(self.template_path).split(".")[0]
+                handler_config = {
+                    "type": "file",
+                    "path": self.template_path
+                }
+            else:
+                name = self.name.replace('/', '-')
+                handler_config = self.template_handler_config
+
             self._template = Template(
-                path=self.template_path,
+                name=name,
+                handler_config=handler_config,
                 sceptre_user_data=self.sceptre_user_data,
                 stack_group_config=self.stack_group_config,
                 s3_details=self.s3_details,
