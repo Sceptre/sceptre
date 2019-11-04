@@ -5,8 +5,9 @@ from sceptre.template_handlers import TemplateHandler
 
 class S3(TemplateHandler):
     """
-    Template Handler that can resolve templates from S3.
+    Template handler that can resolve templates from S3.
     """
+
     def __init__(self, *args, **kwargs):
         self.logger = logging.getLogger(__name__)
         super(S3, self).__init__(*args, **kwargs)
@@ -16,11 +17,12 @@ class S3(TemplateHandler):
             "type": "object",
             "properties": {
                 "path": {"type": "string"}
-            }
+            },
+            "required": ["path"]
         }
 
     def handle(self):
-        self.logger.debug("Downloading file from S3: %s" % self.argument)
+        self.logger.debug("Downloading file from S3: %s" % self.arguments["path"])
 
         segments = self.arguments["path"].split('/')
         bucket = segments[0]

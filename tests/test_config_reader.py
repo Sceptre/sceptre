@@ -240,6 +240,7 @@ class TestConfigReader(object):
             template_path=os.path.join(
                 self.context.project_path, "templates/path/to/template"
             ),
+            template_handler_config=None,
             region="region_region",
             profile="account_profile",
             parameters={"param1": "val1"},

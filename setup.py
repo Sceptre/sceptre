@@ -21,7 +21,7 @@ install_requirements = [
     "packaging==16.8",
     "six>=1.11.0,<2.0.0",
     "networkx==2.1",
-    "typing>=3.7.0,<3.8.0"
+    "typing>=3.7.0,<3.8.0",
 ]
 
 test_requirements = [
@@ -70,6 +70,7 @@ setup(
             "sceptre.resolvers.stack_output:StackOutputExternal"
         ],
         "sceptre.template_handlers": [
+            "file = sceptre.template_handlers.file:File",
             "s3 = sceptre.template_handlers.s3:S3"
         ]
     },

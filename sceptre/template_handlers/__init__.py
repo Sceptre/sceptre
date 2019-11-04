@@ -3,7 +3,9 @@ import abc
 import logging
 
 import six
-from jsonschema import validate
+from jsonschema import validate, ValidationError
+
+from sceptre.exceptions import TemplateHandlerArgumentsInvalidError
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -12,17 +14,26 @@ class TemplateHandler:
     TemplateHandler is an abstract base class that should be inherited
     by all Template Handlers.
 
+    :param name: Name of the template
+    :type name: str
+
     :param arguments: The arguments of the template handler
-    :type arguments: object
+    :type arguments: dict
+
+    :param sceptre_user_data: Sceptre user data in stack config
+    :type sceptre_user_data: dict
+
     :param connection_manager: Connection manager used to call AWS
     :type connection_manager: sceptre.connection_manager.ConnectionManager
     """
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, arguments=None, connection_manager=None):
+    def __init__(self, name, arguments=None, sceptre_user_data=None, connection_manager=None):
         self.logger = logging.getLogger(__name__)
+        self.name = name
         self.arguments = arguments
+        self.sceptre_user_data = sceptre_user_data
         self.connection_manager = connection_manager
 
     @abc.abstractmethod
@@ -48,8 +59,10 @@ class TemplateHandler:
 
     def validate(self):
         """
-        Validates if the current arguments are correct according to the schema.
-        :return: True if arguments valid, false if not
-        :rtype: bool
+        Validates if the current arguments are correct according to the schema. If this
+        does not raise an exception, the template handler's arguments are valid.
         """
-        return validate(instance=self.arguments, schema=self.schema())
+        try:
+            validate(instance=self.arguments, schema=self.schema())
+        except ValidationError as e:
+            raise TemplateHandlerArgumentsInvalidError(e)

@@ -53,7 +53,8 @@ CONFIG_MERGE_STRATEGIES = {
     "stack_timeout": strategies.child_wins,
     "template_bucket_name": strategies.child_wins,
     "template_key_value": strategies.child_wins,
-    "template_path": strategies.child_wins
+    "template_path": strategies.child_wins,
+    "template": strategies.child_wins
 }
 
 STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
@@ -69,10 +70,10 @@ STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
 )
 
 STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
+    {},
     {
-        "template_path"
-    },
-    {
+        "template_path",
+        "template",
         "dependencies",
         "hooks",
         "iam_role",
@@ -488,7 +489,7 @@ class ConfigReader(object):
         abs_template_path = path.join(
             self.context.project_path, self.context.templates_path,
             sceptreise_path(config["template_path"])
-        )
+        ) if "template_path" in config else None
 
         s3_details = self._collect_s3_details(
             stack_name, config
@@ -497,6 +498,7 @@ class ConfigReader(object):
             name=stack_name,
             project_code=config["project_code"],
             template_path=abs_template_path,
+            template_handler_config=config.get("template"),
             region=config["region"],
             template_bucket_name=config.get("template_bucket_name"),
             template_key_prefix=config.get("template_key_prefix"),
