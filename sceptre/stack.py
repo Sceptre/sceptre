@@ -87,6 +87,11 @@ class Stack(object):
             CloudFormation when a Stack fails to create.
     :type on_failure: str
 
+    :param iam_role: The ARN of a role for Sceptre to assume before interacting\
+            with the environment. If not supplied, Sceptre uses the user's AWS CLI\
+            credentials.
+    :type iam_role: str
+
     :param profile: The name of the profile as defined in ~/.aws/config and\
             ~/.aws/credentials.
     :type profile: str
@@ -110,7 +115,7 @@ class Stack(object):
     def __init__(
         self, name, project_code, template_path, region, template_bucket_name=None,
         template_key_prefix=None, required_version=None, parameters=None,
-        sceptre_user_data=None, hooks=None, s3_details=None,
+        sceptre_user_data=None, hooks=None, s3_details=None, iam_role=None,
         dependencies=None, role_arn=None, protected=False, tags=None,
         external_name=None, notifications=None, on_failure=None, profile=None,
         stack_timeout=0, stack_group_config={}
@@ -136,6 +141,7 @@ class Stack(object):
         self.dependencies = dependencies or []
         self.tags = tags or {}
         self.stack_timeout = stack_timeout
+        self.iam_role = iam_role
         self.profile = profile
         self.hooks = hooks or {}
         self.parameters = parameters or {}
@@ -154,6 +160,7 @@ class Stack(object):
             "template_bucket_name={template_bucket_name}, "
             "template_key_prefix={template_key_prefix}, "
             "required_version={required_version}, "
+            "iam_role={iam_role}, "
             "profile={profile}, "
             "sceptre_user_data={sceptre_user_data}, "
             "parameters={parameters}, "
@@ -176,6 +183,7 @@ class Stack(object):
                 template_bucket_name=self.template_bucket_name,
                 template_key_prefix=self.template_key_prefix,
                 required_version=self.required_version,
+                iam_role=self.iam_role,
                 profile=self.profile,
                 sceptre_user_data=self.sceptre_user_data,
                 parameters=self.parameters,
@@ -205,6 +213,7 @@ class Stack(object):
             self.template_bucket_name == stack.template_bucket_name and
             self.template_key_prefix == stack.template_key_prefix and
             self.required_version == stack.required_version and
+            self.iam_role == stack.iam_role and
             self.profile == stack.profile and
             self.sceptre_user_data == stack.sceptre_user_data and
             self.parameters == stack.parameters and
@@ -233,7 +242,7 @@ class Stack(object):
         """
         if self._connection_manager is None:
             self._connection_manager = ConnectionManager(
-                self.region, self.profile, self.external_name
+                self.region, self.profile, self.external_name, self.iam_role
             )
 
         return self._connection_manager

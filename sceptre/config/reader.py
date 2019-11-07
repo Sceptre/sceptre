@@ -15,7 +15,10 @@ from os import environ, path, walk
 from pkg_resources import iter_entry_points
 import yaml
 
-import jinja2
+from jinja2 import Environment
+from jinja2 import StrictUndefined
+from jinja2 import FileSystemLoader
+from jinja2 import select_autoescape
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
@@ -32,24 +35,25 @@ from sceptre.config import strategies
 ConfigAttributes = collections.namedtuple("Attributes", "required optional")
 
 CONFIG_MERGE_STRATEGIES = {
-    'dependencies': strategies.list_join,
-    'hooks': strategies.child_wins,
-    'notifications': strategies.child_wins,
-    'on_failure': strategies.child_wins,
-    'parameters': strategies.child_wins,
-    'profile': strategies.child_wins,
-    'project_code': strategies.child_wins,
-    'protect': strategies.child_wins,
-    'region': strategies.child_wins,
-    'required_version': strategies.child_wins,
-    'role_arn': strategies.child_wins,
-    'sceptre_user_data': strategies.child_wins,
-    'stack_name': strategies.child_wins,
-    'stack_tags': strategies.child_wins,
-    'stack_timeout': strategies.child_wins,
-    'template_bucket_name': strategies.child_wins,
-    'template_key_value': strategies.child_wins,
-    'template_path': strategies.child_wins
+    "dependencies": strategies.list_join,
+    "hooks": strategies.child_wins,
+    "iam_role": strategies.child_wins,
+    "notifications": strategies.child_wins,
+    "on_failure": strategies.child_wins,
+    "parameters": strategies.child_wins,
+    "profile": strategies.child_wins,
+    "project_code": strategies.child_wins,
+    "protect": strategies.child_wins,
+    "region": strategies.child_wins,
+    "required_version": strategies.child_wins,
+    "role_arn": strategies.child_wins,
+    "sceptre_user_data": strategies.child_wins,
+    "stack_name": strategies.child_wins,
+    "stack_tags": strategies.child_wins,
+    "stack_timeout": strategies.child_wins,
+    "template_bucket_name": strategies.child_wins,
+    "template_key_value": strategies.child_wins,
+    "template_path": strategies.child_wins
 }
 
 STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
@@ -71,6 +75,7 @@ STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
     {
         "dependencies",
         "hooks",
+        "iam_role",
         "notifications",
         "on_failure",
         "parameters",
@@ -362,9 +367,13 @@ class ConfigReader(object):
         config = {}
         abs_directory_path = path.join(self.full_config_path, directory_path)
         if path.isfile(path.join(abs_directory_path, basename)):
-            jinja_env = jinja2.Environment(
-                loader=jinja2.FileSystemLoader(abs_directory_path),
-                undefined=jinja2.StrictUndefined
+            jinja_env = Environment(
+                autoescape=select_autoescape(
+                    disabled_extensions=('yaml',),
+                    default=True,
+                ),
+                loader=FileSystemLoader(abs_directory_path),
+                undefined=StrictUndefined
             )
             template = jinja_env.get_template(basename)
             self.templating_vars.update(stack_group_config)
@@ -492,6 +501,7 @@ class ConfigReader(object):
             template_bucket_name=config.get("template_bucket_name"),
             template_key_prefix=config.get("template_key_prefix"),
             required_version=config.get("required_version"),
+            iam_role=config.get("iam_role"),
             profile=config.get("profile"),
             parameters=config.get("parameters", {}),
             sceptre_user_data=config.get("sceptre_user_data", {}),

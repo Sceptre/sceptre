@@ -2,14 +2,14 @@
 
 import os
 import pytest
-from mock import Mock, patch, sentinel, ANY
+from mock import Mock, MagicMock, patch, sentinel, ANY
 from moto import mock_s3
 
 from boto3.session import Session
 from botocore.exceptions import ClientError, UnknownServiceError
 
 from sceptre.connection_manager import ConnectionManager, _retry_boto_call
-from sceptre.exceptions import RetryLimitExceededError
+from sceptre.exceptions import RetryLimitExceededError, InvalidAWSCredentialsError
 
 
 class TestConnectionManager(object):
@@ -17,6 +17,7 @@ class TestConnectionManager(object):
     def setup_method(self, test_method):
         self.stack_name = None
         self.profile = None
+        self.iam_role = None
         self.region = "eu-west-1"
 
         ConnectionManager._boto_sessions = {}
@@ -30,7 +31,8 @@ class TestConnectionManager(object):
         self.connection_manager = ConnectionManager(
             region=self.region,
             stack_name=self.stack_name,
-            profile=self.profile
+            profile=self.profile,
+            iam_role=self.iam_role
         )
 
     def test_connection_manager_initialised_with_no_optional_parameters(self):
@@ -47,25 +49,29 @@ class TestConnectionManager(object):
         connection_manager = ConnectionManager(
             region=self.region,
             stack_name="stack",
-            profile="profile"
+            profile="profile",
+            iam_role="iam_role"
         )
 
         assert connection_manager.stack_name == "stack"
         assert connection_manager.profile == "profile"
+        assert connection_manager.iam_role == "iam_role"
         assert connection_manager.region == self.region
         assert connection_manager._boto_sessions == {}
         assert connection_manager._clients == {}
         assert connection_manager._stack_keys == {
-            "stack": (self.region, "profile")
+            "stack": (self.region, "profile", "iam_role")
         }
 
     def test_repr(self):
         self.connection_manager.stack_name = "stack"
         self.connection_manager.profile = "profile"
         self.connection_manager.region = "region"
+        self.connection_manager.iam_role = "iam_role"
         response = self.connection_manager.__repr__()
         assert response == "sceptre.connection_manager.ConnectionManager(" \
-            "region='region', profile='profile', stack_name='stack')"
+            "region='region', profile='profile', stack_name='stack', "\
+            "iam_role='iam_role')"
 
     def test_boto_session_with_cache(self):
         self.connection_manager._boto_sessions["test"] = sentinel.boto_session
@@ -81,7 +87,7 @@ class TestConnectionManager(object):
         self.connection_manager.profile = None
 
         boto_session = self.connection_manager._get_session(
-            self.connection_manager.profile, self.region
+            self.connection_manager.profile, self.region, self.iam_role
         )
 
         assert boto_session.isinstance(mock_Session)
@@ -99,7 +105,7 @@ class TestConnectionManager(object):
         self.connection_manager.profile = "profile"
 
         boto_session = self.connection_manager._get_session(
-            self.connection_manager.profile, self.region
+            self.connection_manager.profile, self.region, self.iam_role
         )
 
         assert boto_session.isinstance(mock_Session)
@@ -110,6 +116,76 @@ class TestConnectionManager(object):
             aws_secret_access_key=ANY,
             aws_session_token=ANY
         )
+
+    @patch("sceptre.connection_manager.boto3.session.Session")
+    def test_boto_session_with_no_iam_role(
+            self, mock_Session
+    ):
+        self.connection_manager._boto_sessions = {}
+        self.connection_manager.iam_role = None
+
+        boto_session = self.connection_manager._get_session(
+            self.profile, self.region, self.connection_manager.iam_role
+        )
+
+        assert boto_session.isinstance(mock_Session)
+        mock_Session.assert_called_once_with(
+            profile_name=None,
+            region_name="eu-west-1",
+            aws_access_key_id=ANY,
+            aws_secret_access_key=ANY,
+            aws_session_token=ANY
+        )
+
+        boto_session.client().assume_role.assert_not_called()
+
+    @patch("sceptre.connection_manager.boto3.session.Session")
+    def test_boto_session_with_iam_role(self, mock_Session):
+        self.connection_manager._boto_sessions = {}
+        self.connection_manager.iam_role = "iam_role"
+
+        boto_session = self.connection_manager._get_session(
+            self.profile, self.region, self.connection_manager.iam_role
+        )
+
+        assert boto_session.isinstance(mock_Session)
+        mock_Session.assert_any_call(
+            profile_name=None,
+            region_name="eu-west-1",
+            aws_access_key_id=ANY,
+            aws_secret_access_key=ANY,
+            aws_session_token=ANY
+        )
+
+        boto_session.client().assume_role.assert_called_once_with(
+            RoleArn=self.connection_manager.iam_role,
+            RoleSessionName="{0}-session".format(
+                self.connection_manager.iam_role.split("/")[-1]
+            )
+        )
+
+        credentials = boto_session.client().assume_role()["Credentials"]
+
+        mock_Session.assert_any_call(
+            region_name="eu-west-1",
+            aws_access_key_id=credentials["AccessKeyId"],
+            aws_secret_access_key=credentials["SecretAccessKey"],
+            aws_session_token=credentials["SessionToken"]
+        )
+
+    @patch("sceptre.connection_manager.boto3.session.Session")
+    def test_boto_session_with_iam_role_returning_empty_credentials(self, mock_Session):
+        self.connection_manager._boto_sessions = {}
+        self.connection_manager.iam_role = "iam_role"
+
+        mock_Session.return_value.get_credentials.side_effect = [
+            MagicMock(), None, MagicMock(), MagicMock(), MagicMock()
+        ]
+
+        with pytest.raises(InvalidAWSCredentialsError):
+            self.connection_manager._get_session(
+                self.profile, self.region, self.connection_manager.iam_role
+            )
 
     @patch("sceptre.connection_manager.boto3.session.Session")
     def test_two_boto_sessions(self, mock_Session):
@@ -129,10 +205,11 @@ class TestConnectionManager(object):
         service = "s3"
         region = "eu-west-1"
         profile = None
+        iam_role = None
         stack = self.stack_name
 
         client = self.connection_manager._get_client(
-            service, region, profile, stack
+            service, region, profile, stack, iam_role
         )
         expected_client = Session().client(service)
         assert str(type(client)) == str(type(expected_client))
@@ -141,26 +218,28 @@ class TestConnectionManager(object):
     def test_get_client_with_invalid_client_type(self, mock_get_credentials):
         service = "invalid_type"
         region = "eu-west-1"
+        iam_role = None
         profile = None
         stack = self.stack_name
 
         with pytest.raises(UnknownServiceError):
             self.connection_manager._get_client(
-                service, region, profile, stack
+                service, region, profile, stack, iam_role
             )
 
     @patch("sceptre.connection_manager.boto3.session.Session.get_credentials")
     def test_get_client_with_exisiting_client(self, mock_get_credentials):
         service = "cloudformation"
         region = "eu-west-1"
+        iam_role = None
         profile = None
         stack = self.stack_name
 
         client_1 = self.connection_manager._get_client(
-            service, region, profile, stack
+            service, region, profile, stack, iam_role
         )
         client_2 = self.connection_manager._get_client(
-            service, region, profile, stack
+            service, region, profile, stack, iam_role
         )
         assert client_1 == client_2
 
@@ -170,15 +249,16 @@ class TestConnectionManager(object):
     ):
         service = "cloudformation"
         region = "eu-west-1"
+        iam_role = None
         profile = None
         stack = self.stack_name
 
         self.connection_manager.profile = None
         client_1 = self.connection_manager._get_client(
-            service, region, profile, stack
+            service, region, profile, stack, iam_role
         )
         client_2 = self.connection_manager._get_client(
-            service, region, profile, stack
+            service, region, profile, stack, iam_role
         )
         assert client_1 == client_2
 

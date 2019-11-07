@@ -15,9 +15,12 @@ import threading
 import traceback
 
 import botocore
-import jinja2
-from .exceptions import UnsupportedTemplateFileTypeError
-from .exceptions import TemplateSceptreHandlerError
+from jinja2 import Environment
+from jinja2 import FileSystemLoader
+from jinja2 import StrictUndefined
+from jinja2 import select_autoescape
+from sceptre.exceptions import UnsupportedTemplateFileTypeError
+from sceptre.exceptions import TemplateSceptreHandlerError
 
 
 class Template(object):
@@ -331,9 +334,13 @@ class Template(object):
         """
         logger = logging.getLogger(__name__)
         logger.debug("%s Rendering CloudFormation template", filename)
-        env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(template_dir),
-            undefined=jinja2.StrictUndefined
+        env = Environment(
+            autoescape=select_autoescape(
+                disabled_extensions=('j2',),
+                default=True,
+            ),
+            loader=FileSystemLoader(template_dir),
+            undefined=StrictUndefined
         )
         template = env.get_template(filename)
         body = template.render(**jinja_vars)
