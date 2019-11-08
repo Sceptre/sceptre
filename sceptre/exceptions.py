@@ -36,6 +36,13 @@ class TemplateSceptreHandlerError(SceptreException):
     pass
 
 
+class DependencyDoesNotExistError(SceptreException):
+    """
+    Error raised when a dependency cannot be found
+    """
+    pass
+
+
 class DependencyStackNotLaunchedError(SceptreException):
     """
     Error raised when a dependency stack has not been launched
