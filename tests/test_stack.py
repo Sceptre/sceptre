@@ -2,7 +2,10 @@
 
 import importlib
 
+import pytest
 from mock import MagicMock, sentinel
+
+from sceptre.exceptions import InvalidConfigFileError
 from sceptre.resolvers import Resolver
 from sceptre.stack import Stack
 from sceptre.template import Template
@@ -16,7 +19,6 @@ def stack_factory(**kwargs):
         'template_key_prefix': sentinel.template_key_prefix,
         'required_version': sentinel.required_version,
         'template_path': sentinel.template_path,
-        'template_handler_config': sentinel.template_handler_config,
         'region': sentinel.region,
         'profile': sentinel.profile,
         'parameters': {"key1": "val1"},
@@ -46,7 +48,6 @@ class TestStack(object):
             template_key_prefix=sentinel.template_key_prefix,
             required_version=sentinel.required_version,
             template_path=sentinel.template_path,
-            template_handler_config=sentinel.template_handler_config,
             region=sentinel.region,
             profile=sentinel.profile, parameters={"key1": "val1"},
             sceptre_user_data=sentinel.sceptre_user_data, hooks={},
@@ -60,11 +61,10 @@ class TestStack(object):
         )
         self.stack._template = MagicMock(spec=Template)
 
-    def test_initiate_stack(self):
+    def test_initiate_stack_with_template_path(self):
         stack = Stack(
             name='dev/stack/app', project_code=sentinel.project_code,
             template_path=sentinel.template_path,
-            template_handler_config=sentinel.template_handler_config,
             template_bucket_name=sentinel.template_bucket_name,
             template_key_prefix=sentinel.template_key_prefix,
             required_version=sentinel.required_version,
@@ -80,6 +80,37 @@ class TestStack(object):
         assert stack.parameters == {}
         assert stack.sceptre_user_data == {}
         assert stack.template_path == sentinel.template_path
+        assert stack.template_handler_config == None
+        assert stack.s3_details is None
+        assert stack._template is None
+        assert stack.protected is False
+        assert stack.iam_role is None
+        assert stack.role_arn is None
+        assert stack.dependencies == []
+        assert stack.tags == {}
+        assert stack.notifications == []
+        assert stack.on_failure is None
+        assert stack.stack_group_config == {}
+
+    def test_initiate_stack_with_template_handler(self):
+        stack = Stack(
+            name='dev/stack/app', project_code=sentinel.project_code,
+            template_handler_config=sentinel.template_handler_config,
+            template_bucket_name=sentinel.template_bucket_name,
+            template_key_prefix=sentinel.template_key_prefix,
+            required_version=sentinel.required_version,
+            region=sentinel.region, external_name=sentinel.external_name
+        )
+        assert stack.name == 'dev/stack/app'
+        assert stack.project_code == sentinel.project_code
+        assert stack.template_bucket_name == sentinel.template_bucket_name
+        assert stack.template_key_prefix == sentinel.template_key_prefix
+        assert stack.required_version == sentinel.required_version
+        assert stack.external_name == sentinel.external_name
+        assert stack.hooks == {}
+        assert stack.parameters == {}
+        assert stack.sceptre_user_data == {}
+        assert stack.template_path == None
         assert stack.template_handler_config == sentinel.template_handler_config
         assert stack.s3_details is None
         assert stack._template is None
@@ -92,13 +123,21 @@ class TestStack(object):
         assert stack.on_failure is None
         assert stack.stack_group_config == {}
 
+    def test_raises_exception_if_path_and_handler_configured(self):
+        with pytest.raises(InvalidConfigFileError):
+            Stack(
+                name="stack_name", project_code="project_code",
+                template_path="template_path", template_handler_config={"type": "file"},
+                region="region"
+            )
+
     def test_stack_repr(self):
         assert self.stack.__repr__() == \
             "sceptre.stack.Stack(" \
             "name='dev/app/stack', " \
             "project_code=sentinel.project_code, " \
             "template_path=sentinel.template_path, " \
-            "template_handler_config=sentinel.template_handler_config, " \
+            "template_handler_config=None, " \
             "region=sentinel.region, " \
             "template_bucket_name=sentinel.template_bucket_name, "\
             "template_key_prefix=sentinel.template_key_prefix, "\

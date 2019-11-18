@@ -224,7 +224,7 @@ class Template(object):
 
     def _get_handler_of_type(self, type):
         """
-        Gets a TemplateHandler typ from the registry that can be used to get a string
+        Gets a TemplateHandler type from the registry that can be used to get a string
         representation of a CloudFormation template.
         :param type: The type of Template Handler to load
         :type type: str
