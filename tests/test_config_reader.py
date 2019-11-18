@@ -431,7 +431,6 @@ class TestConfigReader(object):
     @pytest.mark.parametrize("filepaths, del_key", [
         (["A/1.yaml"], "project_code"),
         (["A/1.yaml"], "region"),
-        (["A/1.yaml"], "template_path"),
     ])
     def test_missing_attr(
         self, filepaths, del_key

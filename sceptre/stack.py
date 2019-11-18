@@ -12,6 +12,7 @@ import os
 from typing import Mapping, Sequence
 
 from sceptre.connection_manager import ConnectionManager
+from sceptre.exceptions import InvalidConfigFileError
 from sceptre.helpers import get_external_stack_name, sceptreise_path
 from sceptre.hooks import HookProperty
 from sceptre.resolvers import ResolvableProperty
@@ -30,13 +31,13 @@ class Stack(object):
     :type project_code: str
 
     :param template_path: The relative path to the CloudFormation, Jinja2\
-            or Python template to build the Stack from. Takes precedence over
-            `template` if it is specified.
+            or Python template to build the Stack from. If this is filled,
+            `template_handler_config` should not be filled.
     :type template_path: str
 
     :param template_handler_config: Configuration for a Template Handler that can resolve
             its arguments to a template string. Should contain the `type` property to specify
-            the type of template handler to load
+            the type of template handler to load. Conflicts with `template_path`.
     :type template_handler_config: dict
 
     :param region: The AWS region to build Stacks in.
@@ -128,6 +129,12 @@ class Stack(object):
         stack_timeout=0, stack_group_config={}
     ):
         self.logger = logging.getLogger(__name__)
+
+        if template_path and template_handler_config:
+            raise InvalidConfigFileError("Both 'template_path' and 'template' are set, specify one or the other")
+
+        if not template_path and not template_handler_config:
+            raise InvalidConfigFileError("Neither 'template_path' nor 'template' is set")
 
         self.name = sceptreise_path(name)
         self.project_code = project_code
@@ -278,17 +285,15 @@ class Stack(object):
         """
         if self._template is None:
             if self.template_path:
-                name = os.path.basename(self.template_path).split(".")[0]
                 handler_config = {
                     "type": "file",
                     "path": self.template_path
                 }
             else:
-                name = self.name.replace('/', '-')
                 handler_config = self.template_handler_config
 
             self._template = Template(
-                name=name,
+                name=self.name,
                 handler_config=handler_config,
                 sceptre_user_data=self.sceptre_user_data,
                 stack_group_config=self.stack_group_config,

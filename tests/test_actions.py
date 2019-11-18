@@ -13,7 +13,7 @@ from sceptre.plan.actions import StackActions
 from sceptre.template import Template
 from sceptre.stack_status import StackStatus
 from sceptre.stack_status import StackChangeSetStatus
-from sceptre.exceptions import CannotUpdateFailedStackError
+from sceptre.exceptions import CannotUpdateFailedStackError, InvalidConfigFileError
 from sceptre.exceptions import UnknownStackStatusError
 from sceptre.exceptions import UnknownStackChangeSetStatusError
 from sceptre.exceptions import StackDoesNotExistError
@@ -29,10 +29,9 @@ class TestStackActions(object):
         self.mock_ConnectionManager = self.patcher_connection_manager.start()
         self.stack = Stack(
             name='prod/app/stack', project_code=sentinel.project_code,
-            template_path=sentinel.template_path, template_handler_config=sentinel.template_handler_config,
-            region=sentinel.region, profile=sentinel.profile, parameters={"key1": "val1"},
-            sceptre_user_data=sentinel.sceptre_user_data, hooks={},
-            s3_details=None, dependencies=sentinel.dependencies,
+            template_path=sentinel.template_path, region=sentinel.region,
+            profile=sentinel.profile, parameters={"key1": "val1"}, sceptre_user_data=sentinel.sceptre_user_data,
+            hooks={}, s3_details=None, dependencies=sentinel.dependencies,
             role_arn=sentinel.role_arn, protected=False,
             tags={"tag1": "val1"}, external_name=sentinel.external_name,
             notifications=[sentinel.notification],
@@ -57,7 +56,7 @@ class TestStackActions(object):
         response = self.stack.template
 
         mock_Template.assert_called_once_with(
-            name='prod-app-stack',
+            name='prod/app/stack',
             handler_config={
                 "type": "file",
                 "path": sentinel.template_path
