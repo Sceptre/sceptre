@@ -11,9 +11,9 @@ substituted out.
 
 In config.yaml:
 
-.. code-block:: jinja
+.. code-block:: yaml
 
-   {% raw %}region: {{ var.region }}{% endraw %}
+   region: {{ var.region }}
 
 On the CLI:
 
@@ -46,6 +46,8 @@ In general, native CloudFormation parameters should be used in almost all
 cases. Sceptre user data should only be used when the user wants to alter the
 template based on the value of a config value.
 
+.. _faq_stackconfig_env:
+
 Why are there two ways to supply environment variables in stack config files?
 -----------------------------------------------------------------------------
 
@@ -53,7 +55,7 @@ It is possible to replace values in stack config files with environment
 variables in two ways.
 
 The first is by using templating, and the syntax
-``{% raw %}{{ environment_variable.VALUE }}{% endraw %}``. Any value in a
+``{{ environment_variable.VALUE }}``. Any value in a
 config file may be replaced using this method.
 
 The second is by using a resolver, and the syntax:

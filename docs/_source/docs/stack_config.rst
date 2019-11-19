@@ -195,13 +195,15 @@ Cascading Config
 ----------------
 
 Stack config can be cascaded in the same way StackGroup config can be, as
-described in the section in StackGroup Config on `Cascading Config`_.
+described in the section in StackGroup Config on
+:ref:`Cascading Config <stack_group_config_cascading_config>`.
+
 
 Templating
 ----------
 
 Stack config supports templating in the same way StackGroup config can be, as
-described in the section in StackGroup Config on `Templating`_.
+described in the section in StackGroup Config on :ref:`Templating <stack_group_config_templating>`.
 
 Stack config makes StackGroup config available to template.
 
@@ -211,17 +213,17 @@ StackGroup config
 StackGroup config properties are available via the stack_group_config variable
 when using templating.
 
-.. code-block:: jinja
+.. code-block:: yaml
 
    parameters:
-     sceptre-project-code: {% raw %}{{ stack_group_config.sceptre-project-code }}{% endraw %}
+     sceptre-project-code: {{ stack_group_config.sceptre-project-code }}
 
 Environment Variables
 ---------------------
 
 It is possible to replace values in Stack config files with environment
 variables in two ways. For an explanation on why this is the case, see the
-`FAQ`_.
+:ref:`FAQ <faq_stackconfig_env>`.
 
 Sceptre User Data
 -----------------
@@ -255,10 +257,9 @@ Examples
      param_1: value_1
      param_2: value_2
 
-.. code-block:: jinja
+.. code-block:: yaml
 
-   {% raw %}
-   template_path: example.json
+   template_path: example.yaml
    dependencies:
        - dev/vpc.yaml
    hooks:
@@ -286,7 +287,6 @@ Examples
    stack_tags:
        tag_1: value_1
        tag_2: value_2
-   {% endraw %}
 
 .. _template_path: #template_path
 .. _dependencies: #dependencies
@@ -304,6 +304,3 @@ Examples
 .. _AWS Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStack.html
 .. _CloudFormation Service Role: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-iam-servicerole.html
 .. _CloudFormation Tags: https://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_Tag.html
-.. _Cascading Config: %7B%7B%20site.baseurl%20%7D%7D/docs/stack_group_config.html#cascading-config
-.. _Templating: %7B%7B%20site.baseurl%20%7D%7D/docs/stack_group_config.html#templating
-.. _FAQ: %7B%7B%20site.baseurl%20%7D%7D/docs/faq.html#why-are-there-two-ways-to-supply-environment-variables-in-Stack-config-files
