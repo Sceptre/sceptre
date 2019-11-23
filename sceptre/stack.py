@@ -198,7 +198,9 @@ class Stack(object):
             create_stack_kwargs = {
                 "StackName": self.external_name,
                 "Parameters": self._format_parameters(self.parameters),
-                "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                "Capabilities": ['CAPABILITY_IAM',
+                                 'CAPABILITY_NAMED_IAM',
+                                 'CAPABILITY_AUTO_EXPAND'],
                 "NotificationARNs": self.config.get("notifications", []),
                 "Tags": [
                     {"Key": str(k), "Value": str(v)}
@@ -249,7 +251,9 @@ class Stack(object):
             update_stack_kwargs = {
                 "StackName": self.external_name,
                 "Parameters": self._format_parameters(self.parameters),
-                "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+                "Capabilities": ['CAPABILITY_IAM',
+                                 'CAPABILITY_NAMED_IAM',
+                                 'CAPABILITY_AUTO_EXPAND'],
                 "NotificationARNs": self.config.get("notifications", []),
                 "Tags": [
                     {"Key": str(k), "Value": str(v)}
@@ -564,7 +568,9 @@ class Stack(object):
         create_change_set_kwargs = {
             "StackName": self.external_name,
             "Parameters": self._format_parameters(self.parameters),
-            "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'],
+            "Capabilities": ['CAPABILITY_IAM',
+                             'CAPABILITY_NAMED_IAM',
+                             'CAPABILITY_AUTO_EXPAND'],
             "ChangeSetName": change_set_name,
             "NotificationARNs": self.config.get("notifications", []),
             "Tags": [

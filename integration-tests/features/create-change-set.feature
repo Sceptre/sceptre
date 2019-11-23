@@ -19,3 +19,10 @@ Feature: Create change set
     and the template for stack "1/A" is "valid_template.json"
     When the user creates change set "A" for stack "1/A"
     Then stack "1/A" has change set "A" in "CREATE_COMPLETE" state
+
+  Scenario: create new change set with a SAM template
+    Given stack "11/A" exists in "CREATE_COMPLETE" state
+    and the template for stack "11/A" is "sam_updated_template.yaml"
+    and stack "11/A" does not have change set "A"
+    When the user creates change set "A" for stack "11/A"
+    Then stack "11/A" has change set "A" in "CREATE_COMPLETE" state
