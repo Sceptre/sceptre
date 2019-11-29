@@ -35,7 +35,7 @@ Config file.
 Example
 ~~~~~~~
 
-While rendering templates with Jinja2, some characters aren't supported by AWS. A workaround for this is to use Jinja to replace `-` and `_` with other characters to ensure that we produce a valid template. With this we had some plasticity to the template and it becomes easier to add/remove entries on a particular stack.
+While rendering templates with Jinja2, some characters aren't supported by AWS. A workaround for this is to use Jinja to replace `-`, `.` and `_` with other characters to ensure that we produce a valid template. With this we had some plasticity to the template and it becomes easier to add/remove entries on a particular stack.
 
 With this templating some problems will arise, such empty strings as parameters. In the following example you can find a work around for this issues.
 
