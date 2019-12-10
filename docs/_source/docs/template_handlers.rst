@@ -80,8 +80,19 @@ implemented and return a Python dictionary with the schema. For examples of JSON
 the documentation of the `jsonschema library`_.
 
 Template handlers get access to the ``template`` block parameters, ``sceptre_user_data`` and ``connection_manager``.
-These properties are available on ``self``. Using ``connection_manager``, template handlers can call AWS SDKs
-to fetch templates.
+These properties are available on ``self``. Using ``connection_manager``, template handlers can call AWS endpoints
+to perform actions or fetch templates. These correspond to the AWS Python SDK (see Boto3_). For example:
+
+.. code-block:: python
+
+        self.connection_manager.call(
+            service="s3",
+            command="get_object",
+            kwargs={
+                "Bucket": bucket,
+                "Key": key
+            }
+        )
 
 Sceptre uses the ``sceptre.template_handlers`` entry point to load template handlers. They can be written anywhere and
 are installed as Python packages.
@@ -183,3 +194,4 @@ This template handler can be used in a Stack config file with the following synt
 
 .. _jsonschema library: https://github.com/Julian/jsonschema
 .. _Custom Template Handlers: #custom-template-handlers
+.. _Boto3: https://aws.amazon.com/sdk-for-python/

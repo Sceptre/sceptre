@@ -37,10 +37,6 @@ Sceptre treats the template as CloudFormation, Jinja2 or Python depending on
 the template’s file extension. Note that the template filename may be different
 from the Stack config filename.
 
-This path will be automatically wired into a ``file`` template handler. For more
-information on template handlers, find out more in the :doc:`template_handlers`
-section.
-
 template
 ~~~~~~~~
 
