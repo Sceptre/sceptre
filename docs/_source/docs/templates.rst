@@ -131,12 +131,10 @@ Template `dns-extras.j2`:
     Outputs:
       {% if sceptre_user_data.CNAMErecords is defined %}{% for rule in sceptre_user_data.CNAMErecords %}add{{ rule.record |    replace("-","d")|replace("_","s")|replace('.',"p")}}cnamerecord:
         Value: !Ref 'add{{ rule.record |replace("-","d")|replace("_","s")|replace('.',"p")}}cnamerecord'
-        # Description: 'add{{ rule.record |replace("-","d")|replace("_","s")|replace('.',"p")}}cnamerecord'
         Description: '{{ rule.address }}'
       {% endfor %}{% endif %}
       {% if sceptre_user_data.ALIASrecords is defined %}{% for rule in sceptre_user_data.ALIASrecords %}add{{ rule.record |    replace("-","d")|replace("_","s")|replace('.',"p")}}aliasrecord:
         Value: !Ref 'add{{ rule.record |replace("-","d")|replace("_","s")|replace('.',"p")}}aliasrecord'
-        # Description: 'add{{ rule.record |replace("-","d")|replace("_","s")|replace('.',"p")}}aliasrecord'
         Description: '{{ rule.dnsnamealias }}'
       {% endfor %}{% endif %}
       StackName:
