@@ -210,6 +210,21 @@ class TestTemplate(object):
             expected_output_dict = json.loads(f.read())
         assert output_dict == expected_output_dict
 
+    def test_body_with_chdir_template(self):
+        self.template.sceptre_user_data = None
+        self.template.name = "chdir"
+        current_dir = os.getcwd()
+        self.template.path = os.path.join(
+            os.getcwd(),
+            "tests/fixtures/templates/chdir.py"
+        )
+        try:
+            json.loads(self.template.body)
+        except ValueError:
+            assert False
+        finally:
+            os.chdir(current_dir)
+
     def test_body_with_missing_file(self):
         self.template.path = "incorrect/template/path.py"
         with pytest.raises(IOError):
