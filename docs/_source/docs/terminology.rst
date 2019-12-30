@@ -66,7 +66,8 @@ and access the results from each stack. For example,
 
    responses = plan.launch()
 
-## SceptrePlanExecutor
+SceptrePlanExecutor
+-------------------
 
 You won’t be able to interact with the ``SceptrePlanExecutor`` directly but
 this part of the code is responsible for taking a ``SceptrePlan`` and ensuring

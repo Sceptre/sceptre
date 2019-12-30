@@ -15,9 +15,12 @@ import threading
 import traceback
 
 import botocore
-import jinja2
-from .exceptions import UnsupportedTemplateFileTypeError
-from .exceptions import TemplateSceptreHandlerError
+from jinja2 import Environment
+from jinja2 import FileSystemLoader
+from jinja2 import StrictUndefined
+from jinja2 import select_autoescape
+from sceptre.exceptions import UnsupportedTemplateFileTypeError
+from sceptre.exceptions import TemplateSceptreHandlerError
 
 
 class Template(object):
@@ -145,18 +148,20 @@ class Template(object):
         :raises: IOError
         :raises: TemplateSceptreHandlerError
         """
+
         # Get relative path as list between current working directory and where
         # the template is
         # NB: this is a horrible hack...
         relpath = os.path.relpath(self.path, os.getcwd()).split(os.path.sep)
-        relpaths_to_add = [
-            os.path.sep.join(relpath[:i+1])
+        paths_to_add = [
+            os.path.join(os.getcwd(), os.path.sep.join(relpath[:i+1]))
             for i in range(len(relpath[:-1]))
         ]
+
         # Add any directory between the current working directory and where
         # the template is to the python path
-        for directory in relpaths_to_add:
-            sys.path.append(os.path.join(os.getcwd(), directory))
+        for path in paths_to_add:
+            sys.path.append(path)
         self.logger.debug(
             "%s - Getting CloudFormation from %s", self.name, self.path
         )
@@ -176,8 +181,10 @@ class Template(object):
                 )
             else:
                 raise e
-        for directory in relpaths_to_add:
-            sys.path.remove(os.path.join(os.getcwd(), directory))
+
+        for path in paths_to_add:
+            sys.path.remove(path)
+
         return body
 
     def upload_to_s3(self):
@@ -331,9 +338,13 @@ class Template(object):
         """
         logger = logging.getLogger(__name__)
         logger.debug("%s Rendering CloudFormation template", filename)
-        env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(template_dir),
-            undefined=jinja2.StrictUndefined
+        env = Environment(
+            autoescape=select_autoescape(
+                disabled_extensions=('j2',),
+                default=True,
+            ),
+            loader=FileSystemLoader(template_dir),
+            undefined=StrictUndefined
         )
         template = env.get_template(filename)
         body = template.render(**jinja_vars)
