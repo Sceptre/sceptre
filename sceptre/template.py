@@ -148,18 +148,20 @@ class Template(object):
         :raises: IOError
         :raises: TemplateSceptreHandlerError
         """
+
         # Get relative path as list between current working directory and where
         # the template is
         # NB: this is a horrible hack...
         relpath = os.path.relpath(self.path, os.getcwd()).split(os.path.sep)
-        relpaths_to_add = [
-            os.path.sep.join(relpath[:i+1])
+        paths_to_add = [
+            os.path.join(os.getcwd(), os.path.sep.join(relpath[:i+1]))
             for i in range(len(relpath[:-1]))
         ]
+
         # Add any directory between the current working directory and where
         # the template is to the python path
-        for directory in relpaths_to_add:
-            sys.path.append(os.path.join(os.getcwd(), directory))
+        for path in paths_to_add:
+            sys.path.append(path)
         self.logger.debug(
             "%s - Getting CloudFormation from %s", self.name, self.path
         )
@@ -179,8 +181,10 @@ class Template(object):
                 )
             else:
                 raise e
-        for directory in relpaths_to_add:
-            sys.path.remove(os.path.join(os.getcwd(), directory))
+
+        for path in paths_to_add:
+            sys.path.remove(path)
+
         return body
 
     def upload_to_s3(self):
