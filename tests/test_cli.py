@@ -158,7 +158,7 @@ class TestCli(object):
         }
 
         result_json = json.dumps({'Parameters': 'Example'}, indent=4)
-        result = self.runner.invoke(cli, ["validate", "dev/vpc.yaml"])
+        result = self.runner.invoke(cli, ["--output", "json", "validate", "dev/vpc.yaml"])
         self.mock_stack_actions.validate.assert_called_with()
         assert result.output == "Template mock-stack is valid. Template details:\n\n{}\n".format(
             result_json)
@@ -177,7 +177,7 @@ class TestCli(object):
         self.mock_stack_actions.validate.side_effect = client_error
 
         expected_result = str(client_error) + "\n"
-        result = self.runner.invoke(cli, ["validate", "dev/vpc.yaml"])
+        result = self.runner.invoke(cli, ["--output", "json", "validate", "dev/vpc.yaml"])
         assert expected_result in result.output.replace("\"", "")
 
     def test_estimate_template_cost_with_browser(self):
@@ -243,7 +243,7 @@ class TestCli(object):
         }
 
         result = self.runner.invoke(
-            cli, ["describe", "policy", "dev/vpc.yaml"]
+            cli, ["--output", "json", "describe", "policy", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
         assert result.output == "{}\n".format(json.dumps(
@@ -269,7 +269,7 @@ class TestCli(object):
             }
         }
         self.mock_stack_actions.describe_resources.return_value = response
-        result = self.runner.invoke(cli, ["list", "resources", "dev"])
+        result = self.runner.invoke(cli, ["--output", "yaml", "list", "resources", "dev"])
 
         assert yaml.safe_load(result.output) == [response]
         assert result.exit_code == 0
@@ -284,7 +284,7 @@ class TestCli(object):
             ]
         }
         self.mock_stack_actions.describe_resources.return_value = response
-        result = self.runner.invoke(cli, ["list", "resources", "dev/vpc.yaml"])
+        result = self.runner.invoke(cli, ["--output", "yaml", "list", "resources", "dev/vpc.yaml"])
         assert yaml.safe_load(result.output) == [response]
         assert result.exit_code == 0
 
@@ -422,7 +422,7 @@ class TestCli(object):
         self.mock_stack_actions.list_change_sets.return_value = response
 
         result = self.runner.invoke(
-            cli, ["list", "change-sets", "dev/vpc.yaml"]
+            cli, ["--output", "json", "list", "change-sets", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
         assert yaml.safe_load(result.output) == response
@@ -431,7 +431,7 @@ class TestCli(object):
         outputs = {"OutputKey": "Key", "OutputValue": "Value"}
         self.mock_stack_actions.describe_outputs.return_value = outputs
         result = self.runner.invoke(
-            cli, ["list", "outputs", "dev/vpc.yaml"]
+            cli, ["--output", "json", "list", "outputs", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
         assert json.loads(result.output) == [outputs]
@@ -450,7 +450,7 @@ class TestCli(object):
             "stack": "status"
         }
 
-        result = self.runner.invoke(cli, ["status", "dev"])
+        result = self.runner.invoke(cli, ["--output", "json", "status", "dev"])
         assert result.exit_code == 0
         assert result.output == '{\n    "mock-stack": {\n        \"stack\": \"status\"\n    }\n}\n'
 
