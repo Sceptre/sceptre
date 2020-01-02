@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-from mock import patch, sentinel
+from mock import patch, sentinel, MagicMock
 import pytest
 import yaml
 import errno
@@ -390,3 +390,16 @@ class TestConfigReader(object):
             raise
         else:
             assert False
+
+    def test_resolve_node_tag(self):
+        mock_loader = MagicMock(yaml.Loader)
+        mock_loader.resolve.return_value = "new_tag"
+
+        mock_node = MagicMock(yaml.Node)
+        mock_node.tag = "old_tag"
+        mock_node.value = "String"
+
+        config_reader = ConfigReader(self.context)
+        new_node = config_reader.resolve_node_tag(mock_loader, mock_node)
+
+        assert new_node.tag == 'new_tag'
