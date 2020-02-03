@@ -18,6 +18,8 @@ Hook points
 
 ``before_delete`` or ``after_delete`` - run hook before or after Stack deletion.
 
+``before_launch`` or ``after_launch`` - run hook before or after Stack launch.
+
 Syntax:
 
 Hooks are specified in a Stack’s config file, using the following syntax:
@@ -196,7 +198,27 @@ This hook can be used in a Stack config file with the following syntax:
      before_create:
        - !custom_hook_command_name <argument> # The argument is accessible via self.argument
 
+hook arguments
+^^^^^^^^^^^^^^
+Hook arguments can be a simple string or a complex data structure.
+Assume a Sceptre `copy` hook that calls the `cp command`_:
+
+.. code-block:: yaml
+
+   template_path: <...>
+   hooks:
+     before_create:
+       - !copy "-r from_dir to_dir"
+     before_update:
+       - !copy {"options":"-r", "source": "from_dir", "destination": "to_dir"}
+     after_update:
+       - !copy
+           options: "-r"
+           source: "from_dir"
+           destination: "to_dir"
+
 .. _Custom Hooks: #custom-hooks
 .. _subprocess documentation: https://docs.python.org/3/library/subprocess.html
 .. _documentation: http://docs.aws.amazon.com/autoscaling/latest/userguide/as-suspend-resume-processes.html
 .. _this is great place to start: https://docs.python.org/3/distributing/
+.. _cp command: http://man7.org/linux/man-pages/man1/cp.1.html

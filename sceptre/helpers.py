@@ -78,9 +78,9 @@ def normalise_path(path):
     :returns: A normalised path with forward slashes.
     :returns: string
     """
-    if sep is '/':
+    if sep == '/':
         path = path.replace('\\', '/')
-    elif sep is '\\':
+    elif sep == '\\':
         path = path.replace('/', '\\')
     if path.endswith("/") or path.endswith("\\"):
         raise PathConversionError(
