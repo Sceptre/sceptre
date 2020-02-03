@@ -173,6 +173,7 @@ class StackActions(object):
         )
         return self._wait_for_completion()
 
+    @add_stack_hooks
     def launch(self):
         """
         Launches the Stack.
