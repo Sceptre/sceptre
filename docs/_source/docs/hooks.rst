@@ -18,6 +18,8 @@ Hook points
 
 ``before_delete`` or ``after_delete`` - run hook before or after Stack deletion.
 
+``before_launch`` or ``after_launch`` - run hook before or after Stack launch.
+
 Syntax:
 
 Hooks are specified in a Stack’s config file, using the following syntax:
