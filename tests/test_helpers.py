@@ -21,7 +21,7 @@ class TestHelpers(object):
         assert path == join("valid", "path")
 
     def test_normalise_path_with_backslashes_in_path(self):
-        path = normalise_path("valid\path")
+        path = normalise_path("valid\\path")
         assert path == join("valid", "path")
 
     def test_normalise_path_with_double_backslashes_in_path(self):
@@ -33,7 +33,7 @@ class TestHelpers(object):
         assert path == join("{}this".format(sep), "is", "valid")
 
     def test_normalise_path_with_leading_backslash(self):
-        path = normalise_path('\\this\path\is\\valid')
+        path = normalise_path('\\this\\path\\is\\valid')
         assert path == join("{}this".format(sep), "path", "is", "valid")
 
     def test_normalise_path_with_trailing_slash(self):
@@ -45,7 +45,7 @@ class TestHelpers(object):
     def test_normalise_path_with_trailing_backslash(self):
         with pytest.raises(PathConversionError):
             normalise_path(
-                'this\path\is\invalid\\'
+                'this\\path\\is\\invalid\\'
             )
 
     def test_sceptreise_path_with_valid_path(self):
@@ -65,5 +65,5 @@ class TestHelpers(object):
     def test_sceptreise_path_with_trailing_backslash(self):
         with pytest.raises(PathConversionError):
             sceptreise_path(
-                'this\path\is\invalid\\'
+                'this\\path\\is\\invalid\\'
             )
