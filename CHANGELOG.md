@@ -4,6 +4,71 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.2.1 (2019.08.19)
+
+### Fixed
+
+- `typing` install dependency for Python version < 3.5
+- Race condition in stacks causing RecurrsiveGet exception
+
+## 2.2.0 (2019.08.16)
+
+### Added
+
+- Meaningful Jinja Template exception output handling
+
+### Fixed
+
+- Recursion in `sceptre_user_data` becoming infinite
+- AWS `rate_exceeded` error when hitting AWS API too frequently
+- Readme links
+- StackGraph debugging output
+
+### Nonfunctional
+
+- Moved CircleCI Dockerfile to its own repository
+- Add SonarQube analysis
+- Change CircleCI setup to use context over environment variables
+- Removed redundant test code
+- Add badges to README
+- Adjust Coverage fail-level to 92%
+- Update CONTRIBUTING Guide
+
+## 2.1.5 (2019.06.28)
+
+### Fixed
+
+- Fix missing `Fn::Split` from CFN Functions in cli `generate`
+- Fix Docker deploy latest image
+- Fix setup.py supported programming language
+- Fix CircleCI docs deploy to allow empty commits
+- Fix CircleCI workflow to add docker build to tagged docker deployments
+
+### Nonfunctional
+
+- Fix README git conflict issues
+- Add DockerHub repo link in README
+
+## 2.1.4 (2019.06.26)
+
+### Fixed
+
+- CLI to use correct JSON formatting as default
+- `sceptre generate` for non-trivial JSON and YAML
+- Support for nested dicts in CLI `--var` flag
+- Error handling for missing AWS credentials
+- `stack_output` resolver windows path
+- Stack update error hadnling
+- Overwritten `project_code` in `stack_output` dependencies
+- Typo in terminology documentation
+
+### Nonfunctional
+
+- Add Official Docker image and automatic DockerHub releases
+- Change target git repository to deploy docs
+- Officially support Python 3.7
+- Update README documentation links
+
 ## 2.1.3 (2019.05.14)
 
 ### Fixed

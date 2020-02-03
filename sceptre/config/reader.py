@@ -8,6 +8,7 @@ and constructing Stacks.
 """
 
 import collections
+import copy
 import datetime
 import fnmatch
 import logging
@@ -15,11 +16,15 @@ from os import environ, path, walk
 from pkg_resources import iter_entry_points
 import yaml
 
-import jinja2
+from jinja2 import Environment
+from jinja2 import StrictUndefined
+from jinja2 import FileSystemLoader
+from jinja2 import select_autoescape
 from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
 from sceptre import __version__
+from sceptre.exceptions import DependencyDoesNotExistError
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.exceptions import InvalidSceptreDirectoryError
 from sceptre.exceptions import VersionIncompatibleError
@@ -31,24 +36,25 @@ from sceptre.config import strategies
 ConfigAttributes = collections.namedtuple("Attributes", "required optional")
 
 CONFIG_MERGE_STRATEGIES = {
-    'dependencies': strategies.list_join,
-    'hooks': strategies.child_wins,
-    'notifications': strategies.child_wins,
-    'on_failure': strategies.child_wins,
-    'parameters': strategies.child_wins,
-    'profile': strategies.child_wins,
-    'project_code': strategies.child_wins,
-    'protect': strategies.child_wins,
-    'region': strategies.child_wins,
-    'required_version': strategies.child_wins,
-    'role_arn': strategies.child_wins,
-    'sceptre_user_data': strategies.child_wins,
-    'stack_name': strategies.child_wins,
-    'stack_tags': strategies.child_wins,
-    'stack_timeout': strategies.child_wins,
-    'template_bucket_name': strategies.child_wins,
-    'template_key_value': strategies.child_wins,
-    'template_path': strategies.child_wins
+    "dependencies": strategies.list_join,
+    "hooks": strategies.child_wins,
+    "iam_role": strategies.child_wins,
+    "notifications": strategies.child_wins,
+    "on_failure": strategies.child_wins,
+    "parameters": strategies.child_wins,
+    "profile": strategies.child_wins,
+    "project_code": strategies.child_wins,
+    "protect": strategies.child_wins,
+    "region": strategies.child_wins,
+    "required_version": strategies.child_wins,
+    "role_arn": strategies.child_wins,
+    "sceptre_user_data": strategies.child_wins,
+    "stack_name": strategies.child_wins,
+    "stack_tags": strategies.child_wins,
+    "stack_timeout": strategies.child_wins,
+    "template_bucket_name": strategies.child_wins,
+    "template_key_value": strategies.child_wins,
+    "template_path": strategies.child_wins
 }
 
 STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
@@ -70,6 +76,7 @@ STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
     {
         "dependencies",
         "hooks",
+        "iam_role",
         "notifications",
         "on_failure",
         "parameters",
@@ -151,7 +158,7 @@ class ConfigReader(object):
             # This function signture is required by PyYAML
             def class_constructor(loader, node):
                 return node_class(
-                    loader.construct_scalar(node)
+                    loader.construct_object(self.resolve_node_tag(loader, node))
                 )  # pragma: no cover
 
             return class_constructor
@@ -170,6 +177,11 @@ class ConfigReader(object):
                     "Added constructor for %s with node tag %s",
                     str(node_class), node_tag
                 )
+
+    def resolve_node_tag(self, loader, node):
+        node = copy.copy(node)
+        node.tag = loader.resolve(type(node), node.value, (True, False))
+        return node
 
     def construct_stacks(self):
         """
@@ -219,18 +231,41 @@ class ConfigReader(object):
             if abs_path.startswith(self.context.full_command_path()):
                 command_stacks.add(stack)
 
+        stacks = self.resolve_stacks(stack_map)
+
+        return stacks, command_stacks
+
+    def resolve_stacks(self, stack_map):
+        """
+        Transforms map of Stacks into a set of Stacks, transforms dependencies
+        from a list of Strings (stack names) to a list of Stacks.
+
+        :param stack_map: Map of stacks, containing dependencies as list of Strings.
+        :type base_config: dict
+        :returns: Set of stacks, containing dependencies as list of Stacks.
+        :rtype: set
+        :raises: sceptre.exceptions.DependencyDoesNotExistError
+        """
         stacks = set()
         for stack in stack_map.values():
             if not self.context.ignore_dependencies:
-                stack.dependencies = [
-                    stack_map[sceptreise_path(dep)]
-                    for dep in stack.dependencies
-                ]
+                for i, dep in enumerate(stack.dependencies):
+                    try:
+                        stack.dependencies[i] = stack_map[sceptreise_path(dep)]
+                    except KeyError:
+                        raise DependencyDoesNotExistError(
+                            "{stackname}: Dependency {dep} not found. "
+                            "Valid dependency names are: "
+                            "{stackkeys}. "
+                            "Please make sure that your dependencies stack_outputs "
+                            "have their full path from `config` defined."
+                            .format(stackname=stack.name, dep=dep,
+                                    stackkeys=", ".join(stack_map.keys())))
+
             else:
                 stack.dependencies = []
             stacks.add(stack)
-
-        return stacks, command_stacks
+        return stacks
 
     def read(self, rel_path, base_config=None):
         """
@@ -338,9 +373,13 @@ class ConfigReader(object):
         config = {}
         abs_directory_path = path.join(self.full_config_path, directory_path)
         if path.isfile(path.join(abs_directory_path, basename)):
-            jinja_env = jinja2.Environment(
-                loader=jinja2.FileSystemLoader(abs_directory_path),
-                undefined=jinja2.StrictUndefined
+            jinja_env = Environment(
+                autoescape=select_autoescape(
+                    disabled_extensions=('yaml',),
+                    default=True,
+                ),
+                loader=FileSystemLoader(abs_directory_path),
+                undefined=StrictUndefined
             )
             template = jinja_env.get_template(basename)
             self.templating_vars.update(stack_group_config)
@@ -468,6 +507,7 @@ class ConfigReader(object):
             template_bucket_name=config.get("template_bucket_name"),
             template_key_prefix=config.get("template_key_prefix"),
             required_version=config.get("required_version"),
+            iam_role=config.get("iam_role"),
             profile=config.get("profile"),
             parameters=config.get("parameters", {}),
             sceptre_user_data=config.get("sceptre_user_data", {}),

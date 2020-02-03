@@ -82,18 +82,20 @@ def cli(
                 )
 
     if var:
+        def update_dict(variable):
+            variable_key, variable_value = variable.split("=")
+            keys = variable_key.split(".")
+
+            def nested_set(dic, keys, value):
+                for key in keys[:-1]:
+                    dic = dic.setdefault(key, {})
+                dic[keys[-1]] = value
+
+            nested_set(ctx.obj.get("user_variables"), keys, variable_value)
+
         # --var options overwrite --var-file options
         for variable in var:
-            variable_key, variable_value = variable.split("=")
-            if variable_key in ctx.obj.get("user_variables"):
-                logger.debug(
-                    "Duplicate variable encountered: {0}. "
-                    "Using value from --var option."
-                    .format(variable_key)
-                )
-            ctx.obj.get("user_variables").update(
-                {variable_key: variable_value}
-            )
+            update_dict(variable)
 
 
 cli.add_command(new_group)

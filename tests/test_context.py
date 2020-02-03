@@ -22,7 +22,7 @@ class TestSceptreContext(object):
         )
 
         sentinel.project_path = "project_path/to/sceptre"
-        assert self.context.project_path == sentinel.project_path
+        assert self.context.project_path.replace(path.sep, '/') == sentinel.project_path
 
     def test_full_config_path_returns_correct_path(self):
         context = SceptreContext(

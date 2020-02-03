@@ -12,11 +12,15 @@ import logging
 import os
 import sys
 import threading
+import traceback
 
 import botocore
-import jinja2
-from .exceptions import UnsupportedTemplateFileTypeError
-from .exceptions import TemplateSceptreHandlerError
+from jinja2 import Environment
+from jinja2 import FileSystemLoader
+from jinja2 import StrictUndefined
+from jinja2 import select_autoescape
+from sceptre.exceptions import UnsupportedTemplateFileTypeError
+from sceptre.exceptions import TemplateSceptreHandlerError
 
 
 class Template(object):
@@ -63,6 +67,41 @@ class Template(object):
             )
         )
 
+    def _print_template_traceback(self):
+        """
+        Prints a stack trace, including only files which are inside a
+        'templates' directory. The function is intended to give the operator
+        instant feedback about why their templates are failing to compile.
+
+        :rtype: None
+        """
+        def _print_frame(filename, line, fcn, line_text):
+            self.logger.error("{}:{}:  Template error in '{}'\n=> `{}`".format(
+                filename, line, fcn, line_text))
+
+        try:
+            _, _, tb = sys.exc_info()
+            stack_trace = traceback.extract_tb(tb)
+            search_string = os.path.join('', 'templates', '')
+            if search_string in self.path:
+                template_path = self.path.split(search_string)[0] + search_string
+            else:
+                return
+            for frame in stack_trace:
+                if isinstance(frame, tuple):
+                    # Python 2 / Old style stack frame
+                    if template_path in frame[0]:
+                        _print_frame(frame[0], frame[1], frame[2], frame[3])
+                else:
+                    if template_path in frame.filename:
+                        _print_frame(frame.filename, frame.lineno, frame.name, frame.line)
+        except Exception as tb_exception:
+            self.logger.error(
+                'A template error occured. ' +
+                'Additionally, a traceback exception occured. Exception: %s',
+                tb_exception
+            )
+
     @property
     def body(self):
         """
@@ -74,24 +113,29 @@ class Template(object):
         if self._body is None:
             file_extension = os.path.splitext(self.path)[1]
 
-            if file_extension in {".json", ".yaml", ".template"}:
-                with open(self.path) as template_file:
-                    self._body = template_file.read()
-            elif file_extension == ".j2":
-                self._body = self._render_jinja_template(
-                    os.path.dirname(self.path),
-                    os.path.basename(self.path),
-                    {"sceptre_user_data": self.sceptre_user_data}
-                )
-            elif file_extension == ".py":
-                self._body = self._call_sceptre_handler()
+            try:
+                if file_extension in {".json", ".yaml", ".template"}:
+                    with open(self.path) as template_file:
+                        self._body = template_file.read()
+                elif file_extension == ".j2":
+                    self._body = self._render_jinja_template(
+                        os.path.dirname(self.path),
+                        os.path.basename(self.path),
+                        {"sceptre_user_data": self.sceptre_user_data}
+                    )
+                elif file_extension == ".py":
+                    self._body = self._call_sceptre_handler()
 
-            else:
-                raise UnsupportedTemplateFileTypeError(
-                    "Template has file extension %s. Only .py, .yaml, "
-                    ".template, .json and .j2 are supported.",
-                    os.path.splitext(self.path)[1]
-                )
+                else:
+                    raise UnsupportedTemplateFileTypeError(
+                        "Template has file extension %s. Only .py, .yaml, "
+                        ".template, .json and .j2 are supported.",
+                        os.path.splitext(self.path)[1]
+                    )
+            except Exception as e:
+                self._print_template_traceback()
+                raise e
+
         return self._body
 
     def _call_sceptre_handler(self):
@@ -104,18 +148,20 @@ class Template(object):
         :raises: IOError
         :raises: TemplateSceptreHandlerError
         """
+
         # Get relative path as list between current working directory and where
         # the template is
         # NB: this is a horrible hack...
         relpath = os.path.relpath(self.path, os.getcwd()).split(os.path.sep)
-        relpaths_to_add = [
-            os.path.sep.join(relpath[:i+1])
+        paths_to_add = [
+            os.path.join(os.getcwd(), os.path.sep.join(relpath[:i+1]))
             for i in range(len(relpath[:-1]))
         ]
+
         # Add any directory between the current working directory and where
         # the template is to the python path
-        for directory in relpaths_to_add:
-            sys.path.append(os.path.join(os.getcwd(), directory))
+        for path in paths_to_add:
+            sys.path.append(path)
         self.logger.debug(
             "%s - Getting CloudFormation from %s", self.name, self.path
         )
@@ -135,8 +181,10 @@ class Template(object):
                 )
             else:
                 raise e
-        for directory in relpaths_to_add:
-            sys.path.remove(os.path.join(os.getcwd(), directory))
+
+        for path in paths_to_add:
+            sys.path.remove(path)
+
         return body
 
     def upload_to_s3(self):
@@ -290,9 +338,13 @@ class Template(object):
         """
         logger = logging.getLogger(__name__)
         logger.debug("%s Rendering CloudFormation template", filename)
-        env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(template_dir),
-            undefined=jinja2.StrictUndefined
+        env = Environment(
+            autoescape=select_autoescape(
+                disabled_extensions=('j2',),
+                default=True,
+            ),
+            loader=FileSystemLoader(template_dir),
+            undefined=StrictUndefined
         )
         template = env.get_template(filename)
         body = template.render(**jinja_vars)

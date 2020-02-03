@@ -162,8 +162,7 @@ def step_impl(context, stack_name):
     except ClientError as e:
         message = e.response['Error']['Message']
         if e.response['Error']['Code'] == 'ValidationError' \
-            and (message.endswith("does not exist")
-                 or message.endswith("No updates are to be performed.")):
+                and message.endswith("does not exist"):
             return
         else:
             raise e
@@ -183,8 +182,7 @@ def step_impl(context, stack_name):
     except ClientError as e:
         message = e.response['Error']['Message']
         if e.response['Error']['Code'] == 'ValidationError' \
-            and (message.endswith("does not exist")
-                 or message.endswith("No updates are to be performed.")):
+                and message.endswith("does not exist"):
             return
         else:
             raise e
