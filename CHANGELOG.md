@@ -4,6 +4,39 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.3.0 (2020.02.03)
+
+### Added
+
+- `iam_role` capability for `stack-config`
+- Support for complex data for `resolvers` and `hooks`
+- Hooks support for `launch` command
+
+### Fixed
+
+- Replace JSON with YAML as default Cloudformation format in documentation
+- Broken cross-page references in documentation
+- Jinja autoescape vulnerability
+- Connection manager imports
+- `rel_paths` for `_call_sceptre_handler` in `template.py`
+- Linting as a side-effect of upgrading flake package
+
+### Nonfunctional 
+
+- Add documentation clean target
+- Clean up code blocks in documentation
+- Clarify pip vs. Docker installation in documentation
+- Fix documentation version links
+- Add autocomplete doc for ZSH shell
+- Update integration test instructions
+- Allow to keep specific versions of documentation
+- Keep version `1.3.4` and `1.4.2` active on github pages
+- Fix formatting error in `terminology.rst`
+- Upgrade Dockerfile to Alpine 3.10
+- Improve error message for `stack_output` dependencies
+- Improve `sceptre generate` formatting
+- Unpinned some requirements to avoid conflict with other packages
+
 ## 2.2.1 (2019.08.19)
 
 ### Fixed
