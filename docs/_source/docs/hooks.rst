@@ -12,6 +12,8 @@ If required, users can create their own ``hooks``, as described in the section
 Hook points
 -----------
 
+``before_generate`` or ``after_generate`` - run hook before or after generating stack template.
+
 ``before_create`` or ``after_create`` - run hook before or after Stack creation.
 
 ``before_update`` or ``after_update`` - run hook before or after Stack update.
