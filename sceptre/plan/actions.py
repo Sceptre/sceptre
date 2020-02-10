@@ -573,6 +573,7 @@ class StackActions(object):
         except botocore.exceptions.ClientError:
             return []
 
+    @add_stack_hooks
     def generate(self):
         """
         Returns the Template for the Stack
