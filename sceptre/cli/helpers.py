@@ -76,10 +76,9 @@ def write(var, output_format="json", no_colour=True):
     if output_format == "yaml":
         output = _generate_yaml(var)
     if output_format == "text":
-        if isinstance(var, list):
-            output = "---\n".join(var)
-        else:
-            output = var
+        yaml_out = _generate_yaml(var)
+        output = '\n'.join(yaml_out.split('\n')[1:])   # remove first line
+
     if not no_colour:
         stack_status_colourer = StackStatusColourer()
         output = stack_status_colourer.colour(str(output))
