@@ -57,8 +57,6 @@ class StackActions(object):
         """
         self._protect_execution()
         self.logger.info("%s - Creating Stack", self.stack.name)
-        self.logger.info(f"myssahm parameters = {self.stack.parameters}")
-        self.logger.info(f"myssahm parameters = {self.stack.role_arn}")
         create_stack_kwargs = {
             "StackName": self.stack.external_name,
             "Parameters": self._format_parameters(self.stack.parameters),
