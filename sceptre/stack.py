@@ -109,7 +109,6 @@ class Stack(object):
 
     parameters = ResolvableProperty("parameters")
     role_arn = ResolvableProperty("role_arn")
-    iam_role = ResolvableProperty("iam_role")
     _sceptre_user_data = ResolvableProperty("_sceptre_user_data")
     notifications = ResolvableProperty("notifications")
     hooks = HookProperty("hooks")
