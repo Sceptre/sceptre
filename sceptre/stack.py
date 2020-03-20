@@ -108,6 +108,7 @@ class Stack(object):
     """
 
     parameters = ResolvableProperty("parameters")
+    role_arn = ResolvableProperty("role_arn")
     _sceptre_user_data = ResolvableProperty("_sceptre_user_data")
     notifications = ResolvableProperty("notifications")
     hooks = HookProperty("hooks")
@@ -136,7 +137,6 @@ class Stack(object):
         self._connection_manager = None
 
         self.protected = protected
-        self.role_arn = role_arn
         self.on_failure = on_failure
         self.dependencies = dependencies or []
         self.tags = tags or {}
@@ -144,6 +144,7 @@ class Stack(object):
         self.iam_role = iam_role
         self.profile = profile
         self.hooks = hooks or {}
+        self.role_arn = role_arn  # TODO or None?
         self.parameters = parameters or {}
         self._sceptre_user_data = sceptre_user_data or {}
         self._sceptre_user_data_is_resolved = False

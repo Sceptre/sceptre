@@ -52,7 +52,7 @@ def _call_func_on_values(func, attr, cls):
     :rtype: dict or list
     """
 
-    def func_on_instance(key):
+    def func_on_instance(key, value):
         if isinstance(value, cls):
             func(attr, key, value)
         elif isinstance(value, list) or isinstance(value, dict):
@@ -60,10 +60,17 @@ def _call_func_on_values(func, attr, cls):
 
     if isinstance(attr, dict):
         for key, value in attr.items():
-            func_on_instance(key)
+            func_on_instance(key, value)
     elif isinstance(attr, list):
         for index, value in enumerate(attr):
-            func_on_instance(index)
+            func_on_instance(index, value)
+    else:
+        # support single values by wrapping them into list
+        value = attr
+        attr = [value]
+        func_on_instance(0, value)
+        attr = attr[0]
+
     return attr
 
 
