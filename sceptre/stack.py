@@ -141,7 +141,7 @@ class Stack(object):
         self.dependencies = dependencies or []
         self.tags = tags or {}
         self.stack_timeout = stack_timeout
-        self.iam_role = iam_role  # TODO ``iam_role or None``?
+        self.iam_role = iam_role
         self.profile = profile
         self.hooks = hooks or {}
         self.role_arn = role_arn  # TODO ``role_arn or None``?
