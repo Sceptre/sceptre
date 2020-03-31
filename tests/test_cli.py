@@ -697,7 +697,7 @@ class TestCli(object):
             assert os.path.isdir(template_dir)
 
             with open(os.path.join(config_dir, "config.yaml")) as config_file:
-                config = yaml.load(config_file)
+                config = yaml.safe_load(config_file)
 
             assert config == defaults
 
@@ -723,7 +723,7 @@ class TestCli(object):
             assert os.path.isdir(template_dir)
 
             with open(os.path.join(config_dir, "config.yaml")) as config_file:
-                config = yaml.load(config_file)
+                config = yaml.safe_load(config_file)
             assert existing_config == config
 
     @pytest.mark.parametrize("environment,config_structure,stdin,result", [
@@ -793,7 +793,7 @@ class TestCli(object):
 
             if result:
                 with open(os.path.join(env_dir, "config.yaml")) as config_file:
-                    config = yaml.load(config_file)
+                    config = yaml.safe_load(config_file)
                 assert config == result
             else:
                 assert cmd_result.output.endswith(
