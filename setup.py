@@ -13,22 +13,22 @@ with open("CHANGELOG.md") as history_file:
 
 install_requirements = [
     "boto3>=1.3,<2.0",
-    "click==7.0",
+    "click>=7.0,<8.0",
     "PyYaml>=5.1,<6.0",
     "Jinja2>=2.8,<3",
     "colorama==0.3.9",
-    "packaging==16.8",
+    "packaging>=16.8,<17.0",
     "six>=1.11.0,<2.0.0",
     "networkx==2.1",
     "typing>=3.7.0,<3.8.0"
 ]
 
 test_requirements = [
-    "pytest>=3.2",
+    "pytest>=3.2,<4.0",
     "troposphere>=2.0.0",
-    "moto==1.3.8",
-    "mock==2.0.0",
-    "behave==1.2.5",
+    "moto>=1.3.8,<2.0",
+    "mock>=2.0.0,<3.0.0",
+    "behave>=1.2.5,<2.0.0",
     "freezegun==0.3.12"
 ]
 
