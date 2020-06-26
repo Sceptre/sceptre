@@ -527,6 +527,17 @@ class StackActions(object):
         :rtype: str
         """
         self._protect_execution()
+        change_set = self.describe_change_set(change_set_name)
+        status = change_set.get("Status")
+        reason = change_set.get("StatusReason")
+        if status == "FAILED" and "submitted information didn't contain changes" in reason:
+            self.logger.info(
+                    "Skipping ChangeSet on Stack: {} - there are no changes".format(
+                        change_set.get("StackName")
+                        )
+            )
+            return 0
+
         self.logger.debug(
             "%s - Executing Change Set '%s'", self.stack.name, change_set_name
         )
