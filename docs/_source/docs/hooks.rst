@@ -20,6 +20,8 @@ Hook points
 
 ``before_launch`` or ``after_launch`` - run hook before or after Stack launch.
 
+``before_create_change_set`` or ``after_create_change_set`` - run hook before or after create change set.
+
 Syntax:
 
 Hooks are specified in a Stack’s config file, using the following syntax:
