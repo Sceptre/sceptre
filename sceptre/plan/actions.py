@@ -27,6 +27,7 @@ from sceptre.exceptions import UnknownStackStatusError
 from sceptre.exceptions import UnknownStackChangeSetStatusError
 from sceptre.exceptions import StackDoesNotExistError
 from sceptre.exceptions import ProtectedStackError
+from sceptre.exceptions import InvalidParameterError
 
 
 class StackActions(object):
@@ -59,7 +60,7 @@ class StackActions(object):
         self.logger.info("%s - Creating Stack", self.stack.name)
         create_stack_kwargs = {
             "StackName": self.stack.external_name,
-            "Parameters": self._format_parameters(self.stack.parameters),
+            "Parameters": self._format_parameters(self.stack.parameters, create=True),
             "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'],
             "NotificationARNs": self.stack.notifications,
             "Tags": [
@@ -640,7 +641,7 @@ class StackActions(object):
         except StackDoesNotExistError:
             return "PENDING"
 
-    def _format_parameters(self, parameters):
+    def _format_parameters(self, parameters, create=False):
         """
         Converts CloudFormation parameters to the format used by Boto3.
 
@@ -653,12 +654,27 @@ class StackActions(object):
         for name, value in parameters.items():
             if value is None:
                 continue
+            formatted_parameter = dict(ParameterKey=name)
             if isinstance(value, list):
-                value = ",".join(value)
-            formatted_parameters.append({
-                "ParameterKey": name,
-                "ParameterValue": value
-            })
+                formatted_parameter['ParameterValue'] = ",".join(value)
+            elif isinstance(value, dict):
+                initial_value = value.get('initial_value')
+                use_previous_value = value.get('use_previous_value', False)
+                if not isinstance(use_previous_value, bool):
+                    raise InvalidParameterError("'use_previous_value' must be a boolean")
+                if (create is True or use_previous_value is False) and initial_value is None:
+                    raise InvalidParameterError("'initial_value' is required when creating a new "
+                                                "stack or when 'use_previous_value' is false")
+                if create is True or use_previous_value is False:
+                    if isinstance(initial_value, list):
+                        formatted_parameter['ParameterValue'] = ",".join(initial_value)
+                    else:
+                        formatted_parameter['ParameterValue'] = value.get('initial_value')
+                else:
+                    formatted_parameter['UsePreviousValue'] = use_previous_value
+            else:
+                formatted_parameter['ParameterValue'] = value
+            formatted_parameters.append(formatted_parameter)
 
         return formatted_parameters
 

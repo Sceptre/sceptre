@@ -166,3 +166,10 @@ class InvalidAWSCredentialsError(SceptreException):
     Error raised when AWS credentials are invalid.
     """
     pass
+
+
+class InvalidParameterError(SceptreException):
+    """
+    Error raised when parameters are invalid.
+    """
+    pass

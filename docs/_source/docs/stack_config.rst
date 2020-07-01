@@ -86,6 +86,13 @@ values/resolvers. Lists of values/resolvers will be formatted into an AWS
 compatible comma separated string e.g. \ ``value1,value2,value3``. Lists can
 contain a mixture of values and resolvers.
 
+A parameter can also be configured to use the previous value. You can do so by
+making the value a dictionary. The values supported in the dictionary are
+``initial_value`` and ``use_previous_value``. When creating stacks, setting
+``initial_value`` is required, but can be left out for stack updates. The value
+set at ``initial_value`` value will only be used during creation, or when
+setting ``use_previous_value`` to false.
+
 Syntax:
 
 .. code-block:: yaml
@@ -102,6 +109,14 @@ Syntax:
      <parameter5_name>:
        - !<resolver_name> <resolver_value>
        - "value1"
+     <parameter6_name>:
+       initial_value: "value"
+       use_previous_value: <boolean>
+     <parameter7_name>:
+       initial_value:
+         - "value1"
+         - !<resolver_name> <resolver_value>
+       use_previous_value: <boolean>
 
 Example:
 
@@ -117,6 +132,11 @@ Example:
        - "sg-12345678"
        - !stack_output security-groups::BaseSecurityGroupId
        - !file_contents /file/with/security_group_id.txt
+     security_group_whitelist:
+       initial_value:
+         - "127.0.0.0/24"
+         - "127.0.1.0/24"
+       use_previous_value: true
 
 protected
 ~~~~~~~~~
