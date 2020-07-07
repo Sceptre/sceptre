@@ -52,19 +52,34 @@ def update_command(ctx, path, change_set, verbose, yes):
     plan = SceptrePlan(context)
 
     if change_set:
+        delete_change_set = True
+
         change_set_name = "-".join(["change-set", uuid1().hex])
         plan.create_change_set(change_set_name)
         try:
             # Wait for change set to be created
             statuses = plan.wait_for_cs_completion(change_set_name)
             # Exit if change set fails to create
+            atleast_one_ready = False
             for status in list(statuses.values()):
-                if status != StackChangeSetStatus.READY:
+                if status != StackChangeSetStatus.READY \
+                        and status != StackChangeSetStatus.NO_CHANGES:
+                    # TODO: Print an informative message to the user.
                     exit(1)
+                if status == StackChangeSetStatus.READY:
+                    atleast_one_ready = True
+
+            if not atleast_one_ready:
+                write("No changes detected", context.output_format)
+                exit(0)
 
             # Describe changes
             descriptions = plan.describe_change_set(change_set_name)
             for description in list(descriptions.values()):
+                status = description.get("Status")
+                reason = description.get("StatusReason")
+                if status == "FAILED" and "submitted information didn't contain changes" in reason:
+                    continue
                 if not verbose:
                     description = simplify_change_set_description(description)
                 write(description, context.output_format)
@@ -72,11 +87,11 @@ def update_command(ctx, path, change_set, verbose, yes):
             # Execute change set if happy with changes
             if yes or click.confirm("Proceed with stack update?"):
                 plan.execute_change_set(change_set_name)
-        except Exception as e:
-            raise e
+                delete_change_set = False
         finally:
             # Clean up by deleting change set
-            plan.delete_change_set(change_set_name)
+            if delete_change_set:
+                plan.delete_change_set(change_set_name)
     else:
         confirmation("update", yes, command_path=path)
         responses = plan.update()
