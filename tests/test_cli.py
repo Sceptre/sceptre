@@ -21,7 +21,7 @@ from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer
 from sceptre.exceptions import SceptreException
 from sceptre.plan.actions import StackActions
 from sceptre.stack import Stack
-from sceptre.stack_status import StackStatus
+from sceptre.stack_status import StackChangeSetStatus, StackStatus
 
 
 class TestCli(object):
@@ -482,6 +482,92 @@ class TestCli(object):
         result = self.runner.invoke(cli, **kwargs)
 
         run_command.assert_called_with()
+        assert result.exit_code == exit_code
+
+    @pytest.mark.parametrize(
+        "change_set_status,yes_flag,exit_code,verbose_flag", [
+            (StackChangeSetStatus.READY, True, 0, True),
+            (StackChangeSetStatus.READY, True, 0, False),
+            (StackChangeSetStatus.READY, False, 0, True),
+            (StackChangeSetStatus.READY, False, 0, False),
+            (StackChangeSetStatus.NO_CHANGES, True, 0, True),
+            (StackChangeSetStatus.NO_CHANGES, False, 0, False),
+            (StackChangeSetStatus.NO_CHANGES, True, 0, False),
+            (StackChangeSetStatus.NO_CHANGES, False, 0, True),
+            (StackChangeSetStatus.DEFUNCT, True, 1, True),
+            (StackChangeSetStatus.DEFUNCT, False, 1, False),
+            (StackChangeSetStatus.DEFUNCT, True, 1, False),
+            (StackChangeSetStatus.DEFUNCT, False, 1, True),
+        ]
+    )
+    def test_update_with_change_set(self, change_set_status, yes_flag, exit_code, verbose_flag):
+        create_command = self.mock_stack_actions.create_change_set
+        wait_command = self.mock_stack_actions.wait_for_cs_completion
+        execute_command = self.mock_stack_actions.execute_change_set
+        delete_command = self.mock_stack_actions.delete_change_set
+        describe_command = self.mock_stack_actions.describe_change_set
+
+        wait_command.return_value = change_set_status
+
+        response = {
+            "VerboseProperty": "VerboseProperty",
+            "ChangeSetName": "ChangeSetName",
+            "CreationTime": "CreationTime",
+            "ExecutionStatus": "ExecutionStatus",
+            "StackName": "StackName",
+            "Status": "Status",
+            "StatusReason": "StatusReason",
+            "Changes": [
+                {
+                    "ResourceChange": {
+                        "Action": "Action",
+                        "LogicalResourceId": "LogicalResourceId",
+                        "PhysicalResourceId": "PhysicalResourceId",
+                        "Replacement": "Replacement",
+                        "ResourceType": "ResourceType",
+                        "Scope": "Scope",
+                        "VerboseProperty": "VerboseProperty"
+                    }
+                }
+            ]
+        }
+
+        if not verbose_flag:
+            del response["VerboseProperty"]
+            del response["Changes"][0]["ResourceChange"]["VerboseProperty"]
+
+        describe_command.return_value = response
+
+        kwargs = {"args": ["update", "--change-set", "dev/vpc.yaml"]}
+
+        if yes_flag:
+            kwargs["args"].append("-y")
+        else:
+            kwargs["input"] = "y\n"
+
+        if verbose_flag:
+            kwargs["args"].append("-v")
+
+        result = self.runner.invoke(cli, **kwargs)
+
+        change_set_name = create_command.call_args[0][0]
+        assert 'change-set' in change_set_name
+
+        assert wait_command.called_with(change_set_name)
+        assert delete_command.called_with(change_set_name)
+
+        if change_set_status == StackChangeSetStatus.READY:
+            assert execute_command.called_with(change_set_name)
+            assert describe_command.called_with(change_set_name)
+            output = result.output.splitlines()[0]
+            assert yaml.safe_load(output) == response
+
+        if change_set_status == StackChangeSetStatus.DEFUNCT:
+            assert "Failed to create change set" in result.output
+
+        if change_set_status == StackChangeSetStatus.NO_CHANGES:
+            assert "No changes detected" in result.output
+
         assert result.exit_code == exit_code
 
     @pytest.mark.parametrize(
