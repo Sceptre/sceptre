@@ -213,6 +213,7 @@ Options:
   --var-file FILENAME    A YAML file of variables to template into config
                          files.
   --ignore-dependencies  Ignore dependencies when executing command.
+  --merge-keys           Merge keys in successive var files not overwrite.
   --help                 Show this message and exit.
 
 Commands:

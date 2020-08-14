@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# flake8: noqa
+
 """
 sceptre.cli
 
@@ -39,16 +41,21 @@ from sceptre.cli.helpers import setup_logging, catch_exceptions
     help="The formatting style for command output.")
 @click.option("--no-colour", is_flag=True, help="Turn off output colouring.")
 @click.option(
-    "--var", multiple=True, help="A variable to template into config files.")
+    "--var", multiple=True,
+    help="A variable to template into config files.")
 @click.option(
     "--var-file", multiple=True, type=click.File("rb"),
     help="A YAML file of variables to template into config files.")
 @click.option(
-    "--ignore-dependencies", is_flag=True, help="Ignore dependencies when executing command.")
+    "--ignore-dependencies", is_flag=True,
+    help="Ignore dependencies when executing command.")
+@click.option(
+    "--merge-keys", is_flag=True, default=False,
+    help="Merge keys in successive var files not overwrite.")
 @click.pass_context
 @catch_exceptions
 def cli(
-        ctx, debug, directory, output, no_colour, var, var_file, ignore_dependencies
+        ctx, debug, directory, output, no_colour, var, var_file, ignore_dependencies, merge_keys
 ):
     """
     Sceptre is a tool to manage your cloud native infrastructure deployments.
@@ -65,21 +72,42 @@ def cli(
         "ignore_dependencies": ignore_dependencies,
         "project_path": directory if directory else os.getcwd()
     }
+
     if var_file:
+        def deep_merge(source, destination):
+            for key, value in source.items():
+                if isinstance(value, dict):
+                    node = destination.setdefault(key, {})
+                    deep_merge(value, node)
+                else:
+                    destination[key] = value
+
+            return destination
+
         for fh in var_file:
             parsed = yaml.safe_load(fh.read())
-            ctx.obj.get("user_variables").update(parsed)
+
+            if merge_keys:
+                ctx.obj["user_variables"] = deep_merge(parsed, ctx.obj["user_variables"])
+            else:
+                ctx.obj["user_variables"].update(parsed)
 
             # the rest of this block is for debug purposes only
             existing_keys = set(ctx.obj.get("user_variables").keys())
             new_keys = set(parsed.keys())
             overloaded_keys = existing_keys & new_keys  # intersection
+
             if overloaded_keys:
-                logger.debug(
-                    "Duplicate variables encountered: {0}. "
-                    "Using values from: {1}."
-                    .format(", ".join(overloaded_keys), fh.name)
-                )
+                message = "Duplicate variables encountered: "
+
+                if merge_keys:
+                    message += "{0}. Using values from: {1}.".format(
+                        ", ".join(overloaded_keys), fh.name)
+                else:
+                    message += "{0}. Performing deep merge, {1} wins.".format(
+                        ", ".join(overloaded_keys), fh.name)
+
+                logger.debug(message)
 
     if var:
         def update_dict(variable):
