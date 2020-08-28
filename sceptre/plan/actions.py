@@ -579,6 +579,7 @@ class StackActions(object):
         """
         return self.stack.template.body
 
+    @add_stack_hooks
     def validate(self):
         """
         Validates the Stack's CloudFormation Template.
