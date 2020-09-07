@@ -12,6 +12,7 @@ import time
 
 from os import path
 from datetime import datetime, timedelta
+from collections import OrderedDict
 
 import botocore
 import json
@@ -27,6 +28,8 @@ from sceptre.exceptions import UnknownStackStatusError
 from sceptre.exceptions import UnknownStackChangeSetStatusError
 from sceptre.exceptions import StackDoesNotExistError
 from sceptre.exceptions import ProtectedStackError
+
+from sceptre.helpers import SortedDict
 
 
 class StackActions(object):
@@ -151,6 +154,52 @@ class StackActions(object):
                 return StackStatus.COMPLETE
             else:
                 raise
+
+    def diff(self):
+        """
+        Creates a diff between local and CloudFormation templates. Then shows that diff using your
+        default web browser.
+        """
+        import difflib
+        import webbrowser
+        from cfn_flip import to_json
+
+        temp_file = '/tmp/sceptre_diff.html'
+        self.logger.info(f"Creating diff of {self.stack.external_name}")
+
+        response = self.connection_manager.call(
+            service="cloudformation",
+            command="get_template",
+            kwargs={"StackName": self.stack.external_name}
+        )
+
+        try:
+            local_dict = json.loads(self.stack.template.body, object_pairs_hook=OrderedDict)
+        except ValueError:
+            local_dict = json.loads(
+                to_json(self.stack.template.body), object_pairs_hook=OrderedDict)
+
+        local_dict = SortedDict(**local_dict)
+
+        if isinstance(response['TemplateBody'], str):
+            cf_dict = json.loads(to_json(response['TemplateBody']), object_pairs_hook=OrderedDict)
+        else:
+            cf_dict = response['TemplateBody']
+
+        cf_dict = SortedDict(**cf_dict)
+
+        local = json.dumps(local_dict, indent=4, separators=(',', ': ')).strip().splitlines()
+        cloudformation = json.dumps(cf_dict, indent=4, separators=(',', ': ')).strip().splitlines()
+
+        diff = difflib.HtmlDiff(wrapcolumn=80).make_file(
+            cloudformation, local, 'CLOUDFORMATION', 'LOCAL')
+        try:
+            with open(temp_file, 'w') as f:
+                f.write(diff)
+        except Exception as e:
+            self.logger.error(e, exc_info=1)
+
+        webbrowser.open('file://' + temp_file)
 
     def cancel_stack_update(self):
         """

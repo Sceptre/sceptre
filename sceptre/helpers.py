@@ -1,7 +1,25 @@
 # -*- coding: utf-8 -*-
 from os import sep
+from collections import OrderedDict
 
 from sceptre.exceptions import PathConversionError
+
+
+class SortedDict(OrderedDict):
+    """
+    Returns a recursively sorted (by key) OrderedDict
+    :param **kwargs: Dictionary elements you want to be sorted
+    :type **kwargs: **dict
+    """
+
+    def __init__(self, **kwargs):
+        super(SortedDict, self).__init__()
+
+        for key, value in sorted(kwargs.items()):
+            if isinstance(value, dict):
+                self[key] = SortedDict(**value)
+            else:
+                self[key] = value
 
 
 def get_external_stack_name(project_code, stack_name):

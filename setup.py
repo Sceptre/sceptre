@@ -20,7 +20,8 @@ install_requirements = [
     "packaging>=16.8,<17.0",
     "six>=1.11.0,<2.0.0",
     "networkx==2.4",
-    "typing>=3.7.0,<3.8.0"
+    "typing>=3.7.0,<3.8.0",
+    "cfn-flip==1.2.2"
 ]
 
 test_requirements = [
