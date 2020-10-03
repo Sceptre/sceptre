@@ -4,6 +4,24 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.4.0 (2020.10.03)
+
+### Added
+
+- Support for hooks on create_change_set
+
+### Fixed
+
+- Selection of correct stack group based on exact name
+- Execution of empty change sets
+
+### Nonfunctional
+
+- Added jinja example to documentation
+- Fixed documentation typos
+- Tidied documentation by removing unnecessary comments
+- Remove documented support for Python 2.7
+
 ## 2.3.0 (2020.02.03)
 
 ### Added
@@ -21,7 +39,7 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 - `rel_paths` for `_call_sceptre_handler` in `template.py`
 - Linting as a side-effect of upgrading flake package
 
-### Nonfunctional 
+### Nonfunctional
 
 - Add documentation clean target
 - Clean up code blocks in documentation
