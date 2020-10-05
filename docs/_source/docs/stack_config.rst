@@ -83,6 +83,11 @@ type as defined in the template.
    that are not required by that template. Resolvers can be used to add
    functionality to this key. Find out more in the :doc:`resolvers` section.
 
+.. warning::
+
+   In case the same parameter key is supplied more than once, the last
+   definition silently overrides the earlier definitions.
+
 A parameter can be specified either as a single value/resolver or a list of
 values/resolvers. Lists of values/resolvers will be formatted into an AWS
 compatible comma separated string e.g. \ ``value1,value2,value3``. Lists can
