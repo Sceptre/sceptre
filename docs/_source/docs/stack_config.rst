@@ -66,7 +66,7 @@ to create. For more information and valid values see the `AWS Documentation`_.
 parameters
 ~~~~~~~~~~
 
-.. container:: alert alert-danger
+.. warning::
 
    Sensitive data such as passwords or secret keys should not be stored in
    plaintext in Stack config files. Instead, they should be passed in from the
@@ -76,6 +76,8 @@ parameters
 A dictionary of key-value pairs to be supplied to a template as parameters. The
 keys must match up with the name of the parameter, and the value must be of the
 type as defined in the template.
+
+.. note::
 
    Note that Boto3 throws an exception if parameters are supplied to a template
    that are not required by that template. Resolvers can be used to add
