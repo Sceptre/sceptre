@@ -82,3 +82,19 @@ built in the same ``launch`` command, the environment variable resolver must be
 used.
 
 .. _AWS documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html
+
+How do I build a Serverless application using Sceptre and SAM?
+--------------------------------------------------------------
+
+There are a few different ways that Sceptre can help create serverless
+applications or lambdas.  One approach is to use the `SAM CLI`_ to build
+and deploy your SAM templates to an S3 bucket then have Sceptre deploy the
+generated SAM template to your AWS account. Examples of this approach can
+be found in these projects:
+
+- `Sage-Bionetworks Sceptre lambda github template`_
+- `Versant SAM Sceptre skeleton example`_
+
+.. _SAM CLI: https://github.com/aws/aws-sam-cli
+.. _Sage-Bionetworks Sceptre lambda github template: https://github.com/Sage-Bionetworks-IT/lambda-template
+.. _Versant SAM Sceptre skeleton example: https://github.com/Versent/sam-sceptre
