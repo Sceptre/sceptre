@@ -10,7 +10,7 @@ executors:
 aliases:
   - &docs-job
     docker:
-      - image: cloudreach/sceptre-circleci:0.5.0
+      - image: cloudreach/sceptre-circleci:0.6.0
         environment:
           REPOSITORY_PATH: '/home/circleci/docs'
           DEPLOYMENT_GIT_SSH: 'git@github.com:Sceptre/sceptre.github.io.git'
@@ -32,7 +32,7 @@ aliases:
 jobs:
   build:
     docker:
-      - image: cloudreach/sceptre-circleci:0.5.0
+      - image: cloudreach/sceptre-circleci:0.6.0
     steps:
       - checkout
       - run:
@@ -47,7 +47,6 @@ jobs:
           name: 'Installing Requirements'
           command: |
             . ./venv/bin/activate
-            pip install --upgrade pip
             pip install -r requirements/prod.txt
             pip install -r requirements/dev.txt
             pip install awscli
@@ -70,7 +69,7 @@ jobs:
 
   lint-and-unit-tests:
     docker:
-      - image: cloudreach/sceptre-circleci:0.5.0
+      - image: cloudreach/sceptre-circleci:0.6.0
     steps:
       - attach_workspace:
           at: /home/circleci
@@ -140,7 +139,7 @@ jobs:
   integration-tests:
     parallelism: 2
     docker:
-      - image: cloudreach/sceptre-circleci:0.5.0
+      - image: cloudreach/sceptre-circleci:0.6.0
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
@@ -183,7 +182,7 @@ jobs:
 
   deploy-pypi:
     docker:
-      - image: cloudreach/sceptre-circleci:0.5.0
+      - image: cloudreach/sceptre-circleci:0.6.0
     steps:
       - attach_workspace:
           at: /home/circleci
