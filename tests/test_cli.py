@@ -448,7 +448,6 @@ class TestCli(object):
 
     def test_list_outputs_text(self):
         outputs = {"StackName": [{'OutputKey': "Key", "OutputValue": "Value"}]}
-        # outputs = {"OutputKey": "Key", "OutputValue": "Value"}
         self.mock_stack_actions.describe_outputs.return_value = outputs
         result = self.runner.invoke(
             cli, ["--output", "text", "list", "outputs", "dev/vpc.yaml"]
