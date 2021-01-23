@@ -27,7 +27,8 @@ def validate_command(ctx, path):
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         output_format=ctx.obj.get("output_format"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
+        j2_extensions=ctx.obj.get("j2_extensions")
     )
 
     plan = SceptrePlan(context)
@@ -58,7 +59,8 @@ def generate_command(ctx, path):
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         output_format=ctx.obj.get("output_format"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
+        j2_extensions=ctx.obj.get("j2_extensions")
     )
 
     plan = SceptrePlan(context)
@@ -87,7 +89,8 @@ def estimate_cost_command(ctx, path):
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         output_format=ctx.obj.get("output_format"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
+        j2_extensions=ctx.obj.get("j2_extensions")
     )
 
     plan = SceptrePlan(context)
