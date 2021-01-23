@@ -59,7 +59,7 @@ def cli(
         var,
         var_file,
         ignore_dependencies,
-        j2_extensions,
+        j2_extensions
 ):
     """
     Sceptre is a tool to manage your cloud native infrastructure deployments.
