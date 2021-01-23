@@ -46,7 +46,8 @@ from sceptre.cli.helpers import setup_logging, catch_exceptions
 @click.option(
     "--ignore-dependencies", is_flag=True, help="Ignore dependencies when executing command.")
 @click.option(
-    "--j2_extensions", "j2_extensions",  multiple=True, help="jinja2 extensions to load.")
+    "--j2_extension", "j2_extensions",  multiple=True,
+    help="Import path of Jinja2 extension to load.")
 @click.pass_context
 @catch_exceptions
 def cli(
