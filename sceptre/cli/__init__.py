@@ -45,10 +45,21 @@ from sceptre.cli.helpers import setup_logging, catch_exceptions
     help="A YAML file of variables to template into config files.")
 @click.option(
     "--ignore-dependencies", is_flag=True, help="Ignore dependencies when executing command.")
+@click.option(
+    "--j2_extension", "j2_extensions",  multiple=True,
+    help="Import path of Jinja2 extension to load.")
 @click.pass_context
 @catch_exceptions
 def cli(
-        ctx, debug, directory, output, no_colour, var, var_file, ignore_dependencies
+        ctx,
+        debug,
+        directory,
+        output,
+        no_colour,
+        var,
+        var_file,
+        ignore_dependencies,
+        j2_extensions
 ):
     """
     Sceptre is a tool to manage your cloud native infrastructure deployments.
@@ -63,7 +74,8 @@ def cli(
         "output_format": output,
         "no_colour": no_colour,
         "ignore_dependencies": ignore_dependencies,
-        "project_path": directory if directory else os.getcwd()
+        "project_path": directory if directory else os.getcwd(),
+        "j2_extensions": j2_extensions
     }
     if var_file:
         for fh in var_file:
