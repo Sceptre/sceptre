@@ -66,6 +66,7 @@ def generate_command(ctx, path):
     output = [template for template in responses.values()]
     write(output, context.output_format)
 
+
 @click.command(name="fetch-remote-template", short_help="Prints the remote template.")
 @click.argument("path")
 @click.pass_context

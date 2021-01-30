@@ -25,7 +25,8 @@ from sceptre.cli.describe import describe_group
 from sceptre.cli.list import list_group
 from sceptre.cli.policy import set_policy_command
 from sceptre.cli.status import status_command
-from sceptre.cli.template import (validate_command, generate_command, fetch_remote_template_command,
+from sceptre.cli.template import (validate_command, generate_command,
+                                  fetch_remote_template_command,
                                   estimate_cost_command)
 from sceptre.cli.helpers import setup_logging, catch_exceptions
 

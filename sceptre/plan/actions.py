@@ -579,7 +579,7 @@ class StackActions(object):
         Returns the Template for the Stack
         """
         return self.stack.template.body
-    
+
     @add_stack_hooks
     def fetch_remote_template(self):
         """
@@ -594,7 +594,6 @@ class StackActions(object):
             }
         )
         return response.get("TemplateBody")
-
 
     @add_stack_hooks
     def validate(self):
