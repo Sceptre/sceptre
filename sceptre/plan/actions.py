@@ -28,6 +28,8 @@ from sceptre.exceptions import UnknownStackChangeSetStatusError
 from sceptre.exceptions import StackDoesNotExistError
 from sceptre.exceptions import ProtectedStackError
 
+from botocore.exceptions import ClientError
+
 
 class StackActions(object):
     """
@@ -446,6 +448,7 @@ class StackActions(object):
             "Parameters": self._format_parameters(self.stack.parameters),
             "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'],
             "ChangeSetName": change_set_name,
+            "ChangeSetType": 'UPDATE',
             "NotificationARNs": self.stack.notifications,
             "Tags": [
                 {"Key": str(k), "Value": str(v)}
@@ -459,11 +462,28 @@ class StackActions(object):
         self.logger.debug(
             "%s - Creating Change Set '%s'", self.stack.name, change_set_name
         )
-        self.connection_manager.call(
-            service="cloudformation",
-            command="create_change_set",
-            kwargs=create_change_set_kwargs
-        )
+
+        try:
+            # Create a changeset for an existing stack
+            self.connection_manager.call(
+                service="cloudformation",
+                command="create_change_set",
+                kwargs=create_change_set_kwargs
+            )
+        except ClientError as e:
+            message = e.response['Error']['Message']
+            if e.response['Error']['Code'] == 'ValidationError' \
+                    and message.endswith("does not exist"):
+                # Create a changeset for a new stack
+                create_change_set_kwargs['ChangeSetType'] = 'CREATE'
+                self.connection_manager.call(
+                    service="cloudformation",
+                    command="create_change_set",
+                    kwargs=create_change_set_kwargs
+                )
+            else:
+                raise
+
         # After the call successfully completes, AWS CloudFormation
         # starts creating the Change Set.
         self.logger.info(
