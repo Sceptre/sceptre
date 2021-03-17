@@ -63,6 +63,15 @@ on_failure
 This parameter describes the action taken by CloudFormation when a Stack fails
 to create. For more information and valid values see the `AWS Documentation`_.
 
+Examples include:
+
+``on_failure: "DO_NOTHING"``
+
+``on_failure: "ROLLBACK"``
+
+``on_failure: "DELETE"``
+
+
 parameters
 ~~~~~~~~~~
 
