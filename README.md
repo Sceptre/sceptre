@@ -279,3 +279,4 @@ Full API reference documentation can be found in the
 ## Contributing
 
 See our [Contributing Guide](CONTRIBUTING.md)
+kick build
