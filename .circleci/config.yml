@@ -124,17 +124,19 @@ jobs:
           paths:
             - .tox
 
-  sonar:
-    docker:
-      - image: cloudreach/sceptre-circleci-sonarqube:latest
-    steps:
-      - attach_workspace:
-          at: /home/circleci
-      - run:
-          name: Run Sonarqube
-          command: |
-            . venv/bin/activate
-            make sonar
+#  Disable sonar for now since we don't know how it works.  Hoping that @ngfgrant will
+#  re-appear to help us get it going again.
+#  sonar:
+#    docker:
+#      - image: cloudreach/sceptre-circleci-sonarqube:latest
+#    steps:
+#      - attach_workspace:
+#          at: /home/circleci
+#      - run:
+#          name: Run Sonarqube
+#          command: |
+#            . venv/bin/activate
+#            make sonar
 
   integration-tests:
     parallelism: 2
@@ -248,11 +250,11 @@ workflows:
           filters:
             tags:
               only: /.*/
-      - sonar:
-          context: sceptre-core
-          requires:
-            - build
-            - lint-and-unit-tests
+#      - sonar:
+#          context: sceptre-core
+#          requires:
+#            - build
+#            - lint-and-unit-tests
 
       - integration-tests:
           context: sceptre-core
@@ -290,7 +292,7 @@ workflows:
           requires:
             - lint-and-unit-tests
             - integration-tests
-            - sonar
+#            - sonar
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*/
@@ -312,7 +314,7 @@ workflows:
           requires:
             - lint-and-unit-tests
             - integration-tests
-            - sonar
+#            - sonar
           filters:
             tags:
               only: /.*/
