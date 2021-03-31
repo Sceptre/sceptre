@@ -39,6 +39,13 @@ Sceptre’s source code can be found on `Github`_.
 
 Bugs and feature requests should be raised via our `Issues`_ page.
 
+Communication
+-------------
+
+The Sceptre community uses a Slack channel #sceptre on the og-aws Slack for
+discussion. To join use this link http://slackhatesthe.cloud/ to create an
+account and join the #sceptre channel.
+
 .. _Github: https://github.com/cloudreach/sceptre/
 .. _Issues: https://github.com/cloudreach/sceptre/issues
 .. _CloudFormation: https://aws.amazon.com/cloudformation/
