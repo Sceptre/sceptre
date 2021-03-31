@@ -242,17 +242,12 @@ workflows:
     jobs:
       - build:
           context: sceptre-core
-          filters:
-            tags:
-              only: /.*/
 
       - lint-and-unit-tests:
           context: sceptre-core
           requires:
             - build
-          filters:
-            tags:
-              only: /.*/
+
 #      - sonar:
 #          context: sceptre-core
 #          requires:
@@ -318,9 +313,6 @@ workflows:
             - lint-and-unit-tests
 #            - integration-tests
 #            - sonar
-          filters:
-            tags:
-              only: /.*/
 
       - deploy-latest-dockerhub:
           context: sceptre-core
