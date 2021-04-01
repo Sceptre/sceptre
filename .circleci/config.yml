@@ -10,7 +10,7 @@ executors:
 aliases:
   - &docs-job
     docker:
-      - image: cloudreach/sceptre-circleci:0.4
+      - image: cloudreach/sceptre-circleci:0.7.0
         environment:
           REPOSITORY_PATH: '/home/circleci/docs'
           DEPLOYMENT_GIT_SSH: 'git@github.com:Sceptre/sceptre.github.io.git'
@@ -32,7 +32,7 @@ aliases:
 jobs:
   build:
     docker:
-      - image: cloudreach/sceptre-circleci:0.4
+      - image: cloudreach/sceptre-circleci:0.7.0
     steps:
       - checkout
       - run:
@@ -69,7 +69,7 @@ jobs:
 
   lint-and-unit-tests:
     docker:
-      - image: cloudreach/sceptre-circleci:0.4
+      - image: cloudreach/sceptre-circleci:0.7.0
     steps:
       - attach_workspace:
           at: /home/circleci
@@ -124,40 +124,45 @@ jobs:
           paths:
             - .tox
 
-  sonar:
-    docker:
-      - image: cloudreach/sceptre-circleci-sonarqube:latest
-    steps:
-      - attach_workspace:
-          at: /home/circleci
-      - run:
-          name: Run Sonarqube
-          command: |
-            . venv/bin/activate
-            make sonar
+#  Disable sonar for now since we don't know how it works.  Hoping that @ngfgrant will
+#  re-appear to help us get it going again.
+#  sonar:
+#    docker:
+#      - image: cloudreach/sceptre-circleci-sonarqube:latest
+#    steps:
+#      - attach_workspace:
+#          at: /home/circleci
+#      - run:
+#          name: Run Sonarqube
+#          command: |
+#            . venv/bin/activate
+#            make sonar
 
-  integration-tests:
-    parallelism: 2
-    docker:
-      - image: cloudreach/sceptre-circleci:0.4
-        environment:
-          AWS_DEFAULT_REGION: eu-west-1
-    steps:
-      - attach_workspace:
-          at: /home/circleci
-      - run:
-          name: 'Integration Testing'
-          command: |
-            . ./venv/bin/activate
-            behave --junit \
-                   --junit-directory build/behave \
-                   $(circleci tests glob "integration-tests/features/*.feature" | circleci tests split --split-by=timings)
-      - store_test_results:
-          path: build/behave
-          destination: build/behave
-      - store_artifacts:
-          path: build/behave
-          destination: build/behave
+# Disable integration tests because we don't have access to the
+# AWS account it depends on.  We'll need to get an account before
+# we can run these tests again.
+#  integration-tests:
+#    parallelism: 2
+#    docker:
+#      - image: cloudreach/sceptre-circleci:0.6.0
+#        environment:
+#          AWS_DEFAULT_REGION: eu-west-1
+#    steps:
+#      - attach_workspace:
+#          at: /home/circleci
+#      - run:
+#          name: 'Integration Testing'
+#          command: |
+#            . ./venv/bin/activate
+#            behave --junit \
+#                   --junit-directory build/behave \
+#                   $(circleci tests glob "integration-tests/features/*.feature" | circleci tests split --split-by=timings)
+#      - store_test_results:
+#          path: build/behave
+#          destination: build/behave
+#      - store_artifacts:
+#          path: build/behave
+#          destination: build/behave
 
   build-docker-image:
     executor: docker-publisher
@@ -182,7 +187,7 @@ jobs:
 
   deploy-pypi:
     docker:
-      - image: cloudreach/sceptre-circleci:0.4
+      - image: cloudreach/sceptre-circleci:0.7.0
     steps:
       - attach_workspace:
           at: /home/circleci
@@ -237,38 +242,33 @@ workflows:
     jobs:
       - build:
           context: sceptre-core
-          filters:
-            tags:
-              only: /.*/
 
       - lint-and-unit-tests:
           context: sceptre-core
           requires:
             - build
-          filters:
-            tags:
-              only: /.*/
-      - sonar:
-          context: sceptre-core
-          requires:
-            - build
-            - lint-and-unit-tests
 
-      - integration-tests:
-          context: sceptre-core
-          requires:
-            - build
-          filters:
-            tags:
-              only: /.*/
-            branches:
-              ignore: /^pull\/.*/
+#      - sonar:
+#          context: sceptre-core
+#          requires:
+#            - build
+#            - lint-and-unit-tests
+
+#      - integration-tests:
+#          context: sceptre-core
+#          requires:
+#            - build
+#          filters:
+#            tags:
+#              only: /.*/
+#            branches:
+#              ignore: /^pull\/.*/
 
       - deploy-docs-branch:
           context: sceptre-core
           requires:
             - lint-and-unit-tests
-            - integration-tests
+#            - integration-tests
           filters:
             branches:
               only: master
@@ -277,7 +277,7 @@ workflows:
           context: sceptre-core
           requires:
             - lint-and-unit-tests
-            - integration-tests
+#            - integration-tests
           filters:
             tags:
               only: /^v.*/
@@ -289,8 +289,8 @@ workflows:
           type: approval
           requires:
             - lint-and-unit-tests
-            - integration-tests
-            - sonar
+#            - integration-tests
+#            - sonar
           filters:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*/
@@ -311,11 +311,8 @@ workflows:
           context: sceptre-core
           requires:
             - lint-and-unit-tests
-            - integration-tests
-            - sonar
-          filters:
-            tags:
-              only: /.*/
+#            - integration-tests
+#            - sonar
 
       - deploy-latest-dockerhub:
           context: sceptre-core

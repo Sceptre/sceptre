@@ -16,7 +16,7 @@ install_requirements = [
     "click>=7.0,<8.0",
     "PyYaml>=5.1,<6.0",
     "Jinja2>=2.8,<3",
-    "colorama==0.3.9",
+    "colorama>=0.3.9",
     "packaging>=16.8,<17.0",
     "six>=1.11.0,<2.0.0",
     "networkx==2.1",
@@ -83,7 +83,6 @@ setup(
         "Intended Audience :: Developers",
         "Natural Language :: English",
         "Environment :: Console",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7"

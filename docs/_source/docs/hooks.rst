@@ -12,6 +12,8 @@ If required, users can create their own ``hooks``, as described in the section
 Hook points
 -----------
 
+``before_generate`` or ``after_generate`` - run hook before or after generating stack template.
+
 ``before_create`` or ``after_create`` - run hook before or after Stack creation.
 
 ``before_update`` or ``after_update`` - run hook before or after Stack update.
@@ -19,6 +21,10 @@ Hook points
 ``before_delete`` or ``after_delete`` - run hook before or after Stack deletion.
 
 ``before_launch`` or ``after_launch`` - run hook before or after Stack launch.
+
+``before_validate`` or ``after_validate`` - run hook before or after Stack validation.
+
+``before_create_change_set`` or ``after_create_change_set`` - run hook before or after create change set.
 
 Syntax:
 
