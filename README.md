@@ -276,6 +276,12 @@ Full API reference documentation can be found in the
 - [Get Started](https://sceptre.cloudreach.com/latest/docs/get_started.html)
 - [Documentation](https://sceptre.cloudreach.com/)
 
+## Communication
+
+The Sceptre community uses a Slack channel #sceptre on the og-aws Slack for
+discussion. To join use this link http://slackhatesthe.cloud/ to create an
+account and join the #sceptre channel.
+
 ## Contributing
 
 See our [Contributing Guide](CONTRIBUTING.md)
