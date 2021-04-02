@@ -223,7 +223,7 @@ when using templating.
 .. code-block:: yaml
 
    parameters:
-     sceptre-project-code: {{ stack_group_config.sceptre-project-code }}
+     sceptre-project-code: {{ stack_group_config.project-code }}
 
 Environment Variables
 ---------------------
