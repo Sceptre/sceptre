@@ -95,6 +95,38 @@ be found in these projects:
 - `Sage-Bionetworks Sceptre lambda github template`_
 - `Versant SAM Sceptre skeleton example`_
 
+Another approach is to use the Sceptre `before_launch` hook to run either the
+SAM or CFN "package" command to generate the packaged version of the template.
+
+CloudFormation Example:
+
+```yaml
+template_path: generated/lambda-packaged.json
+stack_name: cfn-lambda-example
+hooks:
+  before_launch:
+    - !cmd >
+        aws --profile {{ stack_group_config.profile }} cloudformation package
+        --template-file templates/cfn-lambda.yaml
+        --s3-bucket {{ stack_group_config.template_bucket_name }}
+        --output json
+        --output-template-file templates/generated/lambda-packaged.json
+```
+
+SAM Example:
+
+```yaml
+template_path: generated/sam-packaged.yaml
+stack_name: sam-example
+hooks:
+  before_launch:
+    - !cmd >
+        sam package --profile {{ stack_group_config.profile }}
+        --s3-bucket {{ stack_group_config.template_bucket_name }}
+        --template-file templates/sam-app.yaml
+        --output-template-file templates/generated/sam-packaged.yaml
+```
+
 .. _SAM CLI: https://github.com/aws/aws-sam-cli
 .. _Sage-Bionetworks Sceptre lambda github template: https://github.com/Sage-Bionetworks-IT/lambda-template
 .. _Versant SAM Sceptre skeleton example: https://github.com/Versent/sam-sceptre
