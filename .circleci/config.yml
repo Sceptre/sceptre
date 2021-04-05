@@ -150,10 +150,8 @@ jobs:
       - attach_workspace:
           at: /home/circleci
       - aws-cli/setup:
-          aws-region: us-east-1
+          profile-name: CiServiceAccess
           role-arn: arn:aws:iam::582448526747:role/bootstrap-ci-service-access-ServiceRole-13M4IKJRFUISQ
-          aws-access-key-id: $AWS_CI_SERVICE_USER_ACCESS_KEY
-          aws-secret-access-key: $AWS_CI_SERVICE_USER_SECRET_ACCESS_KEY
       - run:
           name: 'Integration Testing'
           command: |
