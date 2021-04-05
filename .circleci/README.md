@@ -7,6 +7,9 @@
 * `GITHUB_EMAIL` - email which is associated with commit message and github account
 * `GITHUB_TOKEN` - access token with push rights to the target repository `/docs`
 * `CIRCLE_USERNAME` - built in variable in CIRCLE CI - should be same as user who pushes to repository
+* `AWS_ACCESS_KEY` - The AWS service user access key
+* `AWS_SECRET_ACCESS_KEY` - The AWS service user secret access key
+* `AWS_DEFAULT_REGION` - The default region for the AWS account
 
 ##### Optional evn variables
 
