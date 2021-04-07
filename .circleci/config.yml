@@ -240,11 +240,9 @@ workflows:
   version: 2.1
   build-test-and-deploy:
     jobs:
-      - build:
-          context: sceptre-core
+      - build
 
       - lint-and-unit-tests:
-          context: sceptre-core
           requires:
             - build
 
@@ -308,7 +306,6 @@ workflows:
               ignore: /.*/
 
       - build-docker-image:
-          context: sceptre-core
           requires:
             - lint-and-unit-tests
 #            - integration-tests
