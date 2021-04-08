@@ -69,6 +69,33 @@ def generate_command(ctx, path):
     write(output, context.output_format)
 
 
+@click.command(name="fetch-remote-template", short_help="Prints the remote template.")
+@click.argument("path")
+@click.pass_context
+@catch_exceptions
+def fetch_remote_template_command(ctx, path):
+    """
+    Prints the remote template used for stack in PATH.
+    \f
+
+    :param path: Path to execute the command on.
+    :type path: str
+    """
+    context = SceptreContext(
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options"),
+        output_format=ctx.obj.get("output_format"),
+        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+    )
+
+    plan = SceptrePlan(context)
+    responses = plan.fetch_remote_template()
+    output = [template for template in responses.values()]
+    write(output, context.output_format)
+
+
 @click.command(name="estimate-cost", short_help="Estimates the cost of the template.")
 @click.argument("path")
 @click.pass_context

@@ -581,6 +581,21 @@ class StackActions(object):
         return self.stack.template.body
 
     @add_stack_hooks
+    def fetch_remote_template(self):
+        """
+        Returns the Template for the remote Stack
+        """
+        self.logger.debug("%s - Fetching remote template", self.stack.name)
+        response = self.connection_manager.call(
+            service="cloudformation",
+            command="get_template",
+            kwargs={
+                "StackName": self.stack.external_name
+            }
+        )
+        return response.get("TemplateBody")
+
+    @add_stack_hooks
     def validate(self):
         """
         Validates the Stack's CloudFormation Template.
