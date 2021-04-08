@@ -381,7 +381,8 @@ class ConfigReader(object):
                     default=True,
                 ),
                 loader=FileSystemLoader(abs_directory_path),
-                undefined=StrictUndefined
+                undefined=StrictUndefined,
+                extensions=self.context.j2_extensions,
             )
             template = jinja_env.get_template(basename)
             self.templating_vars.update(stack_group_config)
