@@ -1,6 +1,6 @@
 version: 2.1
-orbs:
-  aws-cli: circleci/aws-cli@2.0
+#orbs:
+#  aws-cli: circleci/aws-cli@2.0
 
 executors:
   docker-publisher:
@@ -51,7 +51,7 @@ jobs:
             . ./venv/bin/activate
             pip install -r requirements/prod.txt
             pip install -r requirements/dev.txt
-#            pip install awscli
+            pip install awscli
       - save_cache:
           key:
             sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
@@ -149,15 +149,23 @@ jobs:
     steps:
       - attach_workspace:
           at: /home/circleci
-      - aws-cli/setup:
+#      - aws-cli/setup:
 #          override-installed: true
-          version: "1"
-          profile-name: CiServiceAccess
-          role-arn: arn:aws:iam::582448526747:role/bootstrap-ci-service-access-ServiceRole-13M4IKJRFUISQ
+#          version: "1"
+#          profile-name: CiServiceAccess
+#          role-arn: arn:aws:iam::582448526747:role/bootstrap-ci-service-access-ServiceRole-13M4IKJRFUISQ
+#      - run:
+#          name: 'Configure AWS CLI'
+#          command: |
+#            - mkdir -p ~/.aws
+#            - echo -e "[default]\nregion=us-east-1\nsource_profile=default\nrole_arn=arn:aws:iam::582448526747:role/bootstrap-ci-service-access-ServiceRole-13M4IKJRFUISQ" > ~/.aws/config
+#            - echo -e "[default]\nregion=us-east-1\naws_access_key_id=$AwsTravisAccessKey\naws_secret_access_key=$AwsTravisSecretAccessKey" > ~/.aws/credentials
       - run:
           name: 'Integration Testing'
           command: |
             . ./venv/bin/activate
+            export AWS_ROLE_ARN="arn:aws:iam::582448526747:role/bootstrap-ci-service-access-ServiceRole-13M4IKJRFUISQ"
+            export AWS_ROLE_SESSION_NAME=session_circlci_test
             behave --junit \
                    --junit-directory build/behave \
                    $(circleci tests glob "integration-tests/features/*.feature" | circleci tests split --split-by=timings)
