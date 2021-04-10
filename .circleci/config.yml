@@ -165,7 +165,7 @@ jobs:
           command: |
             . ./venv/bin/activate
             export AWS_ROLE_ARN="arn:aws:iam::582448526747:user/bootstrap-ci-service-access-ServiceUser-1WCR5CAXKYD85"
-            export AWS_ROLE_SESSION_NAME=session_circlci_test
+            export AWS_ROLE_SESSION_NAME="session_circlci_test"
             behave --junit \
                    --junit-directory build/behave \
                    $(circleci tests glob "integration-tests/features/*.feature" | circleci tests split --split-by=timings)
