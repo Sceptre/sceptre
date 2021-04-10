@@ -145,7 +145,7 @@ jobs:
     docker:
       - image: cloudreach/sceptre-circleci:0.7.0
         environment:
-          AWS_DEFAULT_REGION: us-east-1
+          AWS_DEFAULT_REGION: eu-west-1
     steps:
       - attach_workspace:
           at: /home/circleci
@@ -164,7 +164,7 @@ jobs:
           name: 'Integration Testing'
           command: |
             . ./venv/bin/activate
-            export AWS_ROLE_ARN="arn:aws:iam::582448526747:role/bootstrap-ci-service-access-ServiceRole-13M4IKJRFUISQ"
+            export AWS_ROLE_ARN="arn:aws:iam::582448526747:user/bootstrap-ci-service-access-ServiceUser-1WCR5CAXKYD85"
             export AWS_ROLE_SESSION_NAME=session_circlci_test
             behave --junit \
                    --junit-directory build/behave \
@@ -172,6 +172,7 @@ jobs:
       - store_test_results:
           path: build/behave
           destination: build/behave
+          path: _build/test/lib/<application name>
       - store_artifacts:
           path: build/behave
           destination: build/behave
