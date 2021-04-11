@@ -32,5 +32,3 @@ sceptre.config.strategies module
     :members:
     :undoc-members:
     :show-inheritance:
-
-
