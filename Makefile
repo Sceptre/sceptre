@@ -53,7 +53,7 @@ clean-test:
 	rm -f test-results.xml
 
 lint:
-	pre-commit run --all-files
+	pre-commit run --all-files --show-diff-on-failure
 
 test:
 	pytest --junitxml=test-results/junit.xml
