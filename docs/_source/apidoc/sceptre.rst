@@ -83,5 +83,3 @@ sceptre.template module
     :members:
     :undoc-members:
     :show-inheritance:
-
-
