@@ -16,7 +16,7 @@ help:
 	@echo "clean-build - remove build artifacts"
 	@echo "clean-pyc - remove Python file artifacts"
 	@echo "clean-test - remove test and coverage artifacts"
-	@echo "lint - check style with flake8"
+	@echo "lint - syntatic file validation with pre-commit"
 	@echo "test - run tests quickly with the default Python"
 	@echo "test-all - run tests on every Python version with tox"
 	@echo "test-integration - run integration tests"
@@ -53,7 +53,7 @@ clean-test:
 	rm -f test-results.xml
 
 lint:
-	flake8 .
+	pre-commit run --all-files
 
 test:
 	pytest --junitxml=test-results/junit.xml
