@@ -63,7 +63,7 @@ Images available from version 2.0.0 onward.
 To use our Docker image follow these instructions:
 
 1. Pull the image `docker pull cloudreach/sceptre:[SCEPTRE_VERSION_NUMBER]` e.g.
-   `docker pull cloudreach/sceptre:2.1.4`. Leave out the version number if you
+   `docker pull cloudreach/sceptre:2.4.0`. Leave out the version number if you
    wish to run `latest` or run `docker pull cloudreach/sceptre:latest`.
 
 2. Run the image. You will need to mount the working directory where your
@@ -74,7 +74,7 @@ To use our Docker image follow these instructions:
 
 If you want to use a custom ENTRYPOINT simply amend the Docker command:
 
-`docker run -ti --entrypoint='' cloudreach:latest sh`
+`docker run -ti --entrypoint='' cloudreach/sceptre:latest sh`
 
 The above command will enter you into the shell of the Docker container where
 you can execute sceptre commands - useful for development.
@@ -275,6 +275,12 @@ Full API reference documentation can be found in the
 
 - [Get Started](https://sceptre.cloudreach.com/latest/docs/get_started.html)
 - [Documentation](https://sceptre.cloudreach.com/)
+
+## Communication
+
+The Sceptre community uses a Slack channel #sceptre on the og-aws Slack for
+discussion. To join use this link http://slackhatesthe.cloud/ to create an
+account and join the #sceptre channel.
 
 ## Contributing
 

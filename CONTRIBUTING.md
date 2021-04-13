@@ -95,9 +95,14 @@ $ git checkout -b <branch-name>
 
    Check linting:
 
-```bash
-$ make lint
-```
+As a pre-deployment step we syntatically validate files with
+[pre-commit](https://pre-commit.com).
+
+Please [install pre-commit](https://pre-commit.com/#install) then run
+`pre-commit install` to setup the git hooks.  Once configured the pre-commit
+linters will automatically run on every git commit.  Alternatively you
+can manually execute the validations by running
+`pre-commit run --all-files`.
 
 Run unit tests or coverage in your current environment - (handy for quickly
 running unit tests):

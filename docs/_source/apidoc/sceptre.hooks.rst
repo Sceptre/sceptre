@@ -24,5 +24,3 @@ sceptre.hooks.cmd module
     :members:
     :undoc-members:
     :show-inheritance:
-
-
