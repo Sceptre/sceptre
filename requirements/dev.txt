@@ -1,8 +1,7 @@
 behave>=1.2.5,<2.0.0
 bumpversion>=0.5.3,<0.6.0
 coverage>=4.4.2,<5.0
-flake8>=3.5.0,<4.0
-flake8-per-file-ignores==0.4
+pre-commit>=2.12.0,<2.13
 freezegun>=0.3.12,<0.4.0
 Jinja2>=2.8,<3
 mock>=2.0.0,<2.1.0
