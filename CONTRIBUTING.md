@@ -47,8 +47,7 @@ A good pull request:
 - Is clear.
 - Works across all supported version of Python.
 - Complies with the existing codebase style
-  ([flake8](http://flake8.pycqa.org/en/latest/),
-  [pylint](https://www.pylint.org/)).
+  ([pre-commit](https://pre-commit.com/))
 - Includes [docstrings](https://www.python.org/dev/peps/pep-0257/) and comments
   for unintuitive sections of code.
 - Includes documentation for new features.

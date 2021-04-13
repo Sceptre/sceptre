@@ -139,7 +139,7 @@ jobs:
 #            make sonar
 
   integration-tests:
-    parallelism: 1
+    parallelism: 2
     docker:
       - image: cloudreach/sceptre-circleci:0.7.0
         environment:
