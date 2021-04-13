@@ -13,7 +13,3 @@ repos:
     rev: 3.9.0
     hooks:
       - id: flake8
-        args: ["--max-line-length=120",
-               "--max-complexity=12",
-               "--exclude=.git, __pycache__, build, dist, .tox, venv"
-        ]
