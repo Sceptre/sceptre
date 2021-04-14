@@ -33,7 +33,7 @@ install_requirements = [
 ]
 
 test_requirements = [
-    "pytest>=3.2,<4.0",
+    "pytest>=6.2.0,<7.0.0",
     "troposphere>=2.0.0",
     "moto>=1.3.8,<2.0",
     "mock>=2.0.0,<3.0.0",
