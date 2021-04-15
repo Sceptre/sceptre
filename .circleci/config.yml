@@ -238,20 +238,20 @@ workflows:
       - build:
           filters:
             branches:
-              only: master
+              only: /.*/
       - lint-and-unit-tests:
           requires:
             - build
           filters:
             branches:
-              only: master
+              only: /.*/
       - integration-tests:
           context: sceptre-core
           requires:
             - build
           filters:
             branches:
-              only: master
+              only: /.*/
       - deploy-docs-branch:
           context: sceptre-core
           requires:
@@ -259,21 +259,21 @@ workflows:
             - integration-tests
           filters:
             branches:
-              only: master
+              only: /.*/
       - build-docker-image:
           requires:
             - lint-and-unit-tests
             - integration-tests
           filters:
             branches:
-              only: master
+              only: /.*/
       - deploy-latest-dockerhub:
           context: sceptre-core
           requires:
             - build-docker-image
           filters:
             branches:
-              only: master
+              only: /.*/
 
   tag:
     jobs:
