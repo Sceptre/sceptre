@@ -19,8 +19,7 @@ install_requirements = [
     "colorama>=0.3.9",
     "packaging>=16.8,<17.0",
     "six>=1.11.0,<2.0.0",
-    "networkx==2.1",
-    "typing>=3.7.0,<3.8.0"
+    "networkx==2.1"
 ]
 
 test_requirements = [
@@ -83,7 +82,6 @@ setup(
         "Intended Audience :: Developers",
         "Natural Language :: English",
         "Environment :: Console",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7"
     ],
