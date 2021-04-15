@@ -237,31 +237,40 @@ jobs:
             docker push $IMAGE_NAME:$IMAGE_TAG
 
 workflows:
-  version: 2.1
-  build-test-and-deploy:
+  pre-merge:
     jobs:
       - build
-
       - lint-and-unit-tests:
           requires:
             - build
+      - build-docker-image:
+          requires:
+            - lint-and-unit-tests
 
+  merge:
+    jobs:
+      - build:
+          filters:
+            branches:
+              only: master
+      - lint-and-unit-tests:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
 #      - sonar:
 #          context: sceptre-core
 #          requires:
 #            - build
 #            - lint-and-unit-tests
-
       - integration-tests:
           context: sceptre-core
           requires:
             - build
           filters:
-            tags:
-              only: /.*/
             branches:
-              ignore: /^pull\/.*/
-
+              only: master
       - deploy-docs-branch:
           context: sceptre-core
           requires:
@@ -270,47 +279,14 @@ workflows:
           filters:
             branches:
               only: master
-
-      - deploy-docs-tag:
-          context: sceptre-core
-          requires:
-            - lint-and-unit-tests
-            - integration-tests
-          filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
-
-      - deploy-pypi-approval:
-          context: sceptre-core
-          type: approval
-          requires:
-            - lint-and-unit-tests
-            - integration-tests
-#            - sonar
-          filters:
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
-
-      - deploy-pypi:
-          context: sceptre-core
-          requires:
-            - deploy-pypi-approval
-          filters:
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
-
       - build-docker-image:
           requires:
             - lint-and-unit-tests
             - integration-tests
 #            - sonar
-
+          filters:
+            branches:
+              only: master
       - deploy-latest-dockerhub:
           context: sceptre-core
           requires:
@@ -319,6 +295,47 @@ workflows:
             branches:
               only: master
 
+  tag:
+    jobs:
+      - deploy-docs-tag:
+          context: sceptre-core
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
+      - deploy-pypi-approval:
+          context: sceptre-core
+          type: approval
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
+      - deploy-pypi:
+          context: sceptre-core
+          requires:
+            - deploy-pypi-approval
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
+      - build-docker-image:
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
+      - deploy-latest-dockerhub:
+          context: sceptre-core
+          requires:
+            - build-docker-image
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
       - deploy-dockerhub-tagged:
           context: sceptre-core
           requires:
@@ -326,6 +343,6 @@ workflows:
             - deploy-pypi
           filters:
             tags:
-              only: /^v.*/
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
             branches:
               ignore: /.*/
