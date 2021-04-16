@@ -124,45 +124,31 @@ jobs:
           paths:
             - .tox
 
-#  Disable sonar for now since we don't know how it works.  Hoping that @ngfgrant will
-#  re-appear to help us get it going again.
-#  sonar:
-#    docker:
-#      - image: cloudreach/sceptre-circleci-sonarqube:latest
-#    steps:
-#      - attach_workspace:
-#          at: /home/circleci
-#      - run:
-#          name: Run Sonarqube
-#          command: |
-#            . venv/bin/activate
-#            make sonar
-
-# Disable integration tests because we don't have access to the
-# AWS account it depends on.  We'll need to get an account before
-# we can run these tests again.
-#  integration-tests:
-#    parallelism: 2
-#    docker:
-#      - image: cloudreach/sceptre-circleci:0.6.0
-#        environment:
-#          AWS_DEFAULT_REGION: eu-west-1
-#    steps:
-#      - attach_workspace:
-#          at: /home/circleci
-#      - run:
-#          name: 'Integration Testing'
-#          command: |
-#            . ./venv/bin/activate
-#            behave --junit \
-#                   --junit-directory build/behave \
-#                   $(circleci tests glob "integration-tests/features/*.feature" | circleci tests split --split-by=timings)
-#      - store_test_results:
-#          path: build/behave
-#          destination: build/behave
-#      - store_artifacts:
-#          path: build/behave
-#          destination: build/behave
+  integration-tests:
+    parallelism: 2
+    docker:
+      - image: cloudreach/sceptre-circleci:0.7.0
+        environment:
+          AWS_DEFAULT_REGION: eu-west-1
+    steps:
+      - attach_workspace:
+          at: /home/circleci
+      - run:
+          name: 'Integration Testing'
+          command: |
+            . ./venv/bin/activate
+            mkdir -p ~/.aws
+            echo -e "[default]\nregion=eu-west-1\nsource_profile=default\nrole_arn=arn:aws:iam::582448526747:role/bootstrap-ci-service-access-ServiceRole-13M4IKJRFUISQ" > ~/.aws/config
+            echo -e "[default]\nregion=eu-west-1\naws_access_key_id=$CI_SERVICE_AWS_ACCESS_KEY_ID\naws_secret_access_key=$CI_SERVICE_AWS_SECRET_ACCESS_KEY" > ~/.aws/credentials
+            behave --junit \
+                   --junit-directory build/behave \
+                   $(circleci tests glob "integration-tests/features/*.feature" | circleci tests split --split-by=timings)
+      - store_test_results:
+          path: build/behave
+          destination: build/behave
+      - store_artifacts:
+          path: build/behave
+          destination: build/behave
 
   build-docker-image:
     executor: docker-publisher
@@ -237,98 +223,97 @@ jobs:
             docker push $IMAGE_NAME:$IMAGE_TAG
 
 workflows:
-  version: 2.1
+  build-and-unit-test:
+    jobs:
+      - build:
+          filters:
+            branches:
+              only: /^pull\/.*/
+      - lint-and-unit-tests:
+          requires:
+            - build
+          filters:
+            branches:
+              only: /^pull\/.*/
+      - build-docker-image:
+          requires:
+            - lint-and-unit-tests
+          filters:
+            branches:
+              only: /^pull\/.*/
+
   build-test-and-deploy:
     jobs:
       - build:
-          context: sceptre-core
-
+          filters:
+            branches:
+              ignore: /^pull\/.*/
       - lint-and-unit-tests:
+          requires:
+            - build
+          filters:
+            branches:
+              ignore: /^pull\/.*/
+      - integration-tests:
           context: sceptre-core
           requires:
             - build
-
-#      - sonar:
-#          context: sceptre-core
-#          requires:
-#            - build
-#            - lint-and-unit-tests
-
-#      - integration-tests:
-#          context: sceptre-core
-#          requires:
-#            - build
-#          filters:
-#            tags:
-#              only: /.*/
-#            branches:
-#              ignore: /^pull\/.*/
-
+          filters:
+            branches:
+              ignore: /^pull\/.*/
       - deploy-docs-branch:
           context: sceptre-core
           requires:
             - lint-and-unit-tests
-#            - integration-tests
+            - integration-tests
           filters:
             branches:
-              only: master
-
-      - deploy-docs-tag:
-          context: sceptre-core
-          requires:
-            - lint-and-unit-tests
-#            - integration-tests
-          filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
-
-      - deploy-pypi-approval:
-          context: sceptre-core
-          type: approval
-          requires:
-            - lint-and-unit-tests
-#            - integration-tests
-#            - sonar
-          filters:
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
-
-      - deploy-pypi:
-          context: sceptre-core
-          requires:
-            - deploy-pypi-approval
-          filters:
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
-
+              ignore: /^pull\/.*/
       - build-docker-image:
-          context: sceptre-core
           requires:
             - lint-and-unit-tests
-#            - integration-tests
-#            - sonar
-
+            - integration-tests
+          filters:
+            branches:
+              ignore: /^pull\/.*/
       - deploy-latest-dockerhub:
           context: sceptre-core
           requires:
             - build-docker-image
           filters:
             branches:
-              only: master
+              ignore: /^pull\/.*/
 
+  tag:
+    jobs:
+      - deploy-docs-tag:
+          context: sceptre-core
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
+      - build-docker-image:
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
+      - deploy-latest-dockerhub:
+          context: sceptre-core
+          requires:
+            - build-docker-image
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
       - deploy-dockerhub-tagged:
           context: sceptre-core
           requires:
             - build-docker-image
-            - deploy-pypi
           filters:
             tags:
-              only: /^v.*/
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
             branches:
               ignore: /.*/
