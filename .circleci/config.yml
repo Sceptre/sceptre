@@ -223,7 +223,7 @@ jobs:
             docker push $IMAGE_NAME:$IMAGE_TAG
 
 workflows:
-  pre-merge:
+  build-and-unit-test:
     jobs:
       - build:
           filters:
@@ -242,7 +242,7 @@ workflows:
             branches:
               only: /^pull\/.*/
 
-  merge:
+  build-test-and-deploy:
     jobs:
       - build:
           filters:
