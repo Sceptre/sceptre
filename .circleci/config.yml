@@ -124,20 +124,6 @@ jobs:
           paths:
             - .tox
 
-#  Disable sonar for now since we don't know how it works.  Hoping that @ngfgrant will
-#  re-appear to help us get it going again.
-#  sonar:
-#    docker:
-#      - image: cloudreach/sceptre-circleci-sonarqube:latest
-#    steps:
-#      - attach_workspace:
-#          at: /home/circleci
-#      - run:
-#          name: Run Sonarqube
-#          command: |
-#            . venv/bin/activate
-#            make sonar
-
   integration-tests:
     parallelism: 2
     docker:
@@ -237,31 +223,44 @@ jobs:
             docker push $IMAGE_NAME:$IMAGE_TAG
 
 workflows:
-  version: 2.1
-  build-test-and-deploy:
+  build-and-unit-test:
     jobs:
-      - build
-
+      - build:
+          filters:
+            branches:
+              only: /^pull\/.*/
       - lint-and-unit-tests:
           requires:
             - build
+          filters:
+            branches:
+              only: /^pull\/.*/
+      - build-docker-image:
+          requires:
+            - lint-and-unit-tests
+          filters:
+            branches:
+              only: /^pull\/.*/
 
-#      - sonar:
-#          context: sceptre-core
-#          requires:
-#            - build
-#            - lint-and-unit-tests
-
+  build-test-and-deploy:
+    jobs:
+      - build:
+          filters:
+            branches:
+              ignore: /^pull\/.*/
+      - lint-and-unit-tests:
+          requires:
+            - build
+          filters:
+            branches:
+              ignore: /^pull\/.*/
       - integration-tests:
           context: sceptre-core
           requires:
             - build
           filters:
-            tags:
-              only: /.*/
             branches:
               ignore: /^pull\/.*/
-
       - deploy-docs-branch:
           context: sceptre-core
           requires:
@@ -269,63 +268,52 @@ workflows:
             - integration-tests
           filters:
             branches:
-              only: master
-
-      - deploy-docs-tag:
-          context: sceptre-core
-          requires:
-            - lint-and-unit-tests
-            - integration-tests
-          filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
-
-      - deploy-pypi-approval:
-          context: sceptre-core
-          type: approval
-          requires:
-            - lint-and-unit-tests
-            - integration-tests
-#            - sonar
-          filters:
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
-
-      - deploy-pypi:
-          context: sceptre-core
-          requires:
-            - deploy-pypi-approval
-          filters:
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
-
+              ignore: /^pull\/.*/
       - build-docker-image:
           requires:
             - lint-and-unit-tests
             - integration-tests
-#            - sonar
-
+          filters:
+            branches:
+              ignore: /^pull\/.*/
       - deploy-latest-dockerhub:
           context: sceptre-core
           requires:
             - build-docker-image
           filters:
             branches:
-              only: master
+              ignore: /^pull\/.*/
 
+  tag:
+    jobs:
+      - deploy-docs-tag:
+          context: sceptre-core
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
+      - build-docker-image:
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
+      - deploy-latest-dockerhub:
+          context: sceptre-core
+          requires:
+            - build-docker-image
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
       - deploy-dockerhub-tagged:
           context: sceptre-core
           requires:
             - build-docker-image
-            - deploy-pypi
           filters:
             tags:
-              only: /^v.*/
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
             branches:
               ignore: /.*/
