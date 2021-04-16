@@ -225,13 +225,22 @@ jobs:
 workflows:
   pre-merge:
     jobs:
-      - build
+      - build:
+          filters:
+            branches:
+              only: /^pull\/.*/
       - lint-and-unit-tests:
           requires:
             - build
+          filters:
+            branches:
+              only: /^pull\/.*/
       - build-docker-image:
           requires:
             - lint-and-unit-tests
+          filters:
+            branches:
+              only: /^pull\/.*/
 
   merge:
     jobs:
