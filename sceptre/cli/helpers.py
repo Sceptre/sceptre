@@ -1,5 +1,6 @@
 import logging
 import sys
+from itertools import cycle
 from functools import partial, wraps
 
 import json
@@ -76,10 +77,7 @@ def write(var, output_format="json", no_colour=True):
     if output_format == "yaml":
         output = _generate_yaml(var)
     if output_format == "text":
-        if isinstance(var, list):
-            output = "---\n".join(var)
-        else:
-            output = var
+        output = _generate_text(var)
     if not no_colour:
         stack_status_colourer = StackStatusColourer()
         output = stack_status_colourer.colour(str(output))
@@ -134,6 +132,36 @@ def _generate_yaml(stream):
             return yaml.safe_loads(stream)
         except Exception:
             return stream
+
+
+def _generate_text(stream):
+    pad = 3
+    if isinstance(stream, list):
+        items = []
+        for item in stream:
+            try:
+                if isinstance(item, dict):
+                    # use keys as headers, and add a blank row
+                    if not items:
+                        items = [["Stack"]]
+                        items[0].extend(list(next(iter(*item.values()))))
+                        items.append(["" for _ in range(len(items[0]))])
+                    for k, v in item.items():
+                        for r in item[k]:
+                            row = [k]
+                            row.extend(list(r.values()))
+                            items.append(row)
+                else:
+                    items.append(item)
+            except Exception:
+                print("An error occured writing the text object.")
+        col_widths = [max(len(c) for c in b) for b in zip(*items)]
+        rows = []
+        for row in items:
+            rows.append(" ".join([field.ljust(width + pad)
+                                  for field, width in zip(row, cycle(col_widths))]))
+        return "\n".join(rows)
+    return stream
 
 
 def stack_status_exit_code(statuses):
