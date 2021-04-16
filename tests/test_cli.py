@@ -454,7 +454,7 @@ class TestCli(object):
         )
         assert result.exit_code == 0
         expected_output = 'StackOutputKeyOutputValue\n\nStackNameKeyValue\n'
-        assert result.output.replace(' ','') == expected_output
+        assert result.output.replace(' ', '') == expected_output
 
     def test_list_outputs_with_export(self):
         outputs = {'stack': [{'OutputKey': 'Key', 'OutputValue': 'Value'}]}
