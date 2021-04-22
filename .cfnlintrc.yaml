@@ -1,0 +1,9 @@
+ignore_checks: [E0000, E3012, E1001, W6001]
+ignore_templates:
+  - integration-tests/sceptre-project/config/**/*
+  - integration-tests/sceptre-project/templates/jinja/**/*
+  - tests/fixtures-vpc/config/**/*
+  - tests/fixtures/config/**/*
+  - .circleci/**/*
+  - .pre-commit-config.yaml
+  - .cfnlintrc.yaml
