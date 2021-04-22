@@ -20,3 +20,4 @@ repos:
     rev: v0.48.3
     hooks:
       - id: cfn-python-lint
+        files: .*\.(json|yml|yaml)$
