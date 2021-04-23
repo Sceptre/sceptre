@@ -28,7 +28,10 @@ profile
 ~~~~~~~
 
 The name of the profile as defined in ``~/.aws/config`` and
-``~/.aws/credentials``.
+``~/.aws/credentials``. Use the `aws configure --profile <profile_id>` command
+form the AWS CLI to add profiles to these files.
+
+Reference: `AWS_CLI_Configure`_
 
 project_code
 ~~~~~~~~~~~~
@@ -261,3 +264,4 @@ Examples
 .. _template_key_prefix: #template_key_prefix
 .. _region which supports CloudFormation: http://docs.aws.amazon.com/general/latest/gr/rande.html#cfn_region
 .. _PEP 440: https://www.python.org/dev/peps/pep-0440/#version-specifiers
+.. _AWS_CLI_Configure: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html
