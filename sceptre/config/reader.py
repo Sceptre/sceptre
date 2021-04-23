@@ -391,7 +391,12 @@ class ConfigReader(object):
                 environment_variable=environ
             )
 
-            config = yaml.safe_load(rendered_template)
+            try:
+                config = yaml.safe_load(rendered_template)
+            except Exception as err:
+                raise ValueError(
+                    "Error parsing {}:\n{}".format(abs_directory_path, err)
+                )
 
             return config
 
