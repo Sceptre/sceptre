@@ -6,4 +6,3 @@ ignore_templates:
   - tests/fixtures/config/**/*
   - .circleci/**/*
   - .pre-commit-config.yaml
-  - .cfnlintrc.yaml
