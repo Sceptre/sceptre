@@ -1,0 +1,24 @@
+default_language_version:
+  python: python3
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.9.0
+    hooks:
+      - id: flake8
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.26.1
+    hooks:
+      - id: yamllint
+  - repo: https://github.com/awslabs/cfn-python-lint
+    # newer versions conflict with pre-commit
+    # https://github.com/aws-cloudformation/cfn-python-lint/issues/1427
+    rev: v0.42.0
+    hooks:
+      - id: cfn-python-lint

@@ -23,4 +23,3 @@ Feature: Launch stack
     and the template for stack "1/A" is "valid_template.json"
     When the user launches stack "1/A" with ignore dependencies
     Then stack "1/A" exists in "CREATE_COMPLETE" state
-

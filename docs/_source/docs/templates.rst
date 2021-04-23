@@ -156,6 +156,9 @@ Config file, Sceptre passes an empty ``dict``.
 Example
 ~~~~~~~
 
+Troposphere
+^^^^^^^^^^^
+
 This example is using `troposphere`_
 to generate CloudFormation Template as a `json` string.
 
@@ -177,3 +180,58 @@ to generate CloudFormation Template as a `json` string.
         return vpc(sceptre_user_data)
 
 .. _troposphere: https://github.com/cloudtools/troposphere/
+
+
+AWS CDK
+^^^^^^^
+
+This example generates a cloudformation template from `AWS CDK`_ code.
+
+.. code-block:: yaml
+
+  sceptre_user_data:
+    BucketName: my-bucket
+
+..
+
+
+.. code-block:: python
+
+  import yaml
+  from aws_cdk import (
+      aws_s3 as s3,
+      core as cdk
+  )
+
+  class S3CdkStack(cdk.Stack):
+
+    def __init__(self, scope: cdk.Stack, construct_id: str, sceptre_user_data, **kwargs) -> None:
+      super().__init__(scope, construct_id, **kwargs)
+
+      bucket_name = sceptre_user_data['BucketName']
+      bucket = s3.Bucket(self, "S3Bucket",
+                         bucket_name=bucket_name)
+
+  def sceptre_handler(sceptre_user_data):
+      app = cdk.App()
+      S3CdkStack(app, "S3CdkStack", sceptre_user_data)
+      template = app.synth().get_stack("S3CdkStack").template
+      return yaml.safe_dump(template)
+
+.. _AWS_CDK: https://github.com/aws/aws-cdk
+
+
+Generate cloudformation:
+
+``sceptre generate dev/S3CdkStack.yaml``
+
+.. code-block:: yaml
+
+  Resources:
+    S3Bucket07682993:
+      DeletionPolicy: Retain
+      Properties:
+        BucketName: my-bucket
+      Type: AWS::S3::Bucket
+      UpdateReplacePolicy: Retain
+..
