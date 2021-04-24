@@ -286,6 +286,13 @@ workflows:
 
   tag:
     jobs:
+      - deploy-pypi:
+          context: sceptre-core
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
       - deploy-docs-tag:
           context: sceptre-core
           filters:
@@ -294,15 +301,6 @@ workflows:
             branches:
               ignore: /.*/
       - build-docker-image:
-          filters:
-            tags:
-              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
-            branches:
-              ignore: /.*/
-      - deploy-latest-dockerhub:
-          context: sceptre-core
-          requires:
-            - build-docker-image
           filters:
             tags:
               only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
