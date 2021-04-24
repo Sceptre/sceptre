@@ -8,8 +8,17 @@ repos:
       - id: end-of-file-fixer
       - id: mixed-line-ending
       - id: trailing-whitespace
-
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.9.0
     hooks:
       - id: flake8
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.26.1
+    hooks:
+      - id: yamllint
+  - repo: https://github.com/awslabs/cfn-python-lint
+    # newer versions conflict with pre-commit
+    # https://github.com/aws-cloudformation/cfn-python-lint/issues/1427
+    rev: v0.42.0
+    hooks:
+      - id: cfn-python-lint
