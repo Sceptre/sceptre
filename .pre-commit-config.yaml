@@ -33,6 +33,5 @@ repos:
             ^tests/fixtures/config/|
             ^temp/|
             ^.circleci/|
-            ^.cfnlintrc|
             ^.pre-commit-config.yaml
           )
