@@ -90,24 +90,6 @@ jobs:
             make test-all
 
       - store_test_results:
-          path: test-results
-          destination: test-results
-
-      - store_artifacts:
-          path: test-results
-          destination: test-results
-
-      - run:
-          name: 'Coverage'
-          command: |
-            . venv/bin/activate
-            make coverage
-
-      - store_test_results:
-          path: coverage.xml
-          destination: coverage-reports
-
-      - store_artifacts:
           path: coverage.xml
           destination: coverage-reports
 
