@@ -32,19 +32,6 @@ install_requirements = [
     "networkx>=2.4,<3"
 ]
 
-test_requirements = [
-    "pytest>=6.2.0,<7.0.0",
-    "troposphere>=2.0.0",
-    "moto>=1.3.8,<2.0",
-    "mock>=2.0.0,<3.0.0",
-    "behave>=1.2.5,<2.0.0",
-    "freezegun==0.3.12"
-]
-
-setup_requirements = [
-    "pytest-runner>=3"
-]
-
 setup(
     name="sceptre",
     version=get_version("sceptre/__init__.py"),
@@ -93,13 +80,10 @@ setup(
         "Natural Language :: English",
         "Environment :: Console",
         "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7"
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
     ],
     test_suite="tests",
     install_requires=install_requirements,
-    tests_require=test_requirements,
-    setup_requires=setup_requirements,
-    extras_require={
-        "test": test_requirements
-    }
 )
