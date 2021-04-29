@@ -20,8 +20,6 @@ help:
 	@echo "test - run tests quickly with the default Python"
 	@echo "test-all - run tests on every Python version with tox"
 	@echo "test-integration - run integration tests"
-	@echo "coverage - check code coverage quickly with the default Python"
-	@echo "coverage-ci - check code coverage and generate cobertura report"
 	@echo "dist - package"
 	@echo "install - install the package to the active Python's site-packages"
 	@echo "install-dev - install the test requirements to the active Python's site-packages"
@@ -56,21 +54,13 @@ lint:
 	pre-commit run --all-files --show-diff-on-failure
 
 test:
-	pytest --junitxml=test-results/junit.xml
+	pytest
 
 test-all:
 	tox
 
 test-integration: install
 	behave integration-tests/
-
-coverage-all:
-		coverage erase
-		coverage run --source sceptre -m pytest
-		coverage xml
-
-coverage: coverage-all
-		coverage report --show-missing --fail-under 92
 
 docs:
 	rm -f docs/sceptre.rst

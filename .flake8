@@ -5,7 +5,9 @@ exclude =
 	build,
 	dist,
 	.tox,
-	venv
+	venv,
+	.venv,
+	.pytest_cache
 max-complexity = 12
 per-file-ignores =
 	docs/_api/conf.py: E265
