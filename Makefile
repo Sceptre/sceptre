@@ -72,17 +72,6 @@ coverage-all:
 coverage: coverage-all
 		coverage report --show-missing --fail-under 92
 
-sonar:
-	    @sonar-scanner \
-            -Dsonar.projectKey=Sceptre_${CIRCLE_PROJECT_REPONAME} \
-            -Dsonar.organization=sceptre \
-			-Dsonar.projectName=${CIRCLE_PROJECT_REPONAME} \
-            -Dsonar.pullrequest.provider=GitHub\
-			-Dsonar.branch.name=${CIRCLE_BRANCH}\
-            -Dsonar.sources=. \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.login=${SONAR_LOGIN}
-
 docs:
 	rm -f docs/sceptre.rst
 	rm -f docs/modules.rst
