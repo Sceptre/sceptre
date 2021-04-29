@@ -1,13 +1,5 @@
 # Sceptre
 
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=Sceptre_sceptre&metric=bugs)](https://sonarcloud.io/dashboard?id=Sceptre_sceptre)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Sceptre_sceptre&metric=coverage)](https://sonarcloud.io/dashboard?id=Sceptre_sceptre)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Sceptre_sceptre&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=Sceptre_sceptre)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Sceptre_sceptre&metric=alert_status)](https://sonarcloud.io/dashboard?id=Sceptre_sceptre)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=Sceptre_sceptre&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=Sceptre_sceptre)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=Sceptre_sceptre&metric=security_rating)](https://sonarcloud.io/dashboard?id=Sceptre_sceptre)
-[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=Sceptre_sceptre&metric=sqale_index)](https://sonarcloud.io/dashboard?id=Sceptre_sceptre)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=Sceptre_sceptre&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=Sceptre_sceptre)
 ![image](https://circleci.com/gh/Sceptre/sceptre.png?style=shield)
 ![image](https://badge.fury.io/py/sceptre.svg)
 
