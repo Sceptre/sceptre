@@ -17,8 +17,21 @@ repos:
     hooks:
       - id: yamllint
   - repo: https://github.com/awslabs/cfn-python-lint
-    # newer versions conflict with pre-commit
-    # https://github.com/aws-cloudformation/cfn-python-lint/issues/1427
-    rev: v0.42.0
+    rev: v0.49.0
     hooks:
       - id: cfn-python-lint
+        args:
+          - "-i=E0000"
+          - "-i=E1001"
+          - "-i=E3012"
+          - "-i=W6001"
+        exclude: |
+          (?x)(
+            ^integration-tests/sceptre-project/config/|
+            ^integration-tests/sceptre-project/templates/jinja/|
+            ^tests/fixtures-vpc/config/|
+            ^tests/fixtures/config/|
+            ^temp/|
+            ^.circleci/|
+            ^.pre-commit-config.yaml
+          )
