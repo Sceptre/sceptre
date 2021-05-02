@@ -55,7 +55,7 @@ Images available from version 2.0.0 onward.
 To use our Docker image follow these instructions:
 
 1. Pull the image `docker pull cloudreach/sceptre:[SCEPTRE_VERSION_NUMBER]` e.g.
-   `docker pull cloudreach/sceptre:2.4.0`. Leave out the version number if you
+   `docker pull cloudreach/sceptre:2.5.0`. Leave out the version number if you
    wish to run `latest` or run `docker pull cloudreach/sceptre:latest`.
 
 2. Run the image. You will need to mount the working directory where your
