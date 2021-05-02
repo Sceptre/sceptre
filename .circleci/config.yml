@@ -168,7 +168,6 @@ jobs:
           name: 'Upload Distributions'
           command: |
             . ./venv/bin/activate
-            pip install twine
             twine upload -u $PYPI_USERNAME -p $PYPI_PASSWORD dist/*
 
   deploy-latest-dockerhub:
