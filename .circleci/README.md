@@ -15,3 +15,17 @@
 * `RENDERED_DOCS_DIR` - directory where rendered pages are stored within `DEST_REPO` - default is repository root
 * `DOCS_DEV_VERSION` - directory name where latest version of docs are published,
    default value is `dev` will result in path `../docs/dev`
+
+
+
+##### Release Workflow
+
+This is the workflow used to publish Sceptre releases.
+
+* Verify that the latest CI build for Sceptre is green on the `master` branch
+* Checkout the latest master branch
+* Bump the Sceptre version (i.e. 2.4.0 -> 2.5.0) & update the CHANGELOG.md file
+* Commit and push the change
+* Create a tag (i.e. tag -a -s v2.6.0)
+* Push tag
+* The `publish` workflow is triggered on CI which will publish a new Sceptre release.
