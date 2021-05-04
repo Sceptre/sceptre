@@ -8,14 +8,14 @@
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/sceptre?logo=pypi)](https://pypi.org/project/sceptre/)
 [![License](https://img.shields.io/pypi/l/sceptre?logo=apache)](https://github.com/Sceptre/sceptre/blob/main/LICENSE)
 
-# About
+## About
 
 Sceptre is a tool to drive
 [AWS CloudFormation](https://aws.amazon.com/cloudformation). It automates the
 mundane, repetitive and error-prone tasks, enabling you to concentrate on
 building better infrastructure.
 
-# Features
+## Features
 
 - Code reuse by separating a Stack's template and its configuration
 - Support for templates written in JSON, YAML, Jinja2 or Python DSLs such as
@@ -33,7 +33,7 @@ building better infrastructure.
 - Support for inserting dynamic values in templates via customisable Resolvers
 - Support for running arbitrary code as Hooks before/after Stack builds
 
-# Benefits
+## Benefits
 
 - Utilises cloud-native Infrastructure as Code engines (CloudFormation)
 - You do not need to manage state
@@ -43,16 +43,16 @@ building better infrastructure.
 - Simple CLI and API
 - Unopinionated - Sceptre does not force a specific project structure
 
-# Install
+## Install
 
-## Using pip
+### Using pip
 
 `$ pip install sceptre`
 
 More information on installing sceptre can be found in our
 [Installation Guide](https://sceptre.cloudreach.com/latest/docs/install.html)
 
-## Using Docker Image
+### Using Docker Image
 
 View our [Docker repository](https://hub.docker.com/r/cloudreach/sceptre).
 Images available from version 2.0.0 onward.
@@ -80,19 +80,19 @@ If you have any other environment variables in your non-docker shell you will
 need to pass these in on the Docker CLI using the `-e` flag. See Docker
 documentation on how to achieve this.
 
-# Migrate v1 to v2
+## Migrate v1 to v2
 
 We have tried to make the migration to Sceptre v2 as simple as possible. For
 information about how to migration your v1 project please see our
 [Migration Guide](https://github.com/sceptre/project/wiki/Migration-Guide:-V1-to-V2)
 
-# V1 End of Life Notice
+## V1 End of Life Notice
 
 Support for Version 1 will
 [end on June 1 2019](https://github.com/sceptre/sceptre/issues/593). For new
 projects we recommend using Version 2.
 
-# Example
+## Example
 
 Sceptre organises Stacks into "Stack Groups". Each Stack is represented by a
 YAML configuration file stored in a directory which represents the Stack Group.
