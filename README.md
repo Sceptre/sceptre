@@ -1,7 +1,12 @@
 # Sceptre
 
-![image](https://circleci.com/gh/Sceptre/sceptre.png?style=shield)
-![image](https://badge.fury.io/py/sceptre.svg)
+[![CircleCI](https://img.shields.io/circleci/build/github/Sceptre/sceptre?logo=circleci)](https://app.circleci.com/pipelines/github/Sceptre)
+[![Docker Image Version (latest semver)](https://img.shields.io/docker/v/cloudreach/sceptre?logo=docker&sort=semver)](https://hub.docker.com/r/cloudreach/sceptre)
+[![PyPI](https://img.shields.io/pypi/v/sceptre?logo=pypi)](https://pypi.org/project/sceptre/)
+[![PyPI - Status](https://img.shields.io/pypi/status/sceptre?logo=pypi)](https://pypi.org/project/sceptre/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/sceptre?logo=pypi)](https://pypi.org/project/sceptre/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/sceptre?logo=pypi)](https://pypi.org/project/sceptre/)
+[![License](https://img.shields.io/pypi/l/sceptre?logo=apache)](https://github.com/Sceptre/sceptre/blob/main/LICENSE)
 
 # About
 
