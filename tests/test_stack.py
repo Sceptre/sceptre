@@ -2,7 +2,7 @@
 
 import importlib
 
-from mock import MagicMock, sentinel
+from unittest.mock import MagicMock, sentinel
 from sceptre.resolvers import Resolver
 from sceptre.stack import Stack
 from sceptre.template import Template
@@ -116,12 +116,12 @@ class TestStack(object):
 
     def test_repr_can_eval_correctly(self):
         sceptre = importlib.import_module('sceptre')
-        mock = importlib.import_module('mock')
+        mock = importlib.import_module('unittest.mock')
         evaluated_stack = eval(
             repr(self.stack),
             {
                 'sceptre': sceptre,
-                'sentinel': mock.mock.sentinel
+                'sentinel': mock.sentinel
             }
         )
         assert isinstance(evaluated_stack, Stack)

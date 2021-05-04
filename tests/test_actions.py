@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from mock import patch, sentinel, Mock, call
+from unittest.mock import patch, sentinel, Mock, call
 
 import datetime
 from dateutil.tz import tzutc

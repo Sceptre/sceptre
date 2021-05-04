@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-from mock import patch, sentinel, MagicMock
+from unittest.mock import patch, sentinel, MagicMock
 import pytest
 import yaml
 import errno

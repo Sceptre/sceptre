@@ -6,7 +6,7 @@ import errno
 import json
 
 from click.testing import CliRunner
-from mock import MagicMock, patch, sentinel
+from unittest.mock import MagicMock, patch, sentinel
 import pytest
 import click
 
