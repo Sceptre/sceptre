@@ -52,7 +52,7 @@ include = ["CHANGELOG.md", "README.md"]
 [tool.poetry.dependencies]
 python = "^3.6.1"
 click = "^7.1.2"
-colorama = "^0.4.4"
+colorama = ">=0.2.5,<0.4.4"
 boto3 = "^1.17.64"
 Jinja2 = "^2.11.3"
 networkx = "^2.5.1"
@@ -74,6 +74,7 @@ troposphere = "^2.7.1"
 Sphinx = "^3.5.4"
 sphinx-click = "^2.7.1"
 sphinx-rtd-theme = "^0.5.2"
+awscli = "^1.19.68"
 
 [tool.poetry.scripts]
 sceptre = "sceptre.cli:cli"
