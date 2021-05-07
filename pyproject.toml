@@ -1,6 +1,6 @@
 [build-system]
-build-backend = "setuptools.build_meta"
-requires = ["setuptools", "wheel"]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.coverage.run]
 branch = true
@@ -21,6 +21,72 @@ exclude_lines = [
 ignore_errors = true
 fail_under = 90.0
 show_missing = true
+
+[tool.poetry]
+name = "sceptre"
+version = "2.5.0"
+description = "Cloud Provisioning Tool"
+authors = ["Cloudreach <sceptre@cloudreach.com>"]
+maintainers = []
+license = "Apache-2.0"
+readme = "README.md"
+homepage = "https://sceptre.github.io/"
+repository = "https://github.com/Sceptre/sceptre"
+documentation = "https://sceptre.github.io/"
+keywords = ["sceptre", "aws", "cloud", "provisioning", "cloudformation"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Natural Language :: English",
+  "Environment :: Console",
+  "Programming Language :: Python :: 3.6",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+]
+packages = [
+  { include = "sceptre/" },
+]
+include = ["CHANGELOG.md", "README.md"]
+
+[tool.poetry.dependencies]
+python = "^3.6.1"
+click = "^7.1.2"
+colorama = "^0.4.4"
+boto3 = "^1.17.64"
+Jinja2 = "^2.11.3"
+networkx = "^2.5.1"
+PyYAML = "^5.4.1"
+packaging = "^16"
+
+[tool.poetry.dev-dependencies]
+behave = "^1.2.6"
+coverage = {extras = ["toml"], version = "^5.5"}
+flake8 = "^3.9.1"
+pre-commit = "^2.12.1"
+freezegun = "^1.1.0"
+moto = "^2.0.6"
+pytest = "^6.2.3"
+pytest-cov = "^2.11.1"
+pytest-sugar = "^0.9.4"
+tox = "^3.23.0"
+troposphere = "^2.7.1"
+Sphinx = "^3.5.4"
+sphinx-click = "^2.7.1"
+sphinx-rtd-theme = "^0.5.2"
+
+[tool.poetry.scripts]
+sceptre = "sceptre.cli:cli"
+
+[tool.poetry.plugins."sceptre.hooks"]
+asg_scheduled_actions = "sceptre.hooks.asg_scaling_processes:ASGScalingProcesses"
+cmd = "sceptre.hooks.cmd:Cmd"
+
+[tool.poetry.plugins."sceptre.resolvers"]
+environment_variable = "sceptre.resolvers.environment_variable:EnvironmentVariable"
+file_contents = "sceptre.resolvers.file_contents:FileContents"
+stack_output = "sceptre.resolvers.stack_output:StackOutput"
+stack_output_external = "sceptre.resolvers.stack_output:StackOutputExternal"
 
 [tool.pytest.ini_options]
 addopts = "-s --cov --cov-report term --cov-report term-missing --cov-report xml"
