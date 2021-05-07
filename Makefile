@@ -46,9 +46,10 @@ clean-pyc:
 clean-test:
 	rm -fr .tox/
 	rm -fr .cache/
+	rm -fr .pytest_cache/
 	rm -f .coverage
 	rm -fr htmlcov/
-	rm -f test-results.xml
+	rm -f coverage.xml
 
 lint:
 	pre-commit run --all-files --show-diff-on-failure
@@ -101,16 +102,11 @@ docs-clean:
 	$(MAKE) -C docs clean
 
 dist: clean
-	python setup.py sdist
-	python setup.py bdist_wheel
-	twine check dist/*
+	poetry build
 	ls -l dist
 
 install: clean
-	pip install .
+	poetry install --no-dev
 
 install-dev: clean
-	pip install -r requirements/prod.txt
-	pip install -r requirements/dev.txt
-	pip install -e .
-	@echo "To install the documentation dependencies, run:\ncd docs\nmake install"
+	poetry install
