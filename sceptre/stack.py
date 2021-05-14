@@ -8,6 +8,9 @@ This module implements a Stack class, which stores a Stack's data.
 """
 
 import logging
+import yaml
+
+from deepdiff import DeepDiff
 from typing import Mapping, Sequence
 
 from sceptre.connection_manager import ConnectionManager
@@ -274,6 +277,40 @@ class Stack(object):
                 connection_manager=self.connection_manager
             )
         return self._template
+
+    def diff(self):
+        """
+        Returns a DeepDiff between the template body
+        of the currently deployed stack and the local one.
+
+        :returns: differences
+        :rtype: string
+        """
+        remote_template_stream = \
+            self.connection_manager.call(
+                service="cloudformation",
+                command="get_template",
+                kwargs={"StackName": self.external_name}
+            )["TemplateBody"]
+
+        local_template_stream = self.template.body
+
+        remote_template = yaml.load(
+            remote_template_stream,
+            Loader=yaml.BaseLoader
+        )
+        local_template = yaml.load(
+            local_template_stream,
+            Loader=yaml.BaseLoader
+        )
+
+        deep_diff = DeepDiff(
+            remote_template,
+            local_template,
+            ignore_order=True
+        )
+
+        return deep_diff.pretty()
 
     def _resolve_sceptre_user_data(self):
         data = self._sceptre_user_data

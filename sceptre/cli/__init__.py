@@ -21,6 +21,7 @@ from sceptre.cli.update import update_command
 from sceptre.cli.delete import delete_command
 from sceptre.cli.launch import launch_command
 from sceptre.cli.execute import execute_command
+from sceptre.cli.diff import diff_command
 from sceptre.cli.describe import describe_group
 from sceptre.cli.list import list_group
 from sceptre.cli.policy import set_policy_command
@@ -111,3 +112,4 @@ cli.add_command(set_policy_command)
 cli.add_command(status_command)
 cli.add_command(list_group)
 cli.add_command(describe_group)
+cli.add_command(diff_command)
