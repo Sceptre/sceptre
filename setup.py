@@ -1,15 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from sceptre import __version__
+import codecs
+import os
 from setuptools import setup, find_packages
-from os import path
 
-with open("README.md") as readme_file:
-    readme = readme_file.read()
 
-with open("CHANGELOG.md") as history_file:
-    history = history_file.read()
+def read_file(rel_path):
+    here = os.path.abspath(os.path.dirname(__file__))
+    with codecs.open(os.path.join(here, rel_path), 'r') as fp:
+        return fp.read()
+
+
+def get_version(rel_path):
+    for line in read_file(rel_path).splitlines():
+        if line.startswith("__version__"):
+            delim = '"' if '"' in line else "'"
+            return line.split(delim)[1]
+    else:
+        raise RuntimeError("Unable to find version string.")
+
 
 install_requirements = [
     "boto3>=1.3,<2.0",
@@ -19,28 +29,14 @@ install_requirements = [
     "colorama>=0.3.9",
     "packaging>=16.8,<17.0",
     "six>=1.11.0,<2.0.0",
-    "networkx==2.1",
-    "typing>=3.7.0,<3.8.0"
-]
-
-test_requirements = [
-    "pytest>=3.2,<4.0",
-    "troposphere>=2.0.0",
-    "moto>=1.3.8,<2.0",
-    "mock>=2.0.0,<3.0.0",
-    "behave>=1.2.5,<2.0.0",
-    "freezegun==0.3.12"
-]
-
-setup_requirements = [
-    "pytest-runner>=3"
+    "networkx>=2.4,<3"
 ]
 
 setup(
     name="sceptre",
-    version=__version__,
+    version=get_version("sceptre/__init__.py"),
     description="Cloud Provisioning Tool",
-    long_description=readme,
+    long_description=read_file("README.md"),
     long_description_content_type="text/markdown",
     author="Cloudreach",
     author_email="sceptre@cloudreach.com",
@@ -70,9 +66,9 @@ setup(
         ]
     },
     data_files=[
-        (path.join("sceptre", "stack_policies"), [
-            path.join("sceptre", "stack_policies", "lock.json"),
-            path.join("sceptre", "stack_policies", "unlock.json")
+        (os.path.join("sceptre", "stack_policies"), [
+            os.path.join("sceptre", "stack_policies", "lock.json"),
+            os.path.join("sceptre", "stack_policies", "unlock.json")
         ])
     ],
     include_package_data=True,
@@ -83,15 +79,11 @@ setup(
         "Intended Audience :: Developers",
         "Natural Language :: English",
         "Environment :: Console",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7"
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
     ],
     test_suite="tests",
     install_requires=install_requirements,
-    tests_require=test_requirements,
-    setup_requires=setup_requirements,
-    extras_require={
-        "test": test_requirements
-    }
 )

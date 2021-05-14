@@ -4,6 +4,30 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.5.0 (2021.05.01)
+
+### Added
+
+- Added support for python 3.8 & 3.9
+- Support PEP-518 builds with pyproject.toml file
+- Support before_create_change_set and after_create_change_set hooks
+- Allow generate command to run hooks
+
+### Removed
+
+- Removed support for python 2.7 & 3.5
+
+### Fixed
+
+- Fix "sceptre list outpuuts" command
+- Provide more info on config parsing errors
+
+### Nonfunctional
+
+- Removed Sonarqube
+- Setup pre-commit linters and hooks
+- General documentation updates
+
 ## 2.4.0 (2020.10.03)
 
 ### Added
