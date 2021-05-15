@@ -15,6 +15,9 @@ from datetime import datetime, timedelta
 
 import botocore
 import json
+import yaml
+import deepdiff
+
 from dateutil.tz import tzutc
 
 from sceptre.connection_manager import ConnectionManager
@@ -594,6 +597,33 @@ class StackActions(object):
             }
         )
         return response.get("TemplateBody")
+
+    @add_stack_hooks
+    def diff(self):
+        """
+        Returns a DeepDiff of Temlate and Remote Template
+
+        :returns: The stack name and diffs.
+        :rtype: List[str, str]
+        """
+        remote_template_stream = self.fetch_remote_template()
+        local_template_stream = self.stack.template.body
+
+        remote_template = yaml.load(remote_template_stream,
+                                    Loader=yaml.BaseLoader)
+        local_template = yaml.load(local_template_stream,
+                                   Loader=yaml.BaseLoader)
+
+        deep_diffs = deepdiff.DeepDiff(
+            remote_template, local_template, ignore_order=True
+        )
+
+        if bool(deep_diffs):
+            response = deep_diffs.pretty()
+        else:
+            response = "No diffs"
+
+        return [self.stack.external_name, response]
 
     @add_stack_hooks
     def validate(self):

@@ -1012,3 +1012,48 @@ class TestStackActions(object):
         )
         with pytest.raises(ClientError):
             self.actions._get_cs_status(sentinel.change_set_name)
+
+    @patch("sceptre.plan.actions.StackActions.fetch_remote_template")
+    def test_diff_no_diffs(
+        self, mock_fetch_remote_template
+    ):
+        mock_fetch_remote_template.return_value = '---\nfoo: bar'
+        self.template._body = '---\nfoo: bar'
+
+        response = self.actions.diff()
+        assert response == [sentinel.external_name, "No diffs"]
+
+    @patch("sceptre.plan.actions.StackActions.fetch_remote_template")
+    def test_diff_some_diffs(
+        self, mock_fetch_remote_template
+    ):
+        mock_fetch_remote_template.return_value = '---\nfoo: bar'
+        self.template._body = '---\nfoo: bar\nbaz: qux'
+
+        response = self.actions.diff()
+
+        assert response == [
+            sentinel.external_name,
+            "Item root['baz'] added to dictionary."
+        ]
+
+    @patch("sceptre.plan.actions.StackActions.fetch_remote_template")
+    def test_diff_stack_does_not_exist(
+        self, mock_fetch_remote_template
+    ):
+        mock_fetch_remote_template.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": "ValidationError",
+                    "Message": "\
+An error occurred (ValidationError) \
+when calling the GetTemplate operation: \
+Stack with id foo does not exist"
+                }
+            },
+            sentinel.operation
+        )
+        self.template._body = '---\nfoo: bar'
+
+        with pytest.raises(ClientError):
+            self.actions.diff()

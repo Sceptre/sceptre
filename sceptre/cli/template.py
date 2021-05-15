@@ -96,6 +96,32 @@ def fetch_remote_template_command(ctx, path):
     write(output, context.output_format)
 
 
+@click.command(name="diff", short_help="Show diffs with running stack.")
+@click.argument("path")
+@click.pass_context
+@catch_exceptions
+def diff_command(ctx, path):
+    """
+    Show diffs between the running and generated stack.
+    \f
+
+    :param path: The path to execute the command on.
+    :type path: str
+    """
+    context = SceptreContext(
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options"),
+        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+    )
+
+    plan = SceptrePlan(context)
+    responses = plan.diff()
+    output = "\n".join([": ".join(value) for value in responses.values()])
+    write(output, context.output_format)
+
+
 @click.command(name="estimate-cost", short_help="Estimates the cost of the template.")
 @click.argument("path")
 @click.pass_context
