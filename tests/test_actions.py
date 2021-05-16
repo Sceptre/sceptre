@@ -1012,3 +1012,28 @@ class TestStackActions(object):
         )
         with pytest.raises(ClientError):
             self.actions._get_cs_status(sentinel.change_set_name)
+
+    def test_fetch_remote_template_ok(self):
+        fake_template_body = '---\nfoo: bar'
+        self.actions.connection_manager.call.return_value = {
+            "TemplateBody": fake_template_body
+        }
+        response = self.actions.fetch_remote_template()
+        assert response == fake_template_body
+
+    def test_fetch_remote_template_no_template(self):
+        self.actions.connection_manager.call.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": "ValidationError",
+                    "Message": "\
+An error occurred (ValidationError) \
+when calling the GetTemplate operation: \
+Stack with id foo does not exist"
+                }
+            },
+            sentinel.operation
+        )
+
+        with pytest.raises(ClientError):
+            self.actions.fetch_remote_template()
