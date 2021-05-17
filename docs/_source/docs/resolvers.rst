@@ -39,8 +39,15 @@ Example:
    parameters:
        database_password: !environment_variable DATABASE_PASSWORD
 
+file
+~~~~
+
+Refer to `sceptre-file-resolver <https://github.com/Sceptre/sceptre-file-resolver/>`_ for documentation.
+
 file_contents
 ~~~~~~~~~~~~~
+
+**deprecated**: Consider using the `file`_ resolver instead.
 
 Reads in the contents of a file.
 
