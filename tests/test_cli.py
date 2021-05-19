@@ -189,7 +189,8 @@ class TestCli(object):
         }
 
         args = ["estimate-cost", "dev/vpc.yaml"]
-        result = self.runner.invoke(cli, args)
+        with patch('webbrowser.open', return_value=None):  # Do not open a web browser
+            result = self.runner.invoke(cli, args)
 
         self.mock_stack_actions.estimate_cost.assert_called_with()
 
