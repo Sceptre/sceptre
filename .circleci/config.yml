@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  python: circleci/python@1.0.0
+  python: circleci/python@1.4.0
 
 executors:
   docker-publisher:
@@ -41,7 +41,7 @@ commands:
           name: 'Install Poetry'
           command: |
             curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
-
+            . $HOME/.poetry/env
 
 jobs:
   lint-and-unit-tests:
