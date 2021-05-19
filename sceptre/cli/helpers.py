@@ -135,7 +135,6 @@ def _generate_yaml(stream):
 
 
 def _generate_text(stream):
-    pad = 3
     if isinstance(stream, list):
         items = []
         for item in stream:
@@ -158,8 +157,9 @@ def _generate_text(stream):
         col_widths = [max(len(c) for c in b) for b in zip(*items)]
         rows = []
         for row in items:
-            rows.append(" ".join([field.ljust(width + pad)
-                                  for field, width in zip(row, cycle(col_widths))]))
+            rows.append("".join(
+                [field for field, width in zip(row, cycle(col_widths))]
+            ))
         return "\n".join(rows)
     return stream
 
