@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  python: circleci/python@1.0.0
+
 executors:
   docker-publisher:
     environment:
@@ -18,76 +21,33 @@ aliases:
       - add_ssh_keys:
           fingerprints:
             - '80:24:c0:40:28:36:f1:80:7f:fd:15:c3:09:cf:86:fc'
-      - attach_workspace:
-          at: /home/circleci
+      - python/install-packages:
+          pkg-manager: poetry
       - run:
           name: 'Build and deploy docs'
           command: |
             chmod +x .circleci/add-known-hosts.sh
             ./.circleci/add-known-hosts.sh
-            . ./venv/bin/activate
+            poetry shell
             chmod +x .circleci/github-pages.sh
             ./.circleci/github-pages.sh
 
 jobs:
-  build:
-    docker:
-      - image: cloudreach/sceptre-circleci:0.8.0
-    steps:
-      - checkout
-      - run:
-          name: 'Creating Virtualenv'
-          command: virtualenv venv
-      - restore_cache:
-          key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
-            checksum "requirements/prod.txt" }}-{{ checksum
-            "requirements/dev.txt" }}
-      - run:
-          name: 'Installing Requirements'
-          command: |
-            . ./venv/bin/activate
-            pip install -r requirements/prod.txt
-            pip install -r requirements/dev.txt
-            pip install awscli
-      - save_cache:
-          key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
-            checksum "requirements/prod.txt" }}-{{ checksum
-            "requirements/dev.txt" }}
-          paths:
-            - venv
-      - run:
-          name: 'Installing Sceptre'
-          command: |
-            . ./venv/bin/activate
-            pip install .
-      - persist_to_workspace:
-          root: /home/circleci
-          paths:
-            - project
-
   lint-and-unit-tests:
     docker:
       - image: cloudreach/sceptre-circleci:0.8.0
     steps:
-      - attach_workspace:
-          at: /home/circleci
-      - restore_cache:
-          key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-tox-requirements-{{ arch
-            }}-{{ checksum "requirements/prod.txt" }}-{{ checksum
-            "requirements/dev.txt" }} -{{ checksum "tox.ini" }}
+      - python/install-packages:
+          pkg-manager: poetry
       - run:
           name: 'Linting'
           command: |
-            . ./venv/bin/activate
-            make lint
+            poetry run make lint
 
       - run:
           name: 'Unit Test'
           command: |
-            make test-all
+            poetry run make test-all
 
       - store_test_results:
           path: coverage.xml
@@ -98,14 +58,6 @@ jobs:
           paths:
             - project
 
-      - save_cache:
-          key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-tox-requirements-{{ arch
-            }}-{{ checksum "requirements/prod.txt" }}-{{ checksum
-            "requirements/dev.txt" }}-{{ checksum "tox.ini" }}
-          paths:
-            - .tox
-
   integration-tests:
     parallelism: 2
     docker:
@@ -113,16 +65,15 @@ jobs:
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
-      - attach_workspace:
-          at: /home/circleci
+      - python/install-packages:
+          pkg-manager: poetry
       - run:
           name: 'Integration Testing'
           command: |
-            . ./venv/bin/activate
             mkdir -p ~/.aws
             echo -e "[default]\nregion=eu-west-1\nsource_profile=default\nrole_arn=arn:aws:iam::582448526747:role/sceptre-integration-test-ServiceRole-DUSW2V6ES2ZU" > ~/.aws/config
             echo -e "[default]\nregion=eu-west-1\naws_access_key_id=$CI_SERVICE_AWS_ACCESS_KEY_ID\naws_secret_access_key=$CI_SERVICE_AWS_SECRET_ACCESS_KEY" > ~/.aws/credentials
-            behave --junit \
+            poetry run behave --junit \
                    --junit-directory build/behave \
                    $(circleci tests glob "integration-tests/features/*.feature" | circleci tests split --split-by=timings)
       - store_test_results:
@@ -157,18 +108,12 @@ jobs:
     docker:
       - image: cloudreach/sceptre-circleci:0.8.0
     steps:
-      - attach_workspace:
-          at: /home/circleci
+      - python/install-packages:
+          pkg-manager: poetry
       - run:
-          name: 'Create Distributions'
+          name: 'Publish to PyPI'
           command: |
-            . ./venv/bin/activate
-            make dist
-      - run:
-          name: 'Upload Distributions'
-          command: |
-            . ./venv/bin/activate
-            twine upload -u $PYPI_USERNAME -p $PYPI_PASSWORD dist/*
+            poetry publish --build -u $PYPI_USERNAME -p $PYPI_PASSWORD
 
   deploy-latest-dockerhub:
     executor: docker-publisher
@@ -206,13 +151,7 @@ jobs:
 workflows:
   build-and-unit-test:
     jobs:
-      - build:
-          filters:
-            branches:
-              only: /^pull\/.*/
       - lint-and-unit-tests:
-          requires:
-            - build
           filters:
             branches:
               only: /^pull\/.*/
@@ -225,20 +164,12 @@ workflows:
 
   build-test-and-deploy:
     jobs:
-      - build:
-          filters:
-            branches:
-              ignore: /^pull\/.*/
       - lint-and-unit-tests:
-          requires:
-            - build
           filters:
             branches:
               ignore: /^pull\/.*/
       - integration-tests:
           context: sceptre-core
-          requires:
-            - build
           filters:
             branches:
               ignore: /^pull\/.*/
@@ -267,16 +198,8 @@ workflows:
 
   publish:
     jobs:
-      - build:
-          filters:
-            tags:
-              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
-            branches:
-              ignore: /.*/
       - deploy-pypi:
           context: sceptre-core
-          requires:
-            - build
           filters:
             tags:
               only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
