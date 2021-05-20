@@ -20,7 +20,6 @@ from sceptre.cli.create import create_command
 from sceptre.cli.update import update_command
 from sceptre.cli.delete import delete_command
 from sceptre.cli.launch import launch_command
-from sceptre.cli.stack_name import stack_name_command
 from sceptre.cli.execute import execute_command
 from sceptre.cli.describe import describe_group
 from sceptre.cli.list import list_group
@@ -126,4 +125,3 @@ cli.add_command(set_policy_command)
 cli.add_command(status_command)
 cli.add_command(list_group)
 cli.add_command(describe_group)
-cli.add_command(stack_name_command)
