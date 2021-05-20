@@ -96,6 +96,33 @@ def fetch_remote_template_command(ctx, path):
     write(output, context.output_format)
 
 
+@click.command(name="stack-name", short_help="Reveal the stack name or names.")
+@click.argument("path")
+@click.pass_context
+@catch_exceptions
+def stack_name_command(ctx, path):
+    """
+    Show the stack names of all stacks.
+    \f
+
+    :param path: The path to execute the command on.
+    :type path: str
+    """
+    context = SceptreContext(
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options"),
+        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+    )
+
+    plan = SceptrePlan(context)
+    responses = plan.stack_name()
+
+    for stack_name in responses.values():
+        write(stack_name, context.output_format)
+
+
 @click.command(name="estimate-cost", short_help="Estimates the cost of the template.")
 @click.argument("path")
 @click.pass_context
