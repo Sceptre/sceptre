@@ -1012,3 +1012,9 @@ class TestStackActions(object):
         )
         with pytest.raises(ClientError):
             self.actions._get_cs_status(sentinel.change_set_name)
+
+    def test_diff_no_diffs(
+        self
+    ):
+        response = self.actions.stack_name()
+        assert response == sentinel.external_name
