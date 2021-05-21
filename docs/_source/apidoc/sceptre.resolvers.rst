@@ -32,5 +32,3 @@ sceptre.resolvers.stack\_output module
     :members:
     :undoc-members:
     :show-inheritance:
-
-

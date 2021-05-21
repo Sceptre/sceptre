@@ -392,7 +392,12 @@ class ConfigReader(object):
                 environment_variable=environ
             )
 
-            config = yaml.safe_load(rendered_template)
+            try:
+                config = yaml.safe_load(rendered_template)
+            except Exception as err:
+                raise ValueError(
+                    "Error parsing {}:\n{}".format(abs_directory_path, err)
+                )
 
             return config
 
@@ -450,16 +455,13 @@ class ConfigReader(object):
                 )
             ])
 
-            bucket_region = config.get("region", None)
-
             if "template_key_prefix" in config:
                 prefix = config["template_key_prefix"]
                 template_key = "/".join([prefix.strip("/"), template_key])
 
             s3_details = {
                 "bucket_name": config["template_bucket_name"],
-                "bucket_key": template_key,
-                "bucket_region": bucket_region
+                "bucket_key": template_key
             }
         return s3_details
 

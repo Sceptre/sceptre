@@ -32,5 +32,3 @@ sceptre.plan.plan module
     :members:
     :undoc-members:
     :show-inheritance:
-
-
