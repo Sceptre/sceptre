@@ -59,13 +59,20 @@ class TestTemplate(object):
         mock_bucket_exists.return_value = True
         self.template.s3_details = {
             "bucket_name": "bucket-name",
-            "bucket_key": "bucket-key",
-            "bucket_region": "eu-west-1"
+            "bucket_key": "bucket-key"
         }
 
         self.template.upload_to_s3()
 
-        self.template.connection_manager.call.assert_called_once_with(
+        get_bucket_location_call, put_object_call = self.template.connection_manager.call.call_args_list
+        get_bucket_location_call.assert_called_once_with(
+            service="s3",
+            command="get_bucket_location",
+            kwargs={
+                "Bucket": "bucket-name"
+            }
+        )
+        put_object_call.assert_called_once_with(
             service="s3",
             command="put_object",
             kwargs={
@@ -76,13 +83,17 @@ class TestTemplate(object):
             }
         )
 
+    def test_domain_from_region(self):
+        assert self.template._domain_from_region("us-east-1") == "com"
+        assert self.template._domain_from_region("cn-north-1") == "com.cn"
+        assert self.template._domain_from_region("cn-northwest-1") == "com.cn"
+
     def test_bucket_exists_with_bucket_that_exists(self):
         # connection_manager.call doesn't raise an exception, mimicing the
         # behaviour when head_bucket successfully executes.
         self.template.s3_details = {
             "bucket_name": "bucket-name",
-            "bucket_key": "bucket-key",
-            "bucket_region": "eu-west-1"
+            "bucket_key": "bucket-key"
         }
 
         assert self.template._bucket_exists() is True
@@ -91,8 +102,7 @@ class TestTemplate(object):
         self.template.connection_manager.region = "eu-west-1"
         self.template.s3_details = {
             "bucket_name": "bucket-name",
-            "bucket_key": "bucket-key",
-            "bucket_region": "eu-west-1"
+            "bucket_key": "bucket-key"
         }
 
         self.template.connection_manager.call.side_effect = ClientError(
@@ -114,8 +124,7 @@ class TestTemplate(object):
         # Not Found ClientError only for the first call.
         self.template.s3_details = {
             "bucket_name": "bucket-name",
-            "bucket_key": "bucket-key",
-            "bucket_region": "eu-west-1"
+            "bucket_key": "bucket-key"
         }
 
         self.template.connection_manager.call.side_effect = [
@@ -141,8 +150,7 @@ class TestTemplate(object):
         self.template.connection_manager.region = "us-east-1"
         self.template.s3_details = {
             "bucket_name": "bucket-name",
-            "bucket_key": "bucket-key",
-            "bucket_region": "us-east-1"
+            "bucket_key": "bucket-key"
         }
 
         self.template._create_bucket()
@@ -159,8 +167,7 @@ class TestTemplate(object):
         mock_upload_to_s3.return_value = sentinel.template_url
         self.template.s3_details = {
             "bucket_name": sentinel.bucket_name,
-            "bucket_key": sentinel.bucket_key,
-            "bucket_region": sentinel.bucket_region
+            "bucket_key": sentinel.bucket_key
         }
 
         boto_parameter = self.template.get_boto_call_parameter()
