@@ -13,7 +13,7 @@ executors:
 aliases:
   - &docs-job
     docker:
-      - image: cloudreach/sceptre-circleci:0.8.0
+      - image: cloudreach/sceptre-circleci:latest
         environment:
           REPOSITORY_PATH: '/home/circleci/docs'
           DEPLOYMENT_GIT_SSH: 'git@github.com:Sceptre/sceptre.github.io.git'
@@ -35,7 +35,7 @@ aliases:
 jobs:
   lint-and-unit-tests:
     docker:
-      - image: cloudreach/sceptre-circleci:0.8.0
+      - image: cloudreach/sceptre-circleci:latest
     steps:
       - python/install-packages:
           pkg-manager: poetry
@@ -61,7 +61,7 @@ jobs:
   integration-tests:
     parallelism: 2
     docker:
-      - image: cloudreach/sceptre-circleci:0.8.0
+      - image: cloudreach/sceptre-circleci:latest
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
@@ -106,7 +106,7 @@ jobs:
 
   deploy-pypi:
     docker:
-      - image: cloudreach/sceptre-circleci:0.8.0
+      - image: cloudreach/sceptre-circleci:latest
     steps:
       - python/install-packages:
           pkg-manager: poetry
