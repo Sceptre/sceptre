@@ -51,7 +51,7 @@ include = ["CHANGELOG.md", "README.md"]
 
 [tool.poetry.dependencies]
 python = "^3.6.1"
-click = "^7.1.2"
+click = "^8.0.1"
 colorama = ">=0.2.5,<0.4.4"
 boto3 = "^1.17.64"
 Jinja2 = "^2.11.3"
@@ -71,8 +71,8 @@ pytest-cov = "^2.11.1"
 pytest-sugar = "^0.9.4"
 tox = "^3.23.0"
 troposphere = "^2.7.1"
-Sphinx = "^3.5.4"
-sphinx-click = "^2.7.1"
+Sphinx = "^4.0.2"
+sphinx-click = "^3.0.0"
 sphinx-rtd-theme = "^0.5.2"
 awscli = "^1.19.68"
 
