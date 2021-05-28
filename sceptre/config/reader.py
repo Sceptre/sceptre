@@ -230,12 +230,9 @@ class ConfigReader(object):
                 if not path.exists(full_dep):
                     raise DependencyDoesNotExistError(
                             "{stackname}: Dependency {dep} not found. "
-                            "Valid dependency names are: "
-                            "{stackkeys}. "
                             "Please make sure that your dependencies stack_outputs "
                             "have their full path from `config` defined."
-                            .format(stackname=stack.name, dep=dep,
-                                    stackkeys=", ".join(stack_map.keys())))
+                            .format(stackname=stack.name, dep=dep))
 
                 if full_dep not in full_todo and full_dep not in deps_todo:
                     todo.add(full_dep)
