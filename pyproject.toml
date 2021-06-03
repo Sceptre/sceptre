@@ -55,7 +55,7 @@ click = "^8.0.1"
 colorama = ">=0.2.5,<0.4.4"
 boto3 = "^1.17.64"
 Jinja2 = "^2.11.3"
-networkx = "^2.5.1"
+networkx = ">=2.4,<2.6"
 PyYAML = "^5.4.1"
 packaging = "^16"
 
