@@ -215,7 +215,7 @@ This example generates a cloudformation template from `AWS CDK`_ code.
   def sceptre_handler(sceptre_user_data):
       app = cdk.App()
       S3CdkStack(app, "S3CdkStack", sceptre_user_data)
-      template = app.synth().get_stack("S3CdkStack").template
+      template = app.synth().get_stack_by_name("S3CdkStack").template
       return yaml.safe_dump(template)
 
 .. _AWS_CDK: https://github.com/aws/aws-cdk
