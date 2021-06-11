@@ -16,7 +16,7 @@ class TestASGScalingProcesses(object):
         self.stack = MagicMock(spec=Stack)
         self.stack.connection_manager = MagicMock(spec=ConnectionManager)
         self.stack.external_name = "external_name"
-        self.asg_scaling_processes = ASGScalingProcesses(None, self.stack)
+        self.asg_scaling_processes = ASGScalingProcesses(None)
 
     def test_get_stack_resources_sends_correct_request(self):
         self.stack.connection_manager.call.return_value = {
@@ -27,7 +27,7 @@ class TestASGScalingProcesses(object):
                 }
             ]
         }
-        self.asg_scaling_processes._get_stack_resources()
+        self.asg_scaling_processes._get_stack_resources(self.stack)
         self.stack.connection_manager.call.assert_called_with(
                 service="cloudformation",
                 command="describe_stack_resources",
@@ -51,7 +51,7 @@ class TestASGScalingProcesses(object):
             'StackId': 'arn:aws:...',
             'StackName': 'cloudreach-examples-dev-vpc'
         }]
-        response = self.asg_scaling_processes._find_autoscaling_groups()
+        response = self.asg_scaling_processes._find_autoscaling_groups(self.stack)
 
         assert response == ["cloudreach-examples-asg"]
 
@@ -63,7 +63,7 @@ class TestASGScalingProcesses(object):
         self, mock_get_stack_resources
     ):
         mock_get_stack_resources.return_value = []
-        response = self.asg_scaling_processes._find_autoscaling_groups()
+        response = self.asg_scaling_processes._find_autoscaling_groups(self.stack)
 
         assert response == []
 
@@ -74,7 +74,7 @@ class TestASGScalingProcesses(object):
     def test_run_with_resume_argument(self, mock_find_autoscaling_groups):
         self.asg_scaling_processes.argument = u"resume::ScheduledActions"
         mock_find_autoscaling_groups.return_value = ["autoscaling_group_1"]
-        self.asg_scaling_processes.run()
+        self.asg_scaling_processes.run(self.stack)
         self.stack.connection_manager.call.assert_called_once_with(
                 service="autoscaling",
                 command="resume_processes",
@@ -93,7 +93,7 @@ class TestASGScalingProcesses(object):
     def test_run_with_suspend_argument(self, mock_find_autoscaling_groups):
         self.asg_scaling_processes.argument = "suspend::ScheduledActions"
         mock_find_autoscaling_groups.return_value = ["autoscaling_group_1"]
-        self.asg_scaling_processes.run()
+        self.asg_scaling_processes.run(self.stack)
         self.stack.connection_manager.call.assert_called_once_with(
                 service="autoscaling",
                 command="suspend_processes",
@@ -115,7 +115,7 @@ class TestASGScalingProcesses(object):
         self.asg_scaling_processes.argument = u"invalid_string"
         mock_find_autoscaling_groups.return_value = ["autoscaling_group_1"]
         with pytest.raises(InvalidHookArgumentSyntaxError):
-            self.asg_scaling_processes.run()
+            self.asg_scaling_processes.run(self.stack)
 
     @patch(
         "sceptre.hooks.asg_scaling_processes"
@@ -125,7 +125,7 @@ class TestASGScalingProcesses(object):
         self.asg_scaling_processes.argument = "start::Healthcheck"
         mock_find_autoscaling_groups.return_value = ["autoscaling_group_1"]
         with pytest.raises(InvalidHookArgumentValueError):
-            self.asg_scaling_processes.run()
+            self.asg_scaling_processes.run(self.stack)
 
     @patch(
         "sceptre.hooks.asg_scaling_processes"
@@ -135,4 +135,4 @@ class TestASGScalingProcesses(object):
         self.asg_scaling_processes.argument = 10
         mock_find_autoscaling_groups.return_value = ["autoscaling_group_1"]
         with pytest.raises(InvalidHookArgumentTypeError):
-            self.asg_scaling_processes.run()
+            self.asg_scaling_processes.run(self.stack)

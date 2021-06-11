@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import pytest
-from mock import patch
 import subprocess
 
-from sceptre.hooks.cmd import Cmd
+import pytest
+from mock import patch
+
 from sceptre.exceptions import InvalidHookArgumentTypeError
+from sceptre.hooks.cmd import Cmd
 
 
 class TestCmd(object):
@@ -15,12 +16,12 @@ class TestCmd(object):
     def test_run_with_non_str_argument(self):
         self.cmd.argument = None
         with pytest.raises(InvalidHookArgumentTypeError):
-            self.cmd.run()
+            self.cmd.run(None)
 
     @patch('sceptre.hooks.cmd.subprocess.check_call')
     def test_run_with_str_argument(self, mock_call):
         self.cmd.argument = u"echo hello"
-        self.cmd.run()
+        self.cmd.run(None)
         mock_call.assert_called_once_with(u"echo hello", shell=True)
 
     @patch('sceptre.hooks.cmd.subprocess.check_call')
@@ -28,4 +29,4 @@ class TestCmd(object):
         mock_call.side_effect = subprocess.CalledProcessError(1, "echo")
         self.cmd.argument = u"echo hello"
         with pytest.raises(subprocess.CalledProcessError):
-            self.cmd.run()
+            self.cmd.run(None)
