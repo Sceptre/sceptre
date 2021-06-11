@@ -52,14 +52,14 @@ class TestHooksFunctions(object):
     def test_execute_hooks_with_single_hook(self):
         hook = MagicMock(spec=Hook)
         execute_hooks([hook], self.stack)
-        hook.run.called_once_with()
+        hook.run.assert_called_once_with(self.stack)
 
     def test_execute_hooks_with_multiple_hook(self):
         hook_1 = MagicMock(spec=Hook)
         hook_2 = MagicMock(spec=Hook)
         execute_hooks([hook_1, hook_2], self.stack)
-        hook_1.run.called_once_with()
-        hook_2.run.called_once_with()
+        hook_1.run.assert_called_once_with(self.stack)
+        hook_2.run.assert_called_once_with(self.stack)
 
 
 class TestHook(object):
@@ -91,15 +91,7 @@ class TestHookPropertyDescriptor(object):
         assert self.mock_object.hook_property == self.mock_object
 
 
-class MultipleHook(Hook):
-    def __init__(self, *args, **kwargs):
-        super(MultipleHook, self).__init__(*args, **kwargs)
-
-    def run(self, stack):
-        pass
-
-
-class TestHooksMultipleConfig(object):
+class TestHooksMultipleStacks(object):
     def setup_method(self, test_method):
         pass
 
@@ -110,8 +102,8 @@ class TestHooksMultipleConfig(object):
         sub_stack_two = MagicMock(spec=StackActions)
         sub_stack_two.stack = MagicMock(spec=Stack)
         sub_stack_two.name = 'sub_stack_two'
-        hook_before = MagicMock(MultipleHook)
-        hook_after = MagicMock(MultipleHook)
+        hook_before = MagicMock(MockHook)
+        hook_after = MagicMock(MockHook)
 
         sub_stack_one.stack.hooks = sub_stack_two.stack.hooks = {
             'before_mock_function': [hook_before],
