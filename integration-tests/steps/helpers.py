@@ -47,6 +47,8 @@ def step_impl(context, exception_type):
         assert isinstance(context.error, AttributeError)
     elif exception_type == "UndefinedError":
         assert isinstance(context.error, jinja2.exceptions.UndefinedError)
+    elif exception_type == "RuntimeError":
+        assert isinstance(context.error, RuntimeError)
     else:
         raise Exception("Step has incorrect message")
 

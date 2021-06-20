@@ -8,17 +8,20 @@ and implements methods for uploading it to S3.
 """
 
 import imp
+import json
 import logging
 import os
 import sys
 import threading
 import traceback
 
+import _gojsonnet
 import botocore
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
 from jinja2 import StrictUndefined
 from jinja2 import select_autoescape
+
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 from sceptre.exceptions import TemplateSceptreHandlerError
 
@@ -47,11 +50,12 @@ class Template(object):
     _boto_s3_lock = threading.Lock()
 
     def __init__(
-        self, path, sceptre_user_data, connection_manager=None, s3_details=None
+        self, path, stack_parameters, sceptre_user_data, connection_manager=None, s3_details=None
     ):
         self.logger = logging.getLogger(__name__)
 
         self.path = path
+        self.stack_parameters = stack_parameters
         self.sceptre_user_data = sceptre_user_data
         self.connection_manager = connection_manager
         self.s3_details = s3_details
@@ -62,8 +66,8 @@ class Template(object):
     def __repr__(self):
         return (
             "sceptre.template.Template(name='{0}', path='{1}', "
-            "sceptre_user_data={2}, s3_details={3})".format(
-                self.name, self.path, self.sceptre_user_data, self.s3_details
+            "stack_parameters={2}, sceptre_user_data={3}, s3_details={4})".format(
+                self.name, self.path, self.stack_parameters, self.sceptre_user_data, self.s3_details
             )
         )
 
@@ -75,6 +79,7 @@ class Template(object):
 
         :rtype: None
         """
+
         def _print_frame(filename, line, fcn, line_text):
             self.logger.error("{}:{}:  Template error in '{}'\n=> `{}`".format(
                 filename, line, fcn, line_text))
@@ -125,11 +130,17 @@ class Template(object):
                     )
                 elif file_extension == ".py":
                     self._body = self._call_sceptre_handler()
+                elif file_extension == ".jsonnet":
+                    self._body = self._render_jsonnet_template(
+                        os.path.dirname(self.path),
+                        os.path.basename(self.path),
+                        {'sceptre_user_data': self.sceptre_user_data, 'stack_parameters': self.stack_parameters}
+                    )
 
                 else:
                     raise UnsupportedTemplateFileTypeError(
                         "Template has file extension %s. Only .py, .yaml, "
-                        ".template, .json and .j2 are supported.",
+                        ".template, .json, .j2 and jsonnet are supported.",
                         os.path.splitext(self.path)[1]
                     )
             except Exception as e:
@@ -154,7 +165,7 @@ class Template(object):
         # NB: this is a horrible hack...
         relpath = os.path.relpath(self.path, os.getcwd()).split(os.path.sep)
         paths_to_add = [
-            os.path.join(os.getcwd(), os.path.sep.join(relpath[:i+1]))
+            os.path.join(os.getcwd(), os.path.sep.join(relpath[:i + 1]))
             for i in range(len(relpath[:-1]))
         ]
 
@@ -354,3 +365,33 @@ class Template(object):
         template = env.get_template(filename)
         body = template.render(**jinja_vars)
         return body
+
+    @staticmethod
+    def _render_jsonnet_template(template_dir, filename, jsonnet_vars):
+        """
+        Renders a Jsonnet template.
+
+        Sceptre supports passing sceptre_user_data to JSON and YAML
+        CloudFormation templates using Jsonnet templating.
+
+        :param template_dir: The directory containing the template.
+        :type template_dir: str
+        :param filename: The name of the template file.
+        :type filename: str
+        :param jsonnet_vars: Dict of variables to render into the template.
+        :type jsonnet_vars: dict
+        :returns: The body of the CloudFormation template.
+        :rtype: str
+        """
+        logger = logging.getLogger(__name__)
+        logger.debug("%s Rendering CloudFormation template", filename)
+
+        output = _gojsonnet.evaluate_file(
+            "{}/{}".format(template_dir, filename),
+            tla_codes={
+                'StackParameters': json.dumps(jsonnet_vars['stack_parameters']),
+                'SceptreUserData': json.dumps(jsonnet_vars['sceptre_user_data'])
+            }
+        )
+
+        return output

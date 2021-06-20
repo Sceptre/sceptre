@@ -6,16 +6,16 @@ Feature: Generate template
     Then the output is the same as the contents of "<filename>" template
 
   Examples: Json, Yaml
-    | filename                  |
-    | valid_template.json       |
-    | malformed_template.json   |
-    | invalid_template.json     |
-    | jinja/valid_template.json |
-    | valid_template.yaml       |
-    | valid_template_func.yaml  |
-    | malformed_template.yaml   |
-    | invalid_template.yaml     |
-    | jinja/valid_template.yaml |
+    | filename                       |
+    | valid_template.json            |
+    | malformed_template.json        |
+    | invalid_template.json          |
+    | jinja/valid_template.json      |
+    | valid_template.yaml            |
+    | valid_template_func.yaml       |
+    | malformed_template.yaml        |
+    | invalid_template.yaml          |
+    | jinja/valid_template.yaml      |
 
   Scenario: Generate template using a valid python template file
     Given the template for stack "1/A" is "valid_template.py"
@@ -33,9 +33,10 @@ Feature: Generate template
     Then a "<exception>" is raised
 
   Examples: Template Errors
-    | filename                   | exception                   |
-    | missing_sceptre_handler.py | TemplateSceptreHandlerError |
-    | attribute_error.py         | AttributeError              |
+    | filename                    | exception                   |
+    | missing_sceptre_handler.py  | TemplateSceptreHandlerError |
+    | attribute_error.py          | AttributeError              |
+    | jsonnet/unbound_var.jsonnet | RuntimeError                |
 
   Scenario: Generate template using a template file with an unsupported extension
     Given the template for stack "1/A" is "template.unsupported"
@@ -60,3 +61,27 @@ Feature: Generate template
     | filename                                | exception          |
     | jinja/invalid_template_missing_key.j2   | UndefinedError     |
     | jinja/invalid_template_missing_attr.j2  | UndefinedError     |
+
+  Scenario Outline: Rendering jsonnet templates
+    Given the template for stack "<stack_name>" is "<filename>"
+    When the user generates the template for stack "<stack_name>"
+    Then the output is the same as the contents of "<rendered_filename>" template
+
+    Examples: Template file extensions
+      | stack_name | filename                          | rendered_filename                   |
+      | 7/A        | jsonnet/valid_empty.jsonnet       | jsonnet/valid_empty.json            |
+      | 7/A        | jsonnet/valid_no_args.jsonnet     | valid_template.json                 |
+      | 7/A        | jsonnet/valid_template.jsonnet    | valid_template.json                 |
+      | 7/A        | jsonnet/valid_template.jsonnet    | valid_template.json                 |
+      | 6/3/A      | jsonnet/valid_stack_param.jsonnet | jsonnet/input_output_template.json  |
+
+  Scenario Outline: Generating erroneous jsonnet templates
+    Given the template for stack "1/A" is "<filename>"
+    When the user generates the template for stack "1/A"
+    Then a "<exception>" is raised
+
+    Examples: Template Errors
+      | filename                               | exception                   |
+      | jsonnet/invalid_unbound_var.jsonnet    | RuntimeError                |
+      | jsonnet/invalid_missing_fn_arg.jsonnet | RuntimeError                |
+      | jsonnet/invalid_too_many_args.jsonnet  | RuntimeError                |

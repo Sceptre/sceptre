@@ -58,6 +58,7 @@ class TestStackActions(object):
         mock_Template.assert_called_once_with(
             path=sentinel.template_path,
             sceptre_user_data=sentinel.sceptre_user_data,
+            stack_parameters=self.stack.parameters,
             connection_manager=self.stack.connection_manager,
             s3_details=None
         )

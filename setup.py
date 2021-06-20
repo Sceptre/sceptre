@@ -26,6 +26,7 @@ install_requirements = [
     "click>=7.0,<9.0",
     "PyYaml>=5.1,<6.0",
     "Jinja2>=2.8,<3",
+    "gojsonnet>=0.17.0,<1",
     "colorama>=0.3.9",
     "packaging>=16.8,<17.0",
     "sceptre-file-resolver>=1.0.3,<2",

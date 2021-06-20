@@ -32,6 +32,7 @@ class TestTemplate(object):
         self.template = Template(
             path="/folder/template.py",
             sceptre_user_data={},
+            stack_parameters={},
             connection_manager=connection_manager
         )
 
@@ -45,7 +46,7 @@ class TestTemplate(object):
         representation = self.template.__repr__()
         assert representation == "sceptre.template.Template(" \
             "name='template', path='/folder/template.py'"\
-            ", sceptre_user_data={}, s3_details=None)"
+            ", stack_parameters={}, sceptre_user_data={}, s3_details=None)"
 
     def test_body_with_cache(self):
         self.template._body = sentinel.body
@@ -362,6 +363,64 @@ def test_render_jinja_template(filename, sceptre_user_data, expected):
         template_dir=jinja_template_dir,
         filename=filename,
         jinja_vars={"sceptre_user_data": sceptre_user_data}
+    )
+    expected_yaml = yaml.safe_load(expected)
+    result_yaml = yaml.safe_load(result)
+    assert expected_yaml == result_yaml
+
+
+@pytest.mark.parametrize("filename,stack_parameters,sceptre_user_data,expected", [
+    (
+        "vpc_no_fn.jsonnet",
+        {},
+        {},
+        """Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      EnableDnsHostnames: true
+      CidrBlock: 10.0.0.0/16
+Outputs:
+  VpcId:
+    Value:
+      Ref: VPC"""
+    ),
+    (
+        "vpc.jsonnet",
+        {"EnableDnsHostnames": True, "Tags": ["a", "b"], "AdditionalProperties": {"a": True, "b": "test"}},
+        {"VpcId": "10.0.0.0/16"},
+        """
+Parameters:
+    CidrBlock:
+        Default: '10.0.0.0/16'
+        Type: 'String'
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      EnableDnsHostnames: true
+      CidrBlock: 10.0.0.0/16
+      Tags:
+        - a
+        - b
+    AdditionalProperties:
+      a: true
+      b: test
+Outputs:
+  VpcId:
+    Value:
+      Ref: VPC"""
+    )
+])
+def test_body_with_jsonnet_template(filename, stack_parameters, sceptre_user_data, expected):
+    jsonnet_template_dir = os.path.join(
+        os.getcwd(),
+        "tests/fixtures/templates"
+    )
+    result = sceptre.template.Template._render_jsonnet_template(
+        template_dir=jsonnet_template_dir,
+        filename=filename,
+        jsonnet_vars={"stack_parameters": stack_parameters, "sceptre_user_data": sceptre_user_data}
     )
     expected_yaml = yaml.safe_load(expected)
     result_yaml = yaml.safe_load(result)

@@ -143,6 +143,48 @@ Template `dns-extras.j2`:
         Export:
           Name: !Sub '${AWS::StackName}'
 
+Jsonnet
+-------
+
+Templates with a ``.jsonnet`` extension are treated as Jsonnet Templates. They should
+implement a top-level function `function(StackParameters, SceptreUserData)` which returns
+the CloudFormation Template as a ``string``. ``StackParameters`` and ``SceptreUserData``
+are passed to this function as ``tla-codes`` arguments, and if they are not defined they are
+passed as an empty ``dict``s.
+
+Example
+~~~~~~~
+
+This example is using `jsonnet` to generate CloudFormation Template as a `json` string.
+
+.. code-block:: jsonnet
+
+function(StackParameters, SceptreUserData) {
+    AWSTemplateFormatVersion: '2010-09-09'
+    Description: 'Add Route53 - CNAME and ALIAS records'
+
+    Resources: {
+      VPC: {
+        Type: 'AWS::EC2::VPC',
+        Properties: {
+          EnableDnsHostnames: StackParameters.EnableDnsHostnames,
+          CidrBlock: SceptreUserData.VpcId,
+          Tags: StackParameters.Tags
+        },
+        AdditionalProperties: StackParameters.AdditionalProperties
+      }
+    },
+    Outputs: {
+      VpcId: {
+        Value: {
+            Ref: 'VPC'
+        }
+    }
+  }
+}
+
+..
+
 
 Python
 ------

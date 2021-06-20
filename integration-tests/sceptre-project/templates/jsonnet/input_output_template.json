@@ -1,0 +1,22 @@
+{
+  "Parameters": {
+    "Input": {
+      "Type": "String"
+    }
+  },
+  "Resources": {
+    "WaitConditionHandle": {
+      "Type": "AWS::CloudFormation::WaitConditionHandle",
+      "Properties": {
+        "Input": "TestValue"
+      }
+    }
+  },
+  "Outputs": {
+    "Output": {
+      "Value": {
+        "Ref": "Input"
+      }
+    }
+  }
+}

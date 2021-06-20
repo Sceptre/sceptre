@@ -60,7 +60,6 @@ def generate_command(ctx, path):
         output_format=ctx.obj.get("output_format"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies")
     )
-
     plan = SceptrePlan(context)
     responses = plan.generate()
     output = [template for template in responses.values()]
