@@ -512,7 +512,7 @@ class ConfigReader(object):
             iam_role=config.get("iam_role"),
             profile=config.get("profile"),
             parameters=config.get("parameters", {}),
-            sceptre_user_data=config.get("sceptre_user_data", {}),
+            sceptre_user_data=self._parsed_sceptre_user_data(config, parsed_stack_group_config),
             hooks=config.get("hooks", {}),
             s3_details=s3_details,
             dependencies=config.get("dependencies", []),
@@ -528,6 +528,22 @@ class ConfigReader(object):
 
         del self.templating_vars["stack_group_config"]
         return stack
+    
+    def _parsed_sceptre_user_data(self, config, stack_group_config):
+        """
+        merge `stack_group_config` if `sceptre_user_data` has `merge_config` set True 
+        """
+        sceptre_user_data = config.get("sceptre_user_data", {})
+
+        # ensure sceptre_user_data update the config
+        if sceptre_user_data.get("merge_config") is True:
+            tmp = copy.deepcopy(stack_group_config)
+            tmp.update({'region': config["region"]})
+            tmp.update({'profile': config.get("profile")})
+            tmp.update(sceptre_user_data)
+            sceptre_user_data = tmp
+        
+        return sceptre_user_data
 
     def _parsed_stack_group_config(self, stack_group_config):
         """
