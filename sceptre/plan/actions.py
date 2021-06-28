@@ -28,6 +28,8 @@ from sceptre.exceptions import UnknownStackChangeSetStatusError
 from sceptre.exceptions import StackDoesNotExistError
 from sceptre.exceptions import ProtectedStackError
 
+import urllib
+
 
 class StackActions(object):
     """
@@ -553,9 +555,12 @@ class StackActions(object):
         status = self._wait_for_completion()
         return status
 
-    def list_change_sets(self):
+    def list_change_sets(self, url=False):
         """
         Lists the Stack's Change Sets.
+
+        :param url: Write out a console URL instead.
+        :type url: bool
 
         :returns: The Stack's Change Sets.
         :rtype: dict or list
@@ -569,9 +574,36 @@ class StackActions(object):
                     "StackName": self.stack.external_name
                 }
             )
-            return {self.stack.name: response.get("Summaries", [])}
+
+            summaries = response.get("Summaries", [])
+            if url:
+                summaries = self._convert_to_url(summaries)
+
+            return {self.stack.name: summaries}
+
         except botocore.exceptions.ClientError:
             return []
+
+    def _convert_to_url(self, summaries):
+        """
+        Convert the list_change_sets response from
+        CloudFormation to a URL in the AWS Console.
+        """
+        ref = summaries[0]
+
+        stack_id = ref["StackId"]
+        change_set_id = ref["ChangeSetId"]
+
+        return (
+            "https://{0}.console.aws.amazon.com/cloudformation/home?"
+            "region={0}#/stacks/changesets/changes?{1}".format(
+                self.stack.region,
+                urllib.parse.urlencode({
+                    "stackId": stack_id,
+                    "changeSetId": change_set_id
+                })
+            )
+        )
 
     @add_stack_hooks
     def generate(self):

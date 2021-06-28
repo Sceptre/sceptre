@@ -684,6 +684,28 @@ class TestStackActions(object):
             kwargs={"StackName": sentinel.external_name}
         )
 
+    @patch("sceptre.plan.actions.urllib.parse.urlencode")
+    @patch("sceptre.plan.actions.ConnectionManager.connection_manager.call")
+    def test_list_change_sets_url_mode(
+        self, mock_call, mock_urlencode
+    ):
+        mock_call.return_value = {
+            "Summaries": [{
+                "ChangeSetId": "mychangesetid",
+                "StackId": "mystackid"
+            }]
+        }
+        urlencoded = "stackId=mystackid&changeSetId=mychangesetid"
+        mock_urlencode.return_value = urlencoded
+
+        expected_url = (
+            "https://sentinel.region.console.aws.amazon.com/cloudformation/home?"
+            f"region=sentinel.region#/stacks/changesets/changes?{urlencoded}"
+        )
+
+        response = self.actions.list_change_sets(url=True)
+        assert response == {"prod/app/stack": expected_url}
+
     @patch("sceptre.plan.actions.StackActions.set_policy")
     @patch("os.path.join")
     def test_lock_calls_set_stack_policy_with_policy(
