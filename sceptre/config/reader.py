@@ -195,10 +195,7 @@ class ConfigReader(object):
         """
         stack_map = {}
         command_stacks = set()
-        if self.context.ignore_dependencies:
-            root = self.context.full_command_path()
-        else:
-            root = self.context.full_config_path()
+        root = self.context.full_command_path()
 
         if path.isfile(root):
             todo = {root}
@@ -212,6 +209,8 @@ class ConfigReader(object):
                     todo.add(path.join(directory_name, filename))
 
         stack_group_configs = {}
+        full_todo = todo.copy()
+        deps_todo = set()
 
         while todo:
             abs_path = todo.pop()
@@ -226,6 +225,19 @@ class ConfigReader(object):
                     self.read(path.join(directory, self.context.config_file))
 
             stack = self._construct_stack(rel_path, stack_group_config)
+            for dep in stack.dependencies:
+                full_dep = path.join(self.context.full_config_path(), dep)
+                if not path.exists(full_dep):
+                    raise DependencyDoesNotExistError(
+                            "{stackname}: Dependency {dep} not found. "
+                            "Please make sure that your dependencies stack_outputs "
+                            "have their full path from `config` defined."
+                            .format(stackname=stack.name, dep=dep))
+
+                if full_dep not in full_todo and full_dep not in deps_todo:
+                    todo.add(full_dep)
+                    deps_todo.add(full_dep)
+
             stack_map[sceptreise_path(rel_path)] = stack
 
             full_command_path = self.context.full_command_path()

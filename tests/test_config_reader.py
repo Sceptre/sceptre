@@ -296,25 +296,25 @@ class TestConfigReader(object):
         (
             "Abd",
             ["Abc/1.yaml", "Abd/1.yaml"],
-            {"Abd/1", "Abc/1"},
+            {"Abd/1"},
             {"Abd/1"}
         ),
         (
             "Abd",
             ["Abc/1.yaml", "Abd/Abc/1.yaml", "Abd/2.yaml"],
-            {"Abd/2", "Abd/Abc/1", "Abc/1"},
+            {"Abd/2", "Abd/Abc/1"},
             {"Abd/2", "Abd/Abc/1"}
         ),
         (
             "Abd/Abc",
             ["Abc/1.yaml", "Abd/Abc/1.yaml", "Abd/2.yaml"],
-            {"Abd/2", "Abd/Abc/1", "Abc/1"},
+            {"Abd/Abc/1"},
             {"Abd/Abc/1"}
         ),
         (
             "Ab",
             ["Abc/1.yaml", "Abd/1.yaml"],
-            {"Abd/1", "Abc/1"},
+            set(),
             set()
         )
     ])
