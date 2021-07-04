@@ -17,6 +17,7 @@ import botocore
 import json
 import yaml
 import difflib
+import dictdiffer
 
 from dateutil.tz import tzutc
 
@@ -599,7 +600,7 @@ class StackActions(object):
         return response.get("TemplateBody")
 
     @add_stack_hooks
-    def diff(self):
+    def diff(self, differ="difflib"):
         """
         Returns a DeepDiff of Temlate and Remote Template
 
@@ -609,15 +610,28 @@ class StackActions(object):
         remote_template_stream = self.fetch_remote_template()
         local_template_stream = self.stack.template.body
 
-        remote_template = remote_template_stream.split("\n")
-        local_template = local_template_stream.split("\n")
+        if differ == "difflib":
+            remote_template = remote_template_stream.split("\n")
+            local_template = local_template_stream.split("\n")
 
-        diffs = difflib.unified_diff(
-            remote_template, local_template, fromfile="remote_template",
-            tofile="local_template", lineterm=""
-        )
+            diffs = difflib.unified_diff(
+                remote_template, local_template, fromfile="remote_template",
+                tofile="local_template", lineterm=""
+            )
 
-        return [self.stack.external_name, "\n".join(diffs)]
+            return_val = "\n".join(diffs)
+
+        elif differ == "dictdiffer":
+            remote_template = yaml.load(remote_template_stream,
+                                        Loader=yaml.BaseLoader)
+            local_template = yaml.load(local_template_stream,
+                                       Loader=yaml.BaseLoader)
+
+            diffs = dictdiffer.diff(remote_template, local_template)
+
+            return_val = list(diffs)
+
+        return [self.stack.external_name, return_val]
 
     @add_stack_hooks
     def validate(self):

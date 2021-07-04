@@ -98,14 +98,20 @@ def fetch_remote_template_command(ctx, path):
 
 @click.command(name="diff", short_help="Show diffs with running stack.")
 @click.argument("path")
+@click.option(
+    "-D", "--difflib", help="Specify diff library, default difflib"
+)
 @click.pass_context
 @catch_exceptions
-def diff_command(ctx, path):
+def diff_command(ctx, path, difflib):
     """
     Show diffs between the running and generated stack.
     \f
 
     :param path: The path to execute the command on.
+    :type path: str
+
+    :param difflib: The diff library to use, default difflib.
     :type path: str
     """
     context = SceptreContext(
@@ -117,7 +123,7 @@ def diff_command(ctx, path):
     )
 
     plan = SceptrePlan(context)
-    responses = plan.diff()
+    responses = plan.diff(difflib)
     output = "\n".join([
         stack_name + ": " + template
         for stack_name, template in responses.values()

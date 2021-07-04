@@ -1041,6 +1041,18 @@ class TestStackActions(object):
         assert response == [sentinel.external_name, expected_diff]
 
     @patch("sceptre.plan.actions.StackActions.fetch_remote_template")
+    def test_diff_some_diffs_dictdiffer(
+        self, mock_fetch_remote_template
+    ):
+        mock_fetch_remote_template.return_value = '---\nfoo: bar'
+        self.template._body = '---\nfoo: bar\nbaz: qux'
+
+        response = self.actions.diff("dictdiffer")
+
+        expected_diff = [("add", "", [("baz", "qux")])]
+        assert response == [sentinel.external_name, expected_diff]
+
+    @patch("sceptre.plan.actions.StackActions.fetch_remote_template")
     def test_diff_stack_does_not_exist(
         self, mock_fetch_remote_template
     ):
