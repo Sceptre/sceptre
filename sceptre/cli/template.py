@@ -118,7 +118,10 @@ def diff_command(ctx, path):
 
     plan = SceptrePlan(context)
     responses = plan.diff()
-    output = "\n".join([": ".join(value) for value in responses.values()])
+    output = "\n".join([
+        stack_name + ": " + template
+        for stack_name, template in responses.values()
+    ])
     write(output, context.output_format)
 
 

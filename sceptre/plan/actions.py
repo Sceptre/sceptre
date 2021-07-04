@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 import botocore
 import json
 import yaml
-import deepdiff
+import difflib
 
 from dateutil.tz import tzutc
 
@@ -609,21 +609,15 @@ class StackActions(object):
         remote_template_stream = self.fetch_remote_template()
         local_template_stream = self.stack.template.body
 
-        remote_template = yaml.load(remote_template_stream,
-                                    Loader=yaml.BaseLoader)
-        local_template = yaml.load(local_template_stream,
-                                   Loader=yaml.BaseLoader)
+        remote_template = remote_template_stream.split("\n")
+        local_template = local_template_stream.split("\n")
 
-        deep_diffs = deepdiff.DeepDiff(
-            remote_template, local_template, ignore_order=True
+        diffs = difflib.unified_diff(
+            remote_template, local_template, fromfile="remote_template",
+            tofile="local_template", lineterm=""
         )
 
-        if bool(deep_diffs):
-            response = deep_diffs.pretty()
-        else:
-            response = "No diffs"
-
-        return [self.stack.external_name, response]
+        return [self.stack.external_name, "\n".join(diffs)]
 
     @add_stack_hooks
     def validate(self):
