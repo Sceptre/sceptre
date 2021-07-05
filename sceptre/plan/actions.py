@@ -602,8 +602,11 @@ class StackActions(object):
     @add_stack_hooks
     def diff(self, differ="difflib"):
         """
-        Returns a DeepDiff of Temlate and Remote Template
+        Returns a diff of Template and Remote Template
+        using a specific diff library.
 
+        :param differ: The diff lib to use, default difflib.
+        :type: str
         :returns: The stack name and diffs.
         :rtype: List[str, str]
         """
