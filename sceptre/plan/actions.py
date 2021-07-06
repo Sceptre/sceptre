@@ -967,4 +967,4 @@ class StackActions(object):
 
         diffs = dictdiffer.diff(remote_template, local_template)
 
-        return list(diffs)
+        return str(list(diffs))

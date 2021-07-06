@@ -1049,7 +1049,7 @@ class TestStackActions(object):
 
         response = self.actions.diff("dictdiffer")
 
-        expected_diff = [("add", "", [("baz", "qux")])]
+        expected_diff = "[('add', '', [('baz', 'qux')])]"
         assert response == [sentinel.external_name, expected_diff]
 
     @patch("sceptre.plan.actions.StackActions.fetch_remote_template")
