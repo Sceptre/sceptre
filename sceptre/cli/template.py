@@ -99,7 +99,7 @@ def fetch_remote_template_command(ctx, path):
 @click.command(name="diff", short_help="Show diffs with running stack.")
 @click.argument("path")
 @click.option(
-    "-D", "--difflib", help="Specify diff library, default difflib"
+    "-D", "--difflib", is_flag=True, help="Specify diff library, default difflib"
 )
 @click.pass_context
 @catch_exceptions
