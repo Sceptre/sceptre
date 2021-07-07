@@ -10,7 +10,7 @@ executors:
 aliases:
   - &docs-job
     docker:
-      - image: cloudreach/sceptre-circleci:0.6.0
+      - image: cloudreach/sceptre-circleci:0.8.0
         environment:
           REPOSITORY_PATH: '/home/circleci/docs'
           DEPLOYMENT_GIT_SSH: 'git@github.com:Sceptre/sceptre.github.io.git'
@@ -32,7 +32,7 @@ aliases:
 jobs:
   build:
     docker:
-      - image: cloudreach/sceptre-circleci:0.6.0
+      - image: cloudreach/sceptre-circleci:0.8.0
     steps:
       - checkout
       - run:
@@ -69,7 +69,7 @@ jobs:
 
   lint-and-unit-tests:
     docker:
-      - image: cloudreach/sceptre-circleci:0.6.0
+      - image: cloudreach/sceptre-circleci:0.8.0
     steps:
       - attach_workspace:
           at: /home/circleci
@@ -90,24 +90,6 @@ jobs:
             make test-all
 
       - store_test_results:
-          path: test-results
-          destination: test-results
-
-      - store_artifacts:
-          path: test-results
-          destination: test-results
-
-      - run:
-          name: 'Coverage'
-          command: |
-            . venv/bin/activate
-            make coverage
-
-      - store_test_results:
-          path: coverage.xml
-          destination: coverage-reports
-
-      - store_artifacts:
           path: coverage.xml
           destination: coverage-reports
 
@@ -124,22 +106,10 @@ jobs:
           paths:
             - .tox
 
-  sonar:
-    docker:
-      - image: cloudreach/sceptre-circleci-sonarqube:latest
-    steps:
-      - attach_workspace:
-          at: /home/circleci
-      - run:
-          name: Run Sonarqube
-          command: |
-            . venv/bin/activate
-            make sonar
-
   integration-tests:
     parallelism: 2
     docker:
-      - image: cloudreach/sceptre-circleci:0.6.0
+      - image: cloudreach/sceptre-circleci:0.8.0
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
@@ -149,6 +119,9 @@ jobs:
           name: 'Integration Testing'
           command: |
             . ./venv/bin/activate
+            mkdir -p ~/.aws
+            echo -e "[default]\nregion=eu-west-1\nsource_profile=default\nrole_arn=arn:aws:iam::582448526747:role/sceptre-integration-test-ServiceRole-DUSW2V6ES2ZU" > ~/.aws/config
+            echo -e "[default]\nregion=eu-west-1\naws_access_key_id=$CI_SERVICE_AWS_ACCESS_KEY_ID\naws_secret_access_key=$CI_SERVICE_AWS_SECRET_ACCESS_KEY" > ~/.aws/credentials
             behave --junit \
                    --junit-directory build/behave \
                    $(circleci tests glob "integration-tests/features/*.feature" | circleci tests split --split-by=timings)
@@ -182,7 +155,7 @@ jobs:
 
   deploy-pypi:
     docker:
-      - image: cloudreach/sceptre-circleci:0.6.0
+      - image: cloudreach/sceptre-circleci:0.8.0
     steps:
       - attach_workspace:
           at: /home/circleci
@@ -195,7 +168,6 @@ jobs:
           name: 'Upload Distributions'
           command: |
             . ./venv/bin/activate
-            pip install twine
             twine upload -u $PYPI_USERNAME -p $PYPI_PASSWORD dist/*
 
   deploy-latest-dockerhub:
@@ -232,38 +204,44 @@ jobs:
             docker push $IMAGE_NAME:$IMAGE_TAG
 
 workflows:
-  version: 2.1
+  build-and-unit-test:
+    jobs:
+      - build:
+          filters:
+            branches:
+              only: /^pull\/.*/
+      - lint-and-unit-tests:
+          requires:
+            - build
+          filters:
+            branches:
+              only: /^pull\/.*/
+      - build-docker-image:
+          requires:
+            - lint-and-unit-tests
+          filters:
+            branches:
+              only: /^pull\/.*/
+
   build-test-and-deploy:
     jobs:
       - build:
-          context: sceptre-core
           filters:
-            tags:
-              only: /.*/
-
+            branches:
+              ignore: /^pull\/.*/
       - lint-and-unit-tests:
-          context: sceptre-core
           requires:
             - build
           filters:
-            tags:
-              only: /.*/
-      - sonar:
-          context: sceptre-core
-          requires:
-            - build
-            - lint-and-unit-tests
-
+            branches:
+              ignore: /^pull\/.*/
       - integration-tests:
           context: sceptre-core
           requires:
             - build
           filters:
-            tags:
-              only: /.*/
             branches:
               ignore: /^pull\/.*/
-
       - deploy-docs-branch:
           context: sceptre-core
           requires:
@@ -271,67 +249,62 @@ workflows:
             - integration-tests
           filters:
             branches:
-              only: master
-
-      - deploy-docs-tag:
-          context: sceptre-core
-          requires:
-            - lint-and-unit-tests
-            - integration-tests
-          filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
-
-      - deploy-pypi-approval:
-          context: sceptre-core
-          type: approval
-          requires:
-            - lint-and-unit-tests
-            - integration-tests
-            - sonar
-          filters:
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
-
-      - deploy-pypi:
-          context: sceptre-core
-          requires:
-            - deploy-pypi-approval
-          filters:
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*/
-            branches:
-              ignore: /.*/
-
+              ignore: /^pull\/.*/
       - build-docker-image:
-          context: sceptre-core
           requires:
             - lint-and-unit-tests
             - integration-tests
-            - sonar
           filters:
-            tags:
-              only: /.*/
-
+            branches:
+              ignore: /^pull\/.*/
       - deploy-latest-dockerhub:
           context: sceptre-core
           requires:
             - build-docker-image
           filters:
             branches:
-              only: master
+              ignore: /^pull\/.*/
 
+  publish:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
+      - deploy-pypi:
+          context: sceptre-core
+          requires:
+            - build
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
+      - deploy-docs-tag:
+          context: sceptre-core
+          requires:
+            - deploy-pypi
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
+      - build-docker-image:
+          requires:
+            - deploy-pypi
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
       - deploy-dockerhub-tagged:
           context: sceptre-core
           requires:
             - build-docker-image
-            - deploy-pypi
           filters:
             tags:
-              only: /^v.*/
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
             branches:
               ignore: /.*/

@@ -8,7 +8,7 @@
 - [ ] Added/Updated integration tests (if applicable).
 - [ ] All unit tests (`make test`) are passing.
 - [ ] Used the same coding conventions as the rest of the project.
-- [ ] The new code passes flake8 (`make lint`) checks.
+- [ ] The new code passes pre-commit validations (`pre-commit run --all-files`).
 - [ ] The PR relates to _only_ one subject with a clear title.
       and description in grammatically correct, complete sentences.
 

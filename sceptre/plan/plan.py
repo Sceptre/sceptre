@@ -367,6 +367,16 @@ class SceptrePlan(object):
         self.resolve(command=self.stack_name.__name__)
         return self._execute(*args)
 
+    def diff(self, *args):
+        """
+        Show diffs between the running and generated stack.
+
+        :returns: A dictionary of Stacks and diffs against running stack.
+        :rtype: dict
+        """
+        self.resolve(command=self.diff.__name__)
+        return self._execute(*args)
+
     def _valid_stack_paths(self):
         return [
             sceptreise_path(path.relpath(path.join(dirpath, f), self.context.config_path))

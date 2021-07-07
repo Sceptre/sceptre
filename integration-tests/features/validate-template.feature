@@ -15,4 +15,3 @@ Feature: Validate template
     Given the template for stack "1/A" is "valid_template.json"
     When the user validates the template for stack "1/A" with ignore dependencies
     Then the user is told "the template is valid"
-
