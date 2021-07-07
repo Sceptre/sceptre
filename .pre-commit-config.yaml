@@ -1,0 +1,37 @@
+default_language_version:
+  python: python3
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.9.0
+    hooks:
+      - id: flake8
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.26.1
+    hooks:
+      - id: yamllint
+  - repo: https://github.com/awslabs/cfn-python-lint
+    rev: v0.49.0
+    hooks:
+      - id: cfn-python-lint
+        args:
+          - "-i=E0000"
+          - "-i=E1001"
+          - "-i=E3012"
+          - "-i=W6001"
+        exclude: |
+          (?x)(
+            ^integration-tests/sceptre-project/config/|
+            ^integration-tests/sceptre-project/templates/jinja/|
+            ^tests/fixtures-vpc/config/|
+            ^tests/fixtures/config/|
+            ^temp/|
+            ^.circleci/|
+            ^.pre-commit-config.yaml
+          )

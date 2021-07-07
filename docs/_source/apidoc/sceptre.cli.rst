@@ -104,5 +104,3 @@ sceptre.cli.update module
     :members:
     :undoc-members:
     :show-inheritance:
-
-
