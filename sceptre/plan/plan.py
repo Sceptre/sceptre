@@ -357,6 +357,16 @@ class SceptrePlan(object):
         self.resolve(command=self.fetch_remote_template.__name__)
         return self._execute(*args)
 
+    def stack_name(self, *args):
+        """
+        Returns the Stack name for a given Stack
+
+        :returns: A dictionary of Stack Names.
+        :rtype: dict
+        """
+        self.resolve(command=self.stack_name.__name__)
+        return self._execute(*args)
+
     def diff(self, *args):
         """
         Show diffs between the running and generated stack.

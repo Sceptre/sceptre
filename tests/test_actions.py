@@ -1038,6 +1038,10 @@ Stack with id foo does not exist"
         with pytest.raises(ClientError):
             self.actions.fetch_remote_template()
 
+    def test_stack_name(self):
+        response = self.actions.stack_name()
+        assert response == sentinel.external_name
+
     @patch("sceptre.plan.actions.StackActions.fetch_remote_template")
     def test_diff_no_diffs(
         self, mock_fetch_remote_template

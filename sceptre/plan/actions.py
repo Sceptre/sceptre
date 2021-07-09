@@ -677,6 +677,15 @@ class StackActions(object):
         )
         return response
 
+    def stack_name(self):
+        """
+        Returns the Stack's stack name.
+
+        :returns: The Stack's stack name (external_name).
+        :rtype: str
+        """
+        return self.stack.external_name
+
     def get_status(self):
         """
         Returns the Stack's status.
