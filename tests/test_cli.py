@@ -466,6 +466,33 @@ class TestCli(object):
         assert result.exit_code == 0
         assert result.output == "export SCEPTRE_Key='Value'\n"
 
+    def test_fetch_remote_template(self):
+        self.mock_stack_actions.fetch_remote_template.return_value = '---\nfoo: bar'
+        result = self.runner.invoke(
+            cli, ["fetch-remote-template", "dev/vpc.yaml"]
+        )
+        assert result.exit_code == 0
+        assert result.output == '---\nfoo: bar\n'
+
+    def test_stack_name(self):
+        self.mock_stack_actions.stack_name.return_value = "mock-stack"
+        result = self.runner.invoke(
+            cli, ["stack-name", "dev/vpc.yaml"]
+        )
+        assert result.exit_code == 0
+        assert result.output == "mock-stack\n"
+
+    def test_diff(self):
+        self.mock_stack_actions.diff.return_value = [
+            "mock-stack",
+            '---\nfoo: bar'
+        ]
+        result = self.runner.invoke(
+            cli, ["diff", "dev/vpc.yaml"]
+        )
+        assert result.exit_code == 0
+        assert result.output == 'mock-stack: ---\nfoo: bar\n'
+
     def test_status_with_group(self):
         self.mock_stack_actions.get_status.return_value = {
             "stack": "status"

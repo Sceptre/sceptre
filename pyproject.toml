@@ -19,7 +19,7 @@ exclude_lines = [
   "if TYPE_CHECKING:",
 ]
 ignore_errors = true
-fail_under = 85.0
+fail_under = 90.0
 show_missing = true
 
 [tool.pytest.ini_options]
