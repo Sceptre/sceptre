@@ -65,6 +65,11 @@ Example:
    sceptre_user_data:
      iam_policy: !file_contents /path/to/policy.json
 
+rcmd
+~~~~
+
+Refer to `sceptre-resolver-cmd <https://github.com/Sceptre/sceptre-resolver-cmd/>`_ for documentation.
+
 stack_output
 ~~~~~~~~~~~~
 
