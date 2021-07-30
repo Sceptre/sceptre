@@ -29,6 +29,7 @@ install_requirements = [
     "colorama>=0.3.9",
     "packaging>=16.8,<17.0",
     "sceptre-cmd-resolver>=1.1.3,<2",
+    "sceptre-file-resolver>=1.0.4,<2",
     "six>=1.11.0,<2.0.0",
     "networkx>=2.4,<2.6"
 ]
