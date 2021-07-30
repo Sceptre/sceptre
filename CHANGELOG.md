@@ -4,6 +4,13 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.6.1 (2021.07.30)
+
+### Fixed
+
+- Fix dependencies to install sceptre-file-resolver
+- Consolidate pip requirements files
+
 ## 2.6.0 (2021.07.29)
 
 ### Added
