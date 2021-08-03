@@ -39,6 +39,9 @@ jobs:
       - image: cloudreach/sceptre-circleci:latest
     steps:
       - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - '80:24:c0:40:28:36:f1:80:7f:fd:15:c3:09:cf:86:fc'
       - python/install-packages:
           pkg-manager: poetry
       - run:
@@ -68,6 +71,9 @@ jobs:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
       - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - '80:24:c0:40:28:36:f1:80:7f:fd:15:c3:09:cf:86:fc'
       - python/install-packages:
           pkg-manager: poetry
       - run:
@@ -112,6 +118,9 @@ jobs:
       - image: cloudreach/sceptre-circleci:latest
     steps:
       - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - '80:24:c0:40:28:36:f1:80:7f:fd:15:c3:09:cf:86:fc'
       - python/install-packages:
           pkg-manager: poetry
       - run:
