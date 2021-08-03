@@ -4,6 +4,12 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.6.2 (2021.08.02)
+
+### Fixed
+
+- [Resolves #1072] fix sceptre install for docker
+
 ## 2.6.1 (2021.07.30)
 
 ### Fixed
