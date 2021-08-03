@@ -59,8 +59,28 @@ def cli(
 ):
     """
     Sceptre is a tool to manage your cloud native infrastructure deployments.
-
     """
+    def deep_merge(source, destination):
+        for key, value in source.items():
+            if isinstance(value, dict):
+                node = destination.setdefault(key, {})
+                deep_merge(value, node)
+            else:
+                destination[key] = value
+
+        return destination
+
+    def update_dict(variable):
+        variable_key, variable_value = variable.split("=")
+        keys = variable_key.split(".")
+
+        def nested_set(dic, keys, value):
+            for key in keys[:-1]:
+                dic = dic.setdefault(key, {})
+            dic[keys[-1]] = value
+
+        nested_set(ctx.obj.get("user_variables"), keys, variable_value)
+
     logger = setup_logging(debug, no_colour)
     colorama.init()
     # Enable deprecation warnings
@@ -74,16 +94,6 @@ def cli(
     }
 
     if var_file:
-        def deep_merge(source, destination):
-            for key, value in source.items():
-                if isinstance(value, dict):
-                    node = destination.setdefault(key, {})
-                    deep_merge(value, node)
-                else:
-                    destination[key] = value
-
-            return destination
-
         for fh in var_file:
             parsed = yaml.safe_load(fh.read())
 
@@ -110,20 +120,12 @@ def cli(
                 logger.debug(message)
 
     if var:
-        def update_dict(variable):
-            variable_key, variable_value = variable.split("=")
-            keys = variable_key.split(".")
-
-            def nested_set(dic, keys, value):
-                for key in keys[:-1]:
-                    dic = dic.setdefault(key, {})
-                dic[keys[-1]] = value
-
-            nested_set(ctx.obj.get("user_variables"), keys, variable_value)
-
-        # --var options overwrite --var-file options
+        # --var options overwrite --var-file options, unless a dict and --merge-keys.
         for variable in var:
-            update_dict(variable)
+            if isinstance(variable, dict) and merge_keys:
+                ctx.obj["user_variables"] = deep_merge(variable, ctx.obj["user_variables"])
+            else:
+                update_dict(variable)
 
 
 cli.add_command(new_group)

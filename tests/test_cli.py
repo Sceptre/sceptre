@@ -215,6 +215,27 @@ class TestCli(object):
                 "a": {"b": {"c": "r", "d": "q", "e": "s"}}
             }
         ),
+        # multiple --var-file and --var combined.
+        (
+            ["--merge-keys", "--var-file", "common.yaml", "--var", "CommonTags.Version=1.0.0", "noop"],
+            {
+                "common.yaml": {
+                    "CommonTags": {
+                        "Organization": "Parts Unlimited",
+                        "Department": "IT Operations",
+                        "Envlist": ["sandbox", "dev"]
+                    }
+                }
+            },
+            {
+                "CommonTags": {
+                    "Organization": "Parts Unlimited",
+                    "Department": "IT Operations",
+                    "Envlist": ["sandbox", "dev"],
+                    "Version": "1.0.0"
+                }
+            }
+        ),
     ])
     def test_user_variables(self, command, files, output):
         @cli.command()
