@@ -131,6 +131,111 @@ class TestCli(object):
             },
             {"key1": "file1", "key2": "var2"}
         ),
+        # multiple --var-file option, dictionaries merged.
+        (
+            ["--merge-keys", "--var-file", "foo.yaml", "--var-file", "bar.yaml", "noop"],
+            {
+                "foo.yaml": {"key1": {"a": "b"}},
+                "bar.yaml": {"key1": {"c": "d"}}
+            },
+            {
+                "key1": {"a": "b", "c": "d"}
+            }
+        ),
+        # multiple --var-file option, dictionaries merged, complex example.
+        (
+            ["--merge-keys", "--var-file", "common.yaml", "--var-file", "dev.yaml", "noop"],
+            {
+                "common.yaml": {
+                    "CommonTags": {
+                        "Organization": "Parts Unlimited",
+                        "Department": "IT Operations"
+                    }
+                },
+                "dev.yaml": {"CommonTags": {"Environment": "dev"}}
+            },
+            {
+                "CommonTags": {
+                    "Organization": "Parts Unlimited",
+                    "Department": "IT Operations",
+                    "Environment": "dev"
+                }
+            }
+        ),
+        # multiple --var-file option, dictionaries merged, complex example, with overrides.
+        (
+            ["--merge-keys", "--var-file", "common.yaml", "--var-file", "dev.yaml", "noop"],
+            {
+                "common.yaml": {
+                    "CommonTags": {
+                        "Organization": "Parts Unlimited",
+                        "Department": "IT Operations",
+                        "Environment": "sandbox"
+                    }
+                },
+                "dev.yaml": {"CommonTags": {"Environment": "dev"}},
+            },
+            {
+                "CommonTags": {
+                    "Organization": "Parts Unlimited",
+                    "Department": "IT Operations",
+                    "Environment": "dev"
+                }
+            }
+        ),
+        # multiple --var-file option, dictionaries merged, complex example, with lists.
+        (
+            ["--merge-keys", "--var-file", "common.yaml", "--var-file", "test.yaml", "noop"],
+            {
+                "common.yaml": {
+                    "CommonTags": {
+                        "Organization": "Parts Unlimited",
+                        "Department": "IT Operations",
+                        "Envlist": ["sandbox", "dev"]
+                    }
+                },
+                "test.yaml": {"CommonTags": {"Envlist": ["test"]}},
+            },
+            {
+                "CommonTags": {
+                    "Organization": "Parts Unlimited",
+                    "Department": "IT Operations",
+                    "Envlist": ["test"]  # May not be what we ultimately want!
+                }
+            }
+        ),
+        # multiple --var-file option, dictionaries merged, multiple levels.
+        (
+            ["--merge-keys", "--var-file", "common.yaml", "--var-file", "test.yaml", "noop"],
+            {
+                "common.yaml": {"a": {"b": {"c": "p", "d": "q"}}},
+                "test.yaml": {"a": {"b": {"c": "r", "e": "s"}}}
+            },
+            {
+                "a": {"b": {"c": "r", "d": "q", "e": "s"}}
+            }
+        ),
+        # multiple --var-file and --var combined.
+        (
+            ["--merge-keys", "--var-file", "common.yaml", "--var", "CommonTags.Version=1.0.0", "noop"],
+            {
+                "common.yaml": {
+                    "CommonTags": {
+                        "Organization": "Parts Unlimited",
+                        "Department": "IT Operations",
+                        "Envlist": ["sandbox", "dev"]
+                    }
+                }
+            },
+            {
+                "CommonTags": {
+                    "Organization": "Parts Unlimited",
+                    "Department": "IT Operations",
+                    "Envlist": ["sandbox", "dev"],
+                    "Version": "1.0.0"
+                }
+            }
+        ),
     ])
     def test_user_variables(self, command, files, output):
         @cli.command()
@@ -465,33 +570,6 @@ class TestCli(object):
         )
         assert result.exit_code == 0
         assert result.output == "export SCEPTRE_Key='Value'\n"
-
-    def test_fetch_remote_template(self):
-        self.mock_stack_actions.fetch_remote_template.return_value = '---\nfoo: bar'
-        result = self.runner.invoke(
-            cli, ["fetch-remote-template", "dev/vpc.yaml"]
-        )
-        assert result.exit_code == 0
-        assert result.output == '---\nfoo: bar\n'
-
-    def test_stack_name(self):
-        self.mock_stack_actions.stack_name.return_value = "mock-stack"
-        result = self.runner.invoke(
-            cli, ["stack-name", "dev/vpc.yaml"]
-        )
-        assert result.exit_code == 0
-        assert result.output == "mock-stack\n"
-
-    def test_diff(self):
-        self.mock_stack_actions.diff.return_value = [
-            "mock-stack",
-            '---\nfoo: bar'
-        ]
-        result = self.runner.invoke(
-            cli, ["diff", "dev/vpc.yaml"]
-        )
-        assert result.exit_code == 0
-        assert result.output == 'mock-stack: ---\nfoo: bar\n'
 
     def test_status_with_group(self):
         self.mock_stack_actions.get_status.return_value = {

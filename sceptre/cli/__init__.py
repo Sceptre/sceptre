@@ -49,6 +49,9 @@ from sceptre.cli.helpers import setup_logging, catch_exceptions
 @click.option(
     "--j2_extension", "j2_extensions",  multiple=True,
     help="Import path of Jinja2 extension to load.")
+@click.option(
+    "--merge-keys", is_flag=True, default=False,
+    help="Deep merge keys in successive var dicts.")
 @click.pass_context
 @catch_exceptions
 def cli(
@@ -60,12 +63,33 @@ def cli(
         var,
         var_file,
         ignore_dependencies,
-        j2_extensions
+        j2_extensions,
+        merge_keys
 ):
     """
     Sceptre is a tool to manage your cloud native infrastructure deployments.
-
     """
+    def deep_merge(source, destination):
+        for key, value in source.items():
+            if isinstance(value, dict):
+                node = destination.setdefault(key, {})
+                deep_merge(value, node)
+            else:
+                destination[key] = value
+
+        return destination
+
+    def update_dict(variable):
+        variable_key, variable_value = variable.split("=")
+        keys = variable_key.split(".")
+
+        def nested_set(dic, keys, value):
+            for key in keys[:-1]:
+                dic = dic.setdefault(key, {})
+            dic[keys[-1]] = value
+
+        nested_set(ctx.obj.get("user_variables"), keys, variable_value)
+
     logger = setup_logging(debug, no_colour)
     colorama.init()
     # Enable deprecation warnings
@@ -81,34 +105,36 @@ def cli(
     if var_file:
         for fh in var_file:
             parsed = yaml.safe_load(fh.read())
-            ctx.obj.get("user_variables").update(parsed)
+
+            if merge_keys:
+                ctx.obj["user_variables"] = deep_merge(parsed, ctx.obj["user_variables"])
+            else:
+                ctx.obj["user_variables"].update(parsed)
 
             # the rest of this block is for debug purposes only
             existing_keys = set(ctx.obj.get("user_variables").keys())
             new_keys = set(parsed.keys())
             overloaded_keys = existing_keys & new_keys  # intersection
+
             if overloaded_keys:
-                logger.debug(
-                    "Duplicate variables encountered: {0}. "
-                    "Using values from: {1}."
-                    .format(", ".join(overloaded_keys), fh.name)
-                )
+                message = "Duplicate variables encountered: "
+
+                if merge_keys:
+                    message += "{0}. Using values from: {1}.".format(
+                        ", ".join(overloaded_keys), fh.name)
+                else:
+                    message += "{0}. Performing deep merge, {1} wins.".format(
+                        ", ".join(overloaded_keys), fh.name)
+
+                logger.debug(message)
 
     if var:
-        def update_dict(variable):
-            variable_key, variable_value = variable.split("=")
-            keys = variable_key.split(".")
-
-            def nested_set(dic, keys, value):
-                for key in keys[:-1]:
-                    dic = dic.setdefault(key, {})
-                dic[keys[-1]] = value
-
-            nested_set(ctx.obj.get("user_variables"), keys, variable_value)
-
-        # --var options overwrite --var-file options
+        # --var options overwrite --var-file options, unless a dict and --merge-keys.
         for variable in var:
-            update_dict(variable)
+            if isinstance(variable, dict) and merge_keys:
+                ctx.obj["user_variables"] = deep_merge(variable, ctx.obj["user_variables"])
+            else:
+                update_dict(variable)
 
 
 cli.add_command(new_group)
