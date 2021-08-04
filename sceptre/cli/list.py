@@ -35,8 +35,7 @@ def list_resources(ctx, path):
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         output_format=ctx.obj.get("output_format"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
-        j2_extensions=ctx.obj.get("j2_extensions")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies")
     )
     plan = SceptrePlan(context)
 
@@ -72,8 +71,7 @@ def list_outputs(ctx, path, export):
         user_variables=ctx.obj.get("user_variables", {}),
         options=ctx.obj.get("options", {}),
         output_format=ctx.obj.get("output_format"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
-        j2_extensions=ctx.obj.get("j2_extensions")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies")
     )
 
     plan = SceptrePlan(context)
@@ -112,8 +110,7 @@ def list_change_sets(ctx, path):
         user_variables=ctx.obj.get("user_variables"),
         output_format=ctx.obj.get("output_format"),
         options=ctx.obj.get("options"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
-        j2_extensions=ctx.obj.get("j2_extensions")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies")
     )
 
     plan = SceptrePlan(context)
