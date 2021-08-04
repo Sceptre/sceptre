@@ -121,7 +121,7 @@ def stack_name_command(ctx, path):
 
     for stack_name in responses.values():
         write(stack_name, context.output_format)
-        
+
 
 @click.command(name="diff", short_help="Show diffs with running stack.")
 @click.argument("path")
