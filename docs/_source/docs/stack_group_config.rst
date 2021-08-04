@@ -19,6 +19,7 @@ Sceptre. The available keys are listed below.
 -  `required_version`_ *(optional)*
 -  `template_bucket_name`_ *(optional)*
 -  `template_key_prefix`_ *(optional)*
+-  `j2_environment`_ *(optional)*
 
 Sceptre will only check for and uses the above keys in StackGroup config files
 and are directly accessible from Stack(). Any other keys added by the user are
@@ -73,6 +74,19 @@ Extension can be ``json`` or ``yaml``.
 
 Note that if ``template_bucket_name`` is not supplied, this parameter is
 ignored.
+
+j2_environment
+~~~~~~~~~~~~~~~~~~~
+
+A dictionary that is combined with the default jinja2 environment.
+It's converted to keyword arguments then passed to [jinja2.Environment](https://jinja.palletsprojects.com/en/2.11.x/api/#jinja2.Environment).
+
+```yaml
+j2_environment:
+  extensions:
+    - jinja2.ext.i18n
+    - jinja2.ext.do
+```
 
 require_version
 ~~~~~~~~~~~~~~~
