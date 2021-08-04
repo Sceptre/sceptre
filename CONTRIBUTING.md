@@ -47,8 +47,7 @@ A good pull request:
 - Is clear.
 - Works across all supported version of Python.
 - Complies with the existing codebase style
-  ([flake8](http://flake8.pycqa.org/en/latest/),
-  [pylint](https://www.pylint.org/)).
+  ([pre-commit](https://pre-commit.com/))
 - Includes [docstrings](https://www.python.org/dev/peps/pep-0257/) and comments
   for unintuitive sections of code.
 - Includes documentation for new features.
@@ -95,9 +94,14 @@ $ git checkout -b <branch-name>
 
    Check linting:
 
-```bash
-$ make lint
-```
+As a pre-deployment step we syntatically validate files with
+[pre-commit](https://pre-commit.com).
+
+Please [install pre-commit](https://pre-commit.com/#install) then run
+`pre-commit install` to setup the git hooks.  Once configured the pre-commit
+linters will automatically run on every git commit.  Alternatively you
+can manually execute the validations by running
+`pre-commit run --all-files`.
 
 Run unit tests or coverage in your current environment - (handy for quickly
 running unit tests):

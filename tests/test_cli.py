@@ -189,7 +189,8 @@ class TestCli(object):
         }
 
         args = ["estimate-cost", "dev/vpc.yaml"]
-        result = self.runner.invoke(cli, args)
+        with patch('webbrowser.open', return_value=None):  # Do not open a web browser
+            result = self.runner.invoke(cli, args)
 
         self.mock_stack_actions.estimate_cost.assert_called_with()
 
@@ -427,7 +428,7 @@ class TestCli(object):
         assert result.exit_code == 0
         assert yaml.safe_load(result.output) == response
 
-    def test_list_outputs(self):
+    def test_list_outputs_json(self):
         outputs = {"OutputKey": "Key", "OutputValue": "Value"}
         self.mock_stack_actions.describe_outputs.return_value = outputs
         result = self.runner.invoke(
@@ -435,6 +436,26 @@ class TestCli(object):
         )
         assert result.exit_code == 0
         assert json.loads(result.output) == [outputs]
+
+    def test_list_outputs_yaml(self):
+        outputs = {"OutputKey": "Key", "OutputValue": "Value"}
+        self.mock_stack_actions.describe_outputs.return_value = outputs
+        result = self.runner.invoke(
+            cli, ["--output", "yaml", "list", "outputs", "dev/vpc.yaml"]
+        )
+        assert result.exit_code == 0
+        expected_output = '---\n- OutputKey: Key\n  OutputValue: Value\n\n'
+        assert result.output == expected_output
+
+    def test_list_outputs_text(self):
+        outputs = {"StackName": [{'OutputKey': "Key", "OutputValue": "Value"}]}
+        self.mock_stack_actions.describe_outputs.return_value = outputs
+        result = self.runner.invoke(
+            cli, ["--output", "text", "list", "outputs", "dev/vpc.yaml"]
+        )
+        assert result.exit_code == 0
+        expected_output = 'StackOutputKeyOutputValue\n\nStackNameKeyValue\n'
+        assert result.output.replace(' ', '') == expected_output
 
     def test_list_outputs_with_export(self):
         outputs = {'stack': [{'OutputKey': 'Key', 'OutputValue': 'Value'}]}

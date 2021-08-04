@@ -186,8 +186,7 @@ class TestConfigReader(object):
             },
             {
                 "bucket_name": "bucket-name",
-                "bucket_key": "prefix/name/2012-01-01-00-00-00-000000Z.json",
-                "bucket_region": "eu-west-1",
+                "bucket_key": "prefix/name/2012-01-01-00-00-00-000000Z.json"
             }
         ),
         (
@@ -198,8 +197,7 @@ class TestConfigReader(object):
             },
             {
                 "bucket_name": "bucket-name",
-                "bucket_key": "name/2012-01-01-00-00-00-000000Z.json",
-                "bucket_region": "eu-west-1",
+                "bucket_key": "name/2012-01-01-00-00-00-000000Z.json"
             }
         ),
         (
@@ -209,8 +207,7 @@ class TestConfigReader(object):
             },
             {
                 "bucket_name": "bucket-name",
-                "bucket_key": "name/2012-01-01-00-00-00-000000Z.json",
-                "bucket_region": None,
+                "bucket_key": "name/2012-01-01-00-00-00-000000Z.json"
             }
         ),
         (
@@ -299,25 +296,25 @@ class TestConfigReader(object):
         (
             "Abd",
             ["Abc/1.yaml", "Abd/1.yaml"],
-            {"Abd/1", "Abc/1"},
+            {"Abd/1"},
             {"Abd/1"}
         ),
         (
             "Abd",
             ["Abc/1.yaml", "Abd/Abc/1.yaml", "Abd/2.yaml"],
-            {"Abd/2", "Abd/Abc/1", "Abc/1"},
+            {"Abd/2", "Abd/Abc/1"},
             {"Abd/2", "Abd/Abc/1"}
         ),
         (
             "Abd/Abc",
             ["Abc/1.yaml", "Abd/Abc/1.yaml", "Abd/2.yaml"],
-            {"Abd/2", "Abd/Abc/1", "Abc/1"},
+            {"Abd/Abc/1"},
             {"Abd/Abc/1"}
         ),
         (
             "Ab",
             ["Abc/1.yaml", "Abd/1.yaml"],
-            {"Abd/1", "Abc/1"},
+            set(),
             set()
         )
     ])

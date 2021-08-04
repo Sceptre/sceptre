@@ -21,4 +21,3 @@ Feature: Describe stack_group resources
     Given all the stacks in stack_group "2" are in "CREATE_COMPLETE"
     When the user describes resources in stack_group "2" with ignore dependencies
     Then only all resources in stack_group "2" are described
-

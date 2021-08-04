@@ -16,8 +16,8 @@ Feature: Delete stack
     Then stack "1/A" does not exist
 
   Scenario: delete a stack that exists with dependencies ignoring dependencies
-    Given stack "4/C" exists in "CREATE_COMPLETE" state 
-    and stack "3/A" exists in "CREATE_COMPLETE" state 
+    Given stack "4/C" exists in "CREATE_COMPLETE" state
+    and stack "3/A" exists in "CREATE_COMPLETE" state
     and stack "3/A" depends on stack "4/C"
     When the user deletes stack "4/C" with ignore dependencies
     Then stack "4/C" does not exist and stack "3/A" exists in "CREATE_COMPLETE"

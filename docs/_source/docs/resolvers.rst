@@ -39,24 +39,25 @@ Example:
    parameters:
        database_password: !environment_variable DATABASE_PASSWORD
 
+file
+~~~~
+
+A Sceptre resolver to get file contents. The returned value can be passed into a parameter as
+a string, json, or yaml object.
+
+Refer to `sceptre-file-resolver <https://github.com/Sceptre/sceptre-file-resolver/>`_ for documentation.
+
 file_contents
 ~~~~~~~~~~~~~
 
-Reads in the contents of a file.
+**deprecated**: Consider using the `file`_ resolver instead.
 
-Syntax:
+rcmd
+~~~~
 
-.. code-block:: yaml
+A resolver to execute any shell command.
 
-   parameters|sceptre_user_data:
-     <name>: !file_contents /path/to/file.txt
-
-Example:
-
-.. code-block:: yaml
-
-   sceptre_user_data:
-     iam_policy: !file_contents /path/to/policy.json
+Refer to `sceptre-resolver-cmd <https://github.com/Sceptre/sceptre-resolver-cmd/>`_ for documentation.
 
 stack_output
 ~~~~~~~~~~~~
