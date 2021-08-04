@@ -46,8 +46,7 @@ def update_command(ctx, path, change_set, verbose, yes):
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         output_format=ctx.obj.get("output_format"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
-        j2_environment=ctx.obj.get("j2_environment")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies")
     )
 
     plan = SceptrePlan(context)

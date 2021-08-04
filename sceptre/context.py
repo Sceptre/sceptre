@@ -40,14 +40,11 @@ class SceptreContext(object):
     :param no_colour: Specify whether colouring should be used in the CLI\
             output
     :type no_colour: bool
-
-    :param j2_environment: The j2_environment specified in the CLI command
-    :type j2_environment: dict
     """
 
     def __init__(self, project_path, command_path,
                  user_variables=None, options=None, output_format=None,
-                 no_colour=False, ignore_dependencies=False, j2_environment=None):
+                 no_colour=False, ignore_dependencies=False):
         # project_path: absolute path to the base sceptre project folder
         # e.g. absolute_path/to/sceptre_directory
         self.project_path = normalise_path(project_path)
@@ -77,7 +74,6 @@ class SceptreContext(object):
         self.output_format = output_format if output_format else ""
         self.no_colour = no_colour if no_colour is True else False
         self.ignore_dependencies = ignore_dependencies if ignore_dependencies is True else False
-        self.j2_environment = j2_environment if j2_environment else {}
 
     def full_config_path(self):
         """

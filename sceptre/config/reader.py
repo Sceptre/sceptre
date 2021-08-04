@@ -40,6 +40,7 @@ CONFIG_MERGE_STRATEGIES = {
     "dependencies": strategies.list_join,
     "hooks": strategies.child_wins,
     "iam_role": strategies.child_wins,
+    "j2_environment": strategies.child_wins,
     "notifications": strategies.child_wins,
     "on_failure": strategies.child_wins,
     "parameters": strategies.child_wins,
@@ -66,7 +67,8 @@ STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
     {
         "template_bucket_name",
         "template_key_prefix",
-        "required_version"
+        "required_version",
+        "j2_environment"
     }
 )
 
@@ -230,10 +232,10 @@ class ConfigReader(object):
                 full_dep = str(Path(self.context.full_config_path(), dep))
                 if not path.exists(full_dep):
                     raise DependencyDoesNotExistError(
-                            "{stackname}: Dependency {dep} not found. "
-                            "Please make sure that your dependencies stack_outputs "
-                            "have their full path from `config` defined."
-                            .format(stackname=stack.name, dep=dep))
+                        "{stackname}: Dependency {dep} not found. "
+                        "Please make sure that your dependencies stack_outputs "
+                        "have their full path from `config` defined."
+                        .format(stackname=stack.name, dep=dep))
 
                 if full_dep not in full_todo and full_dep not in deps_todo:
                     todo.add(full_dep)
@@ -395,9 +397,11 @@ class ConfigReader(object):
                 ),
                 "loader": FileSystemLoader(abs_directory_path),
                 "undefined": StrictUndefined,
-                "extensions": self.context.j2_environment
             }
-            jinja_env = Environment(**default_environment)
+            environment = strategies.dict_merge(
+                default_environment,
+                stack_group_config.get("j2_environment", {}))
+            jinja_env = Environment(**environment)
             template = jinja_env.get_template(basename)
             self.templating_vars.update(stack_group_config)
             rendered_template = template.render(
