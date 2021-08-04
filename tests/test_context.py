@@ -19,7 +19,7 @@ class TestSceptreContext(object):
             output_format=sentinel.output_format,
             no_colour=sentinel.no_colour,
             ignore_dependencies=sentinel.ignore_dependencies,
-            j2_extensions=sentinel.j2_extensions
+            j2_environment=sentinel.j2_environment
         )
 
         sentinel.project_path = "project_path/to/sceptre"
@@ -34,7 +34,7 @@ class TestSceptreContext(object):
             output_format=sentinel.output_format,
             no_colour=sentinel.no_colour,
             ignore_dependencies=sentinel.ignore_dependencies,
-            j2_extensions=sentinel.j2_extensions
+            j2_environment=sentinel.j2_environment
         )
 
         full_config_path = path.join("project_path", self.config_path)
@@ -49,7 +49,7 @@ class TestSceptreContext(object):
             output_format=sentinel.output_format,
             no_colour=sentinel.no_colour,
             ignore_dependencies=sentinel.ignore_dependencies,
-            j2_extensions=sentinel.j2_extensions
+            j2_environment=sentinel.j2_environment
         )
         full_command_path = path.join("project_path",
                                       self.config_path,
@@ -66,7 +66,7 @@ class TestSceptreContext(object):
             output_format=sentinel.output_format,
             no_colour=sentinel.no_colour,
             ignore_dependencies=sentinel.ignore_dependencies,
-            j2_extensions=sentinel.j2_extensions
+            j2_environment=sentinel.j2_environment
         )
         full_templates_path = path.join("project_path", self.templates_path)
         assert context.full_templates_path() == full_templates_path

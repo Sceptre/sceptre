@@ -46,7 +46,7 @@ def describe_change_set(ctx, path, change_set_name, verbose):
         output_format=ctx.obj.get("output_format"),
         no_colour=ctx.obj.get("no_colour"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies"),
-        j2_extensions=ctx.obj.get("j2_extensions")
+        j2_environment=ctx.obj.get("j2_environment")
     )
 
     plan = SceptrePlan(context)
@@ -79,7 +79,7 @@ def describe_policy(ctx, path):
         output_format=ctx.obj.get("output_format"),
         no_colour=ctx.obj.get("no_colour"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies"),
-        j2_extensions=ctx.obj.get("j2_extensions")
+        j2_environment=ctx.obj.get("j2_environment")
     )
 
     plan = SceptrePlan(context)

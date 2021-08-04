@@ -30,7 +30,7 @@ def launch_command(ctx, path, yes):
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies"),
-        j2_extensions=ctx.obj.get("j2_extensions")
+        j2_environment=ctx.obj.get("j2_environment")
     )
 
     plan = SceptrePlan(context)

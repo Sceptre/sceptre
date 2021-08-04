@@ -395,7 +395,7 @@ class ConfigReader(object):
                 ),
                 "loader": FileSystemLoader(abs_directory_path),
                 "undefined": StrictUndefined,
-                "extensions": self.context.j2_extensions
+                "extensions": self.context.j2_environment
             }
             jinja_env = Environment(**default_environment)
             template = jinja_env.get_template(basename)
