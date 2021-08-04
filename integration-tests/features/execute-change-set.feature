@@ -20,4 +20,3 @@ Feature: Execute change set
     When the user executes change set "A" for stack "1/A" with ignore dependencies
     Then stack "1/A" does not have change set "A"
     and stack "1/A" was updated with change set "A"
-

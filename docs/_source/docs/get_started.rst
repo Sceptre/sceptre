@@ -7,6 +7,16 @@ Install
 This tutorial assumes that you have installed Sceptre. Instructions on how to
 do this can be found in the section on :doc:`installing Sceptre <install>`.
 
+AWS CLI Config
+--------------
+
+Sceptre uses the same configuration files as the official AWS CLI and can be
+configured using the `aws configure` command. This command configures 2 files
+`~/.aws/config` and `~/.aws/credentials` to setup the API Keys to access your
+AWS Account.
+
+Reference: `AWS_CLI_Configure`_
+
 Directory Structure
 -------------------
 
@@ -185,3 +195,4 @@ reference to the CLI :doc:`in our CLI guide <cli>`
 
 
 .. _CloudFormation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html
+.. _AWS_CLI_Configure: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html
