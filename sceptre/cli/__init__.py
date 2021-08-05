@@ -12,7 +12,6 @@ import warnings
 
 import click
 import colorama
-import yaml
 
 from sceptre import __version__
 from sceptre.cli.new import new_group
