@@ -75,9 +75,9 @@ we could overwrite ``nested: world`` to ``nested: hi`` using:
   requirement.
 
 Alternatively, it is possible to have keys merged according to a deep merge
-algorith, by specifying ``--merge-keys``. For example:
+algorithm, by specifying ``--merge-keys``. For example:
 
-``sceptre --var CommonTags.Version=1 --var-file vars.yaml launch stack``
+``sceptre --merge-keys --var CommonTags.Version=1 --var-file other_tags.yaml launch stack``
 
 Command reference
 -----------------

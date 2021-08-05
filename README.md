@@ -198,23 +198,23 @@ Sceptre can be used from the CLI, or imported as a Python package.
 
 ## CLI
 
-```sh
+```text
 Usage: sceptre [OPTIONS] COMMAND [ARGS]...
 
   Sceptre is a tool to manage your cloud native infrastructure deployments.
 
 Options:
-  --version              Show the version and exit.
-  --debug                Turn on debug logging.
-  --dir TEXT             Specify sceptre directory.
-  --output [yaml|json]   The formatting style for command output.
-  --no-colour            Turn off output colouring.
-  --var TEXT             A variable to template into config files.
-  --var-file FILENAME    A YAML file of variables to template into config
-                         files.
-  --ignore-dependencies  Ignore dependencies when executing command.
-  --merge-keys           Merge keys in successive var files not overwrite.
-  --help                 Show this message and exit.
+  --version                  Show the version and exit.
+  --debug                    Turn on debug logging.
+  --dir TEXT                 Specify sceptre directory.
+  --output [text|yaml|json]  The formatting style for command output.
+  --no-colour                Turn off output colouring.
+  --var TEXT                 A variable to template into config files.
+  --var-file FILENAME        A YAML file of variables to template into config
+                             files.
+  --ignore-dependencies      Ignore dependencies when executing command.
+  --merge-keys               Merge keys in successive var files not overwrite.
+  --help                     Show this message and exit.
 
 Commands:
   create         Creates a stack or a change set.
