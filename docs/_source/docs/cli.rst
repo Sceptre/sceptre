@@ -74,6 +74,11 @@ we could overwrite ``nested: world`` to ``nested: hi`` using:
   a dependency. Using a --var-file with all variables set can help meet this
   requirement.
 
+Alternatively, it is possible to have keys merged according to a deep merge
+algorithm, by specifying ``--merge-keys``. For example:
+
+``sceptre --merge-keys --var CommonTags.Version=1 --var-file other_tags.yaml launch stack``
+
 Command reference
 -----------------
 

@@ -31,8 +31,7 @@ def set_policy_command(ctx, path, policy_file, built_in):
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
-        j2_extensions=ctx.obj.get("j2_extensions")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies")
     )
     plan = SceptrePlan(context)
 

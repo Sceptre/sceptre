@@ -198,37 +198,45 @@ Sceptre can be used from the CLI, or imported as a Python package.
 
 ## CLI
 
-```sh
+```text
 Usage: sceptre [OPTIONS] COMMAND [ARGS]...
 
   Sceptre is a tool to manage your cloud native infrastructure deployments.
 
 Options:
-  --version              Show the version and exit.
-  --debug                Turn on debug logging.
-  --dir TEXT             Specify sceptre directory.
-  --output [yaml|json]   The formatting style for command output.
-  --no-colour            Turn off output colouring.
-  --var TEXT             A variable to template into config files.
-  --var-file FILENAME    A YAML file of variables to template into config
-                         files.
-  --ignore-dependencies  Ignore dependencies when executing command.
-  --help                 Show this message and exit.
+  --version                  Show the version and exit.
+  --debug                    Turn on debug logging.
+  --dir TEXT                 Specify sceptre directory.
+  --output [text|yaml|json]  The formatting style for command output.
+  --no-colour                Turn off output colouring.
+  --var TEXT                 A variable to template into config files.
+  --var-file FILENAME        A YAML file of variables to template into config
+                             files.
+
+  --ignore-dependencies      Ignore dependencies when executing command.
+  --j2_extension TEXT        Import path of Jinja2 extension to load.
+  --merge-keys               Merge dict keys in successive vars and var files
+                             not overwrite.
+
+  --help                     Show this message and exit.
 
 Commands:
-  create         Creates a stack or a change set.
-  delete         Deletes a stack or a change set.
-  describe       Commands for describing attributes of stacks.
-  estimate-cost  Estimates the cost of the template.
-  execute        Executes a Change Set.
-  generate       Prints the template.
-  launch         Launch a Stack or StackGroup.
-  list           Commands for listing attributes of stacks.
-  new            Commands for initialising Sceptre projects.
-  set-policy     Sets Stack policy.
-  status         Print status of stack or stack_group.
-  update         Update a stack.
-  validate       Validates the template.
+  create                 Creates a stack or a change set.
+  delete                 Deletes a stack or a change set.
+  describe               Commands for describing attributes of stacks.
+  diff                   Show diffs with running stack.
+  estimate-cost          Estimates the cost of the template.
+  execute                Executes a Change Set.
+  fetch-remote-template  Prints the remote template.
+  generate               Prints the template.
+  launch                 Launch a Stack or StackGroup.
+  list                   Commands for listing attributes of stacks.
+  new                    Commands for initialising Sceptre projects.
+  set-policy             Sets Stack policy.
+  stack-name             Reveal the stack name or names.
+  status                 Print status of stack or stack_group.
+  update                 Update a stack.
+  validate               Validates the template.
 ```
 
 ## Python
