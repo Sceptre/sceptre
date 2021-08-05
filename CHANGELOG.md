@@ -4,6 +4,42 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.6.2 (2021.08.02)
+
+### Fixed
+
+- [Resolves #1072] fix sceptre install for docker
+
+## 2.6.1 (2021.07.30)
+
+### Fixed
+
+- Fix dependencies to install sceptre-file-resolver
+- Consolidate pip requirements files
+
+## 2.6.0 (2021.07.29)
+
+### Added
+
+- Doc: added docs to release workflow in .circleci/README.md
+- Introduce an .editorconfig to sync common editor configuration across developer systems
+- Update click version
+- Update docker container to use Python 3.7
+- Make the sceptre-resolver-cmd resolver a core resolver
+- Make the sceptre-file-resolver a core resolver
+
+### Removed
+
+- Doc: Removed V1 docs
+
+### Fixed
+
+- [Resolves #1013] Fix virtual-hosted-style uri
+- Remove unnecessary padding with sceptre output command
+- Do not open a web browser during test
+- Optimize Sceptre Start Time by only Processing Dependent Configuration Files
+- [Resolves #1042] Fix OS path resolution on windows
+
 ## 2.5.0 (2021.05.01)
 
 ### Added
