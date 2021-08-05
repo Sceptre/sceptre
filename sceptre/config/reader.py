@@ -14,6 +14,7 @@ import fnmatch
 import logging
 from os import environ, path, walk
 from pkg_resources import iter_entry_points
+from pathlib import Path
 import yaml
 
 from jinja2 import Environment
@@ -226,7 +227,7 @@ class ConfigReader(object):
 
             stack = self._construct_stack(rel_path, stack_group_config)
             for dep in stack.dependencies:
-                full_dep = path.join(self.context.full_config_path(), dep)
+                full_dep = str(Path(self.context.full_config_path(), dep))
                 if not path.exists(full_dep):
                     raise DependencyDoesNotExistError(
                             "{stackname}: Dependency {dep} not found. "
