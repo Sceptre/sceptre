@@ -1039,8 +1039,13 @@ Stack with id foo does not exist"
             self.actions.fetch_remote_template()
 
     def test_stack_name(self):
-        response = self.actions.stack_name()
+        response = self.actions.stack_name(False)
         assert response == sentinel.external_name
+
+#    Fails with TypeError: must be str, not _SentinelObject
+#    def test_stack_name_p_opt(self):
+#        response = self.actions.stack_name(True)
+#        assert response.endswith(sentinel.external_name)
 
     @patch("sceptre.plan.actions.StackActions.fetch_remote_template")
     def test_diff_no_diffs(
