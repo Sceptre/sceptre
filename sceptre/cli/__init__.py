@@ -48,7 +48,7 @@ from sceptre.cli.helpers import setup_logging, catch_exceptions, setup_vars
     help="Ignore dependencies when executing command.")
 @click.option(
     "--merge-keys", is_flag=True, default=False,
-    help="Merge keys in successive var files not overwrite.")
+    help="Merge dict keys in successive vars and var files not overwrite.")
 @click.pass_context
 @catch_exceptions
 def cli(
