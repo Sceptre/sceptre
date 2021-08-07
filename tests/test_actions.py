@@ -40,8 +40,10 @@ class TestStackActions(object):
             stack_timeout=sentinel.stack_timeout
         )
         self.actions = StackActions(self.stack)
+        self.stack_group_config = {}
         self.template = Template(
             "fixtures/templates", self.stack.sceptre_user_data,
+            self.stack_group_config,
             self.actions.connection_manager, self.stack.s3_details
         )
         self.stack._template = self.template
@@ -58,6 +60,7 @@ class TestStackActions(object):
         mock_Template.assert_called_once_with(
             path=sentinel.template_path,
             sceptre_user_data=sentinel.sceptre_user_data,
+            stack_group_config={},
             connection_manager=self.stack.connection_manager,
             s3_details=None
         )

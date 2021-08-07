@@ -21,6 +21,7 @@ from jinja2 import StrictUndefined
 from jinja2 import select_autoescape
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 from sceptre.exceptions import TemplateSceptreHandlerError
+from sceptre.config import strategies
 
 
 class Template(object):
@@ -47,12 +48,13 @@ class Template(object):
     _boto_s3_lock = threading.Lock()
 
     def __init__(
-        self, path, sceptre_user_data, connection_manager=None, s3_details=None
+        self, path, sceptre_user_data, stack_group_config, connection_manager=None, s3_details=None
     ):
         self.logger = logging.getLogger(__name__)
 
         self.path = path
         self.sceptre_user_data = sceptre_user_data
+        self.stack_group_config = stack_group_config
         self.connection_manager = connection_manager
         self.s3_details = s3_details
 
@@ -324,8 +326,7 @@ class Template(object):
     def _domain_from_region(region):
         return "com.cn" if region.startswith("cn-") else "com"
 
-    @staticmethod
-    def _render_jinja_template(template_dir, filename, jinja_vars):
+    def _render_jinja_template(self, template_dir, filename, jinja_vars):
         """
         Renders a jinja template.
 
@@ -343,7 +344,7 @@ class Template(object):
         """
         logger = logging.getLogger(__name__)
         logger.debug("%s Rendering CloudFormation template", filename)
-        default_j2_environment = {
+        default_j2_environment_config = {
                 "autoescape": select_autoescape(
                     disabled_extensions=('j2',),
                     default=True,
@@ -351,7 +352,10 @@ class Template(object):
                 "loader": FileSystemLoader(template_dir),
                 "undefined": StrictUndefined,
             }
-        j2_env = Environment(**default_j2_environment)
-        template = j2_env.get_template(filename)
+        j2_environment_config = strategies.dict_merge(
+            default_j2_environment_config,
+            self.stack_group_config.get("j2_environment", {}))
+        j2_environment = Environment(**j2_environment_config)
+        template = j2_environment.get_template(filename)
         body = template.render(**jinja_vars)
         return body
