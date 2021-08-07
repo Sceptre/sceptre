@@ -388,15 +388,16 @@ class ConfigReader(object):
         config = {}
         abs_directory_path = path.join(self.full_config_path, directory_path)
         if path.isfile(path.join(abs_directory_path, basename)):
-            jinja_env = Environment(
-                autoescape=select_autoescape(
+            default_j2_environment = {
+                "autoescape": select_autoescape(
                     disabled_extensions=('yaml',),
                     default=True,
                 ),
-                loader=FileSystemLoader(abs_directory_path),
-                undefined=StrictUndefined
-            )
-            template = jinja_env.get_template(basename)
+                "loader": FileSystemLoader(abs_directory_path),
+                "undefined": StrictUndefined
+            }
+            j2_env = Environment(**default_j2_environment)
+            template = j2_env.get_template(basename)
             self.templating_vars.update(stack_group_config)
             rendered_template = template.render(
                 self.templating_vars,

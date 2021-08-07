@@ -343,14 +343,15 @@ class Template(object):
         """
         logger = logging.getLogger(__name__)
         logger.debug("%s Rendering CloudFormation template", filename)
-        env = Environment(
-            autoescape=select_autoescape(
-                disabled_extensions=('j2',),
-                default=True,
-            ),
-            loader=FileSystemLoader(template_dir),
-            undefined=StrictUndefined
-        )
-        template = env.get_template(filename)
+        default_j2_environment = {
+                "autoescape": select_autoescape(
+                    disabled_extensions=('j2',),
+                    default=True,
+                ),
+                "loader": FileSystemLoader(template_dir),
+                "undefined": StrictUndefined,
+            }
+        j2_env = Environment(**default_j2_environment)
+        template = j2_env.get_template(filename)
         body = template.render(**jinja_vars)
         return body
