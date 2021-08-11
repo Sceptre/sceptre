@@ -26,7 +26,7 @@ from sceptre.cli.policy import set_policy_command
 from sceptre.cli.status import status_command
 from sceptre.cli.template import (validate_command, generate_command,
                                   estimate_cost_command)
-from sceptre.cli.helpers import setup_logging, catch_exceptions, setup_vars
+from sceptre.cli.helpers import catch_exceptions, setup_vars
 
 
 @click.group()
@@ -57,12 +57,11 @@ def cli(
     """
     Sceptre is a tool to manage your cloud native infrastructure deployments.
     """
-    logger = setup_logging(debug, no_colour)
     colorama.init()
     # Enable deprecation warnings
     warnings.simplefilter("always", DeprecationWarning)
     ctx.obj = {
-        "user_variables": setup_vars(var_file, var, merge_keys, logger),
+        "user_variables": setup_vars(var_file, var, merge_keys, debug, no_colour),
         "output_format": output,
         "no_colour": no_colour,
         "ignore_dependencies": ignore_dependencies,

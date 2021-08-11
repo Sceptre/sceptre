@@ -164,7 +164,7 @@ def _generate_text(stream):
     return stream
 
 
-def setup_vars(var_file, var, merge_keys, logger):
+def setup_vars(var_file, var, merge_keys, debug, no_colour):
     """
     Handle --var-file and --var arguments before
     returning data for the user_variables as required
@@ -177,11 +177,16 @@ def setup_vars(var_file, var, merge_keys, logger):
     :param merge_keys: Merge instead of
         overwrite duplicate keys.
     :type merge_keys: bool
-    :param logger: the logger object.
-    :type logger: logging.Logger
+    :param debug: debug mode.
+    :type debug: bool
+    :param no_colour: no_colour mode.
+    :type no_colour: bool
+
     :returns: data for the user_variables.
     :rtype: Dict
     """
+    logger = setup_logging(debug, no_colour)
+
     return_value = {}
 
     def _update_dict(variable):
