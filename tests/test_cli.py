@@ -238,7 +238,10 @@ class TestCli(object):
         ),
         # multiple --var-file and --var combined.
         (
-            ["--merge-vars", "--var-file", "common.yaml", "--var-file", "test.yaml", "--var", "CommonTags.Project=Unboxing", "noop"],
+            [
+                "--merge-vars", "--var-file", "common.yaml", "--var-file", "test.yaml",
+                "--var", "CommonTags.Project=Unboxing", "noop"
+            ],
             {
                 "common.yaml": {
                     "CommonTags": {
