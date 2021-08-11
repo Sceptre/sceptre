@@ -192,7 +192,8 @@ def step_impl(context, stack_name):
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
         command_path=stack_name + '.yaml',
-        project_path=context.sceptre_dir
+        project_path=context.sceptre_dir,
+        full_scan=True
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
@@ -213,7 +214,8 @@ def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
         command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir,
-        ignore_dependencies=True
+        ignore_dependencies=True,
+        full_scan=True
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)

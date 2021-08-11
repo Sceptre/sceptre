@@ -196,7 +196,11 @@ class ConfigReader(object):
         """
         stack_map = {}
         command_stacks = set()
+
         root = self.context.full_command_path()
+
+        if self.context.full_scan:
+            root = self.context.full_config_path()
 
         if path.isfile(root):
             todo = {root}
