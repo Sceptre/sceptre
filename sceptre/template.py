@@ -38,6 +38,9 @@ class Template(object):
             a handler function in an external Python script.
     :type sceptre_user_data: dict
 
+    :param stack_group_config: The StackGroup config for the Stack.
+    :type stack_group_config: dict
+
     :param connection_manager:
     :type connection_manager: sceptre.connection_manager.ConnectionManager
 

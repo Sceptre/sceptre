@@ -81,12 +81,16 @@ j2_environment
 A dictionary that is combined with the default jinja2 environment.
 It's converted to keyword arguments then passed to [jinja2.Environment](https://jinja.palletsprojects.com/en/2.11.x/api/#jinja2.Environment).
 
-```yaml
-j2_environment:
-  extensions:
-    - jinja2.ext.i18n
-    - jinja2.ext.do
-```
+.. code-block:: yaml
+
+   j2_environment:
+      extensions:
+         - jinja2.ext.i18n
+         - jinja2.ext.do
+      lstrip_blocks: True
+      trim_blocks: True
+      newline_sequence: \n
+
 
 require_version
 ~~~~~~~~~~~~~~~
