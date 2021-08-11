@@ -47,12 +47,12 @@ from sceptre.cli.helpers import catch_exceptions, setup_vars
     "--ignore-dependencies", is_flag=True,
     help="Ignore dependencies when executing command.")
 @click.option(
-    "--merge-keys", is_flag=True, default=False,
-    help="Merge dict keys in successive vars and var files not overwrite.")
+    "--merge-vars", is_flag=True, default=False,
+    help="Merge dict keys in successive vars and var files.")
 @click.pass_context
 @catch_exceptions
 def cli(
-        ctx, debug, directory, output, no_colour, var, var_file, ignore_dependencies, merge_keys
+        ctx, debug, directory, output, no_colour, var, var_file, ignore_dependencies, merge_vars
 ):
     """
     Sceptre is a tool to manage your cloud native infrastructure deployments.
@@ -61,7 +61,7 @@ def cli(
     # Enable deprecation warnings
     warnings.simplefilter("always", DeprecationWarning)
     ctx.obj = {
-        "user_variables": setup_vars(var_file, var, merge_keys, debug, no_colour),
+        "user_variables": setup_vars(var_file, var, merge_vars, debug, no_colour),
         "output_format": output,
         "no_colour": no_colour,
         "ignore_dependencies": ignore_dependencies,
