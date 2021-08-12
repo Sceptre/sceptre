@@ -164,7 +164,7 @@ def _generate_text(stream):
     return stream
 
 
-def setup_vars(var_file, var, merge_keys, debug, no_colour):
+def setup_vars(var_file, var, merge_vars, debug, no_colour):
     """
     Handle --var-file and --var arguments before
     returning data for the user_variables as required
@@ -174,9 +174,9 @@ def setup_vars(var_file, var, merge_keys, debug, no_colour):
     :type var_file: List[Dict]
     :param var: the var list.
     :type var: List[str]
-    :param merge_keys: Merge instead of
+    :param merge_vars: Merge instead of
         overwrite duplicate keys.
-    :type merge_keys: bool
+    :type merge_vars: bool
     :param debug: debug mode.
     :type debug: bool
     :param no_colour: no_colour mode.
@@ -204,7 +204,7 @@ def setup_vars(var_file, var, merge_keys, debug, no_colour):
         for fh in var_file:
             parsed = yaml.safe_load(fh.read())
 
-            if merge_keys:
+            if merge_vars:
                 return_value = _deep_merge(parsed, return_value)
             else:
                 return_value.update(parsed)
@@ -217,7 +217,7 @@ def setup_vars(var_file, var, merge_keys, debug, no_colour):
             if overloaded_keys:
                 message = "Duplicate variables encountered: "
 
-                if merge_keys:
+                if merge_vars:
                     message += "{0}. Using values from: {1}.".format(
                         ", ".join(overloaded_keys), fh.name)
                 else:
@@ -227,9 +227,9 @@ def setup_vars(var_file, var, merge_keys, debug, no_colour):
                 logger.debug(message)
 
     if var:
-        # --var options overwrite --var-file options, unless a dict and --merge-keys.
+        # --var options overwrite --var-file options, unless a dict and --merge-vars.
         for variable in var:
-            if isinstance(variable, dict) and merge_keys:
+            if isinstance(variable, dict) and merge_vars:
                 return_value = _deep_merge(variable, return_value)
             else:
                 _update_dict(variable)
