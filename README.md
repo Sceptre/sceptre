@@ -209,9 +209,10 @@ Options:
   --dir TEXT                 Specify sceptre directory.
   --output [text|yaml|json]  The formatting style for command output.
   --no-colour                Turn off output colouring.
-  --var TEXT                 A variable to template into config files.
-  --var-file FILENAME        A YAML file of variables to template into config
-                             files.
+  --var TEXT                 A variable to replace the value of an item in
+                             config file.
+  --var-file FILENAME        A YAML file of variables to replace the values
+                             of items in config files.
   --ignore-dependencies      Ignore dependencies when executing command.
   --merge-vars               Merge dict keys in vars and var files.
   --help                     Show this message and exit.

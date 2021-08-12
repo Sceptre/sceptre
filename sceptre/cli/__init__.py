@@ -39,10 +39,10 @@ from sceptre.cli.helpers import catch_exceptions, setup_vars
 @click.option("--no-colour", is_flag=True, help="Turn off output colouring.")
 @click.option(
     "--var", multiple=True,
-    help="A variable to template into config files.")
+    help="A variable to replace the value of an item in config file.")
 @click.option(
     "--var-file", multiple=True, type=click.File("rb"),
-    help="A YAML file of variables to template into config files.")
+    help="A YAML file of variables to replace the values of items in config files.")
 @click.option(
     "--ignore-dependencies", is_flag=True,
     help="Ignore dependencies when executing command.")
