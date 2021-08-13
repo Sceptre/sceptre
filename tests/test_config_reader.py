@@ -262,64 +262,80 @@ class TestConfigReader(object):
 
         assert stacks == ({sentinel.stack}, {sentinel.stack})
 
-    @pytest.mark.parametrize("command_path,filepaths,expected_stacks,expected_command_stacks", [
+    @pytest.mark.parametrize("command_path,filepaths,expected_stacks,expected_command_stacks,full_scan", [
         (
             "",
             ["A/1.yaml"],
             {"A/1"},
-            {"A/1"}
+            {"A/1"},
+            False
         ),
         (
             "",
             ["A/1.yaml", "A/2.yaml", "A/3.yaml"],
             {"A/3", "A/2", "A/1"},
-            {"A/3", "A/2", "A/1"}
+            {"A/3", "A/2", "A/1"},
+            False
         ),
         (
             "",
             ["A/1.yaml", "A/A/1.yaml"],
             {"A/1", "A/A/1"},
-            {"A/1", "A/A/1"}
+            {"A/1", "A/A/1"},
+            False
         ),
         (
             "",
             ["A/1.yaml", "A/A/1.yaml", "A/A/2.yaml"],
             {"A/1", "A/A/1", "A/A/2"},
-            {"A/1", "A/A/1", "A/A/2"}
+            {"A/1", "A/A/1", "A/A/2"},
+            False
         ),
         (
             "",
             ["A/A/1.yaml", "A/B/1.yaml"],
             {"A/A/1", "A/B/1"},
-            {"A/A/1", "A/B/1"}
+            {"A/A/1", "A/B/1"},
+            False
         ),
         (
             "Abd",
             ["Abc/1.yaml", "Abd/1.yaml"],
             {"Abd/1"},
-            {"Abd/1"}
+            {"Abd/1"},
+            False
         ),
         (
             "Abd",
             ["Abc/1.yaml", "Abd/Abc/1.yaml", "Abd/2.yaml"],
             {"Abd/2", "Abd/Abc/1"},
-            {"Abd/2", "Abd/Abc/1"}
+            {"Abd/2", "Abd/Abc/1"},
+            False
         ),
         (
             "Abd/Abc",
             ["Abc/1.yaml", "Abd/Abc/1.yaml", "Abd/2.yaml"],
             {"Abd/Abc/1"},
-            {"Abd/Abc/1"}
+            {"Abd/Abc/1"},
+            False
         ),
         (
             "Ab",
             ["Abc/1.yaml", "Abd/1.yaml"],
             set(),
-            set()
-        )
+            set(),
+            False
+        ),
+        (
+            "Abd/Abc",
+            ["Abc/1.yaml", "Abd/Abc/1.yaml", "Abd/2.yaml"],
+            {"Abc/1", "Abd/Abc/1", "Abd/2"},
+            {"Abd/Abc/1"},
+            True
+        ),
     ])
     def test_construct_stacks_with_valid_config(
-        self, command_path, filepaths, expected_stacks, expected_command_stacks
+        self, command_path, filepaths, expected_stacks, expected_command_stacks, full_scan
     ):
         project_path, config_dir = self.create_project()
 
@@ -336,6 +352,7 @@ class TestConfigReader(object):
 
         self.context.project_path = project_path
         self.context.command_path = command_path
+        self.context.full_scan = full_scan
         config_reader = ConfigReader(self.context)
         all_stacks, command_stacks = config_reader.construct_stacks()
         assert {str(stack) for stack in all_stacks} == expected_stacks
