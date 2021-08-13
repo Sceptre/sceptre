@@ -142,6 +142,17 @@ class TestCli(object):
                 "key1": {"a": "b", "c": "d"}
             }
         ),
+        # multiple --var-file option, illustrating dictionaries not merged.
+        (
+            ["--var-file", "foo.yaml", "--var-file", "bar.yaml", "noop"],
+            {
+                "foo.yaml": {"key1": {"a": "b"}},
+                "bar.yaml": {"key1": {"c": "d"}}
+            },
+            {
+                "key1": {"c": "d"}
+            }
+        ),
         # multiple --var-file option, dictionaries merged, complex example.
         (
             ["--merge-vars", "--var-file", "common.yaml", "--var-file", "dev.yaml", "noop"],
