@@ -191,6 +191,23 @@ Will result in the following variables being available to the jinja templating:
    profile: prod
    project_code: api
 
+Note that there is no merging of dictionaries. If the variable appearing in
+the last variable file is a dictionary, and the same variable is defined in an
+earlier variable file, that whole dictionary will be overwritten. For example,
+this would not work as intended:
+
+.. code-block:: yaml
+
+   # default.yaml
+   tags: {"Env": "dev", "Project": "Widget"}
+
+.. code-block:: yaml
+
+   # prod.yaml
+   tags: {"Env": "prod"}
+
+Rather, the final dictionary would only contain the ``Env`` key.
+
 For command line flags, Sceptre splits the string on the first equals sign “=”,
 and sets the key to be the first substring, and the value to be the second. Due
 to the large number of possible user inputs, no error checking is performed on
