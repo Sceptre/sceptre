@@ -211,7 +211,7 @@ class TestCli(object):
                 "CommonTags": {
                     "Organization": "Parts Unlimited",
                     "Department": "IT Operations",
-                    "Envlist": ["test"]  # May not be what we ultimately want!
+                    "Envlist": ["test"]
                 }
             }
         ),
