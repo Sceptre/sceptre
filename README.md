@@ -214,7 +214,8 @@ Options:
   --var-file FILENAME        A YAML file of variables to replace the values
                              of items in config files.
   --ignore-dependencies      Ignore dependencies when executing command.
-  --merge-vars               Merge dict keys in vars and var files.
+  --merge-vars               Merge variables from successive --vars and var
+                             files.
   --help                     Show this message and exit.
 
 Commands:
