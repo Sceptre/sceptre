@@ -361,8 +361,12 @@ class ConfigReader(object):
         if directory_path:
             config = self._recursive_read(parent_directory, filename, stack_group_config)
 
+        # Combine the stack_group_config with the nested config dict
+        config_group = stack_group_config.copy()
+        config_group.update(config)
+
         # Read config file and overwrite inherited properties
-        child_config = self._render(directory_path, filename, stack_group_config) or {}
+        child_config = self._render(directory_path, filename, config_group) or {}
 
         for config_key, strategy in CONFIG_MERGE_STRATEGIES.items():
             value = strategy(
