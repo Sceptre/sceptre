@@ -12,7 +12,6 @@ import warnings
 
 import click
 import colorama
-import yaml
 
 from sceptre import __version__
 from sceptre.cli.new import new_group
@@ -27,7 +26,7 @@ from sceptre.cli.policy import set_policy_command
 from sceptre.cli.status import status_command
 from sceptre.cli.template import (validate_command, generate_command,
                                   estimate_cost_command)
-from sceptre.cli.helpers import setup_logging, catch_exceptions
+from sceptre.cli.helpers import catch_exceptions, setup_vars
 
 
 @click.group()
@@ -39,63 +38,35 @@ from sceptre.cli.helpers import setup_logging, catch_exceptions
     help="The formatting style for command output.")
 @click.option("--no-colour", is_flag=True, help="Turn off output colouring.")
 @click.option(
-    "--var", multiple=True, help="A variable to template into config files.")
+    "--var", multiple=True,
+    help="A variable to replace the value of an item in config file.")
 @click.option(
     "--var-file", multiple=True, type=click.File("rb"),
-    help="A YAML file of variables to template into config files.")
+    help="A YAML file of variables to replace the values of items in config files.")
 @click.option(
-    "--ignore-dependencies", is_flag=True, help="Ignore dependencies when executing command.")
+    "--ignore-dependencies", is_flag=True,
+    help="Ignore dependencies when executing command.")
+@click.option(
+    "--merge-vars", is_flag=True, default=False,
+    help="Merge variables from successive --vars and var files")
 @click.pass_context
 @catch_exceptions
 def cli(
-        ctx, debug, directory, output, no_colour, var, var_file, ignore_dependencies
+        ctx, debug, directory, output, no_colour, var, var_file, ignore_dependencies, merge_vars
 ):
     """
     Sceptre is a tool to manage your cloud native infrastructure deployments.
-
     """
-    logger = setup_logging(debug, no_colour)
     colorama.init()
     # Enable deprecation warnings
     warnings.simplefilter("always", DeprecationWarning)
     ctx.obj = {
-        "user_variables": {},
+        "user_variables": setup_vars(var_file, var, merge_vars, debug, no_colour),
         "output_format": output,
         "no_colour": no_colour,
         "ignore_dependencies": ignore_dependencies,
         "project_path": directory if directory else os.getcwd()
     }
-    if var_file:
-        for fh in var_file:
-            parsed = yaml.safe_load(fh.read())
-            ctx.obj.get("user_variables").update(parsed)
-
-            # the rest of this block is for debug purposes only
-            existing_keys = set(ctx.obj.get("user_variables").keys())
-            new_keys = set(parsed.keys())
-            overloaded_keys = existing_keys & new_keys  # intersection
-            if overloaded_keys:
-                logger.debug(
-                    "Duplicate variables encountered: {0}. "
-                    "Using values from: {1}."
-                    .format(", ".join(overloaded_keys), fh.name)
-                )
-
-    if var:
-        def update_dict(variable):
-            variable_key, variable_value = variable.split("=")
-            keys = variable_key.split(".")
-
-            def nested_set(dic, keys, value):
-                for key in keys[:-1]:
-                    dic = dic.setdefault(key, {})
-                dic[keys[-1]] = value
-
-            nested_set(ctx.obj.get("user_variables"), keys, variable_value)
-
-        # --var options overwrite --var-file options
-        for variable in var:
-            update_dict(variable)
 
 
 cli.add_command(new_group)

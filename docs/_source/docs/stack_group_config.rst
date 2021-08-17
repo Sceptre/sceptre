@@ -210,7 +210,7 @@ Will result in the following variables being available to the jinja templating:
    profile: prod
    project_code: api
 
-Note that there is no merging of dictionaries. If the variable appearing in
+Note that by default, dictionaries are not merged. If the variable appearing in
 the last variable file is a dictionary, and the same variable is defined in an
 earlier variable file, that whole dictionary will be overwritten. For example,
 this would not work as intended:
@@ -226,6 +226,18 @@ this would not work as intended:
    tags: {"Env": "prod"}
 
 Rather, the final dictionary would only contain the ``Env`` key.
+
+By using the ``--merge-vars`` option, these tags can be merged as intended:
+
+.. code-block:: text
+
+    sceptre --merge-vars --var-file=default.yaml --var-file=prod.yaml --var region=us-east-1 <COMMAND>
+
+This will result in the following:
+
+.. code-block:: yaml
+
+    tags: {"Env": "prod", "Project": "Widget"}
 
 For command line flags, Sceptre splits the string on the first equals sign “=”,
 and sets the key to be the first substring, and the value to be the second. Due
