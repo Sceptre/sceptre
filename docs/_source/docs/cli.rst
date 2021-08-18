@@ -74,10 +74,34 @@ we could overwrite ``nested: world`` to ``nested: hi`` using:
   a dependency. Using a --var-file with all variables set can help meet this
   requirement.
 
-Alternatively, it is possible to have keys merged according to a deep merge
-algorithm, by specifying ``--merge-keys``. For example:
+It is also possible to have keys merged according to a deep merge
+algorithm from successive var files, by specifying ``--merge-vars``. So, if we
+had a second variable file "vars2.yaml":
 
-``sceptre --merge-keys --var CommonTags.Version=1 --var-file other_tags.yaml launch stack``
+.. code-block:: yaml
+
+  # other_vars.yaml
+  ---
+  top:
+    middle3:
+      nested: more world
+
+
+We could merge all of this together using:
+
+``sceptre --merge-vars --var-file vars.yaml --var-file other_vars.yaml launch stack``
+
+The ``top`` dictionary would then be expected to contain:
+
+.. code-block:: python
+
+  {
+    "top": {
+      "middle": {"nested": "hello"},
+      "middle2": {"nested": "world"},
+      "middle3": {"nested": "more world"}
+    }
+  }
 
 Command reference
 -----------------

@@ -164,6 +164,90 @@ def _generate_text(stream):
     return stream
 
 
+def setup_vars(var_file, var, merge_vars, debug, no_colour):
+    """
+    Handle --var-file and --var arguments before
+    returning data for the user_variables as required
+    by the ConfigReader and SceptreContext.
+
+    :param var_file: the var_file list.
+    :type var_file: List[Dict]
+    :param var: the var list.
+    :type var: List[str]
+    :param merge_vars: Merge instead of
+        overwrite duplicate keys.
+    :type merge_vars: bool
+    :param debug: debug mode.
+    :type debug: bool
+    :param no_colour: no_colour mode.
+    :type no_colour: bool
+
+    :returns: data for the user_variables.
+    :rtype: Dict
+    """
+    logger = setup_logging(debug, no_colour)
+
+    return_value = {}
+
+    def _update_dict(variable):
+        variable_key, variable_value = variable.split("=")
+        keys = variable_key.split(".")
+
+        def _nested_set(dic, keys, value):
+            for key in keys[:-1]:
+                dic = dic.setdefault(key, {})
+            dic[keys[-1]] = value
+
+        _nested_set(return_value, keys, variable_value)
+
+    if var_file:
+        for fh in var_file:
+            parsed = yaml.safe_load(fh.read())
+
+            if merge_vars:
+                return_value = _deep_merge(parsed, return_value)
+            else:
+                return_value.update(parsed)
+
+            # the rest of this block is for debug purposes only
+            existing_keys = set(return_value.keys())
+            new_keys = set(parsed.keys())
+            overloaded_keys = existing_keys & new_keys  # intersection
+
+            if overloaded_keys:
+                message = "Duplicate variables encountered: "
+
+                if merge_vars:
+                    message += "{0}. Using values from: {1}.".format(
+                        ", ".join(overloaded_keys), fh.name)
+                else:
+                    message += "{0}. Performing deep merge, {1} wins.".format(
+                        ", ".join(overloaded_keys), fh.name)
+
+                logger.debug(message)
+
+    if var:
+        # --var options overwrite --var-file options, unless a dict and --merge-vars.
+        for variable in var:
+            if isinstance(variable, dict) and merge_vars:
+                return_value = _deep_merge(variable, return_value)
+            else:
+                _update_dict(variable)
+
+    return return_value
+
+
+def _deep_merge(source, destination):
+    for key, value in source.items():
+        if isinstance(value, dict):
+            node = destination.setdefault(key, {})
+            _deep_merge(value, node)
+        else:
+            destination[key] = value
+
+    return destination
+
+
 def stack_status_exit_code(statuses):
     if not all(
             status == StackStatus.COMPLETE
