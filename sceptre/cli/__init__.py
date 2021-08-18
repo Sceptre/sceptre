@@ -45,6 +45,9 @@ from sceptre.cli.helpers import catch_exceptions, setup_vars
     "--var-file", multiple=True, type=click.File("rb"),
     help="A YAML file of variables to replace the values of items in config files.")
 @click.option(
+    "--ignore-dependencies", is_flag=True,
+    help="Ignore dependencies when executing command.")
+@click.option(
     "--merge-vars", is_flag=True, default=False,
     help="Merge variables from successive --vars and var files")
 @click.pass_context
