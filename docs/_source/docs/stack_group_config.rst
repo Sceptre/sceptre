@@ -19,6 +19,7 @@ Sceptre. The available keys are listed below.
 -  `required_version`_ *(optional)*
 -  `template_bucket_name`_ *(optional)*
 -  `template_key_prefix`_ *(optional)*
+-  `j2_environment`_ *(optional)*
 
 Sceptre will only check for and uses the above keys in StackGroup config files
 and are directly accessible from Stack(). Any other keys added by the user are
@@ -73,6 +74,24 @@ Extension can be ``json`` or ``yaml``.
 
 Note that if ``template_bucket_name`` is not supplied, this parameter is
 ignored.
+
+j2_environment
+~~~~~~~~~~~~~~~~~~~
+
+A dictionary that is combined with the default jinja2 environment.
+It's converted to keyword arguments then passed to [jinja2.Environment](https://jinja.palletsprojects.com/en/2.11.x/api/#jinja2.Environment).
+This will impact :ref:`Templating` of stacks by modifying the behavior of jinja.
+
+.. code-block:: yaml
+
+   j2_environment:
+      extensions:
+         - jinja2.ext.i18n
+         - jinja2.ext.do
+      lstrip_blocks: True
+      trim_blocks: True
+      newline_sequence: \n
+
 
 require_version
 ~~~~~~~~~~~~~~~
@@ -190,6 +209,35 @@ Will result in the following variables being available to the jinja templating:
    region: us-east-1
    profile: prod
    project_code: api
+
+Note that by default, dictionaries are not merged. If the variable appearing in
+the last variable file is a dictionary, and the same variable is defined in an
+earlier variable file, that whole dictionary will be overwritten. For example,
+this would not work as intended:
+
+.. code-block:: yaml
+
+   # default.yaml
+   tags: {"Env": "dev", "Project": "Widget"}
+
+.. code-block:: yaml
+
+   # prod.yaml
+   tags: {"Env": "prod"}
+
+Rather, the final dictionary would only contain the ``Env`` key.
+
+By using the ``--merge-vars`` option, these tags can be merged as intended:
+
+.. code-block:: text
+
+    sceptre --merge-vars --var-file=default.yaml --var-file=prod.yaml --var region=us-east-1 <COMMAND>
+
+This will result in the following:
+
+.. code-block:: yaml
+
+    tags: {"Env": "prod", "Project": "Widget"}
 
 For command line flags, Sceptre splits the string on the first equals sign “=”,
 and sets the key to be the first substring, and the value to be the second. Due

@@ -209,15 +209,13 @@ Options:
   --dir TEXT                 Specify sceptre directory.
   --output [text|yaml|json]  The formatting style for command output.
   --no-colour                Turn off output colouring.
-  --var TEXT                 A variable to template into config files.
-  --var-file FILENAME        A YAML file of variables to template into config
-                             files.
-
+  --var TEXT                 A variable to replace the value of an item in
+                             config file.
+  --var-file FILENAME        A YAML file of variables to replace the values
+                             of items in config files.
   --ignore-dependencies      Ignore dependencies when executing command.
-  --j2_extension TEXT        Import path of Jinja2 extension to load.
-  --merge-keys               Merge dict keys in successive vars and var files
-                             not overwrite.
-
+  --merge-vars               Merge variables from successive --vars and var
+                             files.
   --help                     Show this message and exit.
 
 Commands:

@@ -4,6 +4,12 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.6.3 (2021.08.13)
+
+### Fixed
+
+- [Resolves #1078] Fix delete CLI dependency tree
+
 ## 2.6.2 (2021.08.02)
 
 ### Fixed

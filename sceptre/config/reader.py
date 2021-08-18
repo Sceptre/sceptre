@@ -66,7 +66,8 @@ STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
     {
         "template_bucket_name",
         "template_key_prefix",
-        "required_version"
+        "required_version",
+        "j2_environment"
     }
 )
 
@@ -196,7 +197,11 @@ class ConfigReader(object):
         """
         stack_map = {}
         command_stacks = set()
+
         root = self.context.full_command_path()
+
+        if self.context.full_scan:
+            root = self.context.full_config_path()
 
         if path.isfile(root):
             todo = {root}
@@ -230,10 +235,10 @@ class ConfigReader(object):
                 full_dep = str(Path(self.context.full_config_path(), dep))
                 if not path.exists(full_dep):
                     raise DependencyDoesNotExistError(
-                            "{stackname}: Dependency {dep} not found. "
-                            "Please make sure that your dependencies stack_outputs "
-                            "have their full path from `config` defined."
-                            .format(stackname=stack.name, dep=dep))
+                        "{stackname}: Dependency {dep} not found. "
+                        "Please make sure that your dependencies stack_outputs "
+                        "have their full path from `config` defined."
+                        .format(stackname=stack.name, dep=dep))
 
                 if full_dep not in full_todo and full_dep not in deps_todo:
                     todo.add(full_dep)
@@ -388,15 +393,19 @@ class ConfigReader(object):
         config = {}
         abs_directory_path = path.join(self.full_config_path, directory_path)
         if path.isfile(path.join(abs_directory_path, basename)):
-            jinja_env = Environment(
-                autoescape=select_autoescape(
+            default_j2_environment_config = {
+                "autoescape": select_autoescape(
                     disabled_extensions=('yaml',),
                     default=True,
                 ),
-                loader=FileSystemLoader(abs_directory_path),
-                undefined=StrictUndefined
-            )
-            template = jinja_env.get_template(basename)
+                "loader": FileSystemLoader(abs_directory_path),
+                "undefined": StrictUndefined
+            }
+            j2_environment_config = strategies.dict_merge(
+                default_j2_environment_config,
+                stack_group_config.get("j2_environment", {}))
+            j2_environment = Environment(**j2_environment_config)
+            template = j2_environment.get_template(basename)
             self.templating_vars.update(stack_group_config)
             rendered_template = template.render(
                 self.templating_vars,

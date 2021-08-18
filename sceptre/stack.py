@@ -270,6 +270,7 @@ class Stack(object):
             self._template = Template(
                 path=self.template_path,
                 sceptre_user_data=self.sceptre_user_data,
+                stack_group_config=self.stack_group_config,
                 s3_details=self.s3_details,
                 connection_manager=self.connection_manager
             )
