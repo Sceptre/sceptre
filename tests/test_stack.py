@@ -80,7 +80,7 @@ class TestStack(object):
         assert stack.parameters == {}
         assert stack.sceptre_user_data == {}
         assert stack.template_path == sentinel.template_path
-        assert stack.template_handler_config == None
+        assert stack.template_handler_config is None
         assert stack.s3_details is None
         assert stack._template is None
         assert stack.protected is False
@@ -110,7 +110,7 @@ class TestStack(object):
         assert stack.hooks == {}
         assert stack.parameters == {}
         assert stack.sceptre_user_data == {}
-        assert stack.template_path == None
+        assert stack.template_path is None
         assert stack.template_handler_config == sentinel.template_handler_config
         assert stack.s3_details is None
         assert stack._template is None

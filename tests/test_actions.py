@@ -13,7 +13,7 @@ from sceptre.plan.actions import StackActions
 from sceptre.template import Template
 from sceptre.stack_status import StackStatus
 from sceptre.stack_status import StackChangeSetStatus
-from sceptre.exceptions import CannotUpdateFailedStackError, InvalidConfigFileError
+from sceptre.exceptions import CannotUpdateFailedStackError
 from sceptre.exceptions import UnknownStackStatusError
 from sceptre.exceptions import UnknownStackChangeSetStatusError
 from sceptre.exceptions import StackDoesNotExistError
@@ -41,7 +41,8 @@ class TestStackActions(object):
         self.actions = StackActions(self.stack)
         self.stack_group_config = {}
         self.template = Template(
-            "fixtures/templates", self.stack.template_handler_config, self.stack.sceptre_user_data, self.stack_group_config,
+            "fixtures/templates", self.stack.template_handler_config,
+            self.stack.sceptre_user_data, self.stack_group_config,
             self.actions.connection_manager, self.stack.s3_details
         )
         self.stack._template = self.template

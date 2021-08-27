@@ -11,9 +11,8 @@ import logging
 import os
 import sys
 import threading
-import traceback
-
 import botocore
+
 from importlib.machinery import SourceFileLoader
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
@@ -23,6 +22,7 @@ from sceptre.exceptions import TemplateHandlerNotFoundError
 from sceptre.exceptions import TemplateSceptreHandlerError
 from sceptre.config import strategies
 from pkg_resources import iter_entry_points
+
 
 class Template(object):
     """

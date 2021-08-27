@@ -8,7 +8,6 @@ This module implements a Stack class, which stores a Stack's data.
 """
 
 import logging
-import os
 from typing import Mapping, Sequence
 
 from sceptre.connection_manager import ConnectionManager

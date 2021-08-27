@@ -333,6 +333,7 @@ class TestTemplate(object):
         result = self.template.body
         assert result == sentinel.template_handler_argument
 
+
 @pytest.mark.parametrize("filename,sceptre_user_data,expected", [
     (
         "vpc.j2",
