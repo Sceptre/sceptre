@@ -32,8 +32,7 @@ install_requirements = [
     "sceptre-cmd-resolver>=1.1.3,<2",
     "sceptre-file-resolver>=1.0.4,<2",
     "six>=1.11.0,<2.0.0",
-    "networkx>=2.4,<2.6",
-    "typing>=3.7,<3.8"
+    "networkx>=2.4,<2.6"
 ]
 
 extra_requirements = {
