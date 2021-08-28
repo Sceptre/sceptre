@@ -83,7 +83,6 @@ class Template(object):
         :returns: The body of the CloudFormation template.
         :rtype: str
         """
-        # TODO: may need to handle https://github.com/Sceptre/sceptre/pull/1043
         if self._body is None:
             type = self.handler_config.get("type")
             handler_class = self._get_handler_of_type(type)

@@ -234,7 +234,7 @@ class TestTemplate(object):
         self.template.sceptre_user_data = None
         self.template.name = "chdir"
         current_dir = os.getcwd()
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/chdir.py"
         )
@@ -384,7 +384,11 @@ def test_render_jinja_template(filename, sceptre_user_data, expected):
         os.getcwd(),
         "tests/fixtures/templates"
     )
-    template = Template(path=filename, sceptre_user_data=sceptre_user_data, stack_group_config={})
+    handler_config = {"type": "file", "path": filename}
+    template = Template(name="template_name",
+                        handler_config=handler_config,
+                        sceptre_user_data=sceptre_user_data,
+                        stack_group_config={})
     result = template._render_jinja_template(
         template_dir=jinja_template_dir,
         filename=filename,
@@ -405,7 +409,11 @@ def test_render_jinja_template(filename, sceptre_user_data, expected):
 def test_render_jinja_template_j2_environment_config(mock_environment, stack_group_config, expected_keys):
     filename = "vpc.j2"
     sceptre_user_data = {"vpc_id": "10.0.0.0/16"}
-    template = Template(path=filename, sceptre_user_data=sceptre_user_data, stack_group_config=stack_group_config)
+    handler_config = {"type": "file", "path": filename}
+    template = Template(name="template_name",
+                        handler_config=handler_config,
+                        sceptre_user_data=sceptre_user_data,
+                        stack_group_config=stack_group_config)
     jinja_template_dir = os.path.join(
         os.getcwd(),
         "tests/fixtures/templates"
