@@ -63,7 +63,15 @@ def generate_command(ctx, path):
 
     plan = SceptrePlan(context)
     responses = plan.generate()
-    output = [template for template in responses.values()]
+
+    output = []
+    templates = responses.values()
+    for template in templates:
+        if template.startswith("---"):
+            output.append(template)
+        else:
+            output.append("---\n" + template)
+
     write(output, context.output_format)
 
 
