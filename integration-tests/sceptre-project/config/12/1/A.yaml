@@ -1,0 +1,4 @@
+template_path: valid_template.json
+stack_tags:
+  Key: '{{ keyA }}'
+  Project: '{{ project }}'
