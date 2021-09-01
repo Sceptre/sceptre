@@ -35,6 +35,8 @@ def step_impl(context):
 
 @then('a "{exception_type}" is raised')
 def step_impl(context, exception_type):
+    print(f'Error Type: {type(context.error)}')
+
     if exception_type == "TemplateSceptreHandlerError":
         assert isinstance(context.error, TemplateSceptreHandlerError)
     elif exception_type == "UnsupportedTemplateFileTypeError":
