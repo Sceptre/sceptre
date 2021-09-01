@@ -137,6 +137,8 @@ class Template(object):
                         ".template, .json and .j2 are supported.",
                         os.path.splitext(self.path)[1]
                     )
+                if not self._body.startswith("---"):
+                    self._body = "---\n{}".format(self._body)
             except Exception as e:
                 self._print_template_traceback()
                 raise e

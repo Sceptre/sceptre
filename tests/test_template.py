@@ -181,18 +181,6 @@ class TestTemplate(object):
 
         assert boto_parameter == {"TemplateBody": sentinel.body}
 
-    def test_body_with_json_template(self):
-        self.template.name = "vpc"
-        self.template.path = os.path.join(
-            os.getcwd(),
-            "tests/fixtures/templates/vpc.json"
-        )
-        output = self.template.body
-        output_dict = json.loads(output)
-        with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
-            expected_output_dict = json.loads(f.read())
-        assert output_dict == expected_output_dict
-
     def test_body_with_yaml_template(self):
         self.template.name = "vpc"
         self.template.path = os.path.join(
@@ -212,7 +200,7 @@ class TestTemplate(object):
             "tests/fixtures/templates/vpc.template"
         )
         output = self.template.body
-        output_dict = json.loads(output)
+        output_dict = yaml.safe_load(output)
         with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
             expected_output_dict = json.loads(f.read())
         assert output_dict == expected_output_dict
@@ -226,7 +214,7 @@ class TestTemplate(object):
             "tests/fixtures/templates/chdir.py"
         )
         try:
-            json.loads(self.template.body)
+            yaml.safe_load(self.template.body)
         except ValueError:
             assert False
         finally:
@@ -244,7 +232,7 @@ class TestTemplate(object):
             os.getcwd(),
             "tests/fixtures/templates/vpc.py"
         )
-        actual_output = json.loads(self.template.body)
+        actual_output = yaml.safe_load(self.template.body)
         with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
             expected_output = json.loads(f.read())
         assert actual_output == expected_output
@@ -256,10 +244,32 @@ class TestTemplate(object):
             os.getcwd(),
             "tests/fixtures/templates/vpc_sgt.py"
         )
-        actual_output = json.loads(self.template.body)
+        actual_output = yaml.safe_load(self.template.body)
         with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
             expected_output = json.loads(f.read())
         assert actual_output == expected_output
+
+    def test_body_injects_yaml_start_marker(self):
+        self.template.name = "vpc"
+        self.template.path = os.path.join(
+            os.getcwd(),
+            "tests/fixtures/templates/vpc.without_start_marker.yaml"
+        )
+        output = self.template.body
+        with open("tests/fixtures/templates/vpc.yaml", "r") as f:
+            expected_output = f.read()
+        assert output == expected_output
+
+    def test_body_with_existing_yaml_start_marker(self):
+        self.template.name = "vpc"
+        self.template.path = os.path.join(
+            os.getcwd(),
+            "tests/fixtures/templates/vpc.yaml"
+        )
+        output = self.template.body
+        with open("tests/fixtures/templates/vpc.yaml", "r") as f:
+            expected_output = f.read()
+        assert output == expected_output
 
     def test_body_injects_sceptre_user_data(self):
         self.template.sceptre_user_data = {
@@ -271,7 +281,7 @@ class TestTemplate(object):
             "tests/fixtures/templates/vpc_sud.py"
         )
 
-        actual_output = json.loads(self.template.body)
+        actual_output = yaml.safe_load(self.template.body)
         with open("tests/fixtures/templates/compiled_vpc_sud.json", "r") as f:
             expected_output = json.loads(f.read())
         assert actual_output == expected_output
