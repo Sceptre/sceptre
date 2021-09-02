@@ -17,6 +17,16 @@ Feature: Generate template
     | invalid_template.yaml     |
     | jinja/valid_template.yaml |
 
+  Scenario: Generate template using a valid python template file
+    Given the template for stack "1/A" is "valid_template.py"
+    When the user generates the template for stack "1/A"
+    Then the output is the same as the string returned by "valid_template.py"
+
+  Scenario: Generate template using a valid python template file with ignore dependencies
+    Given the template for stack "1/A" is "valid_template.py"
+    When the user generates the template for stack "1/A" with ignore dependencies
+    Then the output is the same as the string returned by "valid_template.py"
+
   Scenario Outline: Generating erroneous python templates
     Given the template for stack "1/A" is "<filename>"
     When the user generates the template for stack "1/A"
@@ -50,14 +60,3 @@ Feature: Generate template
     | filename                                | exception          |
     | jinja/invalid_template_missing_key.j2   | UndefinedError     |
     | jinja/invalid_template_missing_attr.j2  | UndefinedError     |
-
-  Scenario: Generate template using a valid python template file
-    Given the template for stack "1/A" is "valid_template.py"
-    When the user generates the template for stack "1/A"
-    Then the output is the same as the string returned by "valid_template.py"
-
-  Scenario: Generate template using a valid python template file with ignore dependencies
-    Given the template for stack "1/A" is "valid_template.py"
-    When the user generates the template for stack "1/A" with ignore dependencies
-    Then the output is the same as the string returned by "valid_template.py"
-
