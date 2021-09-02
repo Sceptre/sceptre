@@ -60,4 +60,3 @@ Feature: Generate template
     Given the template for stack "1/A" is "valid_template.py"
     When the user generates the template for stack "1/A" with ignore dependencies
     Then the output is the same as the string returned by "valid_template.py"
-
