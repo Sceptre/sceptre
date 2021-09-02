@@ -22,7 +22,7 @@ def get_version(rel_path):
 
 
 install_requirements = [
-    "boto3>=1.18.32,<2.0",
+    "boto3>=1.3,<2.0",
     "click>=7.0,<9.0",
     "PyYaml>=5.1,<6.0",
     "Jinja2>=2.8,<3",
