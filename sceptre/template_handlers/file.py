@@ -84,7 +84,7 @@ class File(TemplateHandler):
             raise IOError("No such file or directory: '%s'", path)
 
         import imp
-        module = imp.load_source(self.name, path)
+        module = imp.load_source(path, path)
 
         try:
             body = module.sceptre_handler(self.sceptre_user_data)
