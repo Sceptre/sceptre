@@ -101,6 +101,7 @@ Temporary Items
 
 # User-specific stuff:
 .idea/
+.python-version
 
 ## File-based project format:
 *.iws
