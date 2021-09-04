@@ -15,6 +15,7 @@ import threading
 import traceback
 
 import botocore
+from importlib.machinery import SourceFileLoader
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
 from jinja2 import StrictUndefined
@@ -174,7 +175,7 @@ class Template(object):
         if not os.path.isfile(self.path):
             raise IOError("No such file or directory: '%s'", self.path)
 
-        module = imp.load_source(self.name, self.path)
+        module = SourceFileLoader(self.name, path).load_module()
 
         try:
             body = module.sceptre_handler(self.sceptre_user_data)
