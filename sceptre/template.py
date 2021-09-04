@@ -7,7 +7,6 @@ This module implements a Template class, which stores a CloudFormation template
 and implements methods for uploading it to S3.
 """
 
-import imp
 import logging
 import os
 import sys

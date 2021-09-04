@@ -1,6 +1,5 @@
 from behave import *
 import os
-import imp
 import yaml
 
 from botocore.exceptions import ClientError
