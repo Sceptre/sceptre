@@ -15,6 +15,8 @@ from datetime import datetime, timedelta
 
 import botocore
 import json
+
+from botocore.exceptions import ClientError
 from dateutil.tz import tzutc
 
 from sceptre.connection_manager import ConnectionManager
@@ -434,6 +436,23 @@ class StackActions(object):
             "StackPolicyBody", json.dumps("No Policy Information")))
         return {self.stack.name: json_formatting}
 
+    def get_deployed_template(self):
+        try:
+            template = self.connection_manager.call(
+                service='cloudformation',
+                command='get_template',
+                kwargs={'StackName': self.stack.external_name, 'TemplateStage': 'Original'}
+            )
+            template_body = template['TemplateBody']
+            # Sometimes boto return a string, sometimes a dictionary
+            if not isinstance(template_body, str):
+                template_body = json.dumps(template_body)
+            return template_body
+        except botocore.exceptions.ClientError as e:
+            if e.response['Error']['Code'] == 'ValidationError':
+                return None
+            raise
+
     @add_stack_hooks
     def create_change_set(self, change_set_name):
         """
@@ -603,10 +622,9 @@ class StackActions(object):
         )
         return response
 
-    # Really, we want the generate hooks here...
     @add_stack_hooks
     def diff(self):
-        differ = StackDiffer(self.stack, self.connection_manager)
+        differ = StackDiffer(self)
         return differ.diff()
 
     def estimate_cost(self):

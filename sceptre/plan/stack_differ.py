@@ -1,14 +1,11 @@
-import botocore
-from botocore.exceptions import ClientError
-from cfn_tools import dump_json
-from deepdiff import DeepDiff
-import cfn_flip
-
-from sceptre.connection_manager import ConnectionManager
-from sceptre.exceptions import StackDoesNotExistError
-from sceptre.resolvers import Resolver
-from sceptre.stack import Stack
 from typing import NamedTuple, Dict, List, Optional
+
+import cfn_flip
+from deepdiff import DeepDiff
+
+from sceptre.exceptions import StackDoesNotExistError
+from sceptre.plan.actions import StackActions
+from sceptre.resolvers import Resolver
 
 
 class StackDiff(NamedTuple):
@@ -25,13 +22,12 @@ class StackConfiguration(NamedTuple):
 
 
 class StackDiffer:
-    def __init__(self, stack: Stack, connection_manager: ConnectionManager):
-        self.stack = stack
-        self.connection_manager = connection_manager
+    def __init__(self, stack_actions: StackActions):
+        self.stack_actions = stack_actions
 
     @property
-    def template(self):
-        return self.stack.template.body
+    def stack(self):
+        return self.stack_actions.stack
 
     @property
     def external_name(self):
@@ -48,12 +44,17 @@ class StackDiffer:
     def diff(self) -> StackDiff:
         generated_config = self._create_generated_config()
         deployed_config = self._create_deployed_stack_config()
+
+        generated_template = self._generated_template()
         deployed_stack_template = self._get_deployed_template()
 
-        template_diff = self._compare_templates(deployed_stack_template)
+        template_diff = self._compare_templates(generated_template, deployed_stack_template)
         config_diff = self._compare_configs(generated_config, deployed_config)
 
         return StackDiff(self.external_name, template_diff, config_diff)
+
+    def _generated_template(self):
+        return self.stack_actions.generate()
 
     def _create_generated_config(self):
         parameters = self._extract_parameters_dict()
@@ -94,40 +95,7 @@ class StackDiffer:
         return parameters
 
     def _create_deployed_stack_config(self) -> Optional[StackConfiguration]:
-        try:
-            description = self.connection_manager.call(
-                service="cloudformation",
-                command="describe_stacks",
-                kwargs={"StackName": self.stack.external_name}
-            )
-        except botocore.exceptions.ClientError as e:
-            if e.response["Error"]["Message"].endswith("does not exist"):
-                return
-            raise
-
-        return self._map_stack_description_to_stack_configuration(
-            description
-        )
-
-    def _get_deployed_template(self) -> str:
-        try:
-            template = self.connection_manager.call(
-                service='cloudformation',
-                command='get_template',
-                kwargs={'StackName': self.external_name, 'TemplateStage': 'Original'}
-            )
-            template_body = template['TemplateBody']
-            # Sometimes boto return a string, sometimes a dictionary
-            if not isinstance(template_body, str):
-                template_body = dump_json(template_body)
-            return template_body
-        except ClientError as ex:
-            if ex.response['Error']['Code'] == 'ValidationError':
-                # Template doesn't exist
-                return '{}'
-            raise
-
-    def _map_stack_description_to_stack_configuration(self, description):
+        description = self.stack_actions.describe()
         stacks = description['Stacks']
         for stack in stacks:
             return StackConfiguration(
@@ -143,13 +111,20 @@ class StackDiffer:
                 notification_arns=stack['NotificationARNs']
             )
 
-    def _compare_templates(self, deployed_template: str) -> DeepDiff:
+    def _get_deployed_template(self) -> str:
+        template = self.stack_actions.get_deployed_template()
+        if template is None:
+            return '{}'
+
+        return template
+
+    def _compare_templates(self, generated_template: str, deployed_template: str) -> DeepDiff:
         """Compares the generated templates to the deployed templates using DeepDiff.
 
         Returns:
             A dictionary where the keys are the stack names and the values are DeepDiff objects
         """
-        generated_dict, _ = cfn_flip.load(self.template)
+        generated_dict, _ = cfn_flip.load(generated_template)
         deployed_dict, _ = cfn_flip.load(deployed_template)
         return DeepDiff(
             deployed_dict,
