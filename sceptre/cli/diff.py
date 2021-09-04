@@ -64,6 +64,7 @@ def diff_command(ctx, path, full_templates, output_file):
         path = Path(output_file)
         path.parent.mkdir(parents=True, exist_ok=True)
         context = path.open(mode='wt')
+        click.echo(f"Outputting diff file to {Path(output_file).absolute()}")
     else:
         context = nullcontext(sys.stdout)
     with context as stream:
@@ -83,45 +84,56 @@ deepdiff_json_defaults = {
 
 def output_diff_results(
     diff: StackDiff,
-    print_full_template: bool,
+    print_full_templates: bool,
     output_stream: StringIO
 ):
-    def print(text):
+    def output(text):
         click.echo(text, file=output_stream)
 
     stack_name, template_diff, config_diff = diff
-    if not len(template_diff) and not len(config_diff):
-        print(f"No difference to deployed stack {stack_name}")
+    there_is_config_difference = len(config_diff)
+    there_is_template_difference = len(template_diff)
+    there_is_difference = any([there_is_config_difference, there_is_template_difference])
+
+    stack_is_not_yet_deployed = config_diff.t1 is None
+
+    if not there_is_difference:
+        output(f"No difference to deployed stack {stack_name}")
         return
 
-    print(STAR_BAR)
-    print(f"--> Difference detected for stack {stack_name}!")
+    output(STAR_BAR)
+    output(f"--> Difference detected for stack {stack_name}!")
 
-    if len(config_diff):
-        print(LINE_BAR)
-        if config_diff.t1 is None:
-            print("Current stack doesn't exist")
-        else:
-            print('Config difference:')
-            print(config_diff.to_json(default_mapping=deepdiff_json_defaults, indent=4, ))
+    if stack_is_not_yet_deployed:
+        output("This stack is not deployed yet!")
+        output(f'{LINE_BAR}\nNew config:')
+        output(dump_stack_config(config_diff.t2))
+        output(f'{LINE_BAR}\nNew template:')
+        output(dump_dict(template_diff.t2))
+        output(STAR_BAR)
+        return
 
+    if there_is_config_difference:
+        output(LINE_BAR)
+        output('Config difference:')
+        output(dump_diff(config_diff))
     else:
-        print("No config difference")
+        output("No config difference")
 
     if len(template_diff):
-        print(LINE_BAR)
-        print("Template difference:")
-        print(template_diff.to_json(default_mapping=deepdiff_json_defaults, indent=4,))
-        if print_full_template:
-            deployed, generated = dump_dict(diff.t1), dump_dict(diff.t2)
-            print(LINE_BAR)
-            print(f'Deployed template:\n{LINE_BAR}\n{deployed}')
-            print(LINE_BAR)
-            print(f'New Template:\n{LINE_BAR}\n{generated}')
+        output(LINE_BAR)
+        output("Template difference:")
+        output(dump_diff(template_diff))
+        if print_full_templates:
+            deployed, generated = dump_dict(template_diff.t1), dump_dict(template_diff.t2)
+            output(LINE_BAR)
+            output(f'Deployed template:\n{LINE_BAR}\n{deployed}')
+            output(LINE_BAR)
+            output(f'New Template:\n{LINE_BAR}\n{generated}')
     else:
-        print("No template difference")
+        output("No template difference")
 
-    print(STAR_BAR)
+    output(STAR_BAR)
 
 
 @click.pass_context
@@ -145,3 +157,7 @@ def dump_diff(ctx: click.Context, diff: DeepDiff) -> str:
 
     loaded = json.loads(jsonified)
     return cfn_flip.dump_yaml(loaded)
+
+
+def dump_stack_config(stack_config: StackConfiguration) -> str:
+    return dump_dict(stack_config._asdict())

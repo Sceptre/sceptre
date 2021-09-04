@@ -1,11 +1,13 @@
-from typing import NamedTuple, Dict, List, Optional
+from typing import NamedTuple, Dict, List, Optional, TYPE_CHECKING
 
 import cfn_flip
 from deepdiff import DeepDiff
 
 from sceptre.exceptions import StackDoesNotExistError
-from sceptre.plan.actions import StackActions
 from sceptre.resolvers import Resolver
+
+if TYPE_CHECKING:
+    from sceptre.plan.actions import StackActions
 
 
 class StackDiff(NamedTuple):
@@ -22,7 +24,7 @@ class StackConfiguration(NamedTuple):
 
 
 class StackDiffer:
-    def __init__(self, stack_actions: StackActions):
+    def __init__(self, stack_actions: 'StackActions'):
         self.stack_actions = stack_actions
 
     @property
@@ -96,6 +98,9 @@ class StackDiffer:
 
     def _create_deployed_stack_config(self) -> Optional[StackConfiguration]:
         description = self.stack_actions.describe()
+        if description is None:
+            return None
+
         stacks = description['Stacks']
         for stack in stacks:
             return StackConfiguration(
