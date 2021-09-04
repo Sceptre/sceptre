@@ -31,7 +31,9 @@ install_requirements = [
     "sceptre-cmd-resolver>=1.1.3,<2",
     "sceptre-file-resolver>=1.0.4,<2",
     "six>=1.11.0,<2.0.0",
-    "networkx>=2.4,<2.6"
+    "networkx>=2.4,<2.6",
+    "deepdiff>=5.5.0,<6.0",
+    "cfn-flip>=1.2.3,<2.0"
 ]
 
 setup(

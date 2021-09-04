@@ -14,6 +14,7 @@ import click
 import colorama
 
 from sceptre import __version__
+from sceptre.cli.diff import diff_command
 from sceptre.cli.new import new_group
 from sceptre.cli.create import create_command
 from sceptre.cli.update import update_command
@@ -82,3 +83,4 @@ cli.add_command(set_policy_command)
 cli.add_command(status_command)
 cli.add_command(list_group)
 cli.add_command(describe_group)
+cli.add_command(diff_command)

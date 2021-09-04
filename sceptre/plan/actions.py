@@ -19,6 +19,7 @@ from dateutil.tz import tzutc
 
 from sceptre.connection_manager import ConnectionManager
 from sceptre.hooks import add_stack_hooks
+from sceptre.plan.stack_differ import StackDiffer
 from sceptre.stack_status import StackStatus
 from sceptre.stack_status import StackChangeSetStatus
 
@@ -601,6 +602,12 @@ class StackActions(object):
             "%s - Validate Template response: %s", self.stack.name, response
         )
         return response
+
+    # Really, we want the generate hooks here...
+    @add_stack_hooks
+    def diff(self):
+        differ = StackDiffer(self.stack, self.connection_manager)
+        return differ.diff()
 
     def estimate_cost(self):
         """
