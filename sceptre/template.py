@@ -174,7 +174,7 @@ class Template(object):
         if not os.path.isfile(self.path):
             raise IOError("No such file or directory: '%s'", self.path)
 
-        module = SourceFileLoader(self.name, path).load_module()
+        module = SourceFileLoader(self.name, self.path).load_module()
 
         try:
             body = module.sceptre_handler(self.sceptre_user_data)
