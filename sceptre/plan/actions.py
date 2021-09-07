@@ -15,6 +15,10 @@ from datetime import datetime, timedelta
 
 import botocore
 import json
+import yaml
+import difflib
+import dictdiffer
+
 from dateutil.tz import tzutc
 
 from sceptre.connection_manager import ConnectionManager
@@ -873,3 +877,97 @@ class StackActions(object):
             return StackChangeSetStatus.DEFUNCT
         else:  # pragma: no cover
             raise Exception("This else should not be reachable.")
+
+    @add_stack_hooks
+    def fetch_remote_template(self):
+        """
+        Returns the Template for the remote Stack
+
+        :returns: the template body.
+        :rtype: str
+        """
+        self.logger.debug("%s - Fetching remote template", self.stack.name)
+
+        response = self.connection_manager.call(
+            service="cloudformation",
+            command="get_template",
+            kwargs={
+                "StackName": self.stack.external_name
+            }
+        )
+
+        return response.get("TemplateBody")
+
+    @add_stack_hooks
+    def diff(self, differ="difflib"):
+        """
+        Returns a diff of Template and Remote Template
+        using a specific diff library.
+
+        :param differ: The diff lib to use, default difflib.
+        :type: str
+
+        :returns: The stack name and diffs.
+        :rtype: Tuple[str, str]
+        """
+        remote_template_stream = self.fetch_remote_template()
+        local_template_stream = self.stack.template.body
+
+        if differ == "difflib":
+            function = self._diff_by_difflib
+        elif differ == "dictdiffer":
+            function = self._diff_by_dictdiffer
+
+        response = function(
+            remote_template_stream,
+            local_template_stream
+        )
+
+        return (self.stack.external_name, response)
+
+    def _diff_by_difflib(self, rt_stream, lt_stream):
+        """
+        Diffs remote and local templates using difflib.unified_diff.
+
+        :param rt_stream: remote template as a stream.
+        :type rt_stream: str
+        :param lt_stream: local template as a stream.
+        :type lt_stream: str
+
+        :returns: The diff.
+        :rtype: str
+        """
+
+        remote_template = rt_stream.split("\n")
+        local_template = lt_stream.split("\n")
+
+        diffs = difflib.unified_diff(
+            remote_template, local_template,
+            fromfile="remote_template", tofile="local_template",
+            lineterm=""
+        )
+
+        return "\n".join(diffs)
+
+    def _diff_by_dictdiffer(self, rt_stream, lt_stream):
+        """
+        Diffs remote and local templates using dictdiffer.
+
+        :param rt_stream: remote template as a stream.
+        :type rt_stream: str
+        :param lt_stream: local template as a stream.
+        :type lt_stream: str
+
+        :returns: The diff.
+        :rtype: str
+        """
+        remote_template = yaml.load(
+            rt_stream, Loader=yaml.BaseLoader
+        )
+        local_template = yaml.load(
+            lt_stream, Loader=yaml.BaseLoader
+        )
+
+        diffs = dictdiffer.diff(remote_template, local_template)
+
+        return str(list(diffs))
