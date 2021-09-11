@@ -574,7 +574,6 @@ class StackActions(object):
                     "StackName": self.stack.external_name
                 }
             )
-
             summaries = response.get("Summaries", [])
             if url:
                 summaries = self._convert_to_url(summaries)
@@ -589,21 +588,24 @@ class StackActions(object):
         Convert the list_change_sets response from
         CloudFormation to a URL in the AWS Console.
         """
-        ref = summaries[0]
+        new_summaries = []
 
-        stack_id = ref["StackId"]
-        change_set_id = ref["ChangeSetId"]
+        for summary in summaries:
+            stack_id = summary["StackId"]
+            change_set_id = summary["ChangeSetId"]
 
-        return (
-            "https://{0}.console.aws.amazon.com/cloudformation/home?"
-            "region={0}#/stacks/changesets/changes?{1}".format(
-                self.stack.region,
-                urllib.parse.urlencode({
-                    "stackId": stack_id,
-                    "changeSetId": change_set_id
-                })
+            region = self.stack.region
+            encoded = urllib.parse.urlencode({
+                "stackId": stack_id,
+                "changeSetId": change_set_id
+            })
+
+            new_summaries.append(
+                f"https://{region}.console.aws.amazon.com/cloudformation/home?"
+                f"region={region}#/stacks/changesets/changes?{encoded}"
             )
-        )
+
+        return new_summaries
 
     @add_stack_hooks
     def generate(self):

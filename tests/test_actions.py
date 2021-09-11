@@ -690,21 +690,27 @@ class TestStackActions(object):
         self, mock_call, mock_urlencode
     ):
         mock_call.return_value = {
-            "Summaries": [{
-                "ChangeSetId": "mychangesetid",
-                "StackId": "mystackid"
-            }]
+            "Summaries": [
+                {
+                    "ChangeSetId": "mychangesetid1",
+                    "StackId": "mystackid1"
+                },
+                {
+                    "ChangeSetId": "mychangesetid2",
+                    "StackId": "mystackid2"
+                }
+            ]
         }
-        urlencoded = "stackId=mystackid&changeSetId=mychangesetid"
-        mock_urlencode.return_value = urlencoded
+        encoded = "stackId=mystackid&changeSetId=mychangesetid"
+        mock_urlencode.return_value = encoded
 
         expected_url = (
             "https://sentinel.region.console.aws.amazon.com/cloudformation/home?"
-            f"region=sentinel.region#/stacks/changesets/changes?{urlencoded}"
+            f"region=sentinel.region#/stacks/changesets/changes?{encoded}"
         )
 
         response = self.actions.list_change_sets(url=True)
-        assert response == {"prod/app/stack": expected_url}
+        assert response == {"prod/app/stack": [expected_url]}
 
     @patch("sceptre.plan.actions.StackActions.set_policy")
     @patch("os.path.join")
