@@ -567,7 +567,6 @@ class StackActions(object):
         """
         response = self._list_change_sets()
         summaries = response.get("Summaries", [])
-        #import ipdb; ipdb.set_trace()
 
         if url:
             summaries = self._convert_to_url(summaries)
