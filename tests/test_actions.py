@@ -714,12 +714,10 @@ class TestStackActions(object):
         expected_urls = []
 
         for num in ["1", "2"]:
-            mock_list_change_sets_return_value["Summaries"].append(
-                {
-                    "ChangeSetId": "mychangesetid{num}",
-                    "StackId": "mystackid{num}"
-                }
-            )
+            mock_list_change_sets_return_value["Summaries"].append({
+                "ChangeSetId": "mychangesetid{num}",
+                "StackId": "mystackid{num}"
+            })
             urlencoded = "stackId=mystackid{num}&changeSetId=mychangesetid{num}"
             mock_urlencode_side_effect.append(urlencoded)
             expected_urls.append(
