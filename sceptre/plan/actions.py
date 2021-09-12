@@ -565,21 +565,25 @@ class StackActions(object):
         :returns: The Stack's Change Sets.
         :rtype: dict or list
         """
+        response = self._list_change_sets()
+        summaries = response.get("Summaries", [])
+        #import ipdb; ipdb.set_trace()
+
+        if url:
+            summaries = self._convert_to_url(summaries)
+
+        return {self.stack.name: summaries}
+
+    def _list_change_sets(self):
         self.logger.debug("%s - Listing change sets", self.stack.name)
         try:
-            response = self.connection_manager.call(
+            return self.connection_manager.call(
                 service="cloudformation",
                 command="list_change_sets",
                 kwargs={
                     "StackName": self.stack.external_name
                 }
             )
-            summaries = response.get("Summaries", [])
-            if url:
-                summaries = self._convert_to_url(summaries)
-
-            return {self.stack.name: summaries}
-
         except botocore.exceptions.ClientError:
             return []
 
