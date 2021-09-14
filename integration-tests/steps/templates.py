@@ -25,7 +25,10 @@ def set_template_path(context, stack_name, template_name):
     with open(os.path.join(config_path, stack_name + '.yaml')) as config_file:
         stack_config = yaml.safe_load(config_file)
 
-    stack_config["template_path"] = template_path
+    if "template_path" in stack_config:
+        stack_config["template_path"] = template_path
+    if "template" in stack_config:
+        stack_config["template"]["path"] = template_path
 
     with open(os.path.join(config_path, stack_name + '.yaml'), 'w') as config_file:
         yaml.safe_dump(stack_config, config_file, default_flow_style=False)
