@@ -3,6 +3,7 @@ import os
 import sys
 import traceback
 
+from importlib.machinery import SourceFileLoader
 from jinja2 import Environment, select_autoescape, FileSystemLoader, StrictUndefined
 
 from sceptre.exceptions import UnsupportedTemplateFileTypeError, TemplateSceptreHandlerError
@@ -83,8 +84,7 @@ class File(TemplateHandler):
         if not os.path.isfile(path):
             raise IOError("No such file or directory: '%s'", path)
 
-        import imp
-        module = imp.load_source(path, path)
+        module = SourceFileLoader(path, path).load_module()
 
         try:
             body = module.sceptre_handler(self.sceptre_user_data)

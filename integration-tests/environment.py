@@ -86,4 +86,3 @@ def after_all(context):
     if bucket.creation_date is not None:
         bucket.objects.all().delete()
         bucket.delete()
-
