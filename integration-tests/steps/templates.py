@@ -1,9 +1,9 @@
 from behave import *
 import os
-import imp
 import yaml
 
 from botocore.exceptions import ClientError
+from importlib.machinery import SourceFileLoader
 from sceptre.plan.plan import SceptrePlan
 from sceptre.context import SceptreContext
 from sceptre.cli.helpers import CfnYamlLoader
@@ -112,7 +112,7 @@ def step_impl(context, filename):
         context.sceptre_dir, "templates", filename
     )
 
-    module = imp.load_source("template", filepath)
+    module = SourceFileLoader("template", filepath).load_module()
     body = module.sceptre_handler({})
     for template in context.output.values():
         assert body == template
