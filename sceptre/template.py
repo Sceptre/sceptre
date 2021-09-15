@@ -11,7 +11,6 @@ import logging
 import threading
 import botocore
 
-from importlib.machinery import SourceFileLoader
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
 from jinja2 import StrictUndefined
