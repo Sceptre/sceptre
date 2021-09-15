@@ -1,3 +1,4 @@
+import boto3
 from behave import *
 import os
 import yaml
@@ -25,13 +26,16 @@ def set_template_path(context, stack_name, template_name):
     with open(os.path.join(config_path, stack_name + '.yaml')) as config_file:
         stack_config = yaml.safe_load(config_file)
 
+    template_handler_type = "local"
     if "template_path" in stack_config:
         stack_config["template_path"] = template_path
     if "template" in stack_config:
         stack_config["template"]["path"] = template_path
+        template_handler_type = stack_config["template"]["type"].lower()
 
-    with open(os.path.join(config_path, stack_name + '.yaml'), 'w') as config_file:
-        yaml.safe_dump(stack_config, config_file, default_flow_style=False)
+    if template_handler_type != "s3":
+        with open(os.path.join(config_path, stack_name + '.yaml'), 'w') as config_file:
+            yaml.safe_dump(stack_config, config_file, default_flow_style=False)
 
 
 @given('the template for stack "{stack_name}" is "{template_name}"')
@@ -76,6 +80,23 @@ def step_impl(context, stack_name):
         command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir
     )
+
+    config_path = sceptre_context.full_config_path()
+    template_path = sceptre_context.full_templates_path()
+    with open(os.path.join(config_path, stack_name + '.yaml')) as config_file:
+        stack_config = yaml.safe_load(config_file)
+
+    if  "template" in stack_config and stack_config["template"]["type"].lower() == "s3":
+        segments = stack_config["template"]["path"].split('/')
+        bucket = segments[0]
+        key = "/".join(segments[1:])
+        source_file = f'{template_path}/{segments[-1]}'
+        boto3.client('s3').upload_file(source_file, bucket, key)
+    else:
+        config_path = sceptre_context.full_config_path()
+        with open(os.path.join(config_path, stack_name + '.yaml')) as config_file:
+            stack_config = yaml.safe_load(config_file)
+
     sceptre_plan = SceptrePlan(sceptre_context)
     try:
         context.output = sceptre_plan.generate()
