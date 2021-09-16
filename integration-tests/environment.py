@@ -91,6 +91,7 @@ def before_feature(context, feature):
                 CreateBucketConfiguration={'LocationConstraint': context.region}
             )
 
+
 def after_feature(context, feature):
     """
     Attempt to do a full cleanup of test artifacts however deleting the bucket
