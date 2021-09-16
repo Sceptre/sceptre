@@ -38,13 +38,6 @@ def before_all(context):
     with open(config_path, "w") as file:
         file.write(file_data)
 
-    bucket = boto3.resource('s3').Bucket(context.TEST_ARTIFACT_BUCKET_NAME)
-    if bucket.creation_date is None:
-        bucket.create(
-            Bucket=context.TEST_ARTIFACT_BUCKET_NAME,
-            CreateBucketConfiguration={'LocationConstraint': context.region}
-        )
-
 
 def before_scenario(context, scenario):
     os.environ.pop("AWS_REGION", None)
@@ -82,7 +75,20 @@ def after_all(context):
     context.bucket_name = "sceptre-integration-tests-templates"
     update_config(context)
 
-    bucket = boto3.resource('s3').Bucket(context.TEST_ARTIFACT_BUCKET_NAME)
-    if bucket.creation_date is not None:
-        bucket.objects.all().delete()
-        bucket.delete()
+
+def before_feature(context, feature):
+    if 's3-template-handler' in feature.tags:
+        bucket = boto3.resource('s3').Bucket(context.TEST_ARTIFACT_BUCKET_NAME)
+        if bucket.creation_date is None:
+            bucket.create(
+                Bucket=context.TEST_ARTIFACT_BUCKET_NAME,
+                CreateBucketConfiguration={'LocationConstraint': context.region}
+            )
+
+
+def after_feature(context, feature):
+    if 's3-template-handler' in feature.tags:
+        bucket = boto3.resource('s3').Bucket(context.TEST_ARTIFACT_BUCKET_NAME)
+        if bucket.creation_date is not None:
+            bucket.objects.all().delete()
+            bucket.delete()
