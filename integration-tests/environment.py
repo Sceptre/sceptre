@@ -77,6 +77,12 @@ def after_all(context):
 
 
 def before_feature(context, feature):
+    """
+    Create a test bucket with a deterministic name so that the S3 template handler
+    has a bucket to reference.  The better option would be create a bucket with a
+    unique name on every test run however we cannot dynamically reference bucket
+    names in the sceptre config file.
+    """
     if 's3-template-handler' in feature.tags:
         bucket = boto3.resource('s3').Bucket(context.TEST_ARTIFACT_BUCKET_NAME)
         if bucket.creation_date is None:
@@ -85,10 +91,15 @@ def before_feature(context, feature):
                 CreateBucketConfiguration={'LocationConstraint': context.region}
             )
 
-
 def after_feature(context, feature):
+    """
+    Attempt to do a full cleanup of test artifacts however deleting the bucket
+    causes error on the next bucket creation because it can take some time before
+    the same bucket name is available.  We need to leave the bucket around.
+    https://docs.aws.amazon.com/AmazonS3/latest/userguide/delete-bucket.html
+    """
     if 's3-template-handler' in feature.tags:
         bucket = boto3.resource('s3').Bucket(context.TEST_ARTIFACT_BUCKET_NAME)
         if bucket.creation_date is not None:
             bucket.objects.all().delete()
-            bucket.delete()
+            # bucket.delete()
