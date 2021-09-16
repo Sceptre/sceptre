@@ -15,7 +15,7 @@ behaviour to the [Sceptre github discussion](https://github.com/Sceptre/sceptre/
 ## Report Bugs
 
 Before submitting a bug, please check our
-[issues page](https://github.com/cloudreach/sceptre/issues) and 
+[issues page](https://github.com/cloudreach/sceptre/issues) and
 [discussion board](https://github.com/Sceptre/sceptre/discussions) to see if it's
 already been reported.
 
@@ -109,7 +109,7 @@ $ git checkout -b <branch-name>
    e.g. `[Resolves #123] Fix description of resolver syntax in documentation`
 
 8. Submit a pull request through the GitHub website.
-   
+
 ## Linting
 
 As a pre-deployment step we syntatically validate files with
@@ -126,7 +126,7 @@ Run unit tests or coverage in your current environment - (handy for quickly
 running unit tests):
 
 ```bash
-$ make test 
+$ make test
 $ make coverage
 ```
 
