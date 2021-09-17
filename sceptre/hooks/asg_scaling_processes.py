@@ -17,7 +17,7 @@ class ASGScalingProcesses(Hook):
     def __init__(self, *args, **kwargs):
         super(ASGScalingProcesses, self).__init__(*args, **kwargs)
 
-    def run(self):
+    def run(self, stack):
         """
         Either suspends or resumes any scaling processes on all autoscaling
         groups within the current stack.
@@ -51,9 +51,9 @@ class ASGScalingProcesses(Hook):
 
         action += "_processes"
 
-        autoscaling_group_names = self._find_autoscaling_groups()
+        autoscaling_group_names = self._find_autoscaling_groups(stack)
         for autoscaling_group in autoscaling_group_names:
-            self.stack.connection_manager.call(
+            stack.connection_manager.call(
                 service="autoscaling",
                 command=action,
                 kwargs={
@@ -62,25 +62,25 @@ class ASGScalingProcesses(Hook):
                 }
             )
 
-    def _get_stack_resources(self):
+    def _get_stack_resources(self, stack):
         """
         Retrieves all resources in stack.
         :return: list
         """
-        response = self.stack.connection_manager.call(
+        response = stack.connection_manager.call(
             service="cloudformation",
             command="describe_stack_resources",
-            kwargs={"StackName": self.stack.external_name}
+            kwargs={"StackName": stack.external_name}
         )
         return response.get("StackResources", [])
 
-    def _find_autoscaling_groups(self):
+    def _find_autoscaling_groups(self, stack):
         """
         Retrieves all the autoscaling groups
         :return: list [str]
         """
         asg_names = []
-        resources = self._get_stack_resources()
+        resources = self._get_stack_resources(stack)
         resource_type = "AWS::AutoScaling::AutoScalingGroup"
         for resource in resources:
             if resource.get("ResourceType", False) == resource_type:

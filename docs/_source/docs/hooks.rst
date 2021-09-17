@@ -116,10 +116,10 @@ integrate additional functionality into Sceptre projects.
 A hook is a Python class which inherits from abstract base class ``Hook`` found
 in the ``sceptre.hooks module``.
 
-Hooks are require to implement a ``run()`` function that takes no parameters
-and to call the base class initializer.
+Hooks are require to implement a ``run(stack)`` function that takes a single parameter
+``stack`` and to call the base class initializer.
 
-Hooks may have access to ``argument``, and ``stack`` as object attributes. For example ``self.stack``.
+Hooks may have access to the ``argument`` object attribute. For example ``self.argument``.
 
 Sceptre uses the ``sceptre.hooks`` entry point to locate hook classes. Your
 custom hook can be written anywhere and is installed as Python package.
@@ -152,26 +152,28 @@ custom_hook.py
         argument: str
             The argument is available from the base class and contains the
             argument defined in the Sceptre config file (see below)
-        stack: sceptre.stack.Stack
-             The associated stack of the hook.
-        connection_manager: sceptre.connection_manager.ConnectionManager
-            Boto3 Connection Manager - can be used to call boto3 api.
 
         """
         def __init__(self, *args, **kwargs):
             super(CustomHook, self).__init__(*args, **kwargs)
 
-        def run(self):
+        def run(self, stack):
             """
             run is the method called by Sceptre. It should carry out the work
             intended by this hook.
+
+            Parameters
+            ----------
+            stack: sceptre.stack.Stack
+                The associated stack of the hook.
+            stack.connection_manager: sceptre.connection_manager.ConnectionManager
+                Boto3 Connection Manager - can be used to call boto3 api.
 
             To use instance attribute self.<attribute_name>.
 
             Examples
             --------
             self.argument
-            self.stack_config
 
             """
             print(self.argument)

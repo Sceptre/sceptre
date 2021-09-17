@@ -11,7 +11,7 @@ class Cmd(Hook):
     def __init__(self, *args, **kwargs):
         super(Cmd, self).__init__(*args, **kwargs)
 
-    def run(self):
+    def run(self, stack):
         """
         Runs the argument string in a subprocess.
 

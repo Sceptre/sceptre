@@ -11,15 +11,12 @@ class Hook(object):
 
     :param argument: The argument of the hook.
     :type argument: str
-    :param stack: The associated stack of the hook.
-    :type stack: sceptre.stack.Stack
     """
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, argument=None, stack=None):
+    def __init__(self, argument=None):
         self.logger = logging.getLogger(__name__)
         self.argument = argument
-        self.stack = stack
 
     def setup(self):
         """
@@ -29,10 +26,13 @@ class Hook(object):
         pass  # pragma: no cover
 
     @abc.abstractmethod
-    def run(self):
+    def run(self, stack):
         """
         run is an abstract method which must be overwritten by all
         inheriting classes. Run should execute the logic of the hook.
+
+        :param stack: The associated stack of the hook.
+        :type stack: sceptre.stack.Stack
         """
         pass  # pragma: no cover
 
@@ -74,7 +74,7 @@ class HookProperty(object):
         setattr(instance, self.name, value)
 
 
-def execute_hooks(hooks):
+def execute_hooks(hooks, stack):
     """
     Searches through dictionary or list for Resolver objects and replaces
     them with the resolved value. Supports nested dictionaries and lists.
@@ -88,7 +88,7 @@ def execute_hooks(hooks):
     if isinstance(hooks, list):
         for hook in hooks:
             if isinstance(hook, Hook):
-                hook.run()
+                hook.run(stack)
 
 
 def add_stack_hooks(func):
@@ -100,9 +100,9 @@ def add_stack_hooks(func):
     """
     @wraps(func)
     def decorated(self, *args, **kwargs):
-        execute_hooks(self.stack.hooks.get("before_" + func.__name__))
+        execute_hooks(self.stack.hooks.get("before_" + func.__name__), self.stack)
         response = func(self, *args, **kwargs)
-        execute_hooks(self.stack.hooks.get("after_" + func.__name__))
+        execute_hooks(self.stack.hooks.get("after_" + func.__name__), self.stack)
 
         return response
 
