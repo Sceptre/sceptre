@@ -6,9 +6,9 @@ import boto3
 import string
 import random
 
+
 def before_all(context):
-    random_str = ''.join(random.choices(string.ascii_lowercase +
-                             string.digits, k = 7))
+    random_str = ''.join(random.choices(string.ascii_lowercase + string.digits, k=7))
     context.TEST_ARTIFACT_BUCKET_NAME = f'sceptre-test-artifacts-{random_str}'
     context.region = boto3.session.Session().region_name
     context.uuid = uuid.uuid1().hex
