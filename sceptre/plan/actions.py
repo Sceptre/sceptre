@@ -530,7 +530,7 @@ class StackActions(object):
         change_set = self.describe_change_set(change_set_name)
         status = change_set.get("Status")
         reason = change_set.get("StatusReason")
-        if status == "FAILED" and "submitted information didn't contain changes" in reason:
+        if status == "FAILED" and self.change_set_creation_failed_due_to_no_changes(reason):
             self.logger.info(
                     "Skipping ChangeSet on Stack: {} - there are no changes".format(
                         change_set.get("StackName")
@@ -552,6 +552,23 @@ class StackActions(object):
 
         status = self._wait_for_completion()
         return status
+
+    def change_set_creation_failed_due_to_no_changes(self, reason: str) -> bool:
+        """Indicates the change set failed when it was created because there were actually
+        no changes introduced from the change set.
+
+        :param reason: The reason reported by CloudFormation for the Change Set failure
+        """
+        reason = reason.lower()
+        no_change_substrings = (
+            "submitted information didn't contain changes",
+            "no updates are to be performed"  # The reason returned for failed SAM templates
+        )
+
+        for substring in no_change_substrings:
+            if substring in reason:
+                return True
+        return False
 
     def list_change_sets(self):
         """
