@@ -21,8 +21,14 @@ Feature: Execute change set
     Then stack "1/A" does not have change set "A"
     And stack "1/A" was updated with change set "A"
 
-  Scenario: execute a change set for SAM template with no changes
-    Given stack "1/A" exists using "sam_template.yaml"
-    And stack "1/A" has change set "A" using "sam_template.yaml"
-    When the user executes change set "A" for stack "1/A"
-    Then stack "1/A" does not have change set "A"
+  Scenario: execute a change set that failed creation for no changes
+    Given stack "2/A" exists using "valid_template.json"
+    And stack "2/A" has change set "A" using "valid_template.json"
+    When the user executes change set "A" for stack "2/A"
+    Then stack "2/A" has change set "A" in "FAILED" state
+
+  Scenario: execute a change set that failed creation for a SAM template with no changes
+    Given stack "3/A" exists using "sam_template.yaml"
+    And stack "3/A" has change set "A" using "sam_template.yaml"
+    When the user executes change set "A" for stack "3/A"
+    Then stack "3/A" has change set "A" in "FAILED" state
