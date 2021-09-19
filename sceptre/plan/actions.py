@@ -562,7 +562,7 @@ class StackActions(object):
         reason = reason.lower()
         no_change_substrings = (
             "submitted information didn't contain changes",
-            "no updates are to be performed"  # The reason returned for failed SAM templates
+            "no updates are to be performed"  # The reason returned for SAM templates
         )
 
         for substring in no_change_substrings:
