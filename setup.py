@@ -93,5 +93,5 @@ setup(
     ],
     test_suite="tests",
     install_requires=install_requirements,
-    extra_require=extra_requirements,
+    extras_require=extra_requirements,
 )
