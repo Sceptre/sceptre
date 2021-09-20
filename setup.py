@@ -44,7 +44,7 @@ setup(
     author="Cloudreach",
     author_email="sceptre@cloudreach.com",
     license='Apache2',
-    url="https://github.com/cloudreach/sceptre",
+    url="https://github.com/Sceptre/sceptre",
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     package_dir={
         "sceptre": "sceptre"
