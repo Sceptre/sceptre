@@ -15,7 +15,7 @@ behaviour to the [Sceptre github discussion](https://github.com/Sceptre/sceptre/
 ## Report Bugs
 
 Before submitting a bug, please check our
-[issues page](https://github.com/cloudreach/sceptre/issues) and
+[issues page](https://github.com/Sceptre/sceptre/issues) and
 [discussion board](https://github.com/Sceptre/sceptre/discussions) to see if it's
 already been reported.
 
