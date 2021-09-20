@@ -32,6 +32,8 @@ from sceptre.exceptions import UnknownStackChangeSetStatusError
 from sceptre.exceptions import StackDoesNotExistError
 from sceptre.exceptions import ProtectedStackError
 
+import urllib
+
 
 class StackActions(object):
     """
@@ -557,25 +559,60 @@ class StackActions(object):
         status = self._wait_for_completion()
         return status
 
-    def list_change_sets(self):
+    def list_change_sets(self, url=False):
         """
         Lists the Stack's Change Sets.
+
+        :param url: Write out a console URL instead.
+        :type url: bool
 
         :returns: The Stack's Change Sets.
         :rtype: dict or list
         """
+        response = self._list_change_sets()
+        summaries = response.get("Summaries", [])
+
+        if url:
+            summaries = self._convert_to_url(summaries)
+
+        return {self.stack.name: summaries}
+
+    def _list_change_sets(self):
         self.logger.debug("%s - Listing change sets", self.stack.name)
         try:
-            response = self.connection_manager.call(
+            return self.connection_manager.call(
                 service="cloudformation",
                 command="list_change_sets",
                 kwargs={
                     "StackName": self.stack.external_name
                 }
             )
-            return {self.stack.name: response.get("Summaries", [])}
         except botocore.exceptions.ClientError:
             return []
+
+    def _convert_to_url(self, summaries):
+        """
+        Convert the list_change_sets response from
+        CloudFormation to a URL in the AWS Console.
+        """
+        new_summaries = []
+
+        for summary in summaries:
+            stack_id = summary["StackId"]
+            change_set_id = summary["ChangeSetId"]
+
+            region = self.stack.region
+            encoded = urllib.parse.urlencode({
+                "stackId": stack_id,
+                "changeSetId": change_set_id
+            })
+
+            new_summaries.append(
+                f"https://{region}.console.aws.amazon.com/cloudformation/home?"
+                f"region={region}#/stacks/changesets/changes?{encoded}"
+            )
+
+        return new_summaries
 
     @add_stack_hooks
     def generate(self):
