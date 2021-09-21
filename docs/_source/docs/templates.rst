@@ -179,8 +179,11 @@ to generate CloudFormation Template as a `json` string.
     def sceptre_handler(sceptre_user_data):
         return vpc(sceptre_user_data)
 
-.. _troposphere: https://github.com/cloudtools/troposphere/
+.. note::
+  To generate templates using Troposphere you must install the
+  Troposphere library by running ``pip install sceptre[troposphere]``
 
+.. _troposphere: https://github.com/cloudtools/troposphere/
 
 AWS CDK
 ^^^^^^^
