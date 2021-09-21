@@ -35,6 +35,11 @@ install_requirements = [
     "networkx>=2.4,<2.6"
 ]
 
+extra_requirements = {
+    "troposphere": ["troposphere>=2.0.0,<2.1.0"],
+}
+
+
 setup(
     name="sceptre",
     version=get_version("sceptre/__init__.py"),
@@ -89,4 +94,5 @@ setup(
     ],
     test_suite="tests",
     install_requires=install_requirements,
+    extras_require=extra_requirements,
 )
