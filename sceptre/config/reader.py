@@ -55,7 +55,8 @@ CONFIG_MERGE_STRATEGIES = {
     "stack_timeout": strategies.child_wins,
     "template_bucket_name": strategies.child_wins,
     "template_key_value": strategies.child_wins,
-    "template_path": strategies.child_wins
+    "template_path": strategies.child_wins,
+    "template": strategies.child_wins
 }
 
 STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
@@ -72,10 +73,10 @@ STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
 )
 
 STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
+    {},
     {
-        "template_path"
-    },
-    {
+        "template_path",
+        "template",
         "dependencies",
         "hooks",
         "iam_role",
@@ -521,18 +522,14 @@ class ConfigReader(object):
                     )
                 )
 
-        abs_template_path = path.join(
-            self.context.project_path, self.context.templates_path,
-            sceptreise_path(config["template_path"])
-        )
-
         s3_details = self._collect_s3_details(
             stack_name, config
         )
         stack = Stack(
             name=stack_name,
             project_code=config["project_code"],
-            template_path=abs_template_path,
+            template_path=self._get_absolute_template_path(config.get("template_path")),
+            template_handler_config=config.get("template"),
             region=config["region"],
             template_bucket_name=config.get("template_bucket_name"),
             template_key_prefix=config.get("template_key_prefix"),
@@ -571,3 +568,12 @@ class ConfigReader(object):
         parsed_config.pop("project_path")
         parsed_config.pop("stack_group_path")
         return parsed_config
+
+    def _get_absolute_template_path(self, template_path):
+        if not template_path:
+            return None
+
+        return path.join(
+            self.context.project_path, self.context.templates_path,
+            sceptreise_path(template_path)
+        )

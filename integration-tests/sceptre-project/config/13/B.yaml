@@ -1,0 +1,3 @@
+template:
+  path: sceptre-test-artifacts/13/valid_template.json
+  type: s3

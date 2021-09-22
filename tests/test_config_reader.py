@@ -306,6 +306,7 @@ class TestConfigReader(object):
             template_path=os.path.join(
                 self.context.project_path, "templates/path/to/template"
             ),
+            template_handler_config=None,
             region="region_region",
             profile="account_profile",
             parameters={"param1": "val1"},
@@ -430,7 +431,6 @@ class TestConfigReader(object):
     @pytest.mark.parametrize("filepaths, del_key", [
         (["A/1.yaml"], "project_code"),
         (["A/1.yaml"], "region"),
-        (["A/1.yaml"], "template_path"),
     ])
     def test_missing_attr(
         self, filepaths, del_key

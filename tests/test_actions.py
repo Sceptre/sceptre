@@ -30,9 +30,8 @@ class TestStackActions(object):
         self.stack = Stack(
             name='prod/app/stack', project_code=sentinel.project_code,
             template_path=sentinel.template_path, region=sentinel.region,
-            profile=sentinel.profile, parameters={"key1": "val1"},
-            sceptre_user_data=sentinel.sceptre_user_data, hooks={},
-            s3_details=None, dependencies=sentinel.dependencies,
+            profile=sentinel.profile, parameters={"key1": "val1"}, sceptre_user_data=sentinel.sceptre_user_data,
+            hooks={}, s3_details=None, dependencies=sentinel.dependencies,
             role_arn=sentinel.role_arn, protected=False,
             tags={"tag1": "val1"}, external_name=sentinel.external_name,
             notifications=[sentinel.notification],
@@ -42,8 +41,8 @@ class TestStackActions(object):
         self.actions = StackActions(self.stack)
         self.stack_group_config = {}
         self.template = Template(
-            "fixtures/templates", self.stack.sceptre_user_data,
-            self.stack_group_config,
+            "fixtures/templates", self.stack.template_handler_config,
+            self.stack.sceptre_user_data, self.stack_group_config,
             self.actions.connection_manager, self.stack.s3_details
         )
         self.stack._template = self.template
@@ -58,7 +57,11 @@ class TestStackActions(object):
         response = self.stack.template
 
         mock_Template.assert_called_once_with(
-            path=sentinel.template_path,
+            name='prod/app/stack',
+            handler_config={
+                "type": "file",
+                "path": sentinel.template_path
+            },
             sceptre_user_data=sentinel.sceptre_user_data,
             stack_group_config={},
             connection_manager=self.stack.connection_manager,

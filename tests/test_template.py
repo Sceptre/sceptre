@@ -15,6 +15,18 @@ from sceptre.template import Template
 from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 from sceptre.exceptions import TemplateSceptreHandlerError
+from sceptre.template_handlers import TemplateHandler
+
+
+class MockTemplateHandler(TemplateHandler):
+    def __init__(self, *args, **kwargs):
+        super(MockTemplateHandler, self).__init__(*args, **kwargs)
+
+    def schema(self):
+        return {}
+
+    def handle(self):
+        return self.arguments["argument"]
 
 
 class TestTemplate(object):
@@ -29,22 +41,23 @@ class TestTemplate(object):
         connection_manager.create_bucket_lock = threading.Lock()
 
         self.template = Template(
-            path="/folder/template.py",
+            name="template_name",
+            handler_config={"type": "file", "path": "/folder/template.py"},
             sceptre_user_data={},
             stack_group_config={},
             connection_manager=connection_manager,
         )
 
     def test_initialise_template(self):
-        assert self.template.path == "/folder/template.py"
-        assert self.template.name == "template"
+        assert self.template.handler_config == {"type": "file", "path": "/folder/template.py"}
+        assert self.template.name == "template_name"
         assert self.template.sceptre_user_data == {}
         assert self.template._body is None
 
     def test_repr(self):
         representation = self.template.__repr__()
         assert representation == "sceptre.template.Template(" \
-            "name='template', path='/folder/template.py'"\
+            "name='template_name', handler_config={'type': 'file', 'path': '/folder/template.py'}" \
             ", sceptre_user_data={}, s3_details=None)"
 
     def test_body_with_cache(self):
@@ -183,7 +196,7 @@ class TestTemplate(object):
 
     def test_body_with_json_template(self):
         self.template.name = "vpc"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc.json"
         )
@@ -195,7 +208,7 @@ class TestTemplate(object):
 
     def test_body_with_yaml_template(self):
         self.template.name = "vpc"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc.yaml"
         )
@@ -207,7 +220,7 @@ class TestTemplate(object):
 
     def test_body_with_generic_template(self):
         self.template.name = "vpc"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc.template"
         )
@@ -221,7 +234,7 @@ class TestTemplate(object):
         self.template.sceptre_user_data = None
         self.template.name = "chdir"
         current_dir = os.getcwd()
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/chdir.py"
         )
@@ -233,14 +246,14 @@ class TestTemplate(object):
             os.chdir(current_dir)
 
     def test_body_with_missing_file(self):
-        self.template.path = "incorrect/template/path.py"
+        self.template.handler_config["path"] = "incorrect/template/path.py"
         with pytest.raises(IOError):
             self.template.body
 
     def test_body_with_python_template(self):
         self.template.sceptre_user_data = None
         self.template.name = "vpc"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc.py"
         )
@@ -252,7 +265,7 @@ class TestTemplate(object):
     def test_body_with_python_template_with_sgt(self):
         self.template.sceptre_user_data = None
         self.template.name = "vpc_sgt"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc_sgt.py"
         )
@@ -266,7 +279,7 @@ class TestTemplate(object):
             "cidr_block": "10.0.0.0/16"
         }
         self.template.name = "vpc_sud"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc_sud.py"
         )
@@ -281,7 +294,7 @@ class TestTemplate(object):
             "cidr_block": "10.0.0.0/16"
         }
         self.template.name = "vpc_sud_incorrect_function"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc_sud_incorrect_function.py"
         )
@@ -293,7 +306,7 @@ class TestTemplate(object):
             "cidr_block": "10.0.0.0/16"
         }
         self.template.name = "vpc_sud_incorrect_handler"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc_sud_incorrect_handler.py"
         )
@@ -301,11 +314,24 @@ class TestTemplate(object):
             self.template.body
 
     def test_body_with_incorrect_filetype(self):
-        self.template.path = (
+        self.template.handler_config["path"] = (
             "path/to/something.ext"
         )
         with pytest.raises(UnsupportedTemplateFileTypeError):
             self.template.body
+
+    def test_template_handler_is_called(self):
+        self.template.handler_config = {
+            "type": "test",
+            "argument": sentinel.template_handler_argument
+        }
+
+        self.template._registry = {
+            "test": MockTemplateHandler
+        }
+
+        result = self.template.body
+        assert result == sentinel.template_handler_argument
 
 
 @pytest.mark.parametrize("filename,sceptre_user_data,expected", [
@@ -358,7 +384,11 @@ def test_render_jinja_template(filename, sceptre_user_data, expected):
         os.getcwd(),
         "tests/fixtures/templates"
     )
-    template = Template(path=filename, sceptre_user_data=sceptre_user_data, stack_group_config={})
+    handler_config = {"type": "file", "path": filename}
+    template = Template(name="template_name",
+                        handler_config=handler_config,
+                        sceptre_user_data=sceptre_user_data,
+                        stack_group_config={})
     result = template._render_jinja_template(
         template_dir=jinja_template_dir,
         filename=filename,
@@ -379,7 +409,11 @@ def test_render_jinja_template(filename, sceptre_user_data, expected):
 def test_render_jinja_template_j2_environment_config(mock_environment, stack_group_config, expected_keys):
     filename = "vpc.j2"
     sceptre_user_data = {"vpc_id": "10.0.0.0/16"}
-    template = Template(path=filename, sceptre_user_data=sceptre_user_data, stack_group_config=stack_group_config)
+    handler_config = {"type": "file", "path": filename}
+    template = Template(name="template_name",
+                        handler_config=handler_config,
+                        sceptre_user_data=sceptre_user_data,
+                        stack_group_config=stack_group_config)
     jinja_template_dir = os.path.join(
         os.getcwd(),
         "tests/fixtures/templates"
