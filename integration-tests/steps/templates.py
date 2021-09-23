@@ -113,6 +113,6 @@ def step_impl(context, filename):
     )
 
     module = imp.load_source("template", filepath)
-    body = "---\n" + module.sceptre_handler({})
+    body = module.sceptre_handler({})
     for template in context.output.values():
         assert body == template

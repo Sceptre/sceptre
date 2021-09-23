@@ -8,11 +8,11 @@ Feature: Generate template
   Examples: Json, Yaml
     | filename                  |
     | valid_template.json       |
-    | valid_template_mark.yaml  |
     | malformed_template.json   |
     | invalid_template.json     |
     | jinja/valid_template.json |
     | valid_template.yaml       |
+    | valid_template_mark.yaml  |
     | valid_template_func.yaml  |
     | malformed_template.yaml   |
     | invalid_template.yaml     |
