@@ -271,6 +271,20 @@ class TestTemplate(object):
             expected_output = f.read()
         assert output == expected_output
 
+    def test_body_with_existing_yaml_start_marker_j2(self):
+        self.template.name = "vpc"
+        self.template.path = os.path.join(
+            os.getcwd(),
+            "tests/fixtures/templates/vpc.yaml.j2"
+        )
+        self.template.sceptre_user_data = {
+            "vpc_id": "10.0.0.0/16"
+        }
+        output = self.template.body
+        with open("tests/fixtures/templates/compiled_vpc.yaml", "r") as f:
+            expected_output = f.read()
+        assert output == expected_output.rstrip()
+
     def test_body_injects_sceptre_user_data(self):
         self.template.sceptre_user_data = {
             "cidr_block": "10.0.0.0/16"

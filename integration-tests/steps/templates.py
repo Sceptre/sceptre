@@ -96,10 +96,10 @@ def step_impl(context, stack_name):
 
 @then('the output is the same as the contents of "{filename}" template')
 def step_impl(context, filename):
-
     filepath = os.path.join(
         context.sceptre_dir, "templates", filename
     )
+
     with open(filepath) as template:
         body = template.read()
     for template in context.output.values():
