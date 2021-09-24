@@ -7,21 +7,17 @@ This module implements a Template class, which stores a CloudFormation template
 and implements methods for uploading it to S3.
 """
 
-import imp
 import logging
-import os
-import sys
 import threading
-import traceback
-
 import botocore
+
 from jinja2 import Environment
 from jinja2 import FileSystemLoader
 from jinja2 import StrictUndefined
 from jinja2 import select_autoescape
-from sceptre.exceptions import UnsupportedTemplateFileTypeError
-from sceptre.exceptions import TemplateSceptreHandlerError
+from sceptre.exceptions import TemplateHandlerNotFoundError
 from sceptre.config import strategies
+from pkg_resources import iter_entry_points
 
 
 class Template(object):
@@ -30,9 +26,11 @@ class Template(object):
     loading, storing and optionally uploading local templates for use by
     CloudFormation.
 
-    :param path: The absolute path to the file which stores the CloudFormation\
-            template.
-    :type path: str
+    :param name: The name of the template. Should be safe to use in filenames and not contain path segments.
+    :type name: str
+
+    :param handler_config: The configuration for a Template handler. Must contain a `type`.
+    :type handler_config: dict
 
     :param sceptre_user_data: A dictionary of arbitrary data to be passed to\
             a handler function in an external Python script.
@@ -51,61 +49,27 @@ class Template(object):
     _boto_s3_lock = threading.Lock()
 
     def __init__(
-        self, path, sceptre_user_data, stack_group_config, connection_manager=None, s3_details=None
+        self, name, handler_config, sceptre_user_data,
+        stack_group_config, connection_manager=None, s3_details=None
     ):
         self.logger = logging.getLogger(__name__)
 
-        self.path = path
+        self.name = name
+        self.handler_config = handler_config
         self.sceptre_user_data = sceptre_user_data
         self.stack_group_config = stack_group_config
         self.connection_manager = connection_manager
         self.s3_details = s3_details
 
-        self.name = os.path.basename(path).split(".")[0]
+        self._registry = None
         self._body = None
 
     def __repr__(self):
         return (
-            "sceptre.template.Template(name='{0}', path='{1}', "
-            "sceptre_user_data={2}, s3_details={3})".format(
-                self.name, self.path, self.sceptre_user_data, self.s3_details
+            "sceptre.template.Template(name='{0}', handler_config={1}, sceptre_user_data={2}, s3_details={3})".format(
+                self.name, self.handler_config, self.sceptre_user_data, self.s3_details
             )
         )
-
-    def _print_template_traceback(self):
-        """
-        Prints a stack trace, including only files which are inside a
-        'templates' directory. The function is intended to give the operator
-        instant feedback about why their templates are failing to compile.
-
-        :rtype: None
-        """
-        def _print_frame(filename, line, fcn, line_text):
-            self.logger.error("{}:{}:  Template error in '{}'\n=> `{}`".format(
-                filename, line, fcn, line_text))
-
-        try:
-            _, _, tb = sys.exc_info()
-            stack_trace = traceback.extract_tb(tb)
-            search_string = os.path.join('', 'templates', '')
-            if search_string in self.path:
-                template_path = self.path.split(search_string)[0] + search_string
-            else:
-                return
-            for frame in stack_trace:
-                if isinstance(frame, tuple):
-                    # Python 2 / Old style stack frame
-                    if template_path in frame[0]:
-                        _print_frame(frame[0], frame[1], frame[2], frame[3])
-                else:
-                    if template_path in frame.filename:
-                        _print_frame(frame.filename, frame.lineno, frame.name, frame.line)
-        except Exception as tb_exception:
-            self.logger.error(
-                'A template error occured. ' +
-                'Additionally, a traceback exception occured. Exception: %s',
-                tb_exception
-            )
 
     @property
     def body(self):
@@ -116,83 +80,26 @@ class Template(object):
         :rtype: str
         """
         if self._body is None:
-            file_extension = os.path.splitext(self.path)[1]
+            type = self.handler_config.get("type")
+            handler_class = self._get_handler_of_type(type)
+            handler = handler_class(
+                name=self.name,
+                arguments={k: v for k, v in self.handler_config.items() if k != "type"},
+                sceptre_user_data=self.sceptre_user_data,
+                connection_manager=self.connection_manager
+            )
+            handler.validate()
+            body = handler.handle()
+            if isinstance(body, bytes):
+                body = body.decode('utf-8')
+            if not body.startswith("---"):
+                body = "---\n{}".format(body)
+            self._body = body
 
-            try:
-                if file_extension in {".json", ".yaml", ".template"}:
-                    with open(self.path) as template_file:
-                        self._body = template_file.read()
-                elif file_extension == ".j2":
-                    self._body = self._render_jinja_template(
-                        os.path.dirname(self.path),
-                        os.path.basename(self.path),
-                        {"sceptre_user_data": self.sceptre_user_data}
-                    )
-                elif file_extension == ".py":
-                    self._body = self._call_sceptre_handler()
-
-                else:
-                    raise UnsupportedTemplateFileTypeError(
-                        "Template has file extension %s. Only .py, .yaml, "
-                        ".template, .json and .j2 are supported.",
-                        os.path.splitext(self.path)[1]
-                    )
-                if not self._body.startswith("---"):
-                    self._body = "---\n{}".format(self._body)
-            except Exception as e:
-                self._print_template_traceback()
-                raise e
+        if not self._body.startswith("---"):
+            self._body = "---\n{}".format(self._body)
 
         return self._body
-
-    def _call_sceptre_handler(self):
-        """
-        Calls the function `sceptre_handler` within templates that are python
-        scripts.
-
-        :returns: The string returned from sceptre_handler in the template.
-        :rtype: str
-        :raises: IOError
-        :raises: TemplateSceptreHandlerError
-        """
-
-        # Get relative path as list between current working directory and where
-        # the template is
-        # NB: this is a horrible hack...
-        relpath = os.path.relpath(self.path, os.getcwd()).split(os.path.sep)
-        paths_to_add = [
-            os.path.join(os.getcwd(), os.path.sep.join(relpath[:i+1]))
-            for i in range(len(relpath[:-1]))
-        ]
-
-        # Add any directory between the current working directory and where
-        # the template is to the python path
-        for path in paths_to_add:
-            sys.path.append(path)
-        self.logger.debug(
-            "%s - Getting CloudFormation from %s", self.name, self.path
-        )
-
-        if not os.path.isfile(self.path):
-            raise IOError("No such file or directory: '%s'", self.path)
-
-        module = imp.load_source(self.name, self.path)
-
-        try:
-            body = module.sceptre_handler(self.sceptre_user_data)
-        except AttributeError as e:
-            if 'sceptre_handler' in str(e):
-                raise TemplateSceptreHandlerError(
-                    "The template does not have the required "
-                    "'sceptre_handler(sceptre_user_data)' function."
-                )
-            else:
-                raise e
-
-        for path in paths_to_add:
-            sys.path.remove(path)
-
-        return body
 
     def upload_to_s3(self):
         """
@@ -334,10 +241,8 @@ class Template(object):
     def _render_jinja_template(self, template_dir, filename, jinja_vars):
         """
         Renders a jinja template.
-
         Sceptre supports passing sceptre_user_data to JSON and YAML
         CloudFormation templates using Jinja2 templating.
-
         :param template_dir: The directory containing the template.
         :type template_dir: str
         :param filename: The name of the template file.
@@ -364,3 +269,23 @@ class Template(object):
         template = j2_environment.get_template(filename)
         body = template.render(**jinja_vars)
         return body
+
+    def _get_handler_of_type(self, type):
+        """
+        Gets a TemplateHandler type from the registry that can be used to get a string
+        representation of a CloudFormation template.
+        :param type: The type of Template Handler to load
+        :type type: str
+        :return: Instantiated TemplateHandler
+        :rtype: class
+        """
+        if not self._registry:
+            self._registry = {}
+
+            for entry_point in iter_entry_points("sceptre.template_handlers", type):
+                self._registry[entry_point.name] = entry_point.load()
+
+        if type not in self._registry:
+            raise TemplateHandlerNotFoundError('Handler of type "{0}" not found'.format(type))
+
+        return self._registry[type]

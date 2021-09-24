@@ -46,8 +46,8 @@ The Sceptre community uses a Slack channel #sceptre on the og-aws Slack for
 discussion. To join use this link http://slackhatesthe.cloud/ to create an
 account and join the #sceptre channel.
 
-.. _Github: https://github.com/cloudreach/sceptre/
-.. _Issues: https://github.com/cloudreach/sceptre/issues
+.. _Github: https://github.com/Sceptre/sceptre/
+.. _Issues: https://github.com/Sceptre/sceptre/issues
 .. _CloudFormation: https://aws.amazon.com/cloudformation/
 .. _AWS CLI: https://aws.amazon.com/cli/
 .. _Boto3: https://aws.amazon.com/sdk-for-python/
