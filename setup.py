@@ -36,7 +36,7 @@ install_requirements = [
 ]
 
 extra_requirements = {
-    "troposphere": ["troposphere>=2.0.0,<2.1.0"],
+    "troposphere": ["troposphere>=2,<3"],
 }
 
 
