@@ -401,7 +401,13 @@ def get_stack_status(context, stack_name, region_name=None):
 def create_stack(context, stack_name, body, **kwargs):
     retry_boto_call(
         context.client.create_stack,
-        StackName=stack_name, TemplateBody=body, **kwargs
+        StackName=stack_name,
+        TemplateBody=body, **kwargs,
+        Capabilities=[
+            'CAPABILITY_IAM',
+            'CAPABILITY_NAMED_IAM',
+            'CAPABILITY_AUTO_EXPAND'
+        ]
     )
 
     wait_for_final_state(context, stack_name)
