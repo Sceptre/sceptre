@@ -20,7 +20,6 @@ Sceptre. The available keys are listed below.
 -  `template_bucket_name`_ *(optional)*
 -  `template_key_prefix`_ *(optional)*
 -  `j2_environment`_ *(optional)*
--  `iam_role`_ *(optional)*
 
 Sceptre will only check for and uses the above keys in StackGroup config files
 and are directly accessible from Stack(). Any other keys added by the user are
@@ -99,17 +98,6 @@ require_version
 
 A `PEP 440`_ compatible version specifier. If the Sceptre version does not fall
 within the given version requirement it will abort.
-
-iam_role
-~~~~~~~~
-
-The IAM Role ARN that **Sceptre** should assume when executing any actions on any resources within the
-StackGroup or Stack. This is different from the ``role_arn`` Stack Config option, which sets a
-CloudFormation service role for the stack.
-
-Using ``iam_role`` can be useful if the user executing Sceptre needs an alternative role to
-perform the required actions on that stack_group. In order to use this argument, however, the role
-needs to have an AssumeRolePolicyDocument that permits the user to assume that role.
 
 .. _stack_group_config_cascading_config:
 
