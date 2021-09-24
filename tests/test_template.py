@@ -61,9 +61,9 @@ class TestTemplate(object):
             ", sceptre_user_data={}, s3_details=None)"
 
     def test_body_with_cache(self):
-        self.template._body = sentinel.body
+        self.template._body = "mybody"
         body = self.template.body
-        assert body == sentinel.body
+        assert body == "---\nmybody"
 
     @freeze_time("2012-01-01")
     @patch("sceptre.template.Template._bucket_exists")
@@ -189,19 +189,19 @@ class TestTemplate(object):
 
     def test_get_template_details_without_upload(self):
         self.template.s3_details = None
-        self.template._body = sentinel.body
+        self.template._body = "mybody"
         boto_parameter = self.template.get_boto_call_parameter()
 
-        assert boto_parameter == {"TemplateBody": sentinel.body}
+        assert boto_parameter == {"TemplateBody": "---\nmybody"}
 
     def test_body_with_json_template(self):
         self.template.name = "vpc"
         self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
-            "tests/fixtures/templates/vpc.json"
+            "tests/fixtures-vpc/templates/vpc.json"
         )
         output = self.template.body
-        output_dict = json.loads(output)
+        output_dict = yaml.safe_load(output)
         with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
             expected_output_dict = json.loads(f.read())
         assert output_dict == expected_output_dict
@@ -276,7 +276,7 @@ class TestTemplate(object):
 
     def test_body_injects_yaml_start_marker(self):
         self.template.name = "vpc"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc.without_start_marker.yaml"
         )
@@ -287,7 +287,7 @@ class TestTemplate(object):
 
     def test_body_with_existing_yaml_start_marker(self):
         self.template.name = "vpc"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc.yaml"
         )
@@ -298,7 +298,7 @@ class TestTemplate(object):
 
     def test_body_with_existing_yaml_start_marker_j2(self):
         self.template.name = "vpc"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc.yaml.j2"
         )
@@ -367,7 +367,7 @@ class TestTemplate(object):
         }
 
         result = self.template.body
-        assert result == sentinel.template_handler_argument
+        assert result == "---\n" + str(sentinel.template_handler_argument)
 
 
 @pytest.mark.parametrize("filename,sceptre_user_data,expected", [

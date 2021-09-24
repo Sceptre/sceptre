@@ -89,7 +89,7 @@ class Template(object):
                 connection_manager=self.connection_manager
             )
             handler.validate()
-            body = handler.handle()
+            body = str(handler.handle())
             if isinstance(body, bytes):
                 body = body.decode('utf-8')
             if not body.startswith("---"):
