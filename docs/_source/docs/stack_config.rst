@@ -156,7 +156,7 @@ Example:
        - "subnet-87654321"
      security_group_ids:
        - "sg-12345678"
-       - !stack_output security-groups::BaseSecurityGroupId
+       - !stack_output security-groups.yaml::BaseSecurityGroupId
        - !file_contents /file/with/security_group_id.txt
 
 protected
@@ -204,7 +204,7 @@ e.g:
 .. code-block:: yaml
 
    parameters:
-     VpcID: !stack_output_external <custom-named-vpc-stack>.yaml::VpcID
+     VpcID: !stack_output_external <custom-named-vpc-stack>::VpcID
    dependencies:
      - <environment>/<Stack>
 
@@ -215,7 +215,7 @@ referring to is in a different AWS account or region.
 .. code-block:: yaml
 
    parameters:
-     VpcID: !stack_output_external <custom-named-vpc-stack>.yaml::VpcID my-aws-prod-profile
+     VpcID: !stack_output_external <custom-named-vpc-stack>::VpcID my-aws-prod-profile
    dependencies:
      - <environment>/<Stack>
 
@@ -313,8 +313,8 @@ Examples
            - !cmd "mkdir example"
            - !cmd "touch example.txt"
    parameters:
-       param_1: !stack_output stack_name::output_name
-       param_2: !stack_output_external full_stack_name.yaml::output_name
+       param_1: !stack_output stack_name.yaml::output_name
+       param_2: !stack_output_external full_stack_name::output_name
        param_3: !environment_variable VALUE_3
        param_4:
            {{ var.value4 }}
