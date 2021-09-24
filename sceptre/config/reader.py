@@ -14,6 +14,7 @@ import fnmatch
 import logging
 from os import environ, path, walk
 from pkg_resources import iter_entry_points
+from pathlib import Path
 import yaml
 
 from jinja2 import Environment
@@ -54,7 +55,8 @@ CONFIG_MERGE_STRATEGIES = {
     "stack_timeout": strategies.child_wins,
     "template_bucket_name": strategies.child_wins,
     "template_key_value": strategies.child_wins,
-    "template_path": strategies.child_wins
+    "template_path": strategies.child_wins,
+    "template": strategies.child_wins
 }
 
 STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
@@ -65,15 +67,16 @@ STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
     {
         "template_bucket_name",
         "template_key_prefix",
-        "required_version"
+        "required_version",
+        "j2_environment"
     }
 )
 
 STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
+    {},
     {
-        "template_path"
-    },
-    {
+        "template_path",
+        "template",
         "dependencies",
         "hooks",
         "iam_role",
@@ -195,9 +198,10 @@ class ConfigReader(object):
         """
         stack_map = {}
         command_stacks = set()
-        if self.context.ignore_dependencies:
-            root = self.context.full_command_path()
-        else:
+
+        root = self.context.full_command_path()
+
+        if self.context.full_scan:
             root = self.context.full_config_path()
 
         if path.isfile(root):
@@ -212,6 +216,8 @@ class ConfigReader(object):
                     todo.add(path.join(directory_name, filename))
 
         stack_group_configs = {}
+        full_todo = todo.copy()
+        deps_todo = set()
 
         while todo:
             abs_path = todo.pop()
@@ -226,6 +232,19 @@ class ConfigReader(object):
                     self.read(path.join(directory, self.context.config_file))
 
             stack = self._construct_stack(rel_path, stack_group_config)
+            for dep in stack.dependencies:
+                full_dep = str(Path(self.context.full_config_path(), dep))
+                if not path.exists(full_dep):
+                    raise DependencyDoesNotExistError(
+                        "{stackname}: Dependency {dep} not found. "
+                        "Please make sure that your dependencies stack_outputs "
+                        "have their full path from `config` defined."
+                        .format(stackname=stack.name, dep=dep))
+
+                if full_dep not in full_todo and full_dep not in deps_todo:
+                    todo.add(full_dep)
+                    deps_todo.add(full_dep)
+
             stack_map[sceptreise_path(rel_path)] = stack
 
             full_command_path = self.context.full_command_path()
@@ -343,8 +362,12 @@ class ConfigReader(object):
         if directory_path:
             config = self._recursive_read(parent_directory, filename, stack_group_config)
 
+        # Combine the stack_group_config with the nested config dict
+        config_group = stack_group_config.copy()
+        config_group.update(config)
+
         # Read config file and overwrite inherited properties
-        child_config = self._render(directory_path, filename, stack_group_config) or {}
+        child_config = self._render(directory_path, filename, config_group) or {}
 
         for config_key, strategy in CONFIG_MERGE_STRATEGIES.items():
             value = strategy(
@@ -375,15 +398,19 @@ class ConfigReader(object):
         config = {}
         abs_directory_path = path.join(self.full_config_path, directory_path)
         if path.isfile(path.join(abs_directory_path, basename)):
-            jinja_env = Environment(
-                autoescape=select_autoescape(
+            default_j2_environment_config = {
+                "autoescape": select_autoescape(
                     disabled_extensions=('yaml',),
                     default=True,
                 ),
-                loader=FileSystemLoader(abs_directory_path),
-                undefined=StrictUndefined
-            )
-            template = jinja_env.get_template(basename)
+                "loader": FileSystemLoader(abs_directory_path),
+                "undefined": StrictUndefined
+            }
+            j2_environment_config = strategies.dict_merge(
+                default_j2_environment_config,
+                stack_group_config.get("j2_environment", {}))
+            j2_environment = Environment(**j2_environment_config)
+            template = j2_environment.get_template(basename)
             self.templating_vars.update(stack_group_config)
             rendered_template = template.render(
                 self.templating_vars,
@@ -495,18 +522,14 @@ class ConfigReader(object):
                     )
                 )
 
-        abs_template_path = path.join(
-            self.context.project_path, self.context.templates_path,
-            sceptreise_path(config["template_path"])
-        )
-
         s3_details = self._collect_s3_details(
             stack_name, config
         )
         stack = Stack(
             name=stack_name,
             project_code=config["project_code"],
-            template_path=abs_template_path,
+            template_path=self._get_absolute_template_path(config.get("template_path")),
+            template_handler_config=config.get("template"),
             region=config["region"],
             template_bucket_name=config.get("template_bucket_name"),
             template_key_prefix=config.get("template_key_prefix"),
@@ -545,3 +568,12 @@ class ConfigReader(object):
         parsed_config.pop("project_path")
         parsed_config.pop("stack_group_path")
         return parsed_config
+
+    def _get_absolute_template_path(self, template_path):
+        if not template_path:
+            return None
+
+        return path.join(
+            self.context.project_path, self.context.templates_path,
+            sceptreise_path(template_path)
+        )

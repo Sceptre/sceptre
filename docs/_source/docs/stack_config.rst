@@ -12,7 +12,7 @@ Structure
 A Stack config file is a ``yaml`` object of key-value pairs configuring a
 particular Stack. The available keys are listed below.
 
--  `template_path`_ *(required)*
+-  `template_path`_ or `template`_ *(required)*
 -  `dependencies`_ *(optional)*
 -  `hooks`_ *(optional)*
 -  `notifications`_ *(optional)*
@@ -25,7 +25,10 @@ particular Stack. The available keys are listed below.
 -  `stack_tags`_ *(optional)*
 -  `stack_timeout`_ *(optional)*
 
-template_path - required
+It is not possible to define both `template_path`_ and `template`_. If you do so,
+you will receive an error when deploying the stack.
+
+template_path
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 The path to the CloudFormation, Jinja2 or Python template to build the Stack
@@ -33,6 +36,28 @@ from. The path can either be absolute or relative to the Sceptre Directory.
 Sceptre treats the template as CloudFormation, Jinja2 or Python depending on
 the template’s file extension. Note that the template filename may be different
 from the Stack config filename.
+
+template
+~~~~~~~~
+
+Configuration for a template handler. Template handlers can take in parameters
+and resolve that to a CloudFormation template. This enables you to not only
+load templates from disk, but also from third-party storage or AWS services.
+
+Example for loading from S3 bucket:
+
+.. code-block:: yaml
+
+   template:
+     type: s3
+     path: infra-templates/s3/v1/bucket.yaml
+   parameters:
+     <parameter1_name>: "value"
+   sceptre_user_data:
+
+It is possible to write your own template handlers should you need to. You
+can find a list of currently supported template handlers and guidance for
+developing your own in the :doc:`template_handlers` section.
 
 dependencies
 ~~~~~~~~~~~~
@@ -305,6 +330,7 @@ Examples
        tag_2: value_2
 
 .. _template_path: #template_path
+.. _template: #template
 .. _dependencies: #dependencies
 .. _hooks: #hooks
 .. _notifications: #notifications

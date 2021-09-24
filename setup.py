@@ -23,14 +23,22 @@ def get_version(rel_path):
 
 install_requirements = [
     "boto3>=1.3,<2.0",
-    "click>=7.0,<8.0",
+    "click>=7.0,<9.0",
     "PyYaml>=5.1,<6.0",
     "Jinja2>=2.8,<3",
+    "jsonschema>=3.2,<3.3",
     "colorama>=0.3.9",
     "packaging>=16.8,<17.0",
+    "sceptre-cmd-resolver>=1.1.3,<2",
+    "sceptre-file-resolver>=1.0.4,<2",
     "six>=1.11.0,<2.0.0",
-    "networkx>=2.4,<3"
+    "networkx>=2.4,<2.6"
 ]
+
+extra_requirements = {
+    "troposphere": ["troposphere>=2.0.0,<2.1.0"],
+}
+
 
 setup(
     name="sceptre",
@@ -41,7 +49,7 @@ setup(
     author="Cloudreach",
     author_email="sceptre@cloudreach.com",
     license='Apache2',
-    url="https://github.com/cloudreach/sceptre",
+    url="https://github.com/Sceptre/sceptre",
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     package_dir={
         "sceptre": "sceptre"
@@ -63,6 +71,10 @@ setup(
             "stack_output = sceptre.resolvers.stack_output:StackOutput",
             "stack_output_external ="
             "sceptre.resolvers.stack_output:StackOutputExternal"
+        ],
+        "sceptre.template_handlers": [
+            "file = sceptre.template_handlers.file:File",
+            "s3 = sceptre.template_handlers.s3:S3"
         ]
     },
     data_files=[
@@ -86,4 +98,5 @@ setup(
     ],
     test_suite="tests",
     install_requires=install_requirements,
+    extras_require=extra_requirements,
 )

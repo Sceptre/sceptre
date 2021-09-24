@@ -40,11 +40,15 @@ class SceptreContext(object):
     :param no_colour: Specify whether colouring should be used in the CLI\
             output
     :type no_colour: bool
+
+    :param full_scan: Specify whether folder scan the config files\
+            True for scan all the config files and False for scan only in the command path
+    :type full_scan: bool
     """
 
     def __init__(self, project_path, command_path,
                  user_variables=None, options=None, output_format=None,
-                 no_colour=False, ignore_dependencies=False):
+                 no_colour=False, ignore_dependencies=False, full_scan=False):
         # project_path: absolute path to the base sceptre project folder
         # e.g. absolute_path/to/sceptre_directory
         self.project_path = normalise_path(project_path)
@@ -74,6 +78,7 @@ class SceptreContext(object):
         self.output_format = output_format if output_format else ""
         self.no_colour = no_colour if no_colour is True else False
         self.ignore_dependencies = ignore_dependencies if ignore_dependencies is True else False
+        self.full_scan = full_scan if full_scan is True else False
 
     def full_config_path(self):
         """

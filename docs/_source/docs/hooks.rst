@@ -154,9 +154,6 @@ custom_hook.py
             argument defined in the Sceptre config file (see below)
         stack: sceptre.stack.Stack
              The associated stack of the hook.
-        connection_manager: sceptre.connection_manager.ConnectionManager
-            Boto3 Connection Manager - can be used to call boto3 api.
-
         """
         def __init__(self, *args, **kwargs):
             super(CustomHook, self).__init__(*args, **kwargs)

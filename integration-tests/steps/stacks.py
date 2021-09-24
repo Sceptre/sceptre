@@ -192,7 +192,8 @@ def step_impl(context, stack_name):
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
         command_path=stack_name + '.yaml',
-        project_path=context.sceptre_dir
+        project_path=context.sceptre_dir,
+        full_scan=True
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
@@ -213,7 +214,8 @@ def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
         command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir,
-        ignore_dependencies=True
+        ignore_dependencies=True,
+        full_scan=True
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
@@ -309,6 +311,16 @@ def step_impl(context, stack_name, desired_status):
     assert (status == desired_status)
 
 
+@then('stack "{stack_name}" has "{tag_name}" tag with "{desired_tag_value}" value')
+def step_impl(context, stack_name, tag_name, desired_tag_value):
+    full_name = get_cloudformation_stack_name(context, stack_name)
+
+    tags = get_stack_tags(context, full_name)
+    tag = next((tag for tag in tags if tag['Key'] == tag_name), {'Value': None})
+
+    assert (tag['Value'] == desired_tag_value)
+
+
 @then('stack "{stack_name}" does not exist')
 def step_impl(context, stack_name):
     full_name = get_cloudformation_stack_name(context, stack_name)
@@ -348,6 +360,24 @@ def step_impl(context, stack_name, dependant_stack_name, desired_state):
     dep_status = sceptre_plan.get_status()
     dep_status = get_stack_status(context, dep_full_name)
     assert (dep_status == desired_state)
+
+
+def get_stack_tags(context, stack_name, region_name=None):
+    if region_name is not None:
+        stack = boto3.resource('cloudformation', region_name=region_name).Stack
+    else:
+        stack = context.cloudformation.Stack
+
+    try:
+        stack = retry_boto_call(stack, stack_name)
+        retry_boto_call(stack.load)
+        return stack.tags
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'ValidationError' \
+                and e.response['Error']['Message'].endswith("does not exist"):
+            return None
+        else:
+            raise e
 
 
 def get_stack_status(context, stack_name, region_name=None):

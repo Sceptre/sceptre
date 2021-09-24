@@ -94,6 +94,75 @@ class TestConfigReader(object):
             "filepath": target
         }
 
+    def test_read_nested_configs(self):
+        with self.runner.isolated_filesystem():
+            project_path = os.path.abspath('./example')
+            config_dir = os.path.join(project_path, "config")
+            stack_group_dir_a = os.path.join(config_dir, "A")
+            stack_group_dir_b = os.path.join(stack_group_dir_a, "B")
+            stack_group_dir_c = os.path.join(stack_group_dir_b, "C")
+
+            os.makedirs(stack_group_dir_c)
+            config_filename = "config.yaml"
+
+            config_a = {"keyA": "A", "shared": "A"}
+            with open(os.path.join(stack_group_dir_a, config_filename), 'w') as\
+                    config_file:
+                yaml.safe_dump(
+                    config_a, stream=config_file, default_flow_style=False
+                )
+
+            config_b = {"keyB": "B", "parent": "{{ keyA }}", "shared": "B"}
+            with open(os.path.join(stack_group_dir_b, config_filename), 'w') as\
+                    config_file:
+                yaml.safe_dump(
+                    config_b, stream=config_file, default_flow_style=False
+                )
+
+            config_c = {"keyC": "C", "parent": "{{ keyB }}", "shared": "C"}
+            with open(os.path.join(stack_group_dir_c, config_filename), 'w') as\
+                    config_file:
+                yaml.safe_dump(
+                    config_c, stream=config_file, default_flow_style=False
+                )
+
+            self.context.project_path = project_path
+            reader = ConfigReader(self.context)
+
+            config_a = reader.read("A/config.yaml")
+
+            assert config_a == {
+                "project_path": project_path,
+                "stack_group_path": "A",
+                "keyA": "A",
+                "shared": "A"
+            }
+
+            config_b = reader.read("A/B/config.yaml")
+
+            assert config_b == {
+                "project_path": project_path,
+                "stack_group_path": "A/B",
+                "keyA": "A",
+                "keyB": "B",
+                "shared": "B",
+                "parent": "A"
+            }
+
+            config_c = reader.read(
+                "A/B/C/config.yaml"
+            )
+
+            assert config_c == {
+                "project_path": project_path,
+                "stack_group_path": "A/B/C",
+                "keyA": "A",
+                "keyB": "B",
+                "keyC": "C",
+                "shared": "C",
+                "parent": "B"
+            }
+
     def test_read_reads_config_file_with_base_config(self):
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath('./example')
@@ -237,6 +306,7 @@ class TestConfigReader(object):
             template_path=os.path.join(
                 self.context.project_path, "templates/path/to/template"
             ),
+            template_handler_config=None,
             region="region_region",
             profile="account_profile",
             parameters={"param1": "val1"},
@@ -262,64 +332,80 @@ class TestConfigReader(object):
 
         assert stacks == ({sentinel.stack}, {sentinel.stack})
 
-    @pytest.mark.parametrize("command_path,filepaths,expected_stacks,expected_command_stacks", [
+    @pytest.mark.parametrize("command_path,filepaths,expected_stacks,expected_command_stacks,full_scan", [
         (
             "",
             ["A/1.yaml"],
             {"A/1"},
-            {"A/1"}
+            {"A/1"},
+            False
         ),
         (
             "",
             ["A/1.yaml", "A/2.yaml", "A/3.yaml"],
             {"A/3", "A/2", "A/1"},
-            {"A/3", "A/2", "A/1"}
+            {"A/3", "A/2", "A/1"},
+            False
         ),
         (
             "",
             ["A/1.yaml", "A/A/1.yaml"],
             {"A/1", "A/A/1"},
-            {"A/1", "A/A/1"}
+            {"A/1", "A/A/1"},
+            False
         ),
         (
             "",
             ["A/1.yaml", "A/A/1.yaml", "A/A/2.yaml"],
             {"A/1", "A/A/1", "A/A/2"},
-            {"A/1", "A/A/1", "A/A/2"}
+            {"A/1", "A/A/1", "A/A/2"},
+            False
         ),
         (
             "",
             ["A/A/1.yaml", "A/B/1.yaml"],
             {"A/A/1", "A/B/1"},
-            {"A/A/1", "A/B/1"}
+            {"A/A/1", "A/B/1"},
+            False
         ),
         (
             "Abd",
             ["Abc/1.yaml", "Abd/1.yaml"],
-            {"Abd/1", "Abc/1"},
-            {"Abd/1"}
+            {"Abd/1"},
+            {"Abd/1"},
+            False
         ),
         (
             "Abd",
             ["Abc/1.yaml", "Abd/Abc/1.yaml", "Abd/2.yaml"],
-            {"Abd/2", "Abd/Abc/1", "Abc/1"},
-            {"Abd/2", "Abd/Abc/1"}
+            {"Abd/2", "Abd/Abc/1"},
+            {"Abd/2", "Abd/Abc/1"},
+            False
         ),
         (
             "Abd/Abc",
             ["Abc/1.yaml", "Abd/Abc/1.yaml", "Abd/2.yaml"],
-            {"Abd/2", "Abd/Abc/1", "Abc/1"},
-            {"Abd/Abc/1"}
+            {"Abd/Abc/1"},
+            {"Abd/Abc/1"},
+            False
         ),
         (
             "Ab",
             ["Abc/1.yaml", "Abd/1.yaml"],
-            {"Abd/1", "Abc/1"},
-            set()
-        )
+            set(),
+            set(),
+            False
+        ),
+        (
+            "Abd/Abc",
+            ["Abc/1.yaml", "Abd/Abc/1.yaml", "Abd/2.yaml"],
+            {"Abc/1", "Abd/Abc/1", "Abd/2"},
+            {"Abd/Abc/1"},
+            True
+        ),
     ])
     def test_construct_stacks_with_valid_config(
-        self, command_path, filepaths, expected_stacks, expected_command_stacks
+        self, command_path, filepaths, expected_stacks, expected_command_stacks, full_scan
     ):
         project_path, config_dir = self.create_project()
 
@@ -336,6 +422,7 @@ class TestConfigReader(object):
 
         self.context.project_path = project_path
         self.context.command_path = command_path
+        self.context.full_scan = full_scan
         config_reader = ConfigReader(self.context)
         all_stacks, command_stacks = config_reader.construct_stacks()
         assert {str(stack) for stack in all_stacks} == expected_stacks
@@ -344,7 +431,6 @@ class TestConfigReader(object):
     @pytest.mark.parametrize("filepaths, del_key", [
         (["A/1.yaml"], "project_code"),
         (["A/1.yaml"], "region"),
-        (["A/1.yaml"], "template_path"),
     ])
     def test_missing_attr(
         self, filepaths, del_key

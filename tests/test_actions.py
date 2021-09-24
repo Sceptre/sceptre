@@ -30,9 +30,8 @@ class TestStackActions(object):
         self.stack = Stack(
             name='prod/app/stack', project_code=sentinel.project_code,
             template_path=sentinel.template_path, region=sentinel.region,
-            profile=sentinel.profile, parameters={"key1": "val1"},
-            sceptre_user_data=sentinel.sceptre_user_data, hooks={},
-            s3_details=None, dependencies=sentinel.dependencies,
+            profile=sentinel.profile, parameters={"key1": "val1"}, sceptre_user_data=sentinel.sceptre_user_data,
+            hooks={}, s3_details=None, dependencies=sentinel.dependencies,
             role_arn=sentinel.role_arn, protected=False,
             tags={"tag1": "val1"}, external_name=sentinel.external_name,
             notifications=[sentinel.notification],
@@ -40,8 +39,10 @@ class TestStackActions(object):
             stack_timeout=sentinel.stack_timeout
         )
         self.actions = StackActions(self.stack)
+        self.stack_group_config = {}
         self.template = Template(
-            "fixtures/templates", self.stack.sceptre_user_data,
+            "fixtures/templates", self.stack.template_handler_config,
+            self.stack.sceptre_user_data, self.stack_group_config,
             self.actions.connection_manager, self.stack.s3_details
         )
         self.stack._template = self.template
@@ -56,8 +57,13 @@ class TestStackActions(object):
         response = self.stack.template
 
         mock_Template.assert_called_once_with(
-            path=sentinel.template_path,
+            name='prod/app/stack',
+            handler_config={
+                "type": "file",
+                "path": sentinel.template_path
+            },
             sceptre_user_data=sentinel.sceptre_user_data,
+            stack_group_config={},
             connection_manager=self.stack.connection_manager,
             s3_details=None
         )
@@ -680,6 +686,62 @@ class TestStackActions(object):
             command="list_change_sets",
             kwargs={"StackName": sentinel.external_name}
         )
+
+    @patch("sceptre.plan.actions.StackActions._list_change_sets")
+    def test_list_change_sets(
+        self, mock_list_change_sets
+    ):
+        mock_list_change_sets_return_value = {"Summaries": []}
+        expected_responses = []
+
+        for num in ["1", "2"]:
+            response = [{
+                "ChangeSetId": "mychangesetid{num}",
+                "StackId": "mystackid{num}"
+            }]
+            mock_list_change_sets_return_value["Summaries"].append(response)
+            expected_responses.append(response)
+
+        mock_list_change_sets.return_value = mock_list_change_sets_return_value
+
+        response = self.actions.list_change_sets(url=False)
+        assert response == {"prod/app/stack": expected_responses}
+
+    @patch("sceptre.plan.actions.urllib.parse.urlencode")
+    @patch("sceptre.plan.actions.StackActions._list_change_sets")
+    def test_list_change_sets_url_mode(
+        self, mock_list_change_sets, mock_urlencode
+    ):
+        mock_list_change_sets_return_value = {"Summaries": []}
+        mock_urlencode_side_effect = []
+        expected_urls = []
+
+        for num in ["1", "2"]:
+            mock_list_change_sets_return_value["Summaries"].append({
+                "ChangeSetId": "mychangesetid{num}",
+                "StackId": "mystackid{num}"
+            })
+            urlencoded = "stackId=mystackid{num}&changeSetId=mychangesetid{num}"
+            mock_urlencode_side_effect.append(urlencoded)
+            expected_urls.append(
+                "https://sentinel.region.console.aws.amazon.com/cloudformation/home?"
+                f"region=sentinel.region#/stacks/changesets/changes?{urlencoded}"
+            )
+
+        mock_list_change_sets.return_value = mock_list_change_sets_return_value
+        mock_urlencode.side_effect = mock_urlencode_side_effect
+
+        response = self.actions.list_change_sets(url=True)
+        assert response == {"prod/app/stack": expected_urls}
+
+    @pytest.mark.parametrize("url_mode", [True, False])
+    @patch("sceptre.plan.actions.StackActions._list_change_sets")
+    def test_list_change_sets_empty(
+        self, mock_list_change_sets, url_mode
+    ):
+        mock_list_change_sets.return_value = {"Summaries": []}
+        response = self.actions.list_change_sets(url=url_mode)
+        assert response == {"prod/app/stack": []}
 
     @patch("sceptre.plan.actions.StackActions.set_policy")
     @patch("os.path.join")
