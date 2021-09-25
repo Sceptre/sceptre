@@ -1,6 +1,7 @@
+import contextlib
 import json
+import sys
 from pathlib import Path
-from typing import TextIO
 
 import click
 import yaml
@@ -12,17 +13,12 @@ from sceptre.diffing.diff_writer import DeepDiffWriter, DictDifferWriter, DiffLi
 from sceptre.diffing.stack_differ import DeepDiffStackDiffer, StackDiff, DictDifferStackDiffer, DifflibStackDiffer
 from sceptre.plan.plan import SceptrePlan
 
+@contextlib.contextmanager
+def nullcontext(enter_result=None):
+    yield enter_result
+
 
 @click.command(name="diff", short_help="Compares deployed infrastructure with current configurations")
-@click.option(
-    '-f',
-    '--full-templates',
-    is_flag=True,
-    help=(
-        "If there is a difference between deployed and generated, it will print the full generated "
-        "template if this is set to True"
-    )
-)
 @click.option(
     '-o',
     '--output-file',
@@ -41,7 +37,7 @@ from sceptre.plan.plan import SceptrePlan
 @click.argument('path')
 @click.pass_context
 @catch_exceptions
-def diff_command(ctx: Context, full_templates: bool, output_file: str, differ: str, path):
+def diff_command(ctx: Context, output_file: str, differ: str, path):
     """This command is designed to indicate what the difference between the currently DEPLOYED
     stack templates at the indicated command_path and the stack templates generated off of the
     current templates and configurations.
@@ -80,8 +76,6 @@ def diff_command(ctx: Context, full_templates: bool, output_file: str, differ: s
     else:
         context = nullcontext(sys.stdout)
 
-    writer_class = FullTemplateDiffWriter if full_templates else DiffWriter
-    output_format = OutputFormat[kwargs.get('output', 'yaml')]
     with context as stream:
         for stack_diff in diffs:
             writer = writer_class(stack_diff, stream, output_format)

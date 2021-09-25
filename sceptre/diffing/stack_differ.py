@@ -1,7 +1,11 @@
+import difflib
 from abc import abstractmethod
 from typing import NamedTuple, Dict, List, Optional, Callable, Tuple, Generic, TypeVar, Any
 
 import cfn_flip
+import dictdiffer
+import yaml
+import deepdiff
 
 from sceptre.exceptions import StackDoesNotExistError
 from sceptre.plan.actions import StackActions
@@ -9,12 +13,6 @@ from sceptre.resolvers import Resolver
 from sceptre.stack import Stack
 
 DiffType = TypeVar('DiffType')
-
-
-class StackDiff(NamedTuple):
-    stack_name: str
-    template_diff: Any
-    config_diff: Any
 
 
 class StackConfiguration(NamedTuple):
@@ -25,30 +23,39 @@ class StackConfiguration(NamedTuple):
     role_arn: Optional[str]
 
 
+class StackDiff(NamedTuple):
+    stack_name: str
+    template_diff: DiffType
+    config_diff: DiffType
+    is_deployed: bool
+    generated_config: StackConfiguration
+    generated_template: str
+
+
 class StackDiffer(Generic[DiffType]):
-    def __init__(
-        self,
-        *,
-        universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load
-    ):
-        self.load_template = universal_template_loader
 
     def diff(self, stack_actions: StackActions) -> StackDiff:
         generated_config = self._create_generated_config(stack_actions.stack)
         deployed_config = self._create_deployed_stack_config(stack_actions)
+        is_stack_deployed = bool(deployed_config)
 
         generated_template = self._generate_template(stack_actions)
         deployed_template = self._get_deployed_template(stack_actions)
 
-        template_diff = self.compare_templates(generated_template, deployed_template)
-        config_diff = self.compare_stack_configurations(generated_config, deployed_config)
+        template_diff = self.compare_templates(deployed_template, generated_template)
+        config_diff = self.compare_stack_configurations(deployed_config, generated_config)
 
-        return StackDiff(stack_actions.stack.external_name, template_diff, config_diff)
+        return StackDiff(
+            stack_actions.stack.external_name,
+            template_diff,
+            config_diff,
+            is_stack_deployed,
+            generated_config,
+            generated_template
+        )
 
-    def _generate_template(self, stack_actions: StackActions) -> dict:
-        generated_template_string = stack_actions.generate()
-        template_as_dict, template_format = self.load_template(generated_template_string)
-        return template_as_dict
+    def _generate_template(self, stack_actions: StackActions) -> str:
+        return stack_actions.generate()
 
     def _create_generated_config(self, stack: Stack) -> StackConfiguration:
         parameters = self._extract_parameters_dict(stack)
@@ -113,25 +120,116 @@ class StackDiffer(Generic[DiffType]):
                 role_arn=stack.get('RoleARN')
             )
 
-    def _get_deployed_template(self, stack_actions: StackActions) -> dict:
+    def _get_deployed_template(self, stack_actions: StackActions) -> str:
         template_string = stack_actions.fetch_remote_template()
+
         if template_string is None:
-            return {}
-        template_dict, template_format = self.load_template(template_string)
-        return template_dict
+            return '{}'
+
+        return template_string
 
     @abstractmethod
     def compare_templates(
         self,
-        generated: dict,
-        deployed: dict
+        deployed: str,
+        generated: str,
     ) -> DiffType:
         """Implement this method to return the diff for the templates"""
 
     @abstractmethod
     def compare_stack_configurations(
         self,
+        deployed: Optional[StackConfiguration],
         generated: StackConfiguration,
-        deployed: Optional[StackConfiguration]
     ) -> DiffType:
         """Implement this method to return the diff for the Stack Configurations"""
+
+
+class DeepDiffStackDiffer(StackDiffer):
+    def __init__(
+        self,
+        *,
+        universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load
+    ):
+        self.load_template = universal_template_loader
+
+    def compare_stack_configurations(
+        self,
+        deployed: Optional[StackConfiguration],
+        generated: StackConfiguration,
+    ) -> deepdiff.DeepDiff:
+        return deepdiff.DeepDiff(deployed, generated, verbose_level=2)
+
+    def compare_templates(self, deployed: str, generated: str,) -> deepdiff.DeepDiff:
+        deployed_dict, original_format = self.load_template(deployed)
+        generated_dict, original_format = self.load_template(generated)
+
+        return deepdiff.DeepDiff(deployed_dict, generated_dict, verbose_level=2)
+
+
+class DictDifferStackDiffer(StackDiffer):
+    def __init__(
+        self,
+        *,
+        universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load
+    ):
+        self.load_template = universal_template_loader
+
+    def compare_stack_configurations(
+        self,
+        deployed: Optional[StackConfiguration],
+        generated: StackConfiguration,
+    ) -> List[tuple]:
+        return list(dictdiffer.diff(
+            deployed._asdict() if deployed else {},
+            generated._asdict(),
+        ))
+
+    def compare_templates(self, deployed: str, generated: str) -> List[tuple]:
+        deployed_dict, original_format = self.load_template(deployed)
+        generated_dict, original_format = self.load_template(generated)
+        return list(dictdiffer.diff(
+            deployed_dict,
+            generated_dict
+        ))
+
+
+class DifflibStackDiffer(StackDiffer):
+    def __init__(
+        self,
+        *,
+        serializer: Callable[[dict], str] = yaml.dump,
+        universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load
+    ):
+        super().__init__(universal_template_loader=universal_template_loader)
+        self.serialize = serializer
+
+    def compare_stack_configurations(
+        self,
+        deployed: Optional[StackConfiguration],
+        generated: StackConfiguration,
+    ) -> List[str]:
+        deployed_string = self.serialize(deployed._asdict())
+        generated_string = self.serialize(generated._asdict())
+        diff_lines = difflib.unified_diff(
+            deployed_string.splitlines(),
+            generated_string.splitlines(),
+            fromfile="deployed",
+            tofile="generated",
+            lineterm=""
+        )
+        return list(diff_lines)
+
+    def compare_templates(
+        self,
+        deployed: str,
+        generated: str,
+    ) -> List[str]:
+        diff_lines = difflib.unified_diff(
+            deployed.splitlines(),
+            generated.splitlines(),
+            fromfile="deployed",
+            tofile="generated",
+            lineterm=""
+        )
+        return list(diff_lines)
