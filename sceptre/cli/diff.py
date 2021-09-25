@@ -2,16 +2,19 @@ import contextlib
 import json
 import sys
 from pathlib import Path
+from typing import Dict
 
 import click
 import yaml
 from click import Context
 
-from sceptre.cli import catch_exceptions
+from sceptre.cli.helpers import catch_exceptions
 from sceptre.context import SceptreContext
 from sceptre.diffing.diff_writer import DeepDiffWriter, DictDifferWriter, DiffLibWriter
-from sceptre.diffing.stack_differ import DeepDiffStackDiffer, StackDiff, DictDifferStackDiffer, DifflibStackDiffer
+from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DictDifferStackDiffer, DifflibStackDiffer, StackDiff
 from sceptre.plan.plan import SceptrePlan
+from sceptre.stack import Stack
+
 
 @contextlib.contextmanager
 def nullcontext(enter_result=None):
@@ -67,7 +70,7 @@ def diff_command(ctx: Context, output_file: str, differ: str, path):
     else:
         raise ValueError(f"Unexpected differ type: {differ}")
 
-    diffs = plan.diff(stack_differ)
+    diffs: Dict[Stack, StackDiff] = plan.diff(stack_differ)
 
     if output_file:
         path = Path(output_file)
@@ -77,8 +80,6 @@ def diff_command(ctx: Context, output_file: str, differ: str, path):
         context = nullcontext(sys.stdout)
 
     with context as stream:
-        for stack_diff in diffs:
+        for stack_diff in diffs.values():
             writer = writer_class(stack_diff, stream, output_format)
             writer.write()
-
-

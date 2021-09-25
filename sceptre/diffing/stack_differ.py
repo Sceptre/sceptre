@@ -199,9 +199,8 @@ class DifflibStackDiffer(StackDiffer):
         self,
         *,
         serializer: Callable[[dict], str] = yaml.dump,
-        universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load
     ):
-        super().__init__(universal_template_loader=universal_template_loader)
+        super().__init__()
         self.serialize = serializer
 
     def compare_stack_configurations(

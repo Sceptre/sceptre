@@ -19,6 +19,7 @@ from sceptre.cli.create import create_command
 from sceptre.cli.update import update_command
 from sceptre.cli.delete import delete_command
 from sceptre.cli.launch import launch_command
+from sceptre.cli.diff import diff_command
 from sceptre.cli.execute import execute_command
 from sceptre.cli.describe import describe_group
 from sceptre.cli.list import list_group
@@ -26,8 +27,7 @@ from sceptre.cli.policy import set_policy_command
 from sceptre.cli.status import status_command
 from sceptre.cli.template import (validate_command, generate_command,
                                   estimate_cost_command,
-                                  fetch_remote_template_command,
-                                  diff_command)
+                                  fetch_remote_template_command)
 from sceptre.cli.helpers import catch_exceptions, setup_vars
 
 

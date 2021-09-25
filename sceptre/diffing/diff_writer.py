@@ -1,4 +1,5 @@
 import json
+import pprint
 from abc import abstractmethod, ABC
 from datetime import datetime
 from typing import TextIO, Generic, List
@@ -160,6 +161,20 @@ class DeepDiffWriter(DiffWriter):
         # Yaml is more readable, but DeepDiff doesn't provide to_yaml method.
         loaded = json.loads(jsonified)
         return yaml.dump(loaded)
+
+
+class DictDifferWriter(DiffWriter):
+
+    @property
+    def has_config_difference(self) -> bool:
+        return len(self.config_diff) > 0
+
+    @property
+    def has_template_difference(self) -> bool:
+        return len(self.template_diff) > 0
+
+    def dump_diff(self, diff: List[tuple]) -> str:
+        return pprint.pformat(diff)
 
 
 class DiffLibWriter(DiffWriter):
