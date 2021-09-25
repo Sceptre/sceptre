@@ -942,18 +942,28 @@ class StackActions(object):
         """
         self.logger.debug("%s - Fetching remote template", self.stack.name)
 
-        response = self.connection_manager.call(
-            service="cloudformation",
-            command="get_template",
-            kwargs={
-                "StackName": self.stack.external_name
-            }
-        )
-
-        return response.get("TemplateBody")
+        try:
+            response = self.connection_manager.call(
+                service="cloudformation",
+                command="get_template",
+                kwargs={
+                    "StackName": self.stack.external_name,
+                    "TemplateStage": 'Original'
+                }
+            )
+            template_body = response['TemplateBody']
+            # Sometimes boto returns a string, sometimes a dictionary
+            if not isinstance(template_body, str):
+                template_body = json.dumps(template_body, sort_keys=True)
+            return template_body
+        except botocore.exceptions.ClientError as e:
+            # AWS returns a ValidationError if the stack doesn't exist
+            if e.response['Error']['Code'] == 'ValidationError':
+                return None
+            raise
 
     @add_stack_hooks
-    def diff(self, differ="difflib"):
+    def diff(self, stack_differ):
         """
         Returns a diff of Template and Remote Template
         using a specific diff library.
