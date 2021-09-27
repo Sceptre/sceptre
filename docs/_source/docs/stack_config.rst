@@ -39,7 +39,8 @@ the template’s file extension. Note that the template filename may be differen
 from the Stack config filename.
 
 .. note::
-  This key is deprecated in favor of the `template`_ key.
+  This key is deprecated in favor of the `template`_ key.  It will be removed in
+  the next major release, Sceptre version 3.x
 
 template
 ~~~~~~~~
