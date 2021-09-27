@@ -12,6 +12,7 @@ from sceptre.template_handlers import TemplateHandler
 
 logger = logging.getLogger(__name__)
 
+
 class S3(TemplateHandler):
     """
     Template handler that can resolve templates from S3.
@@ -31,7 +32,6 @@ class S3(TemplateHandler):
         }
 
     def handle(self):
-        logger.debug(f'test200')
         segments = self.arguments["path"].split('/')
         bucket = segments[0]
         key = "/".join(segments[1:])
@@ -40,7 +40,7 @@ class S3(TemplateHandler):
         file_extension = f'.{extension}'
 
         if file_extension in {".json", ".yaml", ".template"}:
-            return template
+            return self._get_template(bucket, key)
         elif file_extension in {".j2", ".py"}:
             try:
                 template = self._get_template(bucket, key)

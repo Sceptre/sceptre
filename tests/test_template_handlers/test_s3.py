@@ -47,4 +47,3 @@ class TestS3(object):
             template_handler.handle()
 
         assert str(e.value) == "BOOM!"
-
