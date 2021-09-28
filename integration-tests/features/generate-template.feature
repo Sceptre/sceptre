@@ -18,15 +18,15 @@ Feature: Generate template
     | invalid_template.yaml     |
     | jinja/valid_template.yaml |
 
-  Scenario: Generate template using a valid python template file
-    Given the template for stack "1/A" is "valid_template.py"
+  Scenario: Generate template using a valid python template file that outputs json
+    Given the template for stack "1/A" is "valid_template_json.py"
     When the user generates the template for stack "1/A"
-    Then the output is the same as the string returned by "valid_template.py"
+    Then the output is the same as the string returned by "valid_template_json.py"
 
-  Scenario: Generate template using a valid python template file with ignore dependencies
-    Given the template for stack "1/A" is "valid_template.py"
+  Scenario: Generate template using a valid python template file that outputs json with ignore dependencies
+    Given the template for stack "1/A" is "valid_template_json.py"
     When the user generates the template for stack "1/A" with ignore dependencies
-    Then the output is the same as the string returned by "valid_template.py"
+    Then the output is the same as the string returned by "valid_template_json.py"
 
   Scenario Outline: Generating erroneous python templates
     Given the template for stack "1/A" is "<filename>"
