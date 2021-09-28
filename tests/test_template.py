@@ -61,9 +61,9 @@ class TestTemplate(object):
             ", sceptre_user_data={}, s3_details=None)"
 
     def test_body_with_cache(self):
-        self.template._body = "mybody"
+        self.template._body = sentinel.body
         body = self.template.body
-        assert body == "---\nmybody"
+        assert body == sentinel.body
 
     @freeze_time("2012-01-01")
     @patch("sceptre.template.Template._bucket_exists")
@@ -189,10 +189,10 @@ class TestTemplate(object):
 
     def test_get_template_details_without_upload(self):
         self.template.s3_details = None
-        self.template._body = "mybody"
+        self.template._body = sentinel.body
         boto_parameter = self.template.get_boto_call_parameter()
 
-        assert boto_parameter == {"TemplateBody": "---\nmybody"}
+        assert boto_parameter == {"TemplateBody": sentinel.body}
 
     def test_body_with_json_template(self):
         self.template.name = "vpc"

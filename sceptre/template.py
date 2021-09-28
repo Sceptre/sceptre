@@ -96,9 +96,6 @@ class Template(object):
                 body = "---\n{}".format(body)
             self._body = body
 
-        if not self._body.startswith("---"):
-            self._body = "---\n{}".format(self._body)
-
         return self._body
 
     def upload_to_s3(self):
