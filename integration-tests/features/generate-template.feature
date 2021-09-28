@@ -28,6 +28,11 @@ Feature: Generate template
     When the user generates the template for stack "1/A" with ignore dependencies
     Then the output is the same as the string returned by "valid_template_json.py"
 
+  Scenario: Generate template using a valid python template file that outputs yaml
+    Given the template for stack "1/A" is "valid_template_yaml.py"
+    When the user generates the template for stack "1/A"
+    Then the output is the same as the string returned by "valid_template_yaml.py"
+
   Scenario Outline: Generating erroneous python templates
     Given the template for stack "1/A" is "<filename>"
     When the user generates the template for stack "1/A"
