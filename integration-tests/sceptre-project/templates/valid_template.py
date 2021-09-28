@@ -10,4 +10,4 @@ def sceptre_handler(scepter_user_data):
         }
       }
     }
-    return "---\n" + json.dumps(template)
+    return json.dumps(template)
