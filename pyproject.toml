@@ -23,4 +23,8 @@ fail_under = 90.0
 show_missing = true
 
 [tool.pytest.ini_options]
+# The "--cov" option will the disable the pycharm debugger.  To enable the debugger either
+# remove this flag or add the "--no-cov" to your pycharm's pytest run configuration.
+# https://github.com/pytest-dev/pytest-cov/issues/131
+# https://stackoverflow.com/questions/34870962/how-to-debug-py-test-in-pycharm-when-coverage-is-enabled
 addopts = "-s --cov --cov-report term --cov-report term-missing --cov-report xml"
