@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 
 import pytest
 from mock import patch, sentinel, Mock, call
@@ -1098,7 +1099,7 @@ class TestStackActions(object):
         with pytest.raises(ClientError):
             self.actions._get_cs_status(sentinel.change_set_name)
 
-    def test_fetch_remote_template_no_template(self):
+    def test_fetch_remote_template__cloudformation_returns_validation_error__returns_none(self):
         self.actions.connection_manager.call.side_effect = ClientError(
             {
                 "Error": {
@@ -1111,65 +1112,48 @@ class TestStackActions(object):
             sentinel.operation
         )
 
-        with pytest.raises(ClientError):
-            self.actions.fetch_remote_template()
+        result = self.actions.fetch_remote_template()
+        assert result is None
 
-    @patch("sceptre.plan.actions.StackActions.fetch_remote_template")
-    def test_diff_no_diffs(
-        self, mock_fetch_remote_template
-    ):
-        mock_fetch_remote_template.return_value = '---\nfoo: bar'
-        self.template._body = '---\nfoo: bar'
+    def test_fetch_remote_template__calls_cloudformation_get_template(self):
+        self.actions.connection_manager.call.return_value = {'TemplateBody': ''}
+        self.actions.fetch_remote_template()
 
-        response = self.actions.diff()
-        assert response == (sentinel.external_name, "")
-
-    @patch("sceptre.plan.actions.StackActions.fetch_remote_template")
-    def test_diff_some_diffs(
-        self, mock_fetch_remote_template
-    ):
-        mock_fetch_remote_template.return_value = '---\nfoo: bar'
-        self.template._body = '---\nfoo: bar\nbaz: qux'
-
-        response = self.actions.diff()
-
-        expected_diff = """--- remote_template
-+++ local_template
-@@ -1,2 +1,3 @@
- ---
- foo: bar
-+baz: qux"""
-        assert response == (sentinel.external_name, expected_diff)
-
-    @patch("sceptre.plan.actions.StackActions.fetch_remote_template")
-    def test_diff_some_diffs_dictdiffer(
-        self, mock_fetch_remote_template
-    ):
-        mock_fetch_remote_template.return_value = '---\nfoo: bar'
-        self.template._body = '---\nfoo: bar\nbaz: qux'
-
-        response = self.actions.diff("dictdiffer")
-
-        expected_diff = "[('add', '', [('baz', 'qux')])]"
-        assert response == (sentinel.external_name, expected_diff)
-
-    @patch("sceptre.plan.actions.StackActions.fetch_remote_template")
-    def test_diff_stack_does_not_exist(
-        self, mock_fetch_remote_template
-    ):
-        mock_fetch_remote_template.side_effect = ClientError(
-            {
-                "Error": {
-                    "Code": "ValidationError",
-                    "Message": "\
-An error occurred (ValidationError) \
-when calling the GetTemplate operation: \
-Stack with id foo does not exist"
-                }
-            },
-            sentinel.operation
+        self.actions.connection_manager.call.assert_called_with(
+            service='cloudformation',
+            command='get_template',
+            kwargs={
+                'StackName': self.stack.external_name,
+                'TemplateStage': 'Original'
+            }
         )
-        self.template._body = '---\nfoo: bar'
 
-        with pytest.raises(ClientError):
-            self.actions.diff()
+    def test_fetch_remote_template__cloudformation_returns_dict_template__returns_jsonified_template(self):
+        template_body = {
+            'AWSTemplateFormatVersion': '2010-09-09',
+            'Resources': {}
+        }
+        self.actions.connection_manager.call.return_value = {
+            'TemplateBody': template_body
+        }
+        result = self.actions.fetch_remote_template()
+        expected = json.dumps(template_body, sort_keys=True, indent=4)
+        assert result == expected
+
+    def test_fetch_remote_template__cloudformation_returns_string_template__returns_jsonified_template(self):
+        template_body = "This is my template"
+        self.actions.connection_manager.call.return_value = {
+            'TemplateBody': template_body
+        }
+        result = self.actions.fetch_remote_template()
+        assert result == template_body
+
+    def test_diff__invokes_diff_method_on_injected_differ_with_self(self):
+        differ = Mock()
+        self.actions.diff(differ)
+        differ.diff.assert_called_with(self.actions)
+
+    def test_diff__returns_result_of_injected_differs_diff_method(self):
+        differ = Mock()
+        result = self.actions.diff(differ)
+        assert result == differ.diff.return_value

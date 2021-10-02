@@ -954,7 +954,7 @@ class StackActions(object):
             template_body = response['TemplateBody']
             # Sometimes boto returns a string, sometimes a dictionary
             if not isinstance(template_body, str):
-                template_body = json.dumps(template_body, sort_keys=True)
+                template_body = json.dumps(template_body, sort_keys=True, indent=4)
             return template_body
         except botocore.exceptions.ClientError as e:
             # AWS returns a ValidationError if the stack doesn't exist
