@@ -1,9 +1,12 @@
+import json
 from typing import Union, Optional
 from unittest.mock import Mock, PropertyMock, ANY
 
+import cfn_flip
 import pytest
+import yaml
 
-from sceptre.diffing.stack_differ import StackDiffer, StackConfiguration, DiffType
+from sceptre.diffing.stack_differ import StackDiffer, StackConfiguration, DiffType, DeepDiffStackDiffer
 from sceptre.exceptions import StackDoesNotExistError
 from sceptre.plan.actions import StackActions
 from sceptre.resolvers import Resolver
@@ -235,3 +238,115 @@ class TestStackDiffer:
             '{}',
             self.actions.generate.return_value
         )
+
+
+class TestDeepDiffStackDiffer:
+
+    def setup_method(self, method):
+        self.differ = DeepDiffStackDiffer()
+
+        self.config1 = StackConfiguration(
+            stack_name='stack',
+            parameters={'pk1': 'pv1'},
+            stack_tags={'tk1': 'tv1'},
+            notifications=['notification'],
+            role_arn=None
+        )
+
+        self.config2 = StackConfiguration(
+            stack_name='stack',
+            parameters={'pk1': 'pv1', 'pk2': 'pv2'},
+            stack_tags={'tk1': 'tv1'},
+            notifications=['notification'],
+            role_arn='new_role'
+        )
+
+        self.template_dict_1 = {
+            'AWSTemplateFormat': '2010-09-09',
+            'Description': 'deployed',
+            'Parameters': {'pk1': 'pv1'},
+            'Resources': {}
+        }
+        self.template_dict_2 = {
+            'AWSTemplateFormat': '2010-09-09',
+            'Description': 'deployed',
+            'Parameters': {'pk1': 'pv1'},
+            'Resources': {
+                'MyBucket': {
+                    'Type': 'AWS::S3::Bucket',
+                    'Properties': {
+                        'BucketName': 'test'
+                    }
+                }
+            }
+        }
+
+    def test_compare_stack_configurations__returns_deepdiff_of_deployed_and_generated(self):
+        comparison = self.differ.compare_stack_configurations(self.config1, self.config2)
+        assert comparison.t1 == self.config1
+        assert comparison.t2 == self.config2
+
+    def test_compare_stack_configurations__returned_deepdiff_has_verbosity_of_2(self):
+        comparison = self.differ.compare_stack_configurations(self.config1, self.config2)
+        assert comparison.verbose_level == 2
+
+    def test_compare_stack_configurations__deployed_is_none__returns_deepdiff_with_none_for_t1(self):
+        comparison = self.differ.compare_stack_configurations(None, self.config2)
+        assert comparison.t1 is None
+
+    @pytest.mark.parametrize(
+        't1_serializer, t2_serializer',
+        [
+            pytest.param(json.dumps, json.dumps, id='templates are json'),
+            pytest.param(yaml.dump, yaml.dump, id='templates are yaml'),
+            pytest.param(json.dumps, yaml.dump, id="templates are mixed formats"),
+        ]
+    )
+    def test_compare_templates__templates_are_json__returns_deepdiff_of_dicts(
+        self,
+        t1_serializer,
+        t2_serializer
+    ):
+        template1, template2 = t1_serializer(self.template_dict_1), t2_serializer(self.template_dict_2)
+        comparison = self.differ.compare_templates(template1, template2)
+        assert comparison.t1 == self.template_dict_1
+        assert comparison.t2 == self.template_dict_2
+
+    def test_compare_templates__templates_are_yaml_with_intrinsic_functions__returns_deepdiff_of_dicts(self):
+        template = """
+            Resources:
+              MyBucket:
+                Type: AWS::S3::Bucket
+                Properties:
+                  BucketName: !Ref MyParam
+        """
+        comparison = self.differ.compare_templates(template, template)
+
+        expected = cfn_flip.load_yaml(template)
+        assert (comparison.t1, comparison.t2) == (expected, expected)
+
+    def test_compare_templates__deployed_is_empty_dict_string__returns_deepdiff_with_empty_dict_for_t1(self):
+        template = json.dumps(self.template_dict_1)
+        comparison = self.differ.compare_templates('{}', template)
+        assert comparison.t1 == {}
+
+
+class TestDifflibStackDiffer:
+
+    def setup_method(self, method):
+        pass
+
+    def test_compare_stack_configurations__returns_diff_of_deployed_and_generated(self):
+        assert False
+
+    def test_compare_stack_configurations__deployed_is_none__returns_diff_with_none(self):
+        assert False
+
+    def test_compare_templates__templates_are_json__returns_diff_of_json_strings(self):
+        assert False
+
+    def test_compare_templates__templates_are_yaml_with_functions__returns_diff_of_template_strings(self):
+        assert False
+
+    def test_compare_templates__deployed_is_none__returns_diff_with_none(self):
+        assert False

@@ -146,6 +146,8 @@ class StackDiffer(Generic[DiffType]):
 
 
 class DeepDiffStackDiffer(StackDiffer):
+    VERBOSITY_LEVEL_TO_INDICATE_CHANGED_VALUES = 2
+
     def __init__(
         self,
         *,
@@ -158,13 +160,21 @@ class DeepDiffStackDiffer(StackDiffer):
         deployed: Optional[StackConfiguration],
         generated: StackConfiguration,
     ) -> deepdiff.DeepDiff:
-        return deepdiff.DeepDiff(deployed, generated, verbose_level=2)
+        return deepdiff.DeepDiff(
+            deployed,
+            generated,
+            verbose_level=self.VERBOSITY_LEVEL_TO_INDICATE_CHANGED_VALUES
+        )
 
     def compare_templates(self, deployed: str, generated: str,) -> deepdiff.DeepDiff:
         deployed_dict, original_format = self.load_template(deployed)
         generated_dict, original_format = self.load_template(generated)
 
-        return deepdiff.DeepDiff(deployed_dict, generated_dict, verbose_level=2)
+        return deepdiff.DeepDiff(
+            deployed_dict,
+            generated_dict,
+            verbose_level=self.VERBOSITY_LEVEL_TO_INDICATE_CHANGED_VALUES
+        )
 
 
 class DifflibStackDiffer(StackDiffer):
