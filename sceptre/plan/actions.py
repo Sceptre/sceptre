@@ -968,10 +968,10 @@ class StackActions(object):
         Returns a diff of Template and Remote Template
         using a specific diff library.
 
-        :param differ: The diff lib to use, default difflib.
-        :type: str
+        :param stack_differ: The diff lib to use, default difflib.
+        :type: sceptre.diffing.stack_differ.StackDiffer
 
-        :returns: The stack name and diffs.
-        :rtype: Tuple[str, str]
+        :returns: A StackDiff object.
+        :rtype: sceptre.diffing.stack_differ.StackDiff
         """
         return stack_differ.diff(self)
