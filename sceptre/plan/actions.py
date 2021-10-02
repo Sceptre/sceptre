@@ -7,32 +7,25 @@ This module implements the StackActions class which provides the functionality
 available to a Stack.
 """
 
+import json
 import logging
 import time
-
-from os import path
+import urllib
 from datetime import datetime, timedelta
+from os import path
 
 import botocore
-import json
-import yaml
-import difflib
-import dictdiffer
-
 from dateutil.tz import tzutc
 
 from sceptre.connection_manager import ConnectionManager
-from sceptre.hooks import add_stack_hooks
-from sceptre.stack_status import StackStatus
-from sceptre.stack_status import StackChangeSetStatus
-
 from sceptre.exceptions import CannotUpdateFailedStackError
-from sceptre.exceptions import UnknownStackStatusError
-from sceptre.exceptions import UnknownStackChangeSetStatusError
-from sceptre.exceptions import StackDoesNotExistError
 from sceptre.exceptions import ProtectedStackError
-
-import urllib
+from sceptre.exceptions import StackDoesNotExistError
+from sceptre.exceptions import UnknownStackChangeSetStatusError
+from sceptre.exceptions import UnknownStackStatusError
+from sceptre.hooks import add_stack_hooks
+from sceptre.stack_status import StackChangeSetStatus
+from sceptre.stack_status import StackStatus
 
 
 class StackActions(object):
