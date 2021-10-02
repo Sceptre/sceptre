@@ -1,8 +1,7 @@
 import json
-import pprint
-from abc import abstractmethod, ABC
+from abc import abstractmethod
 from datetime import datetime
-from typing import TextIO, Generic, List
+from typing import TextIO, Generic
 
 import cfn_flip
 import yaml

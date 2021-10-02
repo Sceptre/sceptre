@@ -16,10 +16,10 @@ DiffType = TypeVar('DiffType')
 
 
 class StackConfiguration(NamedTuple):
-    name: str
+    stack_name: str
     parameters: Dict[str, str]
-    tags: Dict[str, str]
-    notification_arns: List[str]
+    stack_tags: Dict[str, str]
+    notifications: List[str]
     role_arn: Optional[str]
 
 
@@ -60,10 +60,10 @@ class StackDiffer(Generic[DiffType]):
     def _create_generated_config(self, stack: Stack) -> StackConfiguration:
         parameters = self._extract_parameters_dict(stack)
         stack_configuration = StackConfiguration(
-            name=stack.external_name,
+            stack_name=stack.external_name,
             parameters=parameters,
-            tags=stack.tags,
-            notification_arns=stack.notifications,
+            stack_tags=stack.tags,
+            notifications=stack.notifications,
             role_arn=stack.role_arn
         )
 
@@ -111,12 +111,12 @@ class StackDiffer(Generic[DiffType]):
                     for param
                     in stack.get('Parameters', [])
                 },
-                tags={
+                stack_tags={
                     tag['Key']: tag['Value']
                     for tag in stack['Tags']
                 },
-                name=stack['StackName'],
-                notification_arns=stack['NotificationARNs'],
+                stack_name=stack['StackName'],
+                notifications=stack['NotificationARNs'],
                 role_arn=stack.get('RoleARN')
             )
 
