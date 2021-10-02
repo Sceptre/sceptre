@@ -191,22 +191,22 @@ class DifflibStackDiffer(StackDiffer):
         deployed: Optional[StackConfiguration],
         generated: StackConfiguration,
     ) -> List[str]:
-        deployed_string = self.serialize(deployed._asdict())
+        deployed_dict = deployed._asdict() if deployed else {}
+        deployed_string = self.serialize(deployed_dict)
         generated_string = self.serialize(generated._asdict())
-        diff_lines = difflib.unified_diff(
-            deployed_string.splitlines(),
-            generated_string.splitlines(),
-            fromfile="deployed",
-            tofile="generated",
-            lineterm=""
+        return self._diff(
+            deployed_string,
+            generated_string
         )
-        return list(diff_lines)
 
     def compare_templates(
         self,
         deployed: str,
         generated: str,
     ) -> List[str]:
+        return self._diff(deployed, generated)
+
+    def _diff(self, deployed: str, generated: str) -> List[str]:
         diff_lines = difflib.unified_diff(
             deployed.splitlines(),
             generated.splitlines(),

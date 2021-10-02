@@ -1,3 +1,4 @@
+import difflib
 import json
 from typing import Union, Optional
 from unittest.mock import Mock, PropertyMock, ANY
@@ -6,7 +7,13 @@ import cfn_flip
 import pytest
 import yaml
 
-from sceptre.diffing.stack_differ import StackDiffer, StackConfiguration, DiffType, DeepDiffStackDiffer
+from sceptre.diffing.stack_differ import (
+    StackDiffer,
+    StackConfiguration,
+    DiffType,
+    DeepDiffStackDiffer,
+    DifflibStackDiffer
+)
 from sceptre.exceptions import StackDoesNotExistError
 from sceptre.plan.actions import StackActions
 from sceptre.resolvers import Resolver
@@ -334,19 +341,86 @@ class TestDeepDiffStackDiffer:
 class TestDifflibStackDiffer:
 
     def setup_method(self, method):
-        pass
+        self.serialize = yaml.dump
+        self.differ = DifflibStackDiffer(serializer=self.serialize)
 
-    def test_compare_stack_configurations__returns_diff_of_deployed_and_generated(self):
-        assert False
+        self.config1 = StackConfiguration(
+            stack_name='stack',
+            parameters={'pk1': 'pv1'},
+            stack_tags={'tk1': 'tv1'},
+            notifications=['notification'],
+            role_arn=None
+        )
+
+        self.config2 = StackConfiguration(
+            stack_name='stack',
+            parameters={'pk1': 'pv1', 'pk2': 'pv2'},
+            stack_tags={'tk1': 'tv1'},
+            notifications=['notification'],
+            role_arn='new_role'
+        )
+
+        self.template_dict_1 = {
+            'AWSTemplateFormat': '2010-09-09',
+            'Description': 'deployed',
+            'Parameters': {'pk1': 'pv1'},
+            'Resources': {}
+        }
+        self.template_dict_2 = {
+            'AWSTemplateFormat': '2010-09-09',
+            'Description': 'deployed',
+            'Parameters': {'pk1': 'pv1'},
+            'Resources': {
+                'MyBucket': {
+                    'Type': 'AWS::S3::Bucket',
+                    'Properties': {
+                        'BucketName': 'test'
+                    }
+                }
+            }
+        }
+
+    def create_expected_diff(self, first, second):
+        first_list, second_list = first.splitlines(), second.splitlines()
+        return list(difflib.unified_diff(
+            first_list,
+            second_list,
+            fromfile='deployed',
+            tofile='generated',
+            lineterm=''
+        ))
+
+    def test_compare_stack_configurations__returns_diff_of_deployed_and_generated_when_converted_to_dicts(self):
+        comparison = self.differ.compare_stack_configurations(self.config1, self.config2)
+        expected_config_1 = self.serialize(self.config1._asdict())
+        expected_config_2 = self.serialize(self.config2._asdict())
+        expected = self.create_expected_diff(expected_config_1, expected_config_2)
+
+        assert comparison == expected
 
     def test_compare_stack_configurations__deployed_is_none__returns_diff_with_none(self):
-        assert False
+        comparison = self.differ.compare_stack_configurations(None, self.config2)
+        expected = self.create_expected_diff({}, self.config2._asdict())
+        assert comparison == expected
 
-    def test_compare_templates__templates_are_json__returns_diff_of_json_strings(self):
-        assert False
+    @pytest.mark.parametrize(
+        'serializer',
+        [
+            pytest.param(json.dumps, id='templates are json'),
+            pytest.param(yaml.dump, id='templates are yaml'),
+        ]
+    )
+    def test_compare_templates__templates_are_json__returns_deepdiff_of_dicts(
+        self,
+        serializer,
+    ):
+        template1, template2 = serializer(self.template_dict_1), serializer(self.template_dict_2)
+        comparison = self.differ.compare_templates(template1, template2)
+        expected = self.create_expected_diff(template1, template2)
+        assert comparison == expected
 
-    def test_compare_templates__templates_are_yaml_with_functions__returns_diff_of_template_strings(self):
-        assert False
-
-    def test_compare_templates__deployed_is_none__returns_diff_with_none(self):
-        assert False
+    def test_compare_templates__deployed_is_empty_dict_string__returns_diff_with_empty_string(self):
+        template = json.dumps(self.template_dict_1)
+        comparison = self.differ.compare_templates('{}', template)
+        expected = self.create_expected_diff('{}', template)
+        assert comparison == expected
