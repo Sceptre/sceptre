@@ -10,8 +10,8 @@ from click import Context
 
 from sceptre.cli.helpers import catch_exceptions
 from sceptre.context import SceptreContext
-from sceptre.diffing.diff_writer import DeepDiffWriter, DictDifferWriter, DiffLibWriter
-from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DictDifferStackDiffer, DifflibStackDiffer, StackDiff
+from sceptre.diffing.diff_writer import DeepDiffWriter, DiffLibWriter
+from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff
 from sceptre.plan.plan import SceptrePlan
 from sceptre.stack import Stack
 
@@ -34,7 +34,7 @@ def nullcontext(enter_result=None):
 @click.option(
     '-D',
     '--differ',
-    type=click.Choice(['deepdiff', 'dictdiffer', 'difflib']),
+    type=click.Choice(['deepdiff', 'difflib']),
     default='deepdiff'
 )
 @click.argument('path')
@@ -60,9 +60,6 @@ def diff_command(ctx: Context, output_file: str, differ: str, path):
     if differ == "deepdiff":
         stack_differ = DeepDiffStackDiffer()
         writer_class = DeepDiffWriter
-    elif differ == 'dictdiffer':
-        stack_differ = DictDifferStackDiffer()
-        writer_class = DictDifferWriter
     elif differ == 'difflib':
         serializer = json.dumps if output_format == 'json' else yaml.dump
         stack_differ = DifflibStackDiffer(serializer=serializer)

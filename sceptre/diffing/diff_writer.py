@@ -163,20 +163,6 @@ class DeepDiffWriter(DiffWriter):
         return yaml.dump(loaded)
 
 
-class DictDifferWriter(DiffWriter):
-
-    @property
-    def has_config_difference(self) -> bool:
-        return len(self.config_diff) > 0
-
-    @property
-    def has_template_difference(self) -> bool:
-        return len(self.template_diff) > 0
-
-    def dump_diff(self, diff: List[tuple]) -> str:
-        return pprint.pformat(diff)
-
-
 class DiffLibWriter(DiffWriter):
 
     @property

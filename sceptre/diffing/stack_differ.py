@@ -167,33 +167,6 @@ class DeepDiffStackDiffer(StackDiffer):
         return deepdiff.DeepDiff(deployed_dict, generated_dict, verbose_level=2)
 
 
-class DictDifferStackDiffer(StackDiffer):
-    def __init__(
-        self,
-        *,
-        universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load
-    ):
-        self.load_template = universal_template_loader
-
-    def compare_stack_configurations(
-        self,
-        deployed: Optional[StackConfiguration],
-        generated: StackConfiguration,
-    ) -> List[tuple]:
-        return list(dictdiffer.diff(
-            deployed._asdict() if deployed else {},
-            generated._asdict(),
-        ))
-
-    def compare_templates(self, deployed: str, generated: str) -> List[tuple]:
-        deployed_dict, original_format = self.load_template(deployed)
-        generated_dict, original_format = self.load_template(generated)
-        return list(dictdiffer.diff(
-            deployed_dict,
-            generated_dict
-        ))
-
-
 class DifflibStackDiffer(StackDiffer):
     def __init__(
         self,
