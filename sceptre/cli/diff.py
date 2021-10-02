@@ -42,9 +42,18 @@ def nullcontext(enter_result=None):
 @click.pass_context
 @catch_exceptions
 def diff_command(ctx: Context, output_file: str, differ: str, path):
-    """This command is designed to indicate what the difference between the currently DEPLOYED
-    stack templates at the indicated command_path and the stack templates generated off of the
-    current templates and configurations.
+    """Indicates the difference between the currently DEPLOYED stacks in the command path and
+    the stacks configured in Sceptre right now. This command will compare both the templates as well
+    as the subset of stack configurations that can be compared.
+
+    Note: Some settings (such as sceptre_user_data) are not available in a CloudFormation stack
+    description, so the diff will not be indicated. Currently compared stack configurations are:
+
+    \b
+      * parameters
+      * notifications
+      * role_arn
+      * stack_tags
     """
     context = SceptreContext(
         command_path=path,
