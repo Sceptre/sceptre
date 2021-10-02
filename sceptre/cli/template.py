@@ -1,3 +1,5 @@
+import logging
+
 import click
 import webbrowser
 
@@ -7,6 +9,8 @@ from sceptre.cli.helpers import (
     write
 )
 from sceptre.plan.plan import SceptrePlan
+
+logger = logging.getLogger(__name__)
 
 
 @click.command(name="validate", short_help="Validates the template.")
@@ -63,7 +67,7 @@ def generate_command(ctx, path):
 
     plan = SceptrePlan(context)
     responses = plan.generate()
-    output = list(responses.values())
+    output = [template for template in responses.values()]
     write(output, context.output_format)
 
 
@@ -125,5 +129,11 @@ def fetch_remote_template_command(ctx, path):
 
     plan = SceptrePlan(context)
     responses = plan.fetch_remote_template()
-    output = [template for template in responses.values()]
+    output = []
+    for stack, template in responses.items():
+        if template is None:
+            logger.warning(f"{stack.external_name} does not exist")
+        else:
+            output.append(template)
+
     write(output, context.output_format)
