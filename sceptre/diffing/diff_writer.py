@@ -175,4 +175,3 @@ class DiffLibWriter(DiffWriter):
         # Difflib doesn't care about the output format since it only outputs strings. We would have
         # accounted for the output format in the differ itself rather than here.
         return '\n'.join(diff)
-
