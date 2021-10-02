@@ -444,9 +444,3 @@ class TestDifflibStackDiffer:
         template2 = yaml.dump(self.template_dict_1, indent=4)
         comparison = self.differ.compare_templates(template1, template2)
         assert len(comparison) == 0
-
-    def test_compare_templates__json_compared_with_identical_yaml__returns_no_diff(self):
-        template1 = yaml.dump(self.template_dict_1)
-        template2 = json.dumps(self.template_dict_1)
-        comparison = self.differ.compare_templates(template1, template2)
-        assert len(comparison) == 0
