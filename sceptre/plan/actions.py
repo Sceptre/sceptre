@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 from os import path
 
 import botocore
+import cfn_flip
 from dateutil.tz import tzutc
 
 from sceptre.connection_manager import ConnectionManager
@@ -935,6 +936,23 @@ class StackActions(object):
         """
         self.logger.debug("%s - Fetching remote template", self.stack.name)
 
+        original_template = self._fetch_original_remote_template()
+        if original_template and not isinstance(original_template, str):
+            # We don't normally want the processed template, since that will the template after
+            # AWS has processed any transforms (like on SAM templates). However, often the original
+            # template is going to be a dict when CloudFormation sends it, which isn't useful. So we
+            # use the processed template to get the original template's format and serialize the
+            # original back to that format.
+            processed_template = self._fetch_processed_remote_template()
+            _, template_format = cfn_flip.load(processed_template)
+            serializers = {
+                'json': cfn_flip.dump_json,
+                'yaml': cfn_flip.dump_yaml
+            }
+            original_template = serializers[template_format](original_template)
+        return original_template
+
+    def _fetch_original_remote_template(self):
         try:
             response = self.connection_manager.call(
                 service="cloudformation",
@@ -942,6 +960,24 @@ class StackActions(object):
                 kwargs={
                     "StackName": self.stack.external_name,
                     "TemplateStage": 'Original'
+                }
+            )
+            return response['TemplateBody']
+            # Sometimes boto returns a string, sometimes a dictionary
+        except botocore.exceptions.ClientError as e:
+            # AWS returns a ValidationError if the stack doesn't exist
+            if e.response['Error']['Code'] == 'ValidationError':
+                return None
+            raise
+
+    def _fetch_processed_remote_template(self):
+        try:
+            response = self.connection_manager.call(
+                service="cloudformation",
+                command="get_template",
+                kwargs={
+                    "StackName": self.stack.external_name,
+                    "TemplateStage": 'Processed'
                 }
             )
             template_body = response['TemplateBody']
