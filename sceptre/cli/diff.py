@@ -32,8 +32,9 @@ def nullcontext(enter_result=None):
     )
 )
 @click.option(
-    '-D',
-    '--differ',
+    '-t',
+    '--type',
+    'differ',
     type=click.Choice(['deepdiff', 'difflib']),
     default='deepdiff'
 )
