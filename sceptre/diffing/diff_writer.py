@@ -79,7 +79,7 @@ class DiffWriter(Generic[DiffType]):
         Returns:
             The jsonified stack config, if json is the output format; otherwise yaml
         """
-        stack_config_dict = stack_config._asdict()
+        stack_config_dict = dict(stack_config._asdict())
         dumped = self._dump_dict(stack_config_dict)
         return dumped
 
