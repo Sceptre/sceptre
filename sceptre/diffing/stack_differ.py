@@ -1,11 +1,10 @@
 import difflib
 from abc import abstractmethod
-from typing import NamedTuple, Dict, List, Optional, Callable, Tuple, Generic, TypeVar, Any
+from typing import NamedTuple, Dict, List, Optional, Callable, Tuple, Generic, TypeVar
 
 import cfn_flip
-import dictdiffer
-import yaml
 import deepdiff
+import yaml
 
 from sceptre.exceptions import StackDoesNotExistError
 from sceptre.plan.actions import StackActions
