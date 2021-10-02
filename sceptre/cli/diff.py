@@ -1,7 +1,5 @@
-import contextlib
 import json
 import sys
-from pathlib import Path
 from typing import Dict
 
 import click
@@ -16,21 +14,7 @@ from sceptre.plan.plan import SceptrePlan
 from sceptre.stack import Stack
 
 
-@contextlib.contextmanager
-def nullcontext(enter_result=None):
-    yield enter_result
-
-
 @click.command(name="diff", short_help="Compares deployed infrastructure with current configurations")
-@click.option(
-    '-o',
-    '--output-file',
-    type=click.Path(file_okay=True, dir_okay=False, resolve_path=True),
-    help=(
-        "If specified, the filepath that diff results will be printed to; "
-        "Otherwise they will streamed to stdout."
-    )
-)
 @click.option(
     '-t',
     '--type',
@@ -41,7 +25,7 @@ def nullcontext(enter_result=None):
 @click.argument('path')
 @click.pass_context
 @catch_exceptions
-def diff_command(ctx: Context, output_file: str, differ: str, path):
+def diff_command(ctx: Context, differ: str, path):
     """Indicates the difference between the currently DEPLOYED stacks in the command path and
     the stacks configured in Sceptre right now. This command will compare both the templates as well
     as the subset of stack configurations that can be compared.
@@ -79,14 +63,6 @@ def diff_command(ctx: Context, output_file: str, differ: str, path):
 
     diffs: Dict[Stack, StackDiff] = plan.diff(stack_differ)
 
-    if output_file:
-        path = Path(output_file)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        context = path.open(mode='wt')
-    else:
-        context = nullcontext(sys.stdout)
-
-    with context as stream:
-        for stack_diff in diffs.values():
-            writer = writer_class(stack_diff, stream, output_format)
-            writer.write()
+    for stack_diff in diffs.values():
+        writer = writer_class(stack_diff, sys.stdout, output_format)
+        writer.write()
