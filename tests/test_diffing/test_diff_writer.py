@@ -1,4 +1,6 @@
 import difflib
+import json
+from copy import deepcopy
 from io import StringIO
 from itertools import chain
 from typing import TextIO
@@ -6,8 +8,10 @@ from unittest.mock import Mock
 
 import cfn_flip
 import pytest
+import yaml
+from deepdiff import DeepDiff
 
-from sceptre.diffing.diff_writer import DiffWriter
+from sceptre.diffing.diff_writer import DiffWriter, DeepDiffWriter, deepdiff_json_defaults
 from sceptre.diffing.stack_differ import StackDiff, DiffType, StackConfiguration
 
 
@@ -191,26 +195,93 @@ class TestDiffWriter:
 
 
 class TestDeepDiffWriter:
+    def setup_method(self, method):
+        self.stack_name = 'stack'
+
+        self.is_deployed = True
+        self.output_format = 'yaml'
+
+        self.output_stream = StringIO()
+
+        self.config1 = StackConfiguration(
+            stack_name=self.stack_name,
+            parameters={},
+            stack_tags={},
+            notifications=[],
+            role_arn=None
+        )
+
+        self.config2 = deepcopy(self.config1)
+
+        self.template1 = 'template'
+        self.template2 = 'template'
+
+    @property
+    def template_diff(self):
+        return DeepDiff(self.template1, self.template2)
+
+    @property
+    def config_diff(self):
+        return DeepDiff(self.config1, self.config2)
+
+    @property
+    def diff(self):
+        return StackDiff(
+            self.stack_name,
+            self.template_diff,
+            self.config_diff,
+            self.is_deployed,
+            self.config1,
+            self.template1
+        )
+
+    @property
+    def writer(self):
+        return DeepDiffWriter(
+            self.diff,
+            self.output_stream,
+            self.output_format,
+        )
+
     def test_has_config_difference__config_difference_is_present__returns_true(self):
-        assert False
+        self.config2.parameters['new_key'] = 'new value'
+        assert self.writer.has_config_difference
 
     def test_has_config_difference__config_difference_is_absent__returns_false(self):
-        assert False
+        assert self.writer.has_config_difference is False
 
     def test_has_template_difference__template_difference_is_present__returns_true(self):
-        assert False
+        self.template2 = 'new'
+        assert self.writer.has_template_difference
 
     def test_has_template_difference__template_difference_is_absent__returns_false(self):
-        assert False
+        assert self.writer.has_template_difference is False
 
     def test_dump_diff__output_format_is_json__outputs_to_json(self):
-        assert False
+        self.output_format = 'json'
+        self.config2.parameters['new_key'] = 'new value'
+
+        result = self.writer.dump_diff(self.config_diff)
+        expected = self.config_diff.to_json(indent=4, default_mapping=deepdiff_json_defaults)
+        assert result == expected
 
     def test_dump_diff__output_format_is_yaml__outputs_to_yaml(self):
-        assert False
+        self.output_format = 'yaml'
+        self.config2.parameters['new_key'] = 'new value'
+
+        result = self.writer.dump_diff(self.config_diff)
+        expected_dict = json.loads(self.config_diff.to_json(indent=4, default_mapping=deepdiff_json_defaults))
+        expected_yaml = yaml.dump(expected_dict)
+        assert result == expected_yaml
 
     def test_dump_diff__output_format_is_text__outputs_to_yaml(self):
-        assert False
+        self.output_format = 'text'
+        self.config2.parameters['new_key'] = 'new value'
+
+        result = self.writer.dump_diff(self.config_diff)
+        expected_dict = json.loads(self.config_diff.to_json(indent=4, default_mapping=deepdiff_json_defaults))
+        expected_yaml = yaml.dump(expected_dict)
+        assert result == expected_yaml
 
 
 class TestDiffLibWriter:
