@@ -400,7 +400,7 @@ class TestDifflibStackDiffer:
 
     def test_compare_stack_configurations__deployed_is_none__returns_diff_with_none(self):
         comparison = self.differ.compare_stack_configurations(None, self.config2)
-        expected = self.create_expected_diff({}, self.config2._asdict())
+        expected = self.create_expected_diff(self.serialize({}), self.serialize(self.config2._asdict()))
         assert comparison == expected
 
     @pytest.mark.parametrize(
