@@ -11,7 +11,7 @@ import pytest
 import yaml
 from deepdiff import DeepDiff
 
-from sceptre.diffing.diff_writer import DiffWriter, DeepDiffWriter, deepdiff_json_defaults
+from sceptre.diffing.diff_writer import DiffWriter, DeepDiffWriter, deepdiff_json_defaults, DiffLibWriter
 from sceptre.diffing.stack_differ import StackDiff, DiffType, StackConfiguration
 
 
@@ -285,17 +285,71 @@ class TestDeepDiffWriter:
 
 
 class TestDiffLibWriter:
+    def setup_method(self, method):
+        self.stack_name = 'stack'
+
+        self.is_deployed = True
+        self.output_format = 'yaml'
+
+        self.output_stream = StringIO()
+
+        self.config1 = StackConfiguration(
+            stack_name=self.stack_name,
+            parameters={},
+            stack_tags={},
+            notifications=[],
+            role_arn=None
+        )
+
+        self.config2 = deepcopy(self.config1)
+
+        self.template1 = 'template'
+        self.template2 = 'template'
+
+    @property
+    def template_diff(self):
+        return list(difflib.unified_diff(self.template1, self.template2))
+
+    @property
+    def config_diff(self):
+        config_1 = yaml.dump(dict(self.config1._asdict())).splitlines()
+        config_2 = yaml.dump(dict(self.config2._asdict())).splitlines()
+        return list(difflib.unified_diff(config_1, config_2))
+
+    @property
+    def diff(self):
+        return StackDiff(
+            self.stack_name,
+            self.template_diff,
+            self.config_diff,
+            self.is_deployed,
+            self.config1,
+            self.template1
+        )
+
+    @property
+    def writer(self):
+        return DiffLibWriter(
+            self.diff,
+            self.output_stream,
+            self.output_format,
+        )
+
     def test_has_config_difference__config_difference_is_present__returns_true(self):
-        assert False
+        self.config2.parameters['new_key'] = 'new value'
+        assert self.writer.has_config_difference
 
     def test_has_config_difference__config_difference_is_absent__returns_false(self):
-        assert False
+        assert self.writer.has_config_difference is False
 
     def test_has_template_difference__template_difference_is_present__returns_true(self):
-        assert False
+        self.template2 = 'new'
+        assert self.writer.has_template_difference
 
     def test_has_template_difference__template_difference_is_absent__returns_false(self):
-        assert False
+        assert self.writer.has_template_difference is False
 
     def test_dump_diff__returns_joined_list(self):
-        assert False
+        result = self.writer.dump_diff(self.diff.config_diff)
+        expected = '\n'.join(self.diff.config_diff)
+        assert result == expected
