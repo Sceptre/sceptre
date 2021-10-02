@@ -53,7 +53,6 @@ class DiffWriter(Generic[DiffType]):
 
     def _write_new_stack_details(self):
         stack_config_text = self._dump_stack_config(self.stack_diff.generated_config)
-        template_text = self._dump_dict(self.stack_diff.generated_template)
         self._output(
             'This stack is not deployed yet!',
             self.LINE_BAR,
@@ -63,7 +62,7 @@ class DiffWriter(Generic[DiffType]):
             self.LINE_BAR,
             'New Template:',
             '',
-            template_text
+            self.stack_diff.generated_template
         )
         return
 
