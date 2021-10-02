@@ -1,7 +1,7 @@
 import json
 from abc import abstractmethod
 from datetime import datetime
-from typing import TextIO, Generic
+from typing import TextIO, Generic, List
 
 import cfn_flip
 import yaml
@@ -171,7 +171,7 @@ class DiffLibWriter(DiffWriter):
     def has_template_difference(self) -> bool:
         return len(self.template_diff) > 0
 
-    def dump_diff(self, diff: DiffType) -> str:
+    def dump_diff(self, diff: List[str]) -> str:
         # Difflib doesn't care about the output format since it only outputs strings. We would have
         # accounted for the output format in the differ itself rather than here.
         return '\n'.join(diff)
