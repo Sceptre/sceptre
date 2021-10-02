@@ -63,7 +63,7 @@ def generate_command(ctx, path):
 
     plan = SceptrePlan(context)
     responses = plan.generate()
-    output = [template for template in responses.values()]
+    output = list(responses.values())
     write(output, context.output_format)
 
 
