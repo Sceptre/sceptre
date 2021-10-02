@@ -181,9 +181,11 @@ class DifflibStackDiffer(StackDiffer):
         self,
         *,
         serializer: Callable[[dict], str] = yaml.dump,
+        universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load
     ):
         super().__init__()
         self.serialize = serializer
+        self.load_template = universal_template_loader
 
     def compare_stack_configurations(
         self,
@@ -203,7 +205,19 @@ class DifflibStackDiffer(StackDiffer):
         deployed: str,
         generated: str,
     ) -> List[str]:
-        return self._diff(deployed, generated)
+        deployed_dict, deployed_format = self.load_template(deployed)
+        generated_dict, generated_format = self.load_template(generated)
+        dumpers = {
+            'json': cfn_flip.dump_json,
+            'yaml': cfn_flip.dump_yaml
+        }
+        # We use the generated template format because if CloudFormation gave us back a dict for the
+        # template, we cannot be sure what the original format actually was, so we will convert both
+        # templates to the format that the generated template was in.
+        deployed_reformatted = dumpers[generated_format](deployed_dict)
+        generated_reformatted = dumpers[generated_format](generated_dict)
+
+        return self._diff(deployed_reformatted, generated_reformatted)
 
     def _diff(self, deployed: str, generated: str) -> List[str]:
         diff_lines = difflib.unified_diff(

@@ -381,7 +381,15 @@ class TestDifflibStackDiffer:
         }
 
     def create_expected_diff(self, first, second):
-        first_list, second_list = first.splitlines(), second.splitlines()
+        deployed_dict, deployed_format = cfn_flip.load(first)
+        generated_dict, generated_format = cfn_flip.load(second)
+        dumpers = {
+            'json': cfn_flip.dump_json,
+            'yaml': cfn_flip.dump_yaml
+        }
+        first_reformatted = dumpers[generated_format](deployed_dict)
+        second_reformatted = dumpers[generated_format](generated_dict)
+        first_list, second_list = first_reformatted.splitlines(), second_reformatted.splitlines()
         return list(difflib.unified_diff(
             first_list,
             second_list,
@@ -424,3 +432,21 @@ class TestDifflibStackDiffer:
         comparison = self.differ.compare_templates('{}', template)
         expected = self.create_expected_diff('{}', template)
         assert comparison == expected
+
+    def test_compare_templates__json_template__deployed_and_generated_are_identical_except_for_indentation__returns_no_diff(self):
+        template1 = json.dumps(self.template_dict_1, indent=2)
+        template2 = json.dumps(self.template_dict_1, indent=4)
+        comparison = self.differ.compare_templates(template1, template2)
+        assert len(comparison) == 0
+
+    def test_compare_templates__yaml_template__deployed_and_generated_are_identical_except_for_indentation__returns_no_diff(self):
+        template1 = yaml.dump(self.template_dict_1, indent=2)
+        template2 = yaml.dump(self.template_dict_1, indent=4)
+        comparison = self.differ.compare_templates(template1, template2)
+        assert len(comparison) == 0
+
+    def test_compare_templates__json_compared_with_identical_yaml__returns_no_diff(self):
+        template1 = yaml.dump(self.template_dict_1)
+        template2 = json.dumps(self.template_dict_1)
+        comparison = self.differ.compare_templates(template1, template2)
+        assert len(comparison) == 0
