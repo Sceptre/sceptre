@@ -2,7 +2,6 @@ import difflib
 import json
 from copy import deepcopy
 from io import StringIO
-from itertools import chain
 from typing import TextIO
 from unittest.mock import Mock
 
