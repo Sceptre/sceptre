@@ -1,5 +1,6 @@
 import logging
 import sys
+import traceback
 
 from itertools import cycle
 from functools import partial, wraps
@@ -38,8 +39,9 @@ def catch_exceptions(func):
             return func(*args, **kwargs)
         except (SceptreException, BotoCoreError, ClientError, Boto3Error,
                 TemplateError) as error:
-            write(error)
-            raise
+            if "DEBUG_ERRORS" in os.environ:
+                traceback.print_exc()
+            sys.exit(1)
 
     return decorated
 
