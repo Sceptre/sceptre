@@ -16,10 +16,22 @@ deepdiff_json_defaults = {
 
 
 class DiffWriter(Generic[DiffType]):
+    """A component responsible for taking a StackDiff and writing it in a way that is useful and
+    readable. This is an abstract base class, so the abstract methods need to be implemented to
+    create a DiffWriter for a given DiffType.
+    """
     STAR_BAR = '*' * 80
     LINE_BAR = '-' * 80
 
     def __init__(self, stack_diff: StackDiff, output_stream: TextIO, output_format: str):
+        """Initializes the DiffWriter
+
+        :param stack_diff: The diff this writer will be outputting
+        :param output_stream: The stream this writer should output to; Generally, this will be
+            stdout
+        :param output_format: Output format specified for the base Sceptre cli command; This should
+            be one of "yaml", "json", or "text"
+        """
         self.stack_name = stack_diff.stack_name
         self.stack_diff = stack_diff
 
@@ -35,6 +47,7 @@ class DiffWriter(Generic[DiffType]):
         return self.has_config_difference or self.has_template_difference
 
     def write(self):
+        """Writes the diff to the output stream."""
         self._output(self.STAR_BAR)
         if not self.has_difference:
             self._output(f"No difference to deployed stack {self.stack_name}")
@@ -71,28 +84,11 @@ class DiffWriter(Generic[DiffType]):
         self.output_stream.writelines(lines_with_breaks)
 
     def _dump_stack_config(self, stack_config: StackConfiguration) -> str:
-        """Outputs a StackConfiguration to json or yaml, depending on the configured output_format
-
-        Args:
-            stack_config: The StackConfiguration to serialize
-
-        Returns:
-            The jsonified stack config, if json is the output format; otherwise yaml
-        """
         stack_config_dict = dict(stack_config._asdict())
         dumped = self._dump_dict(stack_config_dict)
         return dumped
 
     def _dump_dict(self, dict_to_dump: dict) -> str:
-        """Dumps the dict-to-dump to the output format configured on the current click context
-
-        Args:
-            dict_to_dump: The dict to dump
-
-        Returns:
-            The jsonified dict, if json is the output format, otherwise yaml
-        """
-
         if self.output_format == "json":
             # There's not really a viable way to dump a template as "text" -> YAML is very readable
             dumper = cfn_flip.dump_json
@@ -128,7 +124,7 @@ class DiffWriter(Generic[DiffType]):
 
     @abstractmethod
     def dump_diff(self, diff: DiffType) -> str:
-        """"Implement this method to write a diff to string"""
+        """"Implement this method to write the DiffType to string"""
 
     @property
     @abstractmethod
@@ -141,7 +137,8 @@ class DiffWriter(Generic[DiffType]):
         """Implement this to indicate whether or not there is a template difference"""
 
 
-class DeepDiffWriter(DiffWriter):
+class DeepDiffWriter(DiffWriter[DeepDiff]):
+    """A DiffWriter for StackDiffs where the DiffType is a DeepDiff object."""
 
     @property
     def has_config_difference(self) -> bool:
@@ -161,7 +158,8 @@ class DeepDiffWriter(DiffWriter):
         return yaml.dump(loaded)
 
 
-class DiffLibWriter(DiffWriter):
+class DiffLibWriter(DiffWriter[List[str]]):
+    """A DiffWriter for StackDiffs where the DiffType is a a list of strings."""
 
     @property
     def has_config_difference(self) -> bool:
