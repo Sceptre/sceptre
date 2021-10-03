@@ -216,7 +216,12 @@ class DifflibStackDiffer(StackDiffer):
             'json': cfn_flip.dump_json,
             'yaml': cfn_flip.dump_yaml
         }
-        deployed_reformatted = dumpers[deployed_format](deployed_dict)
+        # We always prefer the generated format, because often CloudFormation will send back a
+        # dictionary for the template and it is not clear what the original format was. By preferring
+        # the generated format, we assume that we haven't switched between yaml and json. But if we
+        # did, we'd still would only be comparing the the values and not the actual formatting, so
+        # this is a better diff anyway.
+        deployed_reformatted = dumpers[generated_format](deployed_dict)
         generated_reformatted = dumpers[generated_format](generated_dict)
 
         return self._diff(deployed_reformatted, generated_reformatted)

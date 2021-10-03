@@ -13,6 +13,7 @@ import time
 import urllib
 from datetime import datetime, timedelta
 from os import path
+from typing import Union, Optional
 
 import botocore
 import cfn_flip
@@ -927,64 +928,42 @@ class StackActions(object):
             raise Exception("This else should not be reachable.")
 
     @add_stack_hooks
-    def fetch_remote_template(self):
+    def fetch_remote_template(self) -> Optional[str]:
         """
         Returns the Template for the remote Stack
 
         :returns: the template body.
-        :rtype: str
         """
         self.logger.debug("%s - Fetching remote template", self.stack.name)
 
-        original_template = self._fetch_original_remote_template()
-        if original_template and not isinstance(original_template, str):
-            # We don't normally want the processed template, since that will the template after
-            # AWS has processed any transforms (like on SAM templates). However, often the original
-            # template is going to be a dict when CloudFormation sends it, which isn't useful. So we
-            # use the processed template to get the original template's format and serialize the
-            # original back to that format.
-            processed_template = self._fetch_processed_remote_template()
-            _, template_format = cfn_flip.load(processed_template)
-            serializers = {
-                'json': cfn_flip.dump_json,
-                'yaml': cfn_flip.dump_yaml
-            }
-            original_template = serializers[template_format](original_template)
+        original_template = self._fetch_remote_template_stage('Original')
+
+        if isinstance(original_template, dict):
+            # AWS oftentimes returns a dict, not a string, for the remote template, which isn't useful
+            # for determining the original template format. So we use the local template to get the
+            # original template's format and serialize the original to that format.
+            local_template_body = self.stack.template.body
+            _, template_format = cfn_flip.load(local_template_body)
+            # Boto3 deserializes the template with OrderedDicts, which pyyaml doesn't know how to dump
+            # properly. So we convert it to json and flip it to yaml if we need to.
+            original_template = cfn_flip.dump_json(original_template)
+            if template_format == 'yaml':
+                original_template = cfn_flip.to_yaml(original_template)
+
         return original_template
 
-    def _fetch_original_remote_template(self):
+    def _fetch_remote_template_stage(self, template_stage: str) -> Optional[Union[str, dict]]:
         try:
             response = self.connection_manager.call(
                 service="cloudformation",
                 command="get_template",
                 kwargs={
                     "StackName": self.stack.external_name,
-                    "TemplateStage": 'Original'
+                    "TemplateStage": template_stage
                 }
             )
             return response['TemplateBody']
             # Sometimes boto returns a string, sometimes a dictionary
-        except botocore.exceptions.ClientError as e:
-            # AWS returns a ValidationError if the stack doesn't exist
-            if e.response['Error']['Code'] == 'ValidationError':
-                return None
-            raise
-
-    def _fetch_processed_remote_template(self):
-        try:
-            response = self.connection_manager.call(
-                service="cloudformation",
-                command="get_template",
-                kwargs={
-                    "StackName": self.stack.external_name,
-                    "TemplateStage": 'Processed'
-                }
-            )
-            template_body = response['TemplateBody']
-            # Sometimes boto returns a string, sometimes a dictionary
-            if not isinstance(template_body, str):
-                template_body = json.dumps(template_body, sort_keys=True, indent=4)
-            return template_body
         except botocore.exceptions.ClientError as e:
             # AWS returns a ValidationError if the stack doesn't exist
             if e.response['Error']['Code'] == 'ValidationError':
