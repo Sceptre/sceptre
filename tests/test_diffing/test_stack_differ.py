@@ -341,9 +341,8 @@ class TestDeepDiffStackDiffer:
 class TestDifflibStackDiffer:
 
     def setup_method(self, method):
-        self.serialize = yaml.dump
+        self.serialize = cfn_flip.dump_yaml
         self.differ = DifflibStackDiffer(serializer=self.serialize)
-
         self.config1 = StackConfiguration(
             stack_name='stack',
             parameters={'pk1': 'pv1'},
@@ -445,7 +444,7 @@ class TestDifflibStackDiffer:
         comparison = self.differ.compare_templates(template1, template2)
         assert len(comparison) == 0
 
-    def test_compate_templates__opposite_template_types_but_identical_template__returns_no_diff(self):
+    def test_compare_templates__opposite_template_types_but_identical_template__returns_no_diff(self):
         template1 = json.dumps(self.template_dict_1)
         template2 = yaml.dump(self.template_dict_1)
         comparison = self.differ.compare_templates(template1, template2)

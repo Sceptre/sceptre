@@ -4,7 +4,6 @@ from typing import NamedTuple, Dict, List, Optional, Callable, Tuple, Generic, T
 
 import cfn_flip
 import deepdiff
-import yaml
 
 from sceptre.exceptions import StackDoesNotExistError
 from sceptre.plan.actions import StackActions
@@ -180,7 +179,7 @@ class DifflibStackDiffer(StackDiffer):
     def __init__(
         self,
         *,
-        serializer: Callable[[dict], str] = yaml.dump,
+        serializer: Callable[[dict], str] = cfn_flip.dump_yaml,
         universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load
     ):
         super().__init__()
