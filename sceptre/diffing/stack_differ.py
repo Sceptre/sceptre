@@ -14,6 +14,7 @@ DiffType = TypeVar('DiffType')
 
 
 class StackConfiguration(NamedTuple):
+    """A data container to represent the comparable parts of a Stack."""
     stack_name: str
     parameters: Dict[str, str]
     stack_tags: Dict[str, str]
@@ -22,6 +23,9 @@ class StackConfiguration(NamedTuple):
 
 
 class StackDiff(NamedTuple):
+    """A data container to represent the full difference between a deployed stack and the stack as
+    it exists locally within Sceptre.
+    """
     stack_name: str
     template_diff: DiffType
     config_diff: DiffType
@@ -31,8 +35,24 @@ class StackDiff(NamedTuple):
 
 
 class StackDiffer(Generic[DiffType]):
+    """A utility for producing a StackDiff that indicates the full difference between a given stack
+    as it is currently DEPLOYED on CloudFormation and the stack as it exists in the local Sceptre
+    configurations.
 
+    This utility compares both the stack configuration (specifically those attributes that CAN be
+    compared) as well as the stack template.
+
+    As an abstract base class, the two comparison methods need to be implemented so that the
+    StackDiff can be generated.
+    """
     def diff(self, stack_actions: StackActions) -> StackDiff:
+        """Produces a StackDiff between the currently deployed stack (if it exists) and the stack
+        as it exists locally in Sceptre.
+
+        :param stack_actions: The StackActions object to use for generating and fetching templates
+            as well as providing other details about the stack.
+        :return: The StackDiff that expresses the difference.
+        """
         generated_config = self._create_generated_config(stack_actions.stack)
         deployed_config = self._create_deployed_stack_config(stack_actions)
         is_stack_deployed = bool(deployed_config)
@@ -67,13 +87,21 @@ class StackDiffer(Generic[DiffType]):
 
         return stack_configuration
 
-    def _extract_parameters_dict(self, stack: Stack):
+    def _extract_parameters_dict(self, stack: Stack) -> dict:
+        """Extracts a USABLE dict of parameters from the stack.
+
+        Because stack parameters often contain resolvers referencing stacks that might not exist yet
+        (such as when producing a diff on a yet-to-be-deployed stack), we cannot always resolve the
+        stack parameters. Therefore, we need to resolve them (if possible) and fall back to a
+        different representation of that resolver, if necessary.
+
+        :param stack: The stack to extract the parameters from
+        :return: A dictionary of stack parameters to be compared.
+        """
         parameters = {}
         # parameters is a ResolvableProperty, but the underlying, pre-resolved parameters are
         # stored in _parameters. We might not actually be able to resolve values, such as in the
-        # case where it attempts to get a value from a stack that doesn't exist yet. Therefore, this
-        # resolves the values individually, where they CAN be resolved, and otherwise makes an
-        # alternative placeholder value
+        # case where it attempts to get a value from a stack that doesn't exist yet.
         for key, value in stack._parameters.items():
             if isinstance(value, Resolver):
                 # There might be some resolvers that we can still resolve values for.
@@ -99,6 +127,7 @@ class StackDiffer(Generic[DiffType]):
     def _create_deployed_stack_config(self, stack_actions: StackActions) -> Optional[StackConfiguration]:
         description = stack_actions.describe()
         if description is None:
+            # This means the stack has not been deployed yet
             return None
 
         stacks = description['Stacks']
@@ -132,7 +161,12 @@ class StackDiffer(Generic[DiffType]):
         deployed: str,
         generated: str,
     ) -> DiffType:
-        """Implement this method to return the diff for the templates"""
+        """Implement this method to return the diff for the templates
+
+        :param deployed: The stack template as it has been deployed
+        :param generated: The stack template as it exists locally within Sceptre
+        :return: The generated diff between the two
+        """
 
     @abstractmethod
     def compare_stack_configurations(
@@ -140,10 +174,24 @@ class StackDiffer(Generic[DiffType]):
         deployed: Optional[StackConfiguration],
         generated: StackConfiguration,
     ) -> DiffType:
-        """Implement this method to return the diff for the Stack Configurations"""
+        """Implement this method to return the diff for the stack configurations.
+
+        :param deployed: The StackConfiguration as it has been deployed. This MIGHT be None, if the
+            stack has not been deployed.
+        :param generated: The StackConfiguration as it exists locally within Sceptre
+        :return: The generated diff between the two
+        """
 
 
-class DeepDiffStackDiffer(StackDiffer):
+class DeepDiffStackDiffer(StackDiffer[deepdiff.DeepDiff]):
+    """A StackDiffer that relies upon the DeepDiff library to produce the difference between the
+    stack as it has been deployed onto CloudFormation and as it exists locally within Sceptre.
+
+    This differ relies upon a recursive key/value comparison of Python data structures, indicating
+    specific keys or values that have been added, removed, or altered between the two. Templates
+    are read in as dictionaries and compared this way, so json or yaml formatting changes will not
+    be reflected, only changes in value.
+    """
     VERBOSITY_LEVEL_TO_INDICATE_CHANGED_VALUES = 2
 
     def __init__(
@@ -151,6 +199,12 @@ class DeepDiffStackDiffer(StackDiffer):
         *,
         universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load
     ):
+        """Initializes a DeepDiffStackDiffer.
+
+        :param universal_template_loader: This should be a callable that can load either a json or
+            yaml string and return a tuple where the first element is the loaded template and the
+            second element is the template format (either "json" or "yaml")
+        """
         self.load_template = universal_template_loader
 
     def compare_stack_configurations(
@@ -165,8 +219,10 @@ class DeepDiffStackDiffer(StackDiffer):
         )
 
     def compare_templates(self, deployed: str, generated: str,) -> deepdiff.DeepDiff:
-        deployed_dict, original_format = self.load_template(deployed)
-        generated_dict, original_format = self.load_template(generated)
+        # We don't actually care about the original formats here, since we only care about the
+        # template VALUES.
+        deployed_dict, _ = self.load_template(deployed)
+        generated_dict, _ = self.load_template(generated)
 
         return deepdiff.DeepDiff(
             deployed_dict,
@@ -175,15 +231,24 @@ class DeepDiffStackDiffer(StackDiffer):
         )
 
 
-class DifflibStackDiffer(StackDiffer):
+class DifflibStackDiffer(StackDiffer[List[str]]):
+    """A StackDiffer that uses difflib to produce a diff between the stack as it exists on AWS and
+    the stack as it exists locally within Sceptre.
+
+    Because difflib generates diffs off of lists of strings, both StackConfigurations and
+    """
     def __init__(
         self,
         *,
-        serializer: Callable[[dict], str] = cfn_flip.dump_yaml,
         universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load
     ):
+        """Initializes a DifflibStackDiffer.
+
+        :param universal_template_loader: This should be a callable that can load either a json or
+            yaml string and return a tuple where the first element is the loaded template and the
+            second element is the template format (either "json" or "yaml")
+        """
         super().__init__()
-        self.serialize = serializer
         self.load_template = universal_template_loader
 
     def compare_stack_configurations(
@@ -192,9 +257,9 @@ class DifflibStackDiffer(StackDiffer):
         generated: StackConfiguration,
     ) -> List[str]:
         deployed_dict = deployed._asdict() if deployed else {}
-        deployed_string = self.serialize(deployed_dict)
-        generated_string = self.serialize(generated._asdict())
-        return self._diff(
+        deployed_string = cfn_flip.dump_yaml(deployed_dict)
+        generated_string = cfn_flip.dump_yaml(generated._asdict())
+        return self._make_string_diff(
             deployed_string,
             generated_string
         )
@@ -209,7 +274,7 @@ class DifflibStackDiffer(StackDiffer):
         # returning dictionaries when we get the "Original" template. We can't know the original
         # format for these, so we load them and dump them uniformly again. This will eliminate minor
         # whitespace changes.
-        deployed_dict, deployed_format = self.load_template(deployed)
+        deployed_dict, _ = self.load_template(deployed)
         generated_dict, generated_format = self.load_template(generated)
         dumpers = {
             'json': cfn_flip.dump_json,
@@ -223,9 +288,9 @@ class DifflibStackDiffer(StackDiffer):
         deployed_reformatted = dumpers[generated_format](deployed_dict)
         generated_reformatted = dumpers[generated_format](generated_dict)
 
-        return self._diff(deployed_reformatted, generated_reformatted)
+        return self._make_string_diff(deployed_reformatted, generated_reformatted)
 
-    def _diff(self, deployed: str, generated: str) -> List[str]:
+    def _make_string_diff(self, deployed: str, generated: str) -> List[str]:
         diff_lines = difflib.unified_diff(
             deployed.splitlines(),
             generated.splitlines(),

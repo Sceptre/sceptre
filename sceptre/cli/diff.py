@@ -2,6 +2,7 @@ import json
 import sys
 from typing import Dict
 
+import cfn_flip
 import click
 import yaml
 from click import Context
@@ -55,8 +56,7 @@ def diff_command(ctx: Context, differ: str, path):
         stack_differ = DeepDiffStackDiffer()
         writer_class = DeepDiffWriter
     elif differ == 'difflib':
-        serializer = json.dumps if output_format == 'json' else yaml.dump
-        stack_differ = DifflibStackDiffer(serializer=serializer)
+        stack_differ = DifflibStackDiffer()
         writer_class = DiffLibWriter
     else:
         raise ValueError(f"Unexpected differ type: {differ}")

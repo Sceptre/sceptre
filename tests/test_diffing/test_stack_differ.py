@@ -342,7 +342,7 @@ class TestDifflibStackDiffer:
 
     def setup_method(self, method):
         self.serialize = cfn_flip.dump_yaml
-        self.differ = DifflibStackDiffer(serializer=self.serialize)
+        self.differ = DifflibStackDiffer()
         self.config1 = StackConfiguration(
             stack_name='stack',
             parameters={'pk1': 'pv1'},
