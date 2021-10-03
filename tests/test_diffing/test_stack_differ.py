@@ -433,14 +433,20 @@ class TestDifflibStackDiffer:
         expected = self.create_expected_diff('{}', template)
         assert comparison == expected
 
-    def test_compare_templates__json_template__deployed_and_generated_are_identical_except_for_indentation__returns_no_diff(self):
+    def test_compare_templates__json_template__only_indentation_diff__returns_no_diff(self):
         template1 = json.dumps(self.template_dict_1, indent=2)
         template2 = json.dumps(self.template_dict_1, indent=4)
         comparison = self.differ.compare_templates(template1, template2)
         assert len(comparison) == 0
 
-    def test_compare_templates__yaml_template__deployed_and_generated_are_identical_except_for_indentation__returns_no_diff(self):
+    def test_compare_templates__yaml_template__only_indentation_diff__returns_no_diff(self):
         template1 = yaml.dump(self.template_dict_1, indent=2)
         template2 = yaml.dump(self.template_dict_1, indent=4)
+        comparison = self.differ.compare_templates(template1, template2)
+        assert len(comparison) == 0
+
+    def test_compate_templates__opposite_template_types_but_identical_template__returns_no_diff(self):
+        template1 = json.dumps(self.template_dict_1)
+        template2 = yaml.dump(self.template_dict_1)
         comparison = self.differ.compare_templates(template1, template2)
         assert len(comparison) == 0

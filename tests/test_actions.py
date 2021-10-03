@@ -1146,7 +1146,7 @@ class TestStackActions(object):
             pytest.param('yaml', id='local format is yaml')
         ]
     )
-    def test_fetch_remote_template__cloudformation_returns_dict_template__returns_template_in_format_of_local_template(self, local_format):
+    def test_fetch_remote_template__dict_template__returns_template_in_format_of_local_template(self, local_format):
         template_body = {
             'AWSTemplateFormatVersion': '2010-09-09',
             'Resources': {}
