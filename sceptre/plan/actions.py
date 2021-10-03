@@ -939,7 +939,7 @@ class StackActions(object):
         original_template = self._fetch_remote_template_stage('Original')
 
         if isinstance(original_template, dict):
-            # AWS oftentimes returns a dict, not a string, for the remote template, which isn't useful
+            # AWS oftentimes returns a dict, not a string for the remote template, which isn't useful
             # for determining the original template format. So we use the local template to get the
             # original template's format and serialize the original to that format.
             local_template_body = self.stack.template.body
