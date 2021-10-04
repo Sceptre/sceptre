@@ -24,4 +24,3 @@ sceptre.diffing.diff_writer module
     :members:
     :undoc-members:
     :show-inheritance:
-
