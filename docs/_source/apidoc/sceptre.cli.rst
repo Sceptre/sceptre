@@ -25,6 +25,14 @@ sceptre.cli.delete module
     :undoc-members:
     :show-inheritance:
 
+sceptre.cli.diff module
+_______________________
+
+.. automodule:: sceptre.cli.diff
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 sceptre.cli.describe module
 ---------------------------
 

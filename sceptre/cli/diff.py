@@ -21,7 +21,9 @@ from sceptre.stack import Stack
     '--type',
     'differ',
     type=click.Choice(['deepdiff', 'difflib']),
-    default='deepdiff'
+    default='deepdiff',
+    help='The type of differ to use. Use "deepdiff" for recursive key/value comparison. "difflib" '
+         'produces a more traditional "diff" result. Defaults to deepdiff.'
 )
 @click.argument('path')
 @click.pass_context
