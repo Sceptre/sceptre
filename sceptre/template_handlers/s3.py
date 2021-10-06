@@ -44,34 +44,40 @@ class S3(TemplateHandler):
         bucket = path.parts[0]
         key = "/".join(path.parts[1:])
 
-        if path.suffix in {".json", ".yaml", ".template"}:
-            return self._get_template(bucket, key)
-        elif path.suffix in {".j2", ".py"}:
-            try:
-                template = self._get_template(bucket, key)
-                file = tempfile.NamedTemporaryFile(prefix=path.stem)
-                with file as f:
-                    f.write(template)
-                    f.seek(0)
-                    f.read()
-                    if path.suffix == ".j2":
-                        return self._render_jinja_template(
-                            os.path.dirname(f.name),
-                            os.path.basename(f.name),
-                            {"sceptre_user_data": self.sceptre_user_data}
-                        )
-                    elif path.suffix == ".py":
-                        return self._call_sceptre_handler(f.name)
+        raw_template_suffix = [".json", ".yaml", ".template"]
+        jinja_template_suffix = [".j2"]
+        python_template_suffix = [".py"]
+        supported_suffix = raw_template_suffix + jinja_template_suffix + python_template_suffix
 
-            except Exception as e:
-                self._print_template_traceback()
-                raise e
-        else:
+        if path.suffix not in supported_suffix:
             raise UnsupportedTemplateFileTypeError(
                 "Template has file extension %s. Only .py, .yaml, "
                 ".template, .json and .j2 are supported.",
                 path.suffix
             )
+
+        try:
+            template = self._get_template(bucket, key)
+            if path.suffix in jinja_template_suffix + python_template_suffix:
+                file = tempfile.NamedTemporaryFile(prefix=path.stem)
+                with file as f:
+                    f.write(template)
+                    f.seek(0)
+                    f.read()
+                    if path.suffix in jinja_template_suffix:
+                        template = self._render_jinja_template(
+                            os.path.dirname(f.name),
+                            os.path.basename(f.name),
+                            {"sceptre_user_data": self.sceptre_user_data}
+                        )
+                    elif path.suffix in python_template_suffix:
+                        template = self._call_sceptre_handler(f.name)
+
+        except Exception as e:
+            self._print_template_traceback()
+            raise e
+
+        return template
 
     def _get_template(self, bucket, key):
         """
