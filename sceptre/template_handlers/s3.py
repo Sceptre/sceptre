@@ -1,7 +1,8 @@
 import logging
+import pathlib
 import os
-import tempfile
 import sys
+import tempfile
 import traceback
 
 from importlib.machinery import SourceFileLoader
@@ -15,7 +16,10 @@ logger = logging.getLogger(__name__)
 
 class S3(TemplateHandler):
     """
-    Template handler that can resolve templates from S3.
+    Template handler that can resolve templates from S3.  Raw CFN templates
+    with extension (.json, .yaml, .template) are deployed directly from memory
+    while references to jinja (.j2) and python (.py) templates are downloaded,
+    transformed into CFN templates then deployed to AWS.
     """
 
     def __init__(self, *args, **kwargs):
@@ -32,30 +36,31 @@ class S3(TemplateHandler):
         }
 
     def handle(self):
-        segments = self.arguments["path"].split('/')
-        bucket = segments[0]
-        key = "/".join(segments[1:])
-        filename = segments[-1]
-        extension = filename.split('.')[1]
-        file_extension = f'.{extension}'
+        """
+        handle template in S3 bucket
+        """
+        input_path = self.arguments["path"]
+        path = pathlib.Path(input_path)
+        bucket = path.parts[0]
+        key = "/".join(path.parts[1:])
 
-        if file_extension in {".json", ".yaml", ".template"}:
+        if path.suffix in {".json", ".yaml", ".template"}:
             return self._get_template(bucket, key)
-        elif file_extension in {".j2", ".py"}:
+        elif path.suffix in {".j2", ".py"}:
             try:
                 template = self._get_template(bucket, key)
-                file = tempfile.NamedTemporaryFile(prefix=f'{filename}_')
+                file = tempfile.NamedTemporaryFile(prefix=path.stem)
                 with file as f:
                     f.write(template)
                     f.seek(0)
                     f.read()
-                    if file_extension == ".j2":
+                    if path.suffix == ".j2":
                         return self._render_jinja_template(
                             os.path.dirname(f.name),
                             os.path.basename(f.name),
                             {"sceptre_user_data": self.sceptre_user_data}
                         )
-                    elif file_extension == ".py":
+                    elif path.suffix == ".py":
                         return self._call_sceptre_handler(f.name)
 
             except Exception as e:
@@ -65,12 +70,12 @@ class S3(TemplateHandler):
             raise UnsupportedTemplateFileTypeError(
                 "Template has file extension %s. Only .py, .yaml, "
                 ".template, .json and .j2 are supported.",
-                file_extension
+                path.suffix
             )
 
     def _get_template(self, bucket, key):
         """
-        Get template from remote location
+        Get template from S3 bucket
 
         :returns: The body of the CloudFormation template.
         :rtype: str
