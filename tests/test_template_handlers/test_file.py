@@ -4,7 +4,7 @@ import pytest
 import yaml
 
 from sceptre.template_handlers.file import File
-
+from sceptre.template_handlers.helper import Helper
 
 @pytest.mark.parametrize("filename,sceptre_user_data,expected", [
     (
@@ -56,7 +56,7 @@ def test_render_jinja_template(filename, sceptre_user_data, expected):
         os.getcwd(),
         "tests/fixtures/templates"
     )
-    result = File._render_jinja_template(
+    result = Helper.render_jinja_template(
         template_dir=jinja_template_dir,
         filename=filename,
         jinja_vars={"sceptre_user_data": sceptre_user_data}
