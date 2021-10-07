@@ -3,8 +3,8 @@ import os
 import pytest
 import yaml
 
-from sceptre.template_handlers.file import File
 from sceptre.template_handlers.helper import Helper
+
 
 @pytest.mark.parametrize("filename,sceptre_user_data,expected", [
     (

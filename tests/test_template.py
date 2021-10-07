@@ -16,7 +16,6 @@ from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 from sceptre.exceptions import TemplateSceptreHandlerError
 from sceptre.template_handlers import TemplateHandler
-import sceptre.template_handlers.helper
 
 
 class MockTemplateHandler(TemplateHandler):

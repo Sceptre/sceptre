@@ -1,7 +1,5 @@
 import logging
 import os
-import sys
-import traceback
 
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 from sceptre.template_handlers.helper import Helper
