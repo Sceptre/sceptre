@@ -89,6 +89,7 @@ class TestStackDiffer:
 
         self.command_capturer = Mock()
         self.differ = ImplementedStackDiffer(self.command_capturer)
+        self.stack_status = 'CREATE_COMPLETE'
 
     def describe_stack(self):
         return {
@@ -102,7 +103,7 @@ class TestStackDiffer:
                         }
                         for key, value in self.deployed_parameters.items()
                     ],
-                    'StackStatus': 'CREATE_COMPLETE',
+                    'StackStatus': self.stack_status,
                     'NotificationARNs': self.deployed_notification_arns,
                     'RoleARN': self.deployed_role_arn,
                     'Tags': [
@@ -241,6 +242,47 @@ class TestStackDiffer:
         self.actions.fetch_remote_template.return_value = None
         self.differ.diff(self.actions)
 
+        self.command_capturer.compare_templates.assert_called_with(
+            '{}',
+            self.actions.generate.return_value
+        )
+
+    @pytest.mark.parametrize(
+        'status',
+        [
+            pytest.param(status)
+            for status in [
+                'CREATE_FAILED',
+                'ROLLBACK_FAILED',
+                'DELETE_COMPLETE',
+                'UPDATE_ROLLBACK_FAILED',
+            ]
+        ]
+    )
+    def test_diff__stack_status_indicates_it_is_not_deployed__compares_none_to_generated_config(self, status):
+        self.stack_status = status
+        self.differ.diff(self.actions)
+
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            None,
+            self.expected_generated_config
+        )
+
+    @pytest.mark.parametrize(
+        'status',
+        [
+            pytest.param(status)
+            for status in [
+                'CREATE_FAILED',
+                'ROLLBACK_FAILED',
+                'DELETE_COMPLETE',
+                'UPDATE_ROLLBACK_FAILED',
+            ]
+        ]
+    )
+    def test_diff__stack_status_indicates_it_is_not_deployed__compares_empty_dict_string_to_generated_template(self, status):
+        self.stack_status = status
+        self.differ.diff(self.actions)
         self.command_capturer.compare_templates.assert_called_with(
             '{}',
             self.actions.generate.return_value

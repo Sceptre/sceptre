@@ -45,6 +45,14 @@ class StackDiffer(Generic[DiffType]):
     As an abstract base class, the two comparison methods need to be implemented so that the
     StackDiff can be generated.
     """
+
+    STACK_STATUSES_INDICATING_NOT_DEPLOYED = [
+        'CREATE_FAILED',
+        'ROLLBACK_FAILED',
+        'DELETE_COMPLETE',
+        'UPDATE_ROLLBACK_FAILED',
+    ]
+
     def diff(self, stack_actions: StackActions) -> StackDiff:
         """Produces a StackDiff between the currently deployed stack (if it exists) and the stack
         as it exists locally in Sceptre.
@@ -58,7 +66,7 @@ class StackDiffer(Generic[DiffType]):
         is_stack_deployed = bool(deployed_config)
 
         generated_template = self._generate_template(stack_actions)
-        deployed_template = self._get_deployed_template(stack_actions)
+        deployed_template = self._get_deployed_template(stack_actions, is_stack_deployed)
 
         template_diff = self.compare_templates(deployed_template, generated_template)
         config_diff = self.compare_stack_configurations(deployed_config, generated_config)
@@ -107,14 +115,15 @@ class StackDiffer(Generic[DiffType]):
                 # There might be some resolvers that we can still resolve values for.
                 try:
                     value_to_use = value.resolve()
-                except StackDoesNotExistError:
-                    # In the end, this value likely won't matter, because if the stack this one is
-                    # dependent upon doesn't exist, this one most likely won't exist either, so
-                    # when deployed version is compared to this one, it will indicate we're creating
-                    # a new stack where one doesn't exist. The only place this value would be shown
-                    # is where the current stack DOES exist, but a new dependency is added that does
-                    # not exist yet. In which case, it will show the most usable output we can
-                    # provide right now.
+                except Exception:
+                    # We catch any errors out of the resolver, since that usually indicates the stack
+                    # doesn't exist yet. In the end, this value likely won't matter, because if the
+                    # stack this one is dependent upon doesn't exist, this one most likely won't
+                    # exist either, so when deployed version is compared to this one, it will
+                    # indicate we're creating a new stack where one doesn't exist. The only place
+                    # this value would be shown is where the current stack DOES exist, but a new
+                    # dependency is added that does not exist yet. In which case, it will show the
+                    # most usable output we can provide right now.
                     value_to_use = f'!{type(value).__name__}'
                     if value.argument is not None:
                         value_to_use += f': {value.argument}'
@@ -132,6 +141,8 @@ class StackDiffer(Generic[DiffType]):
 
         stacks = description['Stacks']
         for stack in stacks:
+            if stack['StackStatus'] in self.STACK_STATUSES_INDICATING_NOT_DEPLOYED:
+                return None
             return StackConfiguration(
                 parameters={
                     param['ParameterKey']: param.get('ResolvedValue', param['ParameterValue'])
@@ -147,13 +158,11 @@ class StackDiffer(Generic[DiffType]):
                 role_arn=stack.get('RoleARN')
             )
 
-    def _get_deployed_template(self, stack_actions: StackActions) -> str:
-        template_string = stack_actions.fetch_remote_template()
-
-        if template_string is None:
+    def _get_deployed_template(self, stack_actions: StackActions, is_deployed: bool) -> str:
+        if is_deployed:
+            return stack_actions.fetch_remote_template()
+        else:
             return '{}'
-
-        return template_string
 
     @abstractmethod
     def compare_templates(
