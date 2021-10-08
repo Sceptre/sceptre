@@ -14,7 +14,7 @@ from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.helpers import get_external_stack_name, sceptreise_path
 from sceptre.hooks import HookProperty
-from sceptre.resolvers import ResolvableProperty
+from sceptre.resolvers import ResolvableProperty, ResolveLater
 from sceptre.template import Template
 
 
@@ -315,5 +315,5 @@ class Stack(object):
         else:
             return
         for value in iterator:
-            if isinstance(value, ResolvableProperty.ResolveLater):
+            if isinstance(value, ResolveLater):
                 value()

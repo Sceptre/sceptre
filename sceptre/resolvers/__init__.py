@@ -12,8 +12,7 @@ class RecursiveGet(Exception):
     pass
 
 
-@six.add_metaclass(abc.ABCMeta)
-class Resolver:
+class Resolver(abc.ABC):
     """
     Resolver is an abstract base class that should be inherited by all
     Resolvers.
@@ -23,8 +22,6 @@ class Resolver:
     :param stack: The associated stack of the resolver.
     :type stack: sceptre.stack.Stack
     """
-
-    __metaclass__ = abc.ABCMeta
 
     def __init__(self, argument=None, stack=None):
         self.logger = logging.getLogger(__name__)
@@ -49,8 +46,37 @@ class Resolver:
         """
         pass  # pragma: no cover
 
+    def clone(self, stack=None):
+        """
+        Produces a "fresh", pre-setup copy of the Resolver, with the sta
 
-class ResolvableProperty(object):
+        :param stack: The stack to set on the cloned resolver
+        :type stack: sceptre.stack.Stack
+        """
+        return type(self)(self.argument, stack)
+
+
+class ResolveLater:
+    """Represents a value that could not yet be resolved but can be resolved in the future."""
+
+    def __init__(self, instance, name, resolution_function):
+        self._instance = instance
+        self._name = name
+        self._resolution_function = resolution_function
+
+    @property
+    def attribute(self):
+        return getattr(self._instance, self._name)
+
+    @attribute.setter
+    def attribute(self, value):
+        setattr(self._instance, self._name, value)
+
+    def __call__(self):
+        self.attribute = self._resolution_function
+
+
+class ResolvableProperty:
     """
     This is a descriptor class used to store an attribute that may contain
     Resolver objects. When retrieving the dictionary or list, any Resolver
@@ -67,7 +93,7 @@ class ResolvableProperty(object):
         self._get_in_progress = False
         self._lock = RLock()
 
-    def __get__(self, instance, type):
+    def __get__(self, stack, type):
         """
         Attribute getter which resolves any Resolver object contained in the
         complex data structure.
@@ -76,71 +102,17 @@ class ResolvableProperty(object):
         :rtype: dict or list
         """
         with self._lock, self._no_recursive_get():
+            if hasattr(stack, self.name):
+                return self.get_resolved_value(stack, type)
 
-            def resolve_mutable_value(attr, key, value):
-                try:
-                    attr[key] = value.resolve()
-                except RecursiveGet:
-                    attr[key] = self.ResolveLater(
-                        instance,
-                        self.name,
-                        key,
-                        lambda: value.resolve()
-                    )
-
-            def resolve_singular_value(value):
-                try:
-                    resolved_value = value.resolve()
-                    setattr(instance, self.name, resolved_value)
-                except RecursiveGet:
-                    resolved_value = self.ResolveLater(
-                        instance,
-                        self.name,
-                        None,
-                        lambda: value.resolve()
-                    )
-                    setattr(instance, self.name, resolved_value)
-                return resolved_value
-
-            if hasattr(instance, self.name):
-                attribute = getattr(instance, self.name)
-                if isinstance(attribute, Resolver):
-                    return resolve_singular_value(attribute)
-                else:
-                    return _call_func_on_values(
-                        resolve_mutable_value, getattr(instance, self.name), Resolver
-                    )
-
-    def __set__(self, instance, value):
+    def __set__(self, stack, value):
         """
         Attribute setter which adds a stack reference to any resolvers in the
         data structure `value` and calls the setup method.
 
         """
-        def setup(attr, key, value):
-            value.stack = instance
-            value.setup()
-
         with self._lock:
-            _call_func_on_values(setup, value, Resolver)
-            setattr(instance, self.name, value)
-
-    class ResolveLater(object):
-        """Represents a value that could not yet be resolved but can be resolved in the future."""
-        def __init__(self, instance, name, key, resolution_function):
-            self._instance = instance
-            self._name = name
-            self._key = key
-            self._resolution_function = resolution_function
-
-        def __call__(self):
-            """Resolve the value."""
-            value = self._resolution_function()
-            if self._key is None:
-                setattr(self._instance, self._name, value)
-            else:
-                attr = getattr(self._instance, self._name)
-                attr[self._key] = self._resolution_function()
+            self.assign_value_to_stack(stack, value)
 
     @contextmanager
     def _no_recursive_get(self):
@@ -151,3 +123,97 @@ class ResolvableProperty(object):
             yield
         finally:
             self._get_in_progress = False
+
+    @abc.abstractmethod
+    def get_resolved_value(self, stack, type):
+        pass
+
+    @abc.abstractmethod
+    def assign_value_to_stack(self, stack, value):
+        pass
+
+
+class ResolvableContainerProperty(ResolvableProperty):
+    """
+    This is a descriptor class used to store an attribute that may contain
+    Resolver objects. When retrieving the dictionary or list, any Resolver
+    objects contains are a value or within a list are resolved to a primitive
+    type. Supports nested dictionary and lists.
+
+    :param name: Attribute suffix used to store the property in the instance.
+    :type name: str
+    """
+
+    def get_resolved_value(self, instance, type):
+        def resolve(attr, key, value):
+            try:
+                attr[key] = value.resolve()
+            except RecursiveGet:
+                attr[key] = self.ResolveContainerLater(
+                    instance,
+                    self.name,
+                    lambda: value.resolve(),
+                    key,
+                )
+
+        container = getattr(instance, self.name)
+        _call_func_on_values(
+            resolve, container, Resolver
+        )
+        return container
+
+    def assign_value_to_stack(self, stack, value):
+        cloned = self._clone_resolvers_recursively(value, stack)
+        setattr(stack, self.name, cloned)
+
+    def _clone_resolvers_recursively(self, value, stack):
+        if isinstance(value, Resolver):
+            value = value.clone(stack)
+            value.setup()
+            return value
+        if isinstance(value, list):
+            return [self._clone_resolvers_recursively(item, stack) for item in value]
+        elif isinstance(value, dict):
+            return {
+                key: self._clone_resolvers_recursively(val, stack)
+                for key, val in value.items()
+            }
+        return value
+
+    class ResolveContainerLater(ResolveLater):
+        """Represents a value that could not yet be resolved but can be resolved in the future."""
+
+        def __init__(self, instance, name, resolution_function, key):
+            super().__init__(instance, name, resolution_function)
+            self._key = key
+
+        def __call__(self):
+            """Resolve the value."""
+            self.attribute[self._key] = self._resolution_function()
+
+
+class ResolvableValueProperty(ResolvableProperty):
+    def get_resolved_value(self, stack, type):
+        raw_value = getattr(stack, self.name)
+        if isinstance(raw_value, Resolver):
+            value = self._resolve(raw_value)
+            setattr(stack, self.name, value)
+        else:
+            value = raw_value
+        return value
+
+    def _resolve(self, resolver):
+        try:
+            return resolver.resolve()
+        except RecursiveGet:
+            return ResolveLater(
+                resolver,
+                self.name,
+                lambda: resolver.resolve()
+            )
+
+    def assign_value_to_stack(self, stack, value):
+        if isinstance(value, Resolver):
+            value = value.clone(stack)
+            value.setup()
+        setattr(stack, self.name, value)
