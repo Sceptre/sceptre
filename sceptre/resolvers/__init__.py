@@ -4,7 +4,6 @@ import logging
 from contextlib import contextmanager
 from threading import RLock
 
-import six
 from sceptre.helpers import _call_func_on_values
 
 
