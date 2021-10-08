@@ -1,8 +1,8 @@
 import logging
 import os
+import sceptre.template_handlers.helper as helper
 
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
-from sceptre.template_handlers.helper import Helper
 from sceptre.template_handlers import TemplateHandler
 
 
@@ -32,13 +32,13 @@ class File(TemplateHandler):
                 with open(path) as template_file:
                     return template_file.read()
             elif file_extension == ".j2":
-                return Helper.render_jinja_template(
+                return helper.render_jinja_template(
                     os.path.dirname(path),
                     os.path.basename(path),
                     {"sceptre_user_data": self.sceptre_user_data}
                 )
             elif file_extension == ".py":
-                return Helper.call_sceptre_handler(path,
+                return helper.call_sceptre_handler(path,
                                                    self.sceptre_user_data)
             else:
                 raise UnsupportedTemplateFileTypeError(
@@ -47,5 +47,5 @@ class File(TemplateHandler):
                     os.path.splitext(path)[1]
                 )
         except Exception as e:
-            Helper.print_template_traceback(path)
+            helper.print_template_traceback(path)
             raise e
