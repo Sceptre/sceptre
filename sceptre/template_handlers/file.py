@@ -38,7 +38,7 @@ class File(TemplateHandler):
                     {"sceptre_user_data": self.sceptre_user_data}
                 )
             elif file_extension == ".py":
-                return Helper.call_sceptre_handler(self.arguments,
+                return Helper.call_sceptre_handler(path,
                                                    self.sceptre_user_data)
             else:
                 raise UnsupportedTemplateFileTypeError(
@@ -47,5 +47,5 @@ class File(TemplateHandler):
                     os.path.splitext(path)[1]
                 )
         except Exception as e:
-            Helper.print_template_traceback(self.arguments)
+            Helper.print_template_traceback(path)
             raise e

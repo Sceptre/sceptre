@@ -15,11 +15,15 @@ class Helper:
     Template handler helpers.
     """
 
-    def call_sceptre_handler(arguments, sceptre_user_data):
+    def call_sceptre_handler(path, sceptre_user_data):
         """
         Calls the function `sceptre_handler` within templates that are python
         scripts.
 
+        :param path: A path to the file.
+        :type name: str
+        :param sceptre_user_data: The sceptre_user_data parameter values.
+        :type name: str
         :returns: The string returned from sceptre_handler in the template.
         :rtype: str
         :raises: IOError
@@ -28,8 +32,6 @@ class Helper:
         # Get relative path as list between current working directory and where
         # the template is
         # NB: this is a horrible hack...
-        path = arguments["path"]
-
         relpath = os.path.relpath(path, os.getcwd()).split(os.path.sep)
         relpaths_to_add = [
             os.path.sep.join(relpath[:i + 1])
@@ -62,12 +64,14 @@ class Helper:
             sys.path.remove(os.path.join(os.getcwd(), directory))
         return body
 
-    def print_template_traceback(arguments):
+    def print_template_traceback(path):
         """
         Prints a stack trace, including only files which are inside a
         'templates' directory. The function is intended to give the operator
         instant feedback about why their templates are failing to compile.
 
+        :param path: A path to the file.
+        :type name: str
         :rtype: None
         """
 
@@ -79,8 +83,8 @@ class Helper:
             _, _, tb = sys.exc_info()
             stack_trace = traceback.extract_tb(tb)
             search_string = os.path.join('', 'templates', '')
-            if search_string in arguments["path"]:
-                template_path = arguments["path"].split(search_string)[0] + search_string
+            if search_string in path:
+                template_path = path.split(search_string)[0] + search_string
             else:
                 return
             for frame in stack_trace:
