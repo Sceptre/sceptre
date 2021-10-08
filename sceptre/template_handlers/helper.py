@@ -9,10 +9,10 @@ from sceptre.exceptions import TemplateSceptreHandlerError
 
 logger = logging.getLogger(__name__)
 
-
 """
 Template handler helpers.
 """
+
 
 def call_sceptre_handler(path, sceptre_user_data):
     """
@@ -63,6 +63,7 @@ def call_sceptre_handler(path, sceptre_user_data):
         sys.path.remove(os.path.join(os.getcwd(), directory))
     return body
 
+
 def print_template_traceback(path):
     """
     Prints a stack trace, including only files which are inside a
@@ -100,6 +101,7 @@ def print_template_traceback(path):
             'Additionally, a traceback exception occured. Exception: %s',
             tb_exception
         )
+
 
 def render_jinja_template(template_dir, filename, jinja_vars):
     """
