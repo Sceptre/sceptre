@@ -258,7 +258,7 @@ class TestStackDiffer:
             ]
         ]
     )
-    def test_diff__stack_status_indicates_it_is_not_deployed__compares_none_to_generated_config(self, status):
+    def test_diff__non_deployed_stack_status__compares_none_to_generated_config(self, status):
         self.stack_status = status
         self.differ.diff(self.actions)
 
@@ -278,7 +278,7 @@ class TestStackDiffer:
             ]
         ]
     )
-    def test_diff__stack_status_indicates_it_is_not_deployed__compares_empty_dict_string_to_generated_template(self, status):
+    def test_diff__non_deployed_stack_status__compares_empty_dict_string_to_generated_template(self, status):
         self.stack_status = status
         self.differ.diff(self.actions)
         self.command_capturer.compare_templates.assert_called_with(

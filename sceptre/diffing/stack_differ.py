@@ -5,7 +5,6 @@ from typing import NamedTuple, Dict, List, Optional, Callable, Tuple, Generic, T
 import cfn_flip
 import deepdiff
 
-from sceptre.exceptions import StackDoesNotExistError
 from sceptre.plan.actions import StackActions
 from sceptre.resolvers import Resolver
 from sceptre.stack import Stack
