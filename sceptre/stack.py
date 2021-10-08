@@ -117,6 +117,11 @@ class Stack(object):
     parameters = ResolvableProperty("parameters")
     _sceptre_user_data = ResolvableProperty("_sceptre_user_data")
     notifications = ResolvableProperty("notifications")
+    template_bucket_name = ResolvableProperty("template_bucket_name")
+    s3_details = ResolvableProperty("s3_details")
+    iam_role = ResolvableProperty('iam_role')
+    role_arn = ResolvableProperty('role_arn')
+
     hooks = HookProperty("hooks")
 
     def __init__(
@@ -138,13 +143,11 @@ class Stack(object):
         self.name = sceptreise_path(name)
         self.project_code = project_code
         self.region = region
-        self.template_bucket_name = template_bucket_name
         self.template_key_prefix = template_key_prefix
         self.required_version = required_version
         self.external_name = external_name or get_external_stack_name(self.project_code, self.name)
         self.template_path = template_path
         self.template_handler_config = template_handler_config
-        self.s3_details = s3_details
         self._template = None
         self._connection_manager = None
 
@@ -157,6 +160,8 @@ class Stack(object):
         self.iam_role = iam_role
         self.profile = profile
         self.hooks = hooks or {}
+        self.s3_details = s3_details
+        self.template_bucket_name = template_bucket_name
         self.parameters = parameters or {}
         self._sceptre_user_data = sceptre_user_data or {}
         self._sceptre_user_data_is_resolved = False

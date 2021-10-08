@@ -76,18 +76,40 @@ class ResolvableProperty(object):
         :rtype: dict or list
         """
         with self._lock, self._no_recursive_get():
-            def resolve(attr, key, value):
+
+            def resolve_mutable_value(attr, key, value):
                 try:
                     attr[key] = value.resolve()
                 except RecursiveGet:
-                    attr[key] = self.ResolveLater(instance, self.name, key,
-                                                  lambda: value.resolve())
+                    attr[key] = self.ResolveLater(
+                        instance,
+                        self.name,
+                        key,
+                        lambda: value.resolve()
+                    )
+
+            def resolve_singular_value(value):
+                try:
+                    resolved_value = value.resolve()
+                    setattr(instance, self.name, resolved_value)
+                except RecursiveGet:
+                    resolved_value = self.ResolveLater(
+                        instance,
+                        self.name,
+                        None,
+                        lambda: value.resolve()
+                    )
+                    setattr(instance, self.name, resolved_value)
+                return resolved_value
 
             if hasattr(instance, self.name):
-                retval = _call_func_on_values(
-                    resolve, getattr(instance, self.name), Resolver
-                )
-                return retval
+                attribute = getattr(instance, self.name)
+                if isinstance(attribute, Resolver):
+                    return resolve_singular_value(attribute)
+                else:
+                    return _call_func_on_values(
+                        resolve_mutable_value, getattr(instance, self.name), Resolver
+                    )
 
     def __set__(self, instance, value):
         """
@@ -113,8 +135,12 @@ class ResolvableProperty(object):
 
         def __call__(self):
             """Resolve the value."""
-            attr = getattr(self._instance, self._name)
-            attr[self._key] = self._resolution_function()
+            value = self._resolution_function()
+            if self._key is None:
+                setattr(self._instance, self._name, value)
+            else:
+                attr = getattr(self._instance, self._name)
+                attr[self._key] = self._resolution_function()
 
     @contextmanager
     def _no_recursive_get(self):

@@ -472,7 +472,7 @@ class ConfigReader(object):
         :rtype: dict
         """
         s3_details = None
-        if "template_bucket_name" in config:
+        if config.get("template_bucket_name"):
             template_key = "/".join([
                 sceptreise_path(stack_name), "{time_stamp}.json".format(
                     time_stamp=datetime.datetime.utcnow().strftime(
