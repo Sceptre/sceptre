@@ -253,9 +253,8 @@ class TestStackDiffer:
             pytest.param(status)
             for status in [
                 'CREATE_FAILED',
-                'ROLLBACK_FAILED',
+                'ROLLBACK_COMPLETE',
                 'DELETE_COMPLETE',
-                'UPDATE_ROLLBACK_FAILED',
             ]
         ]
     )
@@ -274,9 +273,8 @@ class TestStackDiffer:
             pytest.param(status)
             for status in [
                 'CREATE_FAILED',
-                'ROLLBACK_FAILED',
+                'ROLLBACK_COMPLETE',
                 'DELETE_COMPLETE',
-                'UPDATE_ROLLBACK_FAILED',
             ]
         ]
     )

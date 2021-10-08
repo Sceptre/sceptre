@@ -48,9 +48,8 @@ class StackDiffer(Generic[DiffType]):
 
     STACK_STATUSES_INDICATING_NOT_DEPLOYED = [
         'CREATE_FAILED',
-        'ROLLBACK_FAILED',
+        'ROLLBACK_COMPLETE',
         'DELETE_COMPLETE',
-        'UPDATE_ROLLBACK_FAILED',
     ]
 
     def diff(self, stack_actions: StackActions) -> StackDiff:
@@ -160,7 +159,7 @@ class StackDiffer(Generic[DiffType]):
 
     def _get_deployed_template(self, stack_actions: StackActions, is_deployed: bool) -> str:
         if is_deployed:
-            return stack_actions.fetch_remote_template()
+            return stack_actions.fetch_remote_template() or '{}'
         else:
             return '{}'
 
