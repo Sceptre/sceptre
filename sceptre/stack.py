@@ -14,7 +14,7 @@ from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.helpers import get_external_stack_name, sceptreise_path
 from sceptre.hooks import HookProperty
-from sceptre.resolvers import ResolvableProperty, ResolveLater
+from sceptre.resolvers import ResolvableProperty, ResolveLater, ResolvableContainerProperty, ResolvableValueProperty
 from sceptre.template import Template
 
 
@@ -114,13 +114,13 @@ class Stack(object):
 
     """
 
-    parameters = ResolvableProperty("parameters")
-    _sceptre_user_data = ResolvableProperty("_sceptre_user_data")
-    notifications = ResolvableProperty("notifications")
-    template_bucket_name = ResolvableProperty("template_bucket_name")
-    s3_details = ResolvableProperty("s3_details")
-    iam_role = ResolvableProperty('iam_role')
-    role_arn = ResolvableProperty('role_arn')
+    parameters = ResolvableContainerProperty("parameters")
+    _sceptre_user_data = ResolvableContainerProperty("_sceptre_user_data")
+    notifications = ResolvableContainerProperty("notifications")
+    s3_details = ResolvableContainerProperty("s3_details")
+
+    template_bucket_name = ResolvableValueProperty("template_bucket_name")
+    role_arn = ResolvableValueProperty('role_arn')
 
     hooks = HookProperty("hooks")
 

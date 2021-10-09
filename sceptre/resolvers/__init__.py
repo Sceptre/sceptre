@@ -116,7 +116,7 @@ class ResolvableProperty:
     @contextmanager
     def _no_recursive_get(self):
         if self._get_in_progress:
-            raise RecursiveGet()
+            raise RecursiveGet(f"Resolving Stack.{self.name} required resolving Stack.{self.name}")
         self._get_in_progress = True
         try:
             yield
@@ -192,24 +192,16 @@ class ResolvableContainerProperty(ResolvableProperty):
 
 
 class ResolvableValueProperty(ResolvableProperty):
+
     def get_resolved_value(self, stack, type):
         raw_value = getattr(stack, self.name)
         if isinstance(raw_value, Resolver):
-            value = self._resolve(raw_value)
+            value = raw_value.resolve()
             setattr(stack, self.name, value)
         else:
             value = raw_value
-        return value
 
-    def _resolve(self, resolver):
-        try:
-            return resolver.resolve()
-        except RecursiveGet:
-            return ResolveLater(
-                resolver,
-                self.name,
-                lambda: resolver.resolve()
-            )
+        return value
 
     def assign_value_to_stack(self, stack, value):
         if isinstance(value, Resolver):
