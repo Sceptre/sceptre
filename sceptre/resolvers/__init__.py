@@ -55,26 +55,6 @@ class Resolver(abc.ABC):
         return type(self)(self.argument, stack)
 
 
-class ResolveLater:
-    """Represents a value that could not yet be resolved but can be resolved in the future."""
-
-    def __init__(self, instance, name, resolution_function):
-        self._instance = instance
-        self._name = name
-        self._resolution_function = resolution_function
-
-    @property
-    def attribute(self):
-        return getattr(self._instance, self._name)
-
-    @attribute.setter
-    def attribute(self, value):
-        setattr(self._instance, self._name, value)
-
-    def __call__(self):
-        self.attribute = self._resolution_function
-
-
 class ResolvableProperty:
     """
     This is a descriptor class used to store an attribute that may contain
@@ -148,11 +128,11 @@ class ResolvableContainerProperty(ResolvableProperty):
             try:
                 attr[key] = value.resolve()
             except RecursiveResolve:
-                attr[key] = self.ResolveContainerLater(
+                attr[key] = self.ResolveLater(
                     instance,
                     self.name,
-                    lambda: value.resolve(),
                     key,
+                    lambda: value.resolve(),
                 )
 
         container = getattr(instance, self.name)
@@ -179,16 +159,19 @@ class ResolvableContainerProperty(ResolvableProperty):
             }
         return value
 
-    class ResolveContainerLater(ResolveLater):
+    class ResolveLater:
         """Represents a value that could not yet be resolved but can be resolved in the future."""
 
-        def __init__(self, instance, name, resolution_function, key):
-            super().__init__(instance, name, resolution_function)
+        def __init__(self, instance, name, key, resolution_function):
+            self._instance = instance
+            self._name = name
             self._key = key
+            self._resolution_function = resolution_function
 
         def __call__(self):
             """Resolve the value."""
-            self.attribute[self._key] = self._resolution_function()
+            attr = getattr(self._instance, self._name)
+            attr[self._key] = self._resolution_function()
 
 
 class ResolvableValueProperty(ResolvableProperty):
@@ -197,6 +180,8 @@ class ResolvableValueProperty(ResolvableProperty):
         raw_value = getattr(stack, self.name)
         if isinstance(raw_value, Resolver):
             value = raw_value.resolve()
+            # Overwrite the stored resolver value with the resolved value to avoid resolving the
+            # same value multiple times.
             setattr(stack, self.name, value)
         else:
             value = raw_value
@@ -205,6 +190,9 @@ class ResolvableValueProperty(ResolvableProperty):
 
     def assign_value_to_stack(self, stack, value):
         if isinstance(value, Resolver):
+            # We clone the resolver when we assign the value so that every stack gets its own resolver
+            # rather than potentially having one resolver instance shared in memory across multiple
+            # stacks.
             value = value.clone(stack)
             value.setup()
         setattr(stack, self.name, value)
