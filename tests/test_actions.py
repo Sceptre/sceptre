@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+import json
 
+import cfn_flip
 import pytest
 from mock import patch, sentinel, Mock, call
 
@@ -36,7 +38,8 @@ class TestStackActions(object):
             tags={"tag1": "val1"}, external_name=sentinel.external_name,
             notifications=[sentinel.notification],
             on_failure=sentinel.on_failure,
-            stack_timeout=sentinel.stack_timeout
+            stack_timeout=sentinel.stack_timeout,
+
         )
         self.actions = StackActions(self.stack)
         self.stack_group_config = {}
@@ -45,6 +48,15 @@ class TestStackActions(object):
             self.stack.sceptre_user_data, self.stack_group_config,
             self.actions.connection_manager, self.stack.s3_details
         )
+        self.template._body = json.dumps({
+            'AWSTemplateFormatVersion': '2010-09-09',
+            'Resources': {
+                'Bucket': {
+                    'Type': 'AWS::S3::Bucket',
+                    'Properties': {}
+                }
+            }
+        })
         self.stack._template = self.template
 
     def teardown_method(self, test_method):
@@ -1097,3 +1109,65 @@ class TestStackActions(object):
         )
         with pytest.raises(ClientError):
             self.actions._get_cs_status(sentinel.change_set_name)
+
+    def test_fetch_remote_template__cloudformation_returns_validation_error__returns_none(self):
+        self.actions.connection_manager.call.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": "ValidationError",
+                    "Message": "An error occurred (ValidationError) "
+                               "when calling the GetTemplate operation: "
+                               "Stack with id foo does not exist"
+                }
+            },
+            sentinel.operation
+        )
+
+        result = self.actions.fetch_remote_template()
+        assert result is None
+
+    def test_fetch_remote_template__calls_cloudformation_get_template(self):
+        self.actions.connection_manager.call.return_value = {'TemplateBody': ''}
+        self.actions.fetch_remote_template()
+
+        self.actions.connection_manager.call.assert_called_with(
+            service='cloudformation',
+            command='get_template',
+            kwargs={
+                'StackName': self.stack.external_name,
+                'TemplateStage': 'Original'
+            }
+        )
+
+    @pytest.mark.parametrize(
+        'local_format',
+        [
+            pytest.param('json', id='local format is json'),
+            pytest.param('yaml', id='local format is yaml')
+        ]
+    )
+    def test_fetch_remote_template__dict_template__returns_template_in_format_of_local_template(self, local_format):
+        template_body = {
+            'AWSTemplateFormatVersion': '2010-09-09',
+            'Resources': {}
+        }
+        self.actions.connection_manager.call.return_value = {
+            'TemplateBody': template_body
+        }
+        if local_format == 'json':
+            self.template._body = cfn_flip.to_json(self.template._body)
+            expected = cfn_flip.dump_json(template_body)
+        elif local_format == 'yaml':
+            self.template._body = cfn_flip.to_yaml(self.template._body)
+            expected = cfn_flip.dump_yaml(template_body)
+
+        result = self.actions.fetch_remote_template()
+        assert result == expected
+
+    def test_fetch_remote_template__cloudformation_returns_string_template__returns_that_string(self):
+        template_body = "This is my template"
+        self.actions.connection_manager.call.return_value = {
+            'TemplateBody': template_body
+        }
+        result = self.actions.fetch_remote_template()
+        assert result == template_body
