@@ -927,7 +927,6 @@ class StackActions(object):
         else:  # pragma: no cover
             raise Exception("This else should not be reachable.")
 
-    @add_stack_hooks
     def fetch_remote_template(self) -> Optional[str]:
         """
         Returns the Template for the remote Stack
