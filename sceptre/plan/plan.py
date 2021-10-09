@@ -7,15 +7,12 @@ This module implements a SceptrePlan, which is responsible for holding all
 nessessary information for a command to execute.
 """
 from os import path, walk
-from typing import Dict
 
-from sceptre.diffing.stack_differ import StackDiff
-from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.config.graph import StackGraph
 from sceptre.config.reader import ConfigReader
-from sceptre.plan.executor import SceptrePlanExecutor
+from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.helpers import sceptreise_path
-from sceptre.stack import Stack
+from sceptre.plan.executor import SceptrePlanExecutor
 
 
 class SceptrePlan(object):
