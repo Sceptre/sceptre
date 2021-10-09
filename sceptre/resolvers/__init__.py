@@ -55,7 +55,7 @@ class Resolver(abc.ABC):
         return type(self)(self.argument, stack)
 
 
-class ResolvableProperty:
+class ResolvableProperty(abc.ABC):
     """
     This is a descriptor class used to store an attribute that may contain
     Resolver objects. When retrieving the dictionary or list, any Resolver

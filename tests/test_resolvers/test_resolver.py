@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+import itertools
+from unittest.mock import call
 
 from mock import sentinel, MagicMock
 
-from sceptre.resolvers import Resolver, ResolvableProperty
+from sceptre.resolvers import Resolver, ResolvableProperty, ResolvableContainerProperty
 
 
 class MockResolver(Resolver):
@@ -17,7 +19,7 @@ class MockResolver(Resolver):
 
 
 class MockClass(object):
-    resolvable_property = ResolvableProperty("resolvable_property")
+    resolvable_container_property = ResolvableContainerProperty("resolvable_property")
     config = MagicMock()
 
 
@@ -34,13 +36,13 @@ class TestResolver(object):
         assert self.mock_resolver.argument == sentinel.argument
 
 
-class TestResolvablePropertyDescriptor(object):
+class TestResolvableContainerPropertyDescriptor(object):
 
     def setup_method(self, test_method):
         self.mock_object = MockClass()
 
     def test_setting_resolvable_property_with_none(self):
-        self.mock_object.resolvable_property = None
+        self.mock_object.resolvable_container_property = None
         assert self.mock_object._resolvable_property is None
 
     def test_setting_resolvable_property_with_nested_lists(self):
@@ -64,13 +66,35 @@ class TestResolvablePropertyDescriptor(object):
             ]
         ]
 
-        self.mock_object.resolvable_property = complex_data_structure
-        assert self.mock_object._resolvable_property == complex_data_structure
-        assert mock_resolver.stack == self.mock_object
+        cloned_data_structure = [
+            "String",
+            mock_resolver.clone.return_value,
+            [
+                mock_resolver.clone.return_value,
+                "String",
+                [
+                    [
+                        mock_resolver.clone.return_value,
+                        "String",
+                        None
+                    ],
+                    mock_resolver.clone.return_value,
+                    "String"
+                ]
+            ]
+        ]
+
+        self.mock_object.resolvable_container_property = complex_data_structure
+        assert self.mock_object._resolvable_property == cloned_data_structure
+        expected_calls = [
+            call(self.mock_object),
+            call().setup()
+        ] * 4
+        mock_resolver.clone.assert_has_calls(expected_calls)
 
     def test_getting_resolvable_property_with_none(self):
         self.mock_object._resolvable_property = None
-        assert self.mock_object.resolvable_property is None
+        assert self.mock_object.resolvable_container_property is None
 
     def test_getting_resolvable_property_with_nested_lists(self):
         mock_resolver = MagicMock(spec=MockResolver)
@@ -117,7 +141,7 @@ class TestResolvablePropertyDescriptor(object):
         ]
 
         self.mock_object._resolvable_property = complex_data_structure
-        prop = self.mock_object.resolvable_property
+        prop = self.mock_object.resolvable_container_property
         assert prop == resolved_complex_data_structure
 
     def test_getting_resolvable_property_with_nested_dictionaries_and_lists(
@@ -213,7 +237,7 @@ class TestResolvablePropertyDescriptor(object):
         }
 
         self.mock_object._resolvable_property = complex_data_structure
-        prop = self.mock_object.resolvable_property
+        prop = self.mock_object.resolvable_container_property
         assert prop == resolved_complex_data_structure
 
     def test_getting_resolvable_property_with_nested_dictionaries(self):
@@ -255,5 +279,5 @@ class TestResolvablePropertyDescriptor(object):
         }
 
         self.mock_object._resolvable_property = complex_data_structure
-        prop = self.mock_object.resolvable_property
+        prop = self.mock_object.resolvable_container_property
         assert prop == resolved_complex_data_structure
