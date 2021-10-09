@@ -65,7 +65,7 @@ class S3(TemplateHandler):
                         template = helper.call_sceptre_handler(f.name)
 
         except Exception as e:
-            helper.print_template_traceback()
+            helper.print_template_traceback(path)
             raise e
 
         return template
