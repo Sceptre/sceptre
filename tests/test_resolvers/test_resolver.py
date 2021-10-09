@@ -19,7 +19,7 @@ class MockResolver(Resolver):
 
 
 class MockClass(object):
-    resolvable_container_property = ResolvableContainerProperty("resolvable_property")
+    resolvable_container_property = ResolvableContainerProperty("resolvable_container_property")
     config = MagicMock()
 
 
@@ -43,7 +43,7 @@ class TestResolvableContainerPropertyDescriptor(object):
 
     def test_setting_resolvable_property_with_none(self):
         self.mock_object.resolvable_container_property = None
-        assert self.mock_object._resolvable_property is None
+        assert self.mock_object._resolvable_container_property is None
 
     def test_setting_resolvable_property_with_nested_lists(self):
         mock_resolver = MagicMock(spec=MockResolver)
@@ -85,7 +85,7 @@ class TestResolvableContainerPropertyDescriptor(object):
         ]
 
         self.mock_object.resolvable_container_property = complex_data_structure
-        assert self.mock_object._resolvable_property == cloned_data_structure
+        assert self.mock_object._resolvable_container_property == cloned_data_structure
         expected_calls = [
             call(self.mock_object),
             call().setup()
@@ -93,7 +93,7 @@ class TestResolvableContainerPropertyDescriptor(object):
         mock_resolver.clone.assert_has_calls(expected_calls)
 
     def test_getting_resolvable_property_with_none(self):
-        self.mock_object._resolvable_property = None
+        self.mock_object._resolvable_container_property = None
         assert self.mock_object.resolvable_container_property is None
 
     def test_getting_resolvable_property_with_nested_lists(self):
@@ -140,7 +140,7 @@ class TestResolvableContainerPropertyDescriptor(object):
             None
         ]
 
-        self.mock_object._resolvable_property = complex_data_structure
+        self.mock_object._resolvable_container_property = complex_data_structure
         prop = self.mock_object.resolvable_container_property
         assert prop == resolved_complex_data_structure
 
@@ -236,7 +236,7 @@ class TestResolvableContainerPropertyDescriptor(object):
             }
         }
 
-        self.mock_object._resolvable_property = complex_data_structure
+        self.mock_object._resolvable_container_property = complex_data_structure
         prop = self.mock_object.resolvable_container_property
         assert prop == resolved_complex_data_structure
 
@@ -278,6 +278,6 @@ class TestResolvableContainerPropertyDescriptor(object):
             }
         }
 
-        self.mock_object._resolvable_property = complex_data_structure
+        self.mock_object._resolvable_container_property = complex_data_structure
         prop = self.mock_object.resolvable_container_property
         assert prop == resolved_complex_data_structure
