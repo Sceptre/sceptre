@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
-import itertools
-from unittest.mock import call
+from unittest.mock import call, Mock
 
+import pytest
 from mock import sentinel, MagicMock
 
-from sceptre.resolvers import Resolver, ResolvableProperty, ResolvableContainerProperty
+from sceptre.resolvers import (
+    Resolver,
+    ResolvableContainerProperty,
+    ResolvableValueProperty,
+    RecursiveResolve
+)
 
 
 class MockResolver(Resolver):
@@ -20,6 +25,7 @@ class MockResolver(Resolver):
 
 class MockClass(object):
     resolvable_container_property = ResolvableContainerProperty("resolvable_container_property")
+    resolvable_value_property = ResolvableValueProperty('resolvable_value_property')
     config = MagicMock()
 
 
@@ -281,3 +287,57 @@ class TestResolvableContainerPropertyDescriptor(object):
         self.mock_object._resolvable_container_property = complex_data_structure
         prop = self.mock_object.resolvable_container_property
         assert prop == resolved_complex_data_structure
+
+
+class TestResolvableValueProperty:
+    def setup_method(self, test_method):
+        self.mock_object = MockClass()
+
+    @pytest.mark.parametrize(
+        'value',
+        ['string', True, 123, 1.23, None]
+    )
+    def test_set__non_resolver__sets_private_variable_as_value(self, value):
+        self.mock_object.resolvable_value_property = value
+        assert self.mock_object._resolvable_value_property == value
+
+    def test_set__resolver__sets_private_variable_with_clone_of_resolver_with_instance(self):
+        resolver = Mock(spec=MockResolver)
+        self.mock_object.resolvable_value_property = resolver
+        assert self.mock_object._resolvable_value_property == resolver.clone.return_value
+
+    def test_set__resolver__sets_up_cloned_resolver(self):
+        resolver = Mock(spec=MockResolver)
+        self.mock_object.resolvable_value_property = resolver
+        resolver.clone.return_value.setup.assert_any_call()
+
+    @pytest.mark.parametrize(
+        'value',
+        ['string', True, 123, 1.23, None]
+    )
+    def test_get__non_resolver__returns_value(self, value):
+        self.mock_object._resolvable_value_property = value
+        assert self.mock_object.resolvable_value_property == value
+
+    def test_get__resolver__returns_resolved_value(self):
+        resolver = Mock(spec=MockResolver)
+        self.mock_object._resolvable_value_property = resolver
+        assert self.mock_object.resolvable_value_property == resolver.resolve.return_value
+
+    def test_get__resolver__updates_set_value_with_resolved_value(self):
+        resolver = Mock(spec=MockResolver)
+        self.mock_object._resolvable_value_property = resolver
+        self.mock_object.resolvable_value_property
+        assert self.mock_object._resolvable_value_property == resolver.resolve.return_value
+
+    def test_get__resolver__resolver_attempts_to_access_resolver__raises_recursive_resolve(self):
+        class RecursiveResolver(Resolver):
+            def resolve(self):
+                # This should blow up!
+                value = self.stack.resolvable_value_property
+        resolver = RecursiveResolver()
+        self.mock_object.resolvable_value_property = resolver
+
+        with pytest.raises(RecursiveResolve):
+            self.mock_object.resolvable_value_property
+
