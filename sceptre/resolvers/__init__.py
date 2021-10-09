@@ -7,7 +7,7 @@ from threading import RLock
 from sceptre.helpers import _call_func_on_values
 
 
-class RecursiveGet(Exception):
+class RecursiveResolve(Exception):
     pass
 
 
@@ -116,7 +116,7 @@ class ResolvableProperty:
     @contextmanager
     def _no_recursive_get(self):
         if self._get_in_progress:
-            raise RecursiveGet(f"Resolving Stack.{self.name} required resolving Stack.{self.name}")
+            raise RecursiveResolve(f"Resolving Stack.{self.name} required resolving Stack.{self.name}")
         self._get_in_progress = True
         try:
             yield
@@ -147,7 +147,7 @@ class ResolvableContainerProperty(ResolvableProperty):
         def resolve(attr, key, value):
             try:
                 attr[key] = value.resolve()
-            except RecursiveGet:
+            except RecursiveResolve:
                 attr[key] = self.ResolveContainerLater(
                     instance,
                     self.name,
