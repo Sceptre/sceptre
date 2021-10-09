@@ -335,9 +335,9 @@ class TestResolvableValueProperty:
             def resolve(self):
                 # This should blow up!
                 value = self.stack.resolvable_value_property
+
         resolver = RecursiveResolver()
         self.mock_object.resolvable_value_property = resolver
 
         with pytest.raises(RecursiveResolve):
             self.mock_object.resolvable_value_property
-
