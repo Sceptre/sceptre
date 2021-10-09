@@ -7,28 +7,27 @@ This module implements the StackActions class which provides the functionality
 available to a Stack.
 """
 
+import json
 import logging
 import time
-
-from os import path
+import urllib
 from datetime import datetime, timedelta
+from os import path
+from typing import Union, Optional
 
 import botocore
-import json
+import cfn_flip
 from dateutil.tz import tzutc
 
 from sceptre.connection_manager import ConnectionManager
-from sceptre.hooks import add_stack_hooks
-from sceptre.stack_status import StackStatus
-from sceptre.stack_status import StackChangeSetStatus
-
 from sceptre.exceptions import CannotUpdateFailedStackError
-from sceptre.exceptions import UnknownStackStatusError
-from sceptre.exceptions import UnknownStackChangeSetStatusError
-from sceptre.exceptions import StackDoesNotExistError
 from sceptre.exceptions import ProtectedStackError
-
-import urllib
+from sceptre.exceptions import StackDoesNotExistError
+from sceptre.exceptions import UnknownStackChangeSetStatusError
+from sceptre.exceptions import UnknownStackStatusError
+from sceptre.hooks import add_stack_hooks
+from sceptre.stack_status import StackChangeSetStatus
+from sceptre.stack_status import StackStatus
 
 
 class StackActions(object):
@@ -927,3 +926,45 @@ class StackActions(object):
             return StackChangeSetStatus.DEFUNCT
         else:  # pragma: no cover
             raise Exception("This else should not be reachable.")
+
+    def fetch_remote_template(self) -> Optional[str]:
+        """
+        Returns the Template for the remote Stack
+
+        :returns: the template body.
+        """
+        self.logger.debug("%s - Fetching remote template", self.stack.name)
+
+        original_template = self._fetch_remote_template_stage('Original')
+
+        if isinstance(original_template, dict):
+            # AWS oftentimes returns a dict, not a string for the remote template, which isn't useful
+            # for determining the original template format. So we use the local template to get the
+            # original template's format and serialize the original to that format.
+            local_template_body = self.stack.template.body
+            _, template_format = cfn_flip.load(local_template_body)
+            # Boto3 deserializes the template with OrderedDicts, which pyyaml doesn't know how to dump
+            # properly. So we convert it to json and flip it to yaml if we need to.
+            original_template = cfn_flip.dump_json(original_template)
+            if template_format == 'yaml':
+                original_template = cfn_flip.to_yaml(original_template)
+
+        return original_template
+
+    def _fetch_remote_template_stage(self, template_stage: str) -> Optional[Union[str, dict]]:
+        try:
+            response = self.connection_manager.call(
+                service="cloudformation",
+                command="get_template",
+                kwargs={
+                    "StackName": self.stack.external_name,
+                    "TemplateStage": template_stage
+                }
+            )
+            return response['TemplateBody']
+            # Sometimes boto returns a string, sometimes a dictionary
+        except botocore.exceptions.ClientError as e:
+            # AWS returns a ValidationError if the stack doesn't exist
+            if e.response['Error']['Code'] == 'ValidationError':
+                return None
+            raise
