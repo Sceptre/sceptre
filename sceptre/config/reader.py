@@ -272,7 +272,10 @@ class ConfigReader(object):
             if not self.context.ignore_dependencies:
                 for i, dep in enumerate(stack.dependencies):
                     try:
-                        stack.dependencies[i] = stack_map[sceptreise_path(dep)]
+                        if not isinstance(dep, Stack):
+                            # If the dependency was inherited from a stack group, it might already
+                            # have been mapped and so doesn't need to be mapped again.
+                            stack.dependencies[i] = stack_map[sceptreise_path(dep)]
                     except KeyError:
                         raise DependencyDoesNotExistError(
                             "{stackname}: Dependency {dep} not found. "

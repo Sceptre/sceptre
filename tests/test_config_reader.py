@@ -525,6 +525,39 @@ class TestConfigReader(object):
         else:
             assert False
 
+    @pytest.mark.parametrize(
+        "filepaths, dependency, parent_config_path", [
+            (["A/1.yaml", "A/2.yaml", "B/1.yaml"], "B/1.yaml", 'A/config.yaml'),
+            (["A/1.yaml", "A/2.yaml"], "A/1.yaml", 'A/config.yaml'),
+        ]
+    )
+    def test_inherited_dependency_already_resolved(self, filepaths, dependency, parent_config_path):
+        project_path, config_dir = self.create_project()
+        parent_config = {
+            'dependencies': [dependency]
+        }
+        abs_path = os.path.join(config_dir, parent_config_path)
+        self.write_config(abs_path, parent_config)
+
+        for rel_path in filepaths:
+            # Set up config with reference to an existing stack
+            config = {
+                "project_code": "project_code",
+                "region": "region",
+                "template_path": rel_path,
+            }
+
+            abs_path = os.path.join(config_dir, rel_path)
+            self.write_config(abs_path, config)
+        self.context.project_path = project_path
+        try:
+            config_reader = ConfigReader(self.context)
+            all_stacks, command_stacks = config_reader.construct_stacks()
+        except Exception:
+            raise
+        else:
+            assert True
+
     def test_resolve_node_tag(self):
         mock_loader = MagicMock(yaml.Loader)
         mock_loader.resolve.return_value = "new_tag"
