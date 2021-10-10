@@ -164,7 +164,7 @@ class Stack(object):
         self.s3_details = s3_details
         self.template_bucket_name = template_bucket_name
         self.parameters = parameters or {}
-        self._sceptre_user_data = sceptre_user_data or {}
+        self.sceptre_user_data = sceptre_user_data or {}
         self.notifications = notifications or []
         self.stack_group_config = stack_group_config or {}
 

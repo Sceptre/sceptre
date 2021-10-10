@@ -121,16 +121,18 @@ class ResolvableContainerProperty(ResolvableProperty):
     :param name: Attribute suffix used to store the property in the instance.
     :type name: str
     """
+    def __init__(self, name):
+        super().__init__(name)
+        self._deferred_resolution_has_been_triggered = False
 
     def __get__(self, stack, type):
         container = super().__get__(stack, type)
 
-        # Resolve any deferred resolvers, now that the recursive lock has been released.
-        _call_func_on_values(
-            lambda attr, key, value: value(),
-            container,
-            self.ResolveLater
-        )
+        with self._lock:
+            if not self._deferred_resolution_has_been_triggered:
+                # Resolve any deferred resolvers, now that the recursive lock has been released.
+                self.resolve_deferred_resolvers(container)
+
         return container
 
     def get_resolved_value(self, stack, type):
@@ -177,6 +179,14 @@ class ResolvableContainerProperty(ResolvableProperty):
                 for key, val in value.items()
             }
         return value
+
+    def resolve_deferred_resolvers(self, container):
+        self._deferred_resolution_has_been_triggered = True
+        _call_func_on_values(
+            lambda attr, key, value: value(),
+            container,
+            self.ResolveLater
+        )
 
     class ResolveLater:
         """Represents a value that could not yet be resolved but can be resolved in the future."""
