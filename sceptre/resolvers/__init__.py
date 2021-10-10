@@ -3,6 +3,7 @@ import abc
 import logging
 from contextlib import contextmanager
 from threading import RLock
+from typing import Any
 
 from sceptre.helpers import _call_func_on_values
 
@@ -57,10 +58,8 @@ class Resolver(abc.ABC):
 
 class ResolvableProperty(abc.ABC):
     """
-    This is a descriptor class used to store an attribute that may contain
-    Resolver objects. When retrieving the dictionary or list, any Resolver
-    objects contains are a value or within a list are resolved to a primitive
-    type. Supports nested dictionary and lists.
+    This is an abstract base class for a descriptor used to store an attribute that have values
+    associated with Resolver objects.
 
     :param name: Attribute suffix used to store the property in the instance.
     :type name: str
@@ -74,8 +73,7 @@ class ResolvableProperty(abc.ABC):
 
     def __get__(self, stack, type):
         """
-        Attribute getter which resolves any Resolver object contained in the
-        complex data structure.
+        Attribute getter which resolves the resolver(s).
 
         :return: The attribute stored with the suffix ``name`` in the instance.
         :rtype: dict or list
@@ -88,7 +86,6 @@ class ResolvableProperty(abc.ABC):
         """
         Attribute setter which adds a stack reference to any resolvers in the
         data structure `value` and calls the setup method.
-
         """
         with self._lock:
             self.assign_value_to_stack(stack, value)
@@ -104,11 +101,13 @@ class ResolvableProperty(abc.ABC):
             self._get_in_progress = False
 
     @abc.abstractmethod
-    def get_resolved_value(self, stack, type):
+    def get_resolved_value(self, stack, type) -> Any:
+        """Implement this method to return the value of the resolvable_property."""
         pass
 
     @abc.abstractmethod
-    def assign_value_to_stack(self, stack, value):
+    def assign_value_to_stack(self, stack, value: Any):
+        """Implement this method to assign the value to the resolvable property."""
         pass
 
 
@@ -123,19 +122,35 @@ class ResolvableContainerProperty(ResolvableProperty):
     :type name: str
     """
 
-    def get_resolved_value(self, instance, type):
+    def __get__(self, stack, type):
+        container = super().__get__(stack, type)
+
+        # Resolve any deferred resolvers, now that the recursive lock has been released.
+        _call_func_on_values(
+            lambda attr, key, value: value(),
+            container,
+            self.ResolveLater
+        )
+        return container
+
+    def get_resolved_value(self, stack, type):
         def resolve(attr, key, value):
+            # Update the container key's value with the resolved value, if possible...
             try:
                 attr[key] = value.resolve()
             except RecursiveResolve:
+                # It's possible that resolving the resolver might attempt to access another
+                # resolvable property's value in this same container. In this case, we'll delay
+                # resolution and instead return a ResolveLater so the value can be resolved outside
+                # this recursion.
                 attr[key] = self.ResolveLater(
-                    instance,
+                    stack,
                     self.name,
                     key,
                     lambda: value.resolve(),
                 )
 
-        container = getattr(instance, self.name)
+        container = getattr(stack, self.name)
         _call_func_on_values(
             resolve, container, Resolver
         )
@@ -147,6 +162,10 @@ class ResolvableContainerProperty(ResolvableProperty):
 
     def _clone_resolvers_recursively(self, value, stack):
         if isinstance(value, Resolver):
+            # We clone the resolver to avoid the case where the SAME resolver defined on a
+            # StackGroup gets shared on multiple stacks because the stack on that shared resolver
+            # would be updated to whatever the last stack it was set to, which could lead to weird
+            # bugs. By cloning the stack, we guarantee each stack gets its own copy of the resolver.
             value = value.clone(stack)
             value.setup()
             return value
