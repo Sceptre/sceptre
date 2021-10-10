@@ -110,6 +110,9 @@ class ResolvableProperty(abc.ABC):
         """Implement this method to assign the value to the resolvable property."""
         pass
 
+    def __repr__(self):
+        return f'<{self.__class__.__name__}({self.name[1:]})>'
+
 
 class ResolvableContainerProperty(ResolvableProperty):
     """
@@ -121,17 +124,13 @@ class ResolvableContainerProperty(ResolvableProperty):
     :param name: Attribute suffix used to store the property in the instance.
     :type name: str
     """
-    def __init__(self, name):
-        super().__init__(name)
-        self._deferred_resolution_has_been_triggered = False
 
     def __get__(self, stack, type):
         container = super().__get__(stack, type)
 
         with self._lock:
-            if not self._deferred_resolution_has_been_triggered:
-                # Resolve any deferred resolvers, now that the recursive lock has been released.
-                self.resolve_deferred_resolvers(container)
+            # Resolve any deferred resolvers, now that the recursive lock has been released.
+            self.resolve_deferred_resolvers(stack, container)
 
         return container
 
@@ -180,13 +179,15 @@ class ResolvableContainerProperty(ResolvableProperty):
             }
         return value
 
-    def resolve_deferred_resolvers(self, container):
-        self._deferred_resolution_has_been_triggered = True
-        _call_func_on_values(
-            lambda attr, key, value: value(),
-            container,
-            self.ResolveLater
-        )
+    def resolve_deferred_resolvers(self, stack, container):
+        has_been_resolved_attr_name = f'{self.name}_is_resolved'
+        if not getattr(stack, has_been_resolved_attr_name, False):
+            setattr(stack, has_been_resolved_attr_name, True)
+            _call_func_on_values(
+                lambda attr, key, value: value(),
+                container,
+                self.ResolveLater
+            )
 
     class ResolveLater:
         """Represents a value that could not yet be resolved but can be resolved in the future."""
