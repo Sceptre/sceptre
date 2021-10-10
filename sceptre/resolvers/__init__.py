@@ -47,7 +47,7 @@ class Resolver(abc.ABC):
 
     def clone(self, stack=None):
         """
-        Produces a "fresh", pre-setup copy of the Resolver, with the sta
+        Produces a "fresh", pre-setup copy of the Resolver, with the specified stack.
 
         :param stack: The stack to set on the cloned resolver
         :type stack: sceptre.stack.Stack

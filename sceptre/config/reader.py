@@ -476,7 +476,7 @@ class ConfigReader(object):
         """
         s3_details = None
         # If the config explicitly sets the template_bucket_name to None, we don't want to enter
-        # this conditional block. 
+        # this conditional block.
         if config.get("template_bucket_name"):
             template_key = "/".join([
                 sceptreise_path(stack_name), "{time_stamp}.json".format(
