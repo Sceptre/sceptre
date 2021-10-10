@@ -933,7 +933,7 @@ class StackActions(object):
 
         :returns: the template body.
         """
-        self.logger.debug("%s - Fetching remote template", self.stack.name)
+        self.logger.debug(f"{self.stack.name} - Fetching remote template")
 
         original_template = self._fetch_remote_template_stage('Original')
 
