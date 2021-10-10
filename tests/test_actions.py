@@ -1139,14 +1139,7 @@ class TestStackActions(object):
             }
         )
 
-    @pytest.mark.parametrize(
-        'local_format',
-        [
-            pytest.param('json', id='local format is json'),
-            pytest.param('yaml', id='local format is yaml')
-        ]
-    )
-    def test_fetch_remote_template__dict_template__returns_template_in_format_of_local_template(self, local_format):
+    def test_fetch_remote_template__dict_template__returns_json(self):
         template_body = {
             'AWSTemplateFormatVersion': '2010-09-09',
             'Resources': {}
@@ -1154,12 +1147,7 @@ class TestStackActions(object):
         self.actions.connection_manager.call.return_value = {
             'TemplateBody': template_body
         }
-        if local_format == 'json':
-            self.template._body = cfn_flip.to_json(self.template._body)
-            expected = cfn_flip.dump_json(template_body)
-        elif local_format == 'yaml':
-            self.template._body = cfn_flip.to_yaml(self.template._body)
-            expected = cfn_flip.dump_yaml(template_body)
+        expected = json.dumps(template_body, indent=4)
 
         result = self.actions.fetch_remote_template()
         assert result == expected
