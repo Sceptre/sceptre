@@ -288,6 +288,19 @@ class TestResolvableContainerPropertyDescriptor(object):
         prop = self.mock_object.resolvable_container_property
         assert prop == resolved_complex_data_structure
 
+    def test_get__resolver_references_same_property_for_other_value__resolves_it(self):
+        class MyResolver(Resolver):
+            def resolve(self):
+                return self.stack.resolvable_container_property['other_value']
+
+        resolver = MyResolver()
+        self.mock_object.resolvable_container_property = {
+            'other_value': 'abc',
+            'resolver': resolver
+        }
+
+        assert self.mock_object.resolvable_container_property['resolver'] == 'abc'
+
 
 class TestResolvableValueProperty:
     def setup_method(self, test_method):
