@@ -277,21 +277,19 @@ class DifflibStackDiffer(StackDiffer[List[str]]):
         generated: str,
     ) -> List[str]:
         # Sometimes there might only be simple whitespace differences... which difflib will show but
-        # are actually insignificant and "false positives". Also, CloudFormation has a habit of
-        # returning dictionaries when we get the "Original" template. We can't know the original
-        # format for these, so we load them and dump them uniformly again. This will eliminate minor
-        # whitespace changes.
+        # are actually insignificant and "false positives". Also, it's POSSIBLE that the template
+        # format might have changed, even if all the VALUES have stayed the same, so we'll read both
+        # templates into dicts (regardless of their format) and we'll output both to the format of
+        # the local template using identical serialization settings. This will truly enable comparison
+        # of the actual values rather than other things that don't actually make a difference to
+        # CloudFormation. If only the format/meaningless whitespace has changed, this will result in
+        # there being no diff.
         deployed_dict, _ = self.load_template(deployed)
         generated_dict, generated_format = self.load_template(generated)
         dumpers = {
             'json': cfn_flip.dump_json,
             'yaml': cfn_flip.dump_yaml
         }
-        # We always prefer the generated format, because often CloudFormation will send back a
-        # dictionary for the template and it is not clear what the original format was. By preferring
-        # the generated format, we assume that we haven't switched between yaml and json. But if we
-        # did, we'd still would only be comparing the the values and not the actual formatting, so
-        # this is a better diff anyway.
         deployed_reformatted = dumpers[generated_format](deployed_dict)
         generated_reformatted = dumpers[generated_format](generated_dict)
 
