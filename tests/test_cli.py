@@ -901,3 +901,40 @@ class TestCli(object):
         encoder = CustomJsonEncoder()
         response = encoder.encode(datetime.datetime(2016, 5, 3))
         assert response == '"2016-05-03 00:00:00"'
+
+    def test_fetch_remote_template(self):
+        self.mock_stack_actions.fetch_remote_template.return_value = '---\nfoo: bar'
+        result = self.runner.invoke(
+            cli, ["fetch-remote-template", "dev/vpc.yaml"]
+        )
+        assert result.exit_code == 0
+        assert result.output == '---\nfoo: bar\n'
+
+    def test_stack_name(self):
+        self.mock_stack_actions.stack_name.return_value = "mock-stack"
+        result = self.runner.invoke(
+            cli, ["stack-name", "dev/vpc.yaml"]
+        )
+        assert result.exit_code == 0
+        assert result.output == "mock-stack\n"
+
+    def test_diff(self):
+        self.mock_stack_actions.diff.return_value = [
+            "mock-stack",
+            '---\nfoo: bar'
+        ]
+        result = self.runner.invoke(
+            cli, ["diff", "dev/vpc.yaml"]
+        )
+        assert result.exit_code == 0
+        assert result.output == 'mock-stack: ---\nfoo: bar\n'
+
+    def test_detect_stack_drift(self):
+        self.mock_stack_actions.detect_stack_drift.return_value = [
+            "mock-stack", {"some": "json"}
+        ]
+        result = self.runner.invoke(
+            cli, ["detect-stack-drift", "dev/vpc.yaml"]
+        )
+        assert result.exit_code == 0
+        assert result.output == '{\n  "mock-stack": {\n    "some": "json"\n  }\n}\n'

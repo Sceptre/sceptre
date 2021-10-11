@@ -1165,3 +1165,53 @@ Stack with id foo does not exist"
 
         with pytest.raises(ClientError):
             self.actions.diff()
+
+    @patch("sceptre.plan.actions.StackActions._describe_stack_resource_drifts")
+    @patch("sceptre.plan.actions.StackActions._describe_stack_drift_detection_status")
+    @patch("sceptre.plan.actions.StackActions._detect_stack_drift")
+    def test_detect_stack_drift(
+        self,
+        mock_detect_stack_drift,
+        mock_describe_stack_drift_detection_status,
+        mock_describe_stack_resource_drifts
+    ):
+        mock_detect_stack_drift.return_value = {
+            "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62"
+        }
+        mock_describe_stack_drift_detection_status.side_effect = [
+            {
+                "StackId": "fake-stack-id",
+                "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
+                "DetectionStatus": "DETECTION_IN_PROGRESS",
+                "DetectionStatusReason": "User Initiated"
+            },
+            {
+                "StackId": "fake-stack-id",
+                "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
+                "StackDriftStatus": "IN_SYNC",
+                "DetectionStatus": "DETECTION_COMPLETE",
+                "DriftedStackResourceCount": 0
+            }
+        ]
+
+        expected_drifts = {
+            "StackResourceDrifts": [
+                {
+                    "StackId": "fake-stack-id",
+                    "LogicalResourceId": "VPC",
+                    "PhysicalResourceId": "vpc-028c655dea7c65227",
+                    "ResourceType": "AWS::EC2::VPC",
+                    "ExpectedProperties": '{"foo":"bar"}',
+                    "ActualProperties": '{"foo":"bar"}',
+                    "PropertyDifferences": [],
+                    "StackResourceDriftStatus": "IN_SYNC"
+                }
+            ]
+        }
+
+        mock_describe_stack_resource_drifts.return_value = expected_drifts
+        expected_response = [sentinel.external_name, expected_drifts]
+
+        response = self.actions.detect_stack_drift()
+
+        assert response == expected_response

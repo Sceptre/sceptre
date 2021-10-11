@@ -1,5 +1,6 @@
 import click
 import webbrowser
+import json
 
 from sceptre.context import SceptreContext
 from sceptre.cli.helpers import (
@@ -109,6 +110,8 @@ def stack_name_command(ctx, path, print_name):
 
     :param path: The path to execute the command on.
     :type path: str
+    :param print_name: Also print the internal stack name.
+    :type print_name: bool
     """
     context = SceptreContext(
         command_path=path,
@@ -136,9 +139,12 @@ def stack_name_command(ctx, path, print_name):
 def diff_command(ctx, path, differ):
     """
     Show diffs between the running and generated stack.
+    \f
 
-    :param difflib: The diff library to use, default difflib.
+    :param path: The path to execute the command on.
     :type path: str
+    :param differ: The diff library to use, default difflib.
+    :type differ: str
     """
     context = SceptreContext(
         command_path=path,
@@ -153,6 +159,35 @@ def diff_command(ctx, path, differ):
     output = "\n".join([
         stack_name + ": " + template
         for stack_name, template in responses.values()
+    ])
+    write(output, context.output_format)
+
+
+@click.command(name="detect-stack-drift", short_help="Detects stack drift on running stacks.")
+@click.argument("path")
+@click.pass_context
+@catch_exceptions
+def detect_stack_drift_command(ctx, path):
+    """
+    Detect stack drift on running stacks.
+    \f
+
+    :param path: The path to execute the command on.
+    :type path: str
+    """
+    context = SceptreContext(
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options"),
+        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+    )
+
+    plan = SceptrePlan(context)
+    responses = plan.detect_stack_drift()
+    output = "\n".join([
+        json.dumps({stack_name: response}, sort_keys=True, indent=2, default=str)
+        for stack_name, response in responses.values()
     ])
     write(output, context.output_format)
 

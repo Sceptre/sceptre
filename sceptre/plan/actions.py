@@ -651,18 +651,129 @@ class StackActions(object):
         local_template_stream = self.stack.template.body
 
         if differ == "difflib":
-            return_val = self._diff_by_difflib(
+            response = self._diff_by_difflib(
                 remote_template_stream,
                 local_template_stream
             )
 
         elif differ == "dictdiffer":
-            return_val = self._diff_by_dictdiffer(
+            response = self._diff_by_dictdiffer(
                 remote_template_stream,
                 local_template_stream
             )
 
-        return [self.stack.external_name, return_val]
+        return [self.stack.external_name, response]
+
+    def detect_stack_drift(self):
+        """
+        Detects stack drift for a running stack.
+
+        :returns: The stack drift.
+        :rtype: Tuple[str, Union[str, dict]]
+        """
+        response = self._detect_stack_drift()
+
+        detection_id = response["StackDriftDetectionId"]
+        status = self._wait_for_drift(detection_id)
+
+        if status == "DETECTION_COMPLETE":
+            response = self._describe_stack_resource_drifts()
+            return_value = (self.stack.external_name, response)
+        else:
+            return_value = (self.stack.external_name, status)
+
+        return return_value
+
+    def _wait_for_drift(self, detect_id):
+        """
+        Waits for drift detection to complete.
+
+        :param detect_id: The drift detection ID.
+        :type detect_id: str
+
+        :returns: The drift status.
+        :rtype: str
+        """
+        timeout = 300
+        elapsed = 0
+
+        while True:
+            if elapsed >= timeout:
+                return "TIMED_OUT"
+
+            self.logger.debug("%s - Waiting for drift detection", self.stack.name)
+            response = self._describe_stack_drift_detection_status(detect_id)
+
+            status = response["DetectionStatus"]
+            self._print_drift_status(response)
+
+            if status == "DETECTION_IN_PROGRESS":
+                time.sleep(10)
+                elapsed += 10
+            else:
+                return status
+
+    def _print_drift_status(self, response):
+        """
+        Print the drift status while waiting for
+        drift detection to complete.
+        """
+        keys = [
+            "StackDriftDetectionId",
+            "DetectionStatus",
+            "DetectionStatusReason",
+            "StackDriftStatus"
+        ]
+
+        for key in keys:
+            if key in response:
+                self.logger.debug(
+                    "%s - %s - %s",
+                    self.stack.name,
+                    key, response[key]
+                )
+
+    def _detect_stack_drift(self):
+        """
+        Run detect_stack_drift.
+        """
+        self.logger.debug("%s - Detecting Stack Drift", self.stack.name)
+
+        return self.connection_manager.call(
+            service="cloudformation",
+            command="detect_stack_drift",
+            kwargs={
+                "StackName": self.stack.external_name
+            }
+        )
+
+    def _describe_stack_drift_detection_status(self, detect_id):
+        """
+        Run describe_stack_drift_detection_status.
+        """
+        self.logger.debug("%s - Detecting Stack Drift Detection Status", self.stack.name)
+
+        return self.connection_manager.call(
+            service="cloudformation",
+            command="describe_stack_drift_detection_status",
+            kwargs={
+                "StackDriftDetectionId": detect_id
+            }
+        )
+
+    def _describe_stack_resource_drifts(self):
+        """
+        Detects stack resource_drifts for a running stack.
+        """
+        self.logger.debug("%s - Detecting Stack Drift", self.stack.name)
+
+        return self.connection_manager.call(
+            service="cloudformation",
+            command="describe_stack_resource_drifts",
+            kwargs={
+                "StackName": self.stack.external_name
+            }
+        )
 
     @add_stack_hooks
     def validate(self):

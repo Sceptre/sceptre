@@ -351,18 +351,18 @@ class SceptrePlan(object):
         """
         Returns a generated Template for a given Stack
 
-        :returns: A dictionary of Stacks and their template body.
-        :rtype: dict
+        :returns: A list of Stacks and their template body.
+        :rtype: List[str]
         """
         self.resolve(command=self.fetch_remote_template.__name__)
         return self._execute(*args)
 
     def stack_name(self, *args):
         """
-        Returns the Stack name for a given Stack
+        Returns the Stack name for a running stack.
 
-        :returns: A dictionary of Stack Names.
-        :rtype: dict
+        :returns: A list of Stack Names.
+        :rtype: List[str]
         """
         self.resolve(command=self.stack_name.__name__)
         return self._execute(*args)
@@ -371,10 +371,20 @@ class SceptrePlan(object):
         """
         Show diffs between the running and generated stack.
 
-        :returns: A dictionary of Stacks and diffs against running stack.
-        :rtype: dict
+        :returns: A list of Stacks and diffs against running stacks.
+        :rtype: List[str]
         """
         self.resolve(command=self.diff.__name__)
+        return self._execute(*args)
+
+    def detect_stack_drift(self, *args):
+        """
+        Detects stack drift for a running stack.
+
+        :returns: A list of detected drift against running stacks.
+        :rtype: List[str]
+        """
+        self.resolve(command=self.detect_stack_drift.__name__)
         return self._execute(*args)
 
     def _valid_stack_paths(self):
