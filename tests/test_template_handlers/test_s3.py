@@ -34,7 +34,6 @@ class TestS3(object):
         )
         assert result == b"Stuff is working"
 
-
     def test_invalid_response_reraises_exception(self):
         connection_manager = MagicMock(spec=ConnectionManager)
         connection_manager.call.side_effect = SceptreException("BOOM!")
@@ -50,12 +49,10 @@ class TestS3(object):
 
         assert str(e.value) == "BOOM!"
 
-
     def test_handler_unsupported_type(self):
         s3_handler = S3("s3_handler", {'path': 'bucket/folder/file.unsupported'})
         with pytest.raises(UnsupportedTemplateFileTypeError):
             s3_handler.handle()
-
 
     @pytest.mark.parametrize("path", [
         ("bucket/folder/file.json"),
@@ -68,7 +65,6 @@ class TestS3(object):
         s3_handler = S3("s3_handler", {'path': path})
         s3_handler.handle()
         assert mock_get_template.call_count == 1
-
 
     @patch('sceptre.template_handlers.helper.render_jinja_template')
     @patch('sceptre.template_handlers.s3.S3._get_template')
@@ -86,7 +82,6 @@ class TestS3(object):
         s3_handler = S3("s3_handler", {'path': 'bucket/folder/file.j2'})
         s3_handler.handle()
         assert mock_render_jinja_template.call_count == 1
-
 
     @patch('sceptre.template_handlers.helper.call_sceptre_handler')
     @patch('sceptre.template_handlers.s3.S3._get_template')
