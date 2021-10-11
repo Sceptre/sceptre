@@ -1,25 +1,22 @@
 # -*- coding: utf-8 -*-
+import datetime
 import json
 
-import cfn_flip
 import pytest
+from botocore.exceptions import ClientError
+from dateutil.tz import tzutc
 from mock import patch, sentinel, Mock, call
 
-import datetime
-from dateutil.tz import tzutc
-
-from botocore.exceptions import ClientError
-
-from sceptre.stack import Stack
-from sceptre.plan.actions import StackActions
-from sceptre.template import Template
-from sceptre.stack_status import StackStatus
-from sceptre.stack_status import StackChangeSetStatus
 from sceptre.exceptions import CannotUpdateFailedStackError
-from sceptre.exceptions import UnknownStackStatusError
-from sceptre.exceptions import UnknownStackChangeSetStatusError
-from sceptre.exceptions import StackDoesNotExistError
 from sceptre.exceptions import ProtectedStackError
+from sceptre.exceptions import StackDoesNotExistError
+from sceptre.exceptions import UnknownStackChangeSetStatusError
+from sceptre.exceptions import UnknownStackStatusError
+from sceptre.plan.actions import StackActions
+from sceptre.stack import Stack
+from sceptre.stack_status import StackChangeSetStatus
+from sceptre.stack_status import StackStatus
+from sceptre.template import Template
 
 
 class TestStackActions(object):

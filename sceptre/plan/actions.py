@@ -16,7 +16,6 @@ from os import path
 from typing import Union, Optional
 
 import botocore
-import cfn_flip
 from dateutil.tz import tzutc
 
 from sceptre.connection_manager import ConnectionManager
