@@ -215,7 +215,7 @@ class Template(object):
         :returns: The boto call parameter for the template.
         :rtype: dict
         """
-        if self.s3_details:
+        if self.s3_details and self.s3_details.get("bucket_name"):
             url = self.upload_to_s3()
             return {"TemplateURL": url}
         else:
