@@ -1,3 +1,3 @@
 template:
-  path: sceptre-test-artifacts-y1wyen03msgnb4ml/13/valid_template.j2
+  path: sceptre-test-artifacts/13/python/valid_template.py
   type: s3

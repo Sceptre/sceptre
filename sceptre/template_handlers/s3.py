@@ -62,7 +62,8 @@ class S3(TemplateHandler):
                             {"sceptre_user_data": self.sceptre_user_data}
                         )
                     elif path.suffix in python_template_suffix:
-                        template = helper.call_sceptre_handler(f.name)
+                        template = helper.call_sceptre_handler(f.name,
+                                                               self.sceptre_user_data)
 
         except Exception as e:
             helper.print_template_traceback(path)
