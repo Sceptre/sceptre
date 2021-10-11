@@ -553,7 +553,8 @@ class ConfigReader(object):
             notifications=config.get("notifications"),
             on_failure=config.get("on_failure"),
             stack_timeout=config.get("stack_timeout", 0),
-            stack_group_config=parsed_stack_group_config
+            stack_group_config=parsed_stack_group_config,
+            is_project_dependency=config.get("is_project_dependency", False)
         )
 
         del self.templating_vars["stack_group_config"]
