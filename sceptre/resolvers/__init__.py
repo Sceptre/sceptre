@@ -100,6 +100,16 @@ class ResolvableProperty(abc.ABC):
         finally:
             self._get_in_progress = False
 
+    def get_setup_resolver_for_stack(self, stack, resolver: Resolver):
+        # We clone the resolver when we assign the value so that every stack gets its own resolver
+        # rather than potentially having one resolver instance shared in memory across multiple
+        # stacks.
+        if stack.is_project_dependency:
+            return None
+        clone = resolver.clone(stack)
+        clone.setup()
+        return clone
+
     @abc.abstractmethod
     def get_resolved_value(self, stack, type) -> Any:
         """Implement this method to return the value of the resolvable_property."""
@@ -158,25 +168,26 @@ class ResolvableContainerProperty(ResolvableProperty):
         return container
 
     def assign_value_to_stack(self, stack, value):
-        cloned = self._clone_resolvers_recursively(value, stack)
+        cloned = self._clone_container_recursively(value, stack)
         setattr(stack, self.name, cloned)
 
-    def _clone_resolvers_recursively(self, value, stack):
+    def _clone_container_recursively(self, value, stack):
         if isinstance(value, Resolver):
-            # We clone the resolver to avoid the case where the SAME resolver defined on a
-            # StackGroup gets shared on multiple stacks because the stack on that shared resolver
-            # would be updated to whatever the last stack it was set to, which could lead to weird
-            # bugs. By cloning the stack, we guarantee each stack gets its own copy of the resolver.
-            value = value.clone(stack)
-            value.setup()
-            return value
+            return self.get_setup_resolver_for_stack(stack, value)
         if isinstance(value, list):
-            return [self._clone_resolvers_recursively(item, stack) for item in value]
+            return_value = []
+            for item in value:
+                cloned = self._clone_container_recursively(item, stack)
+                if cloned is not None:
+                    return_value.append(cloned)
+            return return_value
         elif isinstance(value, dict):
-            return {
-                key: self._clone_resolvers_recursively(val, stack)
-                for key, val in value.items()
-            }
+            return_value = {}
+            for key, val in value.items():
+                cloned = self._clone_container_recursively(val, stack)
+                if cloned is not None:
+                    return_value[key] = cloned
+            return return_value
         return value
 
     def resolve_deferred_resolvers(self, stack, container):
@@ -237,9 +248,5 @@ class ResolvableValueProperty(ResolvableProperty):
 
     def assign_value_to_stack(self, stack, value):
         if isinstance(value, Resolver):
-            # We clone the resolver when we assign the value so that every stack gets its own resolver
-            # rather than potentially having one resolver instance shared in memory across multiple
-            # stacks.
-            value = value.clone(stack)
-            value.setup()
+            value = self.get_setup_resolver_for_stack(stack, value)
         setattr(stack, self.name, value)
