@@ -1,18 +1,16 @@
-from behave import *
-import time
 import os
-import yaml
-import boto3
+import time
 from contextlib import contextmanager
 
-from behave.runner import Context
+import boto3
+import yaml
+from behave import *
 from botocore.exceptions import ClientError
+
 from helpers import read_template_file, get_cloudformation_stack_name
 from helpers import retry_boto_call
-
-from sceptre.plan.plan import SceptrePlan
 from sceptre.context import SceptreContext
-from sceptre.stack import Stack
+from sceptre.plan.plan import SceptrePlan
 
 
 def set_stack_timeout(context, stack_name, stack_timeout):
@@ -89,27 +87,6 @@ def step_impl(context, stack_name, template_name):
 
     status = get_stack_status(context, full_name)
     assert (status == "CREATE_COMPLETE")
-
-
-@given('all files in template bucket for stack "{stack_name}" are deleted at cleanup')
-def step_impl(context: Context, stack_name):
-    context.add_cleanup(
-        cleanup_template_files_in_bucket,
-        context.sceptre_dir,
-        stack_name
-    )
-
-
-def cleanup_template_files_in_bucket(sceptre_dir, stack_name):
-    sceptre_context = SceptreContext(
-        command_path=stack_name + '.yaml',
-        project_path=sceptre_dir
-    )
-    plan = SceptrePlan(sceptre_context)
-    s3_resource = boto3.resource('s3')
-    for stack in plan.command_stacks:
-        bucket = s3_resource.Bucket(stack.template_bucket_name)
-        bucket.objects.delete()
 
 
 @given('the stack_timeout for stack "{stack_name}" is "{stack_timeout}"')
