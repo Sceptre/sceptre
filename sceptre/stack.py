@@ -131,7 +131,7 @@ class Stack(object):
         parameters=None, sceptre_user_data=None, hooks=None, s3_details=None,
         iam_role=None, dependencies=None, role_arn=None, protected=False, tags=None,
         external_name=None, notifications=None, on_failure=None, profile=None,
-        stack_timeout=0, stack_group_config={}
+        stack_timeout=0, is_project_dependency=False, stack_group_config={}
     ):
         self.logger = logging.getLogger(__name__)
 
@@ -149,23 +149,26 @@ class Stack(object):
         self.external_name = external_name or get_external_stack_name(self.project_code, self.name)
         self.template_path = template_path
         self.template_handler_config = template_handler_config
+        self.is_project_dependency = is_project_dependency
         self._template = None
         self._connection_manager = None
 
         self.protected = protected
-        self.role_arn = role_arn
         self.on_failure = on_failure
         self.dependencies = dependencies or []
-        self.tags = tags or {}
         self.stack_timeout = stack_timeout
         self.iam_role = iam_role
         self.profile = profile
+
+        self.tags = tags or {}
         self.hooks = hooks or {}
+        self.role_arn = role_arn
         self.s3_details = s3_details
         self.template_bucket_name = template_bucket_name
         self.parameters = parameters or {}
         self.sceptre_user_data = sceptre_user_data or {}
         self.notifications = notifications or []
+
         self.stack_group_config = stack_group_config or {}
 
     def __repr__(self):
