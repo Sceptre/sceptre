@@ -301,6 +301,18 @@ class TestResolvableContainerPropertyDescriptor(object):
 
         assert self.mock_object.resolvable_container_property['resolver'] == 'abc'
 
+    def test_get__resolver_references_itself__raises_recursive_resolve(self):
+        class RecursiveResolver(Resolver):
+            def resolve(self):
+                return self.stack.resolvable_container_property['resolver']
+
+        resolver = RecursiveResolver()
+        self.mock_object.resolvable_container_property = {
+            'resolver': resolver
+        }
+        with pytest.raises(RecursiveResolve):
+            self.mock_object.resolvable_container_property
+
 
 class TestResolvableValueProperty:
     def setup_method(self, test_method):

@@ -93,7 +93,7 @@ class ResolvableProperty(abc.ABC):
     @contextmanager
     def _no_recursive_get(self):
         if self._get_in_progress:
-            raise RecursiveResolve(f"Resolving Stack.{self.name} required resolving Stack.{self.name}")
+            raise RecursiveResolve(f"Resolving Stack.{self.name[1:]} required resolving itself")
         self._get_in_progress = True
         try:
             yield
@@ -180,11 +180,28 @@ class ResolvableContainerProperty(ResolvableProperty):
         return value
 
     def resolve_deferred_resolvers(self, stack, container):
+        def raise_if_not_resolved(attr, key, value):
+            # If this function has been hit, it means that after attempting to resolve all the
+            # ResolveLaters, there STILL are ResolveLaters left in the container. Rather than
+            # continuing to try to resolve (possibly infinitely), we'll raise a RecursiveGet to
+            # break that infinite loop. This situation would happen if a resolver accesses a resolver
+            # in the same container, which then accesses another resolver (possibly the same one) in
+            # the same container.
+            raise RecursiveResolve(f"Resolving Stack.{self.name[1:]} required resolving itself")
+
         has_been_resolved_attr_name = f'{self.name}_is_resolved'
         if not getattr(stack, has_been_resolved_attr_name, False):
+            # We set it first rather than after to avoid entering this block again on this property
+            # for this stack.
             setattr(stack, has_been_resolved_attr_name, True)
             _call_func_on_values(
                 lambda attr, key, value: value(),
+                container,
+                self.ResolveLater
+            )
+            # Raise RecursiveResolve if there are any ResolveLaters left
+            _call_func_on_values(
+                raise_if_not_resolved,
                 container,
                 self.ResolveLater
             )
