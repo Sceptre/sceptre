@@ -934,7 +934,7 @@ class StackActions(object):
         """
         self.logger.debug(f"{self.stack.name} - Fetching remote template")
 
-        original_template = self._fetch_remote_template()
+        original_template = self._fetch_remote_template_stage('Original')
 
         if isinstance(original_template, dict):
             # While not documented behavior, boto3 will attempt to deserialize the TemplateBody
@@ -945,7 +945,7 @@ class StackActions(object):
 
         return original_template
 
-    def _fetch_remote_template(self) -> Optional[Union[str, dict]]:
+    def _fetch_remote_template_stage(self, template_stage: str) -> Optional[Union[str, dict]]:
         try:
             response = self.connection_manager.call(
                 service="cloudformation",
