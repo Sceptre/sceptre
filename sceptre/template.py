@@ -92,6 +92,8 @@ class Template(object):
             body = handler.handle()
             if isinstance(body, bytes):
                 body = body.decode('utf-8')
+            if not str(body).startswith("---"):
+                body = "---\n{}".format(body)
             self._body = body
 
         return self._body
