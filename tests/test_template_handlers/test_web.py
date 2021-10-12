@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 import json
-import io
 import pytest
 
-from mock import MagicMock
-from sceptre.connection_manager import ConnectionManager
-from sceptre.exceptions import SceptreException, UnsupportedTemplateFileTypeError
+# from mock import MagicMock
+# from sceptre.connection_manager import ConnectionManager
+from sceptre.exceptions import UnsupportedTemplateFileTypeError
 from sceptre.template_handlers.web import Web
 from unittest.mock import patch
 
@@ -23,7 +22,7 @@ class TestWeb(object):
     #         connection_manager=connection_manager
     #     )
     #     result = template_handler.handle()
-    # 
+    #
     #     connection_manager.call.assert_called_once_with(
     #         service="s3",
     #         command="get_object",
