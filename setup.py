@@ -74,7 +74,8 @@ setup(
         ],
         "sceptre.template_handlers": [
             "file = sceptre.template_handlers.file:File",
-            "s3 = sceptre.template_handlers.s3:S3"
+            "s3 = sceptre.template_handlers.s3:S3",
+            "web = sceptre.template_handlers.web:Web"
         ]
     },
     data_files=[
