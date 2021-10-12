@@ -12,6 +12,28 @@ from unittest.mock import patch
 
 class TestS3(object):
 
+    def test_get_template(self):
+        connection_manager = MagicMock(spec=ConnectionManager)
+        connection_manager.call.return_value = {
+            "Body": io.BytesIO(b"Stuff is working")
+        }
+        template_handler = S3(
+            name="s3_handler",
+            arguments={"path": "bucket/folder/file.yaml"},
+            connection_manager=connection_manager
+        )
+        result = template_handler.handle()
+
+        connection_manager.call.assert_called_once_with(
+            service="s3",
+            command="get_object",
+            kwargs={
+                "Bucket": "bucket",
+                "Key": "folder/file.yaml"
+            }
+        )
+        assert result == b"Stuff is working"
+
     def test_template_handler(self):
         connection_manager = MagicMock(spec=ConnectionManager)
         connection_manager.call.return_value = {
