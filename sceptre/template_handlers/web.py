@@ -1,4 +1,4 @@
-import logging
+# -*- coding: utf-8 -*-
 import pathlib
 import os
 import requests
@@ -18,7 +18,6 @@ class Web(TemplateHandler):
     transformed into CFN templates then deployed to AWS.
     """
     def __init__(self, *args, **kwargs):
-        self.logger = logging.getLogger(__name__)
         super(Web, self).__init__(*args, **kwargs)
 
     def schema(self):
@@ -37,32 +36,28 @@ class Web(TemplateHandler):
         url = self.arguments["url"]
         path = pathlib.Path(urlparse(url).path)
 
-        standard_template_suffix = [".json", ".yaml", ".template"]
-        jinja_template_suffix = [".j2"]
-        python_template_suffix = [".py"]
-        supported_suffix = standard_template_suffix + jinja_template_suffix + python_template_suffix
-
-        if path.suffix not in supported_suffix:
+        if path.suffix not in self.supported_template_extensions:
             raise UnsupportedTemplateFileTypeError(
                 "Template has file extension %s. Only %s are supported.",
-                path.suffix, ",".join(supported_suffix)
+                path.suffix, ",".join(self.supported_template_extensions)
             )
 
         try:
             template = self._get_template(url)
-            if path.suffix in jinja_template_suffix + python_template_suffix:
+            if path.suffix in self.jinja_template_extensions + self.python_template_extensions:
                 file = tempfile.NamedTemporaryFile(prefix=path.stem)
+                self.logger.debug("Template file saved to: %s", file.name)
                 with file as f:
                     f.write(template)
                     f.seek(0)
                     f.read()
-                    if path.suffix in jinja_template_suffix:
+                    if path.suffix in self.jinja_template_extensions:
                         template = helper.render_jinja_template(
                             os.path.dirname(f.name),
                             os.path.basename(f.name),
                             {"sceptre_user_data": self.sceptre_user_data}
                         )
-                    elif path.suffix in python_template_suffix:
+                    elif path.suffix in self.python_template_extensions:
                         template = helper.call_sceptre_handler(
                             f.name,
                             self.sceptre_user_data
