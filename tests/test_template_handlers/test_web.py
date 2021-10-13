@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
-import io
 import pytest
-import requests_mock
 
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 from sceptre.template_handlers.web import Web
