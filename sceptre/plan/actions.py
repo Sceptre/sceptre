@@ -7,28 +7,26 @@ This module implements the StackActions class which provides the functionality
 available to a Stack.
 """
 
+import json
 import logging
 import time
-
-from os import path
+import urllib
 from datetime import datetime, timedelta
+from os import path
+from typing import Union, Optional
 
 import botocore
-import json
 from dateutil.tz import tzutc
 
 from sceptre.connection_manager import ConnectionManager
-from sceptre.hooks import add_stack_hooks
-from sceptre.stack_status import StackStatus
-from sceptre.stack_status import StackChangeSetStatus
-
 from sceptre.exceptions import CannotUpdateFailedStackError
-from sceptre.exceptions import UnknownStackStatusError
-from sceptre.exceptions import UnknownStackChangeSetStatusError
-from sceptre.exceptions import StackDoesNotExistError
 from sceptre.exceptions import ProtectedStackError
-
-import urllib
+from sceptre.exceptions import StackDoesNotExistError
+from sceptre.exceptions import UnknownStackChangeSetStatusError
+from sceptre.exceptions import UnknownStackStatusError
+from sceptre.hooks import add_stack_hooks
+from sceptre.stack_status import StackChangeSetStatus
+from sceptre.stack_status import StackStatus
 
 
 class StackActions(object):
@@ -927,3 +925,40 @@ class StackActions(object):
             return StackChangeSetStatus.DEFUNCT
         else:  # pragma: no cover
             raise Exception("This else should not be reachable.")
+
+    def fetch_remote_template(self) -> Optional[str]:
+        """
+        Returns the Template for the remote Stack
+
+        :returns: the template body.
+        """
+        self.logger.debug(f"{self.stack.name} - Fetching remote template")
+
+        original_template = self._fetch_original_template_stage()
+
+        if isinstance(original_template, dict):
+            # While not documented behavior, boto3 will attempt to deserialize the TemplateBody
+            # with json.loads and return the template as a dict if it is successful; otherwise (such
+            # as in when the template is in yaml, it will return the string. Therefore, we need to
+            # dump the template to json if we get a dict.
+            original_template = json.dumps(original_template, indent=4)
+
+        return original_template
+
+    def _fetch_original_template_stage(self) -> Optional[Union[str, dict]]:
+        try:
+            response = self.connection_manager.call(
+                service="cloudformation",
+                command="get_template",
+                kwargs={
+                    "StackName": self.stack.external_name,
+                    "TemplateStage": 'Original'
+                }
+            )
+            return response['TemplateBody']
+            # Sometimes boto returns a string, sometimes a dictionary
+        except botocore.exceptions.ClientError as e:
+            # AWS returns a ValidationError if the stack doesn't exist
+            if e.response['Error']['Code'] == 'ValidationError':
+                return None
+            raise

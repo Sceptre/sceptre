@@ -47,8 +47,7 @@ Example:
 s3
 ~~~~~~~~~~~~~
 
-Downloads a template from an S3 bucket. The template will be kept in memory and not be persisted to disk. Currently
-only supports YAML / JSON CloudFormation templates,
+Downloads a template from an S3 bucket.  The bucket is accessed with the same credentials that is used to run sceptre. This handler supports templates with .json, .yaml, .template, .j2 and .py extensions.
 
 Syntax:
 

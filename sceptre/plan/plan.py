@@ -8,11 +8,11 @@ nessessary information for a command to execute.
 """
 from os import path, walk
 
-from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.config.graph import StackGraph
 from sceptre.config.reader import ConfigReader
-from sceptre.plan.executor import SceptrePlanExecutor
+from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.helpers import sceptreise_path
+from sceptre.plan.executor import SceptrePlanExecutor
 
 
 class SceptrePlan(object):
@@ -354,3 +354,13 @@ class SceptrePlan(object):
             for f in files
             if not f.endswith(self.context.config_file)
         ]
+
+    def fetch_remote_template(self, *args):
+        """
+        Returns a generated Template for a given Stack
+
+        :returns: A list of Stacks and their template body.
+        :rtype: List[str]
+        """
+        self.resolve(command=self.fetch_remote_template.__name__)
+        return self._execute(*args)
