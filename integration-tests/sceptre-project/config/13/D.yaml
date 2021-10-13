@@ -1,3 +1,0 @@
-template:
-  path: sceptre-test-artifacts/13/python/valid_template.py
-  type: s3
