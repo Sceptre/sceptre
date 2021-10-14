@@ -63,9 +63,9 @@ Example:
 
    template:
      type: s3
-     path: infra-templates/s3/v1/bucket.yaml
+     path: infra-templates/v1/storage/bucket.yaml
 
-web
+http
 ~~~~~~~~~~~~~
 
 Downloads a template from a url on the web.  This handler supports templates with .json, .yaml,
@@ -76,7 +76,7 @@ Syntax:
 .. code-block:: yaml
 
    template:
-     type: s3
+     type: http
      url: <url>
 
 Example:
@@ -84,8 +84,8 @@ Example:
 .. code-block:: yaml
 
    template:
-     type: web
-     url: https://raw.githubusercontent.com/acme/infra-templates/s3/v1/bucket.yaml
+     type: http
+     url: https://raw.githubusercontent.com/acme/infra-templates/v1/storage/bucket.yaml
 
 
 Custom Template Handlers

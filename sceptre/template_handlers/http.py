@@ -10,15 +10,15 @@ from sceptre.template_handlers import TemplateHandler
 from urllib.parse import urlparse
 
 
-class Web(TemplateHandler):
+class Http(TemplateHandler):
     """
-    Template handler that can resolve templates from the web.  Raw CFN templates
+    Template handler that can resolve templates from the web.  Standard CFN templates
     with extension (.json, .yaml, .template) are deployed directly from memory
     while references to jinja (.j2) and python (.py) templates are downloaded,
     transformed into CFN templates then deployed to AWS.
     """
     def __init__(self, *args, **kwargs):
-        super(Web, self).__init__(*args, **kwargs)
+        super(Http, self).__init__(*args, **kwargs)
 
     def schema(self):
         return {
@@ -77,7 +77,7 @@ class Web(TemplateHandler):
         :returns: The body of the CloudFormation template.
         :rtype: str
         """
-        self.logger.debug("Downloading file from web: %s", url)
+        self.logger.debug("Downloading file from: %s", url)
         try:
             response = requests.get(url)
             return response.content
