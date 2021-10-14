@@ -20,6 +20,7 @@ particular Stack. The available keys are listed below.
 -  `parameters`_ *(optional)*
 -  `protected`_ *(optional)*
 -  `role_arn`_ *(optional)*
+-  `iam_role`_ *(optional)*
 -  `sceptre_user_data`_ *(optional)*
 -  `stack_name`_ *(optional)*
 -  `stack_tags`_ *(optional)*
@@ -156,7 +157,7 @@ Example:
        - "subnet-87654321"
      security_group_ids:
        - "sg-12345678"
-       - !stack_output security-groups::BaseSecurityGroupId
+       - !stack_output security-groups.yaml::BaseSecurityGroupId
        - !file_contents /file/with/security_group_id.txt
 
 protected
@@ -178,6 +179,28 @@ role_arn
 
 The ARN of a `CloudFormation Service Role`_ that is assumed by CloudFormation
 to create, update or delete resources.
+
+iam_role
+~~~~~~~~
+
+This is the IAM Role ARN that **Sceptre** should *assume* using AWS STS when executing any actions
+on the Stack.
+
+This is different from the ``role_arn`` option, which sets a CloudFormation service role for the
+stack. The ``iam_role`` configuration does not configure anything on the stack itself.
+
+This is also different from the ``profile`` StackGroup configuration, though there are similarities.
+``profile`` references the name of a locally-defined profile configured using the AWS CLI. This is
+the *"user"* that Sceptre is operating as. However, `iam_role` is a defined role ARN (typically one
+with elevated permissions the user doesn't otherwise have access to) that the user will assume in
+order to execute the actions on a specific stack group.
+
+Using ``iam_role`` can be useful if the user or system executing Sceptre needs an alternative
+permissions set to perform the required actions on that stack, such as might be the case with a
+CI/CD system like Jenkins.
+
+In order to use this argument, however, the role needs to have an AssumeRolePolicyDocument that
+permits the user to assume that role.
 
 sceptre_user_data
 ~~~~~~~~~~~~~~~~~
@@ -204,7 +227,7 @@ e.g:
 .. code-block:: yaml
 
    parameters:
-     VpcID: !stack_output_external <custom-named-vpc-stack>.yaml::VpcID
+     VpcID: !stack_output_external <custom-named-vpc-stack>::VpcID
    dependencies:
      - <environment>/<Stack>
 
@@ -215,7 +238,7 @@ referring to is in a different AWS account or region.
 .. code-block:: yaml
 
    parameters:
-     VpcID: !stack_output_external <custom-named-vpc-stack>.yaml::VpcID my-aws-prod-profile
+     VpcID: !stack_output_external <custom-named-vpc-stack>::VpcID my-aws-prod-profile
    dependencies:
      - <environment>/<Stack>
 
@@ -313,8 +336,8 @@ Examples
            - !cmd "mkdir example"
            - !cmd "touch example.txt"
    parameters:
-       param_1: !stack_output stack_name::output_name
-       param_2: !stack_output_external full_stack_name.yaml::output_name
+       param_1: !stack_output stack_name.yaml::output_name
+       param_2: !stack_output_external full_stack_name::output_name
        param_3: !environment_variable VALUE_3
        param_4:
            {{ var.value4 }}

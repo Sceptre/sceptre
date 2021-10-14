@@ -679,6 +679,29 @@ class TestStackActions(object):
         )
         mock_wait_for_completion.assert_called_once_with()
 
+    def test_execute_change_set__change_set_is_failed_for_no_changes__returns_0(self):
+        def fake_describe(service, command, kwargs):
+            assert (service, command) == ('cloudformation', 'describe_change_set')
+            return {
+                'Status': 'FAILED',
+                'StatusReason': "The submitted information didn't contain changes",
+            }
+        self.actions.connection_manager.call.side_effect = fake_describe
+        result = self.actions.execute_change_set(sentinel.change_set_name)
+        assert result == 0
+
+    def test_execute_change_set__change_set_is_failed_for_no_updates__returns_0(self):
+        def fake_describe(service, command, kwargs):
+            assert (service, command) == ('cloudformation', 'describe_change_set')
+            return {
+                'Status': 'FAILED',
+                'StatusReason': "No updates are to be performed",
+            }
+
+        self.actions.connection_manager.call.side_effect = fake_describe
+        result = self.actions.execute_change_set(sentinel.change_set_name)
+        assert result == 0
+
     def test_list_change_sets_sends_correct_request(self):
         self.actions.list_change_sets()
         self.actions.connection_manager.call.assert_called_with(
