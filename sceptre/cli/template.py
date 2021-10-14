@@ -68,6 +68,41 @@ def generate_command(ctx, path):
     write(output, context.output_format)
 
 
+@click.command(name="estimate-cost", short_help="Estimates the cost of the template.")
+@click.argument("path")
+@click.pass_context
+@catch_exceptions
+def estimate_cost_command(ctx, path):
+    """
+    Prints a URI to STOUT that provides an estimated cost based on the
+    resources in the stack. This command will also attempt to open a web
+    browser with the returned URI.
+    \f
+
+    :param path: Path to execute the command on.
+    :type path: str
+    """
+    context = SceptreContext(
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options"),
+        output_format=ctx.obj.get("output_format"),
+        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+    )
+
+    plan = SceptrePlan(context)
+    responses = plan.estimate_cost()
+
+    for stack, response in responses.items():
+        if response['ResponseMetadata']['HTTPStatusCode'] == 200:
+            del response['ResponseMetadata']
+            click.echo("View the estimated cost for {} at:".format(stack.name))
+            response = response["Url"]
+            webbrowser.open(response, new=2)
+        write(response + "\n", 'text')
+
+
 @click.command(name="fetch-remote-template", short_help="Prints the remote template.")
 @click.argument("path")
 @click.pass_context
@@ -124,8 +159,8 @@ def stack_name_command(ctx, path, print_name):
     plan = SceptrePlan(context)
     responses = plan.stack_name(print_name)
 
-    for stack_name in responses.values():
-        write(stack_name, context.output_format)
+    for response in responses.values():
+        write(response, context.output_format)
 
 
 @click.command(name="diff", short_help="Show diffs with running stack.")
@@ -190,38 +225,3 @@ def detect_stack_drift_command(ctx, path):
         for stack_name, response in responses.values()
     ])
     write(output, context.output_format)
-
-
-@click.command(name="estimate-cost", short_help="Estimates the cost of the template.")
-@click.argument("path")
-@click.pass_context
-@catch_exceptions
-def estimate_cost_command(ctx, path):
-    """
-    Prints a URI to STOUT that provides an estimated cost based on the
-    resources in the stack. This command will also attempt to open a web
-    browser with the returned URI.
-    \f
-
-    :param path: Path to execute the command on.
-    :type path: str
-    """
-    context = SceptreContext(
-        command_path=path,
-        project_path=ctx.obj.get("project_path"),
-        user_variables=ctx.obj.get("user_variables"),
-        options=ctx.obj.get("options"),
-        output_format=ctx.obj.get("output_format"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
-    )
-
-    plan = SceptrePlan(context)
-    responses = plan.estimate_cost()
-
-    for stack, response in responses.items():
-        if response['ResponseMetadata']['HTTPStatusCode'] == 200:
-            del response['ResponseMetadata']
-            click.echo("View the estimated cost for {} at:".format(stack.name))
-            response = response["Url"]
-            webbrowser.open(response, new=2)
-        write(response + "\n", 'text')

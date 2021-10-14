@@ -347,6 +347,14 @@ class SceptrePlan(object):
         self.resolve(command=self.generate.__name__)
         return self._execute(*args)
 
+    def _valid_stack_paths(self):
+        return [
+            sceptreise_path(path.relpath(path.join(dirpath, f), self.context.config_path))
+            for dirpath, dirnames, files in walk(self.context.config_path)
+            for f in files
+            if not f.endswith(self.context.config_file)
+        ]
+
     def fetch_remote_template(self, *args):
         """
         Returns a generated Template for a given Stack
@@ -386,11 +394,3 @@ class SceptrePlan(object):
         """
         self.resolve(command=self.detect_stack_drift.__name__)
         return self._execute(*args)
-
-    def _valid_stack_paths(self):
-        return [
-            sceptreise_path(path.relpath(path.join(dirpath, f), self.context.config_path))
-            for dirpath, dirnames, files in walk(self.context.config_path)
-            for f in files
-            if not f.endswith(self.context.config_file)
-        ]
