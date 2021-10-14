@@ -27,6 +27,7 @@ install_requirements = [
     "dictdiffer>=0.8.1,<1.0"
     "PyYaml>=5.1,<6.0",
     "Jinja2>=2.8,<3",
+    "jsonschema>=3.2,<3.3",
     "colorama>=0.3.9",
     "packaging>=16.8,<=21",
     "sceptre-cmd-resolver>=1.1.3,<2",
@@ -71,6 +72,10 @@ setup(
             "stack_output = sceptre.resolvers.stack_output:StackOutput",
             "stack_output_external ="
             "sceptre.resolvers.stack_output:StackOutputExternal"
+        ],
+        "sceptre.template_handlers": [
+            "file = sceptre.template_handlers.file:File",
+            "s3 = sceptre.template_handlers.s3:S3"
         ]
     },
     data_files=[

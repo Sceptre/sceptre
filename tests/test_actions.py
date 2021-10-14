@@ -30,9 +30,8 @@ class TestStackActions(object):
         self.stack = Stack(
             name='prod/app/stack', project_code=sentinel.project_code,
             template_path=sentinel.template_path, region=sentinel.region,
-            profile=sentinel.profile, parameters={"key1": "val1"},
-            sceptre_user_data=sentinel.sceptre_user_data, hooks={},
-            s3_details=None, dependencies=sentinel.dependencies,
+            profile=sentinel.profile, parameters={"key1": "val1"}, sceptre_user_data=sentinel.sceptre_user_data,
+            hooks={}, s3_details=None, dependencies=sentinel.dependencies,
             role_arn=sentinel.role_arn, protected=False,
             tags={"tag1": "val1"}, external_name=sentinel.external_name,
             notifications=[sentinel.notification],
@@ -42,8 +41,8 @@ class TestStackActions(object):
         self.actions = StackActions(self.stack)
         self.stack_group_config = {}
         self.template = Template(
-            "fixtures/templates", self.stack.sceptre_user_data,
-            self.stack_group_config,
+            "fixtures/templates", self.stack.template_handler_config,
+            self.stack.sceptre_user_data, self.stack_group_config,
             self.actions.connection_manager, self.stack.s3_details
         )
         self.stack._template = self.template
@@ -58,7 +57,11 @@ class TestStackActions(object):
         response = self.stack.template
 
         mock_Template.assert_called_once_with(
-            path=sentinel.template_path,
+            name='prod/app/stack',
+            handler_config={
+                "type": "file",
+                "path": sentinel.template_path
+            },
             sceptre_user_data=sentinel.sceptre_user_data,
             stack_group_config={},
             connection_manager=self.stack.connection_manager,
@@ -675,6 +678,29 @@ class TestStackActions(object):
             }
         )
         mock_wait_for_completion.assert_called_once_with()
+
+    def test_execute_change_set__change_set_is_failed_for_no_changes__returns_0(self):
+        def fake_describe(service, command, kwargs):
+            assert (service, command) == ('cloudformation', 'describe_change_set')
+            return {
+                'Status': 'FAILED',
+                'StatusReason': "The submitted information didn't contain changes",
+            }
+        self.actions.connection_manager.call.side_effect = fake_describe
+        result = self.actions.execute_change_set(sentinel.change_set_name)
+        assert result == 0
+
+    def test_execute_change_set__change_set_is_failed_for_no_updates__returns_0(self):
+        def fake_describe(service, command, kwargs):
+            assert (service, command) == ('cloudformation', 'describe_change_set')
+            return {
+                'Status': 'FAILED',
+                'StatusReason': "No updates are to be performed",
+            }
+
+        self.actions.connection_manager.call.side_effect = fake_describe
+        result = self.actions.execute_change_set(sentinel.change_set_name)
+        assert result == 0
 
     def test_list_change_sets_sends_correct_request(self):
         self.actions.list_change_sets()
