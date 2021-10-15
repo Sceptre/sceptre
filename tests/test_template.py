@@ -48,6 +48,17 @@ class TestTemplate(object):
             connection_manager=connection_manager,
         )
 
+    def test_initialise_template_default_handler_type(self):
+        template = Template(
+            name="template_name",
+            handler_config={"path": "/folder/template.py"},
+            sceptre_user_data={},
+            stack_group_config={},
+            connection_manager={},
+        )
+
+        assert template.handler_config == {"type": "file", "path": "/folder/template.py"}
+
     def test_initialise_template(self):
         assert self.template.handler_config == {"type": "file", "path": "/folder/template.py"}
         assert self.template.name == "template_name"

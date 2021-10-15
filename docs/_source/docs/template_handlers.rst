@@ -28,6 +28,8 @@ file
 Loads a template from disk. Supports JSON, YAML, Jinja2 and Python files. Will be used if the ``template_path`` Stack
 config property is set, for backwards compatibility reasons.
 
+This is the default template handler type, setting the ``file`` type is option.
+
 Syntax:
 
 .. code-block:: yaml
@@ -41,7 +43,6 @@ Example:
 .. code-block:: yaml
 
    template:
-     type: file
      path: storage/bucket.yaml
 
 s3
