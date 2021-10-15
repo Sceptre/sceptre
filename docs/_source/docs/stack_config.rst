@@ -38,9 +38,9 @@ Sceptre treats the template as CloudFormation, Jinja2 or Python depending on
 the template’s file extension. Note that the template filename may be different
 from the Stack config filename.
 
-.. note::
-  This key is deprecated in favor of the `template`_ key.  It will be removed in
-  the next major release, Sceptre version 3.x
+.. warning::
+
+   This key is deprecated in favor of the `template`_ key.
 
 template
 ~~~~~~~~
