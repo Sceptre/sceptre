@@ -56,6 +56,8 @@ class Template(object):
 
         self.name = name
         self.handler_config = handler_config
+        if self.handler_config is not None and self.handler_config.get('type') is None:
+            self.handler_config['type'] = 'file'
         self.sceptre_user_data = sceptre_user_data
         self.stack_group_config = stack_group_config
         self.connection_manager = connection_manager
@@ -92,6 +94,8 @@ class Template(object):
             body = handler.handle()
             if isinstance(body, bytes):
                 body = body.decode('utf-8')
+            if not str(body).startswith("---"):
+                body = "---\n{}".format(body)
             self._body = body
 
         return self._body
