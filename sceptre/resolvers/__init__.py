@@ -103,11 +103,6 @@ class ResolvableProperty(abc.ABC):
         # We clone the resolver when we assign the value so that every stack gets its own resolver
         # rather than potentially having one resolver instance shared in memory across multiple
         # stacks.
-        if stack.is_project_dependency:
-            # Project dependencies cannot have resolvers. This avoids tangled dependency graphs where
-            # a multiple stacks each provide a project dependency and rely on each other. This sort
-            # of tangle cannot be resolved.
-            return None
         clone = resolver.clone(stack)
         clone.setup()
         return clone
