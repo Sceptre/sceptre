@@ -38,6 +38,10 @@ Sceptre treats the template as CloudFormation, Jinja2 or Python depending on
 the template’s file extension. Note that the template filename may be different
 from the Stack config filename.
 
+.. warning::
+
+   This key is deprecated in favor of the `template`_ key.
+
 template
 ~~~~~~~~
 
@@ -316,14 +320,18 @@ Examples
 
 .. code-block:: yaml
 
-   template_path: templates/example.py
+   template:
+     path: templates/example.py
+     type: file
    parameters:
      param_1: value_1
      param_2: value_2
 
 .. code-block:: yaml
 
-   template_path: example.yaml
+   template
+     path: templates/example.yaml
+     type: file
    dependencies:
        - dev/vpc.yaml
    hooks:
