@@ -91,7 +91,9 @@ specified:
 
 .. code-block:: yaml
 
-   template_path: templates/example.py
+   template:
+     path: templates/example.py
+     type: file
    parameters:
      ExampleParameter: example_value
    hooks:
@@ -196,7 +198,9 @@ This hook can be used in a Stack config file with the following syntax:
 
 .. code-block:: yaml
 
-   template_path: <...>
+   template:
+     path: <...>
+     type: <...>
    hooks:
      before_create:
        - !custom_hook_command_name <argument> # The argument is accessible via self.argument
@@ -208,7 +212,9 @@ Assume a Sceptre `copy` hook that calls the `cp command`_:
 
 .. code-block:: yaml
 
-   template_path: <...>
+   template:
+     path: <...>
+     type: <...>
    hooks:
      before_create:
        - !copy "-r from_dir to_dir"

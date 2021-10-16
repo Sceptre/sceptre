@@ -210,7 +210,9 @@ This resolver can be used in a Stack config file with the following syntax:
 
 .. code-block:: yaml
 
-   template_path: <...>
+   template:
+     path: <...>
+     type: <...>
    parameters:
      param1: !<custom_resolver_command_name> <value> <optional-aws-profile>
 
@@ -221,7 +223,9 @@ Resolver arguments can be a simple string or a complex data structure.
 
 .. code-block:: yaml
 
-    template_path: <...>
+   template:
+     path: <...>
+     type: <...>
     parameters:
       Param1: !ssm "/dev/DbPassword"
       Param2: !ssm {"name": "/dev/DbPassword"}

@@ -7,17 +7,10 @@ template loading mechanisms. See `Custom Template Handlers`_ for more informatio
 
 When a ``template_path`` property is specified in the Stack config, it is wired into a ``file`` template handler by
 default. This saves you from having to specify a full ``template`` block if you just want to load a file from disk.
-Sceptre implements resolvers, which can be used to resolve a value of a
-CloudFormation ``parameter`` or ``sceptre_user_data`` value at runtime. This is
-most commonly used to chain the outputs of one Stack to the inputs of another.
 
-Syntax:
+.. warning::
 
-.. code-block:: yaml
-
-   template:
-     type: s3
-     path: <bucket>/<key>
+   The ``template_path`` key is deprecated in favor of the ``template`` key.
 
 Available Template Handlers
 ---------------------------
@@ -27,6 +20,8 @@ file
 
 Loads a template from disk. Supports JSON, YAML, Jinja2 and Python files. Will be used if the ``template_path`` Stack
 config property is set, for backwards compatibility reasons.
+
+This is the default template handler type, setting the ``file`` type is optional.
 
 Syntax:
 
@@ -41,14 +36,19 @@ Example:
 .. code-block:: yaml
 
    template:
-     type: file
      path: storage/bucket.yaml
+
+.. note::
+
+   The path for the ``template_path`` property is relative to the sceptre_dir/templates directory while the path for
+   this template ``path`` property is relative to the current working directory.
+
 
 s3
 ~~~~~~~~~~~~~
 
-Downloads a template from an S3 bucket. The template will be kept in memory and not be persisted to disk. Currently
-only supports YAML / JSON CloudFormation templates,
+Downloads a template from an S3 bucket.  The bucket is accessed with the same credentials that is used to run sceptre.
+This handler supports templates with .json, .yaml, .template, .j2 and .py extensions.
 
 Syntax:
 
@@ -64,7 +64,30 @@ Example:
 
    template:
      type: s3
-     path: infra-templates/s3/v1/bucket.yaml
+     path: infra-templates/v1/storage/bucket.yaml
+
+http
+~~~~~~~~~~~~~
+
+Downloads a template from a url on the web.  This handler supports templates with .json, .yaml,
+.template, .j2 and .py extensions.
+
+Syntax:
+
+.. code-block:: yaml
+
+   template:
+     type: http
+     url: <url>
+
+Example:
+
+.. code-block:: yaml
+
+   template:
+     type: http
+     url: https://raw.githubusercontent.com/acme/infra-templates/v1/storage/bucket.yaml
+
 
 Custom Template Handlers
 ------------------------

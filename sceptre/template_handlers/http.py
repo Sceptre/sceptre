@@ -1,67 +1,63 @@
-import logging
+# -*- coding: utf-8 -*-
 import pathlib
 import os
+import requests
 import tempfile
 import sceptre.template_handlers.helper as helper
 
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 from sceptre.template_handlers import TemplateHandler
+from urllib.parse import urlparse
 
 
-class S3(TemplateHandler):
+class Http(TemplateHandler):
     """
-    Template handler that can resolve templates from S3.  Raw CFN templates
+    Template handler that can resolve templates from the web.  Standard CFN templates
     with extension (.json, .yaml, .template) are deployed directly from memory
     while references to jinja (.j2) and python (.py) templates are downloaded,
     transformed into CFN templates then deployed to AWS.
     """
-
     def __init__(self, *args, **kwargs):
-        self.logger = logging.getLogger(__name__)
-        super(S3, self).__init__(*args, **kwargs)
+        super(Http, self).__init__(*args, **kwargs)
 
     def schema(self):
         return {
             "type": "object",
             "properties": {
-                "path": {"type": "string"}
+                "url": {"type": "string"}
             },
-            "required": ["path"]
+            "required": ["url"]
         }
 
     def handle(self):
         """
-        handle template in S3 bucket
+        handle template from web
         """
-        input_path = self.arguments["path"]
-        path = pathlib.Path(input_path)
+        url = self.arguments["url"]
+        path = pathlib.Path(urlparse(url).path)
 
-        standard_template_suffix = [".json", ".yaml", ".template"]
-        jinja_template_suffix = [".j2"]
-        python_template_suffix = [".py"]
-        supported_suffix = standard_template_suffix + jinja_template_suffix + python_template_suffix
-
-        if path.suffix not in supported_suffix:
+        if path.suffix not in self.supported_template_extensions:
             raise UnsupportedTemplateFileTypeError(
                 "Template has file extension %s. Only %s are supported.",
-                path.suffix, ",".join(supported_suffix)
+                path.suffix, ",".join(self.supported_template_extensions)
             )
 
         try:
-            template = self._get_template(path)
-            if path.suffix in jinja_template_suffix + python_template_suffix:
+            template = self._get_template(url)
+            if path.suffix in self.jinja_template_extensions + self.python_template_extensions:
                 file = tempfile.NamedTemporaryFile(prefix=path.stem)
+                self.logger.debug("Template file saved to: %s", file.name)
                 with file as f:
                     f.write(template)
                     f.seek(0)
                     f.read()
-                    if path.suffix in jinja_template_suffix:
+                    if path.suffix in self.jinja_template_extensions:
                         template = helper.render_jinja_template(
                             os.path.dirname(f.name),
                             os.path.basename(f.name),
                             {"sceptre_user_data": self.sceptre_user_data}
                         )
-                    elif path.suffix in python_template_suffix:
+                    elif path.suffix in self.python_template_extensions:
                         template = helper.call_sceptre_handler(
                             f.name,
                             self.sceptre_user_data
@@ -73,29 +69,18 @@ class S3(TemplateHandler):
 
         return template
 
-    def _get_template(self, path):
+    def _get_template(self, url):
         """
-        Get template from S3 bucket
-
-        :param path: The path to the object in the bucket
+        Get template from the web
+        :param url: The url to the template
         :type: str
         :returns: The body of the CloudFormation template.
         :rtype: str
         """
-        self.logger.debug("Downloading file from S3: %s", path)
-        bucket = path.parts[0]
-        key = "/".join(path.parts[1:])
-
+        self.logger.debug("Downloading file from: %s", url)
         try:
-            response = self.connection_manager.call(
-                service="s3",
-                command="get_object",
-                kwargs={
-                    "Bucket": bucket,
-                    "Key": key
-                }
-            )
-            return response["Body"].read()
-        except Exception as e:
+            response = requests.get(url)
+            return response.content
+        except requests.exceptions.RequestException as e:
             self.logger.fatal(e)
             raise e
