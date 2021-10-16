@@ -263,9 +263,9 @@ class DifflibStackDiffer(StackDiffer[List[str]]):
         deployed: Optional[StackConfiguration],
         generated: StackConfiguration,
     ) -> List[str]:
-        deployed_dict = deployed._asdict() if deployed else {}
+        deployed_dict = dict(deployed._asdict()) if deployed else {}
         deployed_string = cfn_flip.dump_yaml(deployed_dict)
-        generated_string = cfn_flip.dump_yaml(generated._asdict())
+        generated_string = cfn_flip.dump_yaml(dict(generated._asdict()))
         return self._make_string_diff(
             deployed_string,
             generated_string
