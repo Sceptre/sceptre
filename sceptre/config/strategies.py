@@ -21,8 +21,13 @@ def list_join(a, b):
     """
     if a and not isinstance(a, list):
         raise TypeError('{} is not a list'.format(a))
+    elif a:
+        a = list(a)
+
     if b and not isinstance(b, list):
         raise TypeError('{} is not a list'.format(b))
+    elif b:
+        b = list(b)
 
     if a is None:
         return b

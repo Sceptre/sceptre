@@ -56,7 +56,8 @@ CONFIG_MERGE_STRATEGIES = {
     "template_bucket_name": strategies.child_wins,
     "template_key_value": strategies.child_wins,
     "template_path": strategies.child_wins,
-    "template": strategies.child_wins
+    "template": strategies.child_wins,
+    "is_project_dependency": strategies.child_wins
 }
 
 STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(

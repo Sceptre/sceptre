@@ -327,7 +327,8 @@ class TestConfigReader(object):
             template_key_prefix=None,
             stack_group_config={
                 "custom_key": "custom_value"
-            }
+            },
+            is_project_dependency=False
         )
 
         assert stacks == ({sentinel.stack}, {sentinel.stack})
