@@ -11,7 +11,7 @@ from sceptre.diffing.stack_differ import StackConfiguration, StackDiff, DiffType
 
 deepdiff_json_defaults = {
     datetime.date: lambda x: x.isoformat(),
-    StackConfiguration: lambda x: x._asdict()
+    StackConfiguration: lambda x: dict(x._asdict())
 }
 
 
