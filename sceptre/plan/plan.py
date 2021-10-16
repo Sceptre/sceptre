@@ -7,12 +7,15 @@ This module implements a SceptrePlan, which is responsible for holding all
 nessessary information for a command to execute.
 """
 from os import path, walk
+from typing import Dict
 
+from sceptre.diffing.stack_differ import StackDiff
+from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.config.graph import StackGraph
 from sceptre.config.reader import ConfigReader
-from sceptre.exceptions import ConfigFileNotFoundError
-from sceptre.helpers import sceptreise_path
 from sceptre.plan.executor import SceptrePlanExecutor
+from sceptre.helpers import sceptreise_path
+from sceptre.stack import Stack
 
 
 class SceptrePlan(object):
@@ -363,4 +366,13 @@ class SceptrePlan(object):
         :rtype: List[str]
         """
         self.resolve(command=self.fetch_remote_template.__name__)
+        return self._execute(*args)
+
+    def diff(self, *args) -> Dict[Stack, StackDiff]:
+        """
+        Show diffs between the running and generated stack.
+
+        :returns: A dict where the keys are Stack objects and the values are StackDiffs.
+        """
+        self.resolve(command=self.diff.__name__)
         return self._execute(*args)
