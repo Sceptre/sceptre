@@ -118,6 +118,7 @@ class Stack(object):
     notifications = ResolvableContainerProperty("notifications")
     s3_details = ResolvableContainerProperty("s3_details")
     tags = ResolvableContainerProperty('tags')
+    iam_role = ResolvableValueProperty('iam_role')
 
     template_bucket_name = ResolvableValueProperty("template_bucket_name")
     role_arn = ResolvableValueProperty('role_arn')
@@ -156,9 +157,9 @@ class Stack(object):
         self.on_failure = on_failure
         self.dependencies = dependencies or []
         self.stack_timeout = stack_timeout
-        self.iam_role = iam_role
         self.profile = profile
 
+        self.iam_role = iam_role
         self.tags = tags or {}
         self.hooks = hooks or {}
         self.role_arn = role_arn
@@ -273,7 +274,10 @@ class Stack(object):
                 # attempting to access this connection_manager property, such as when using
                 # !stack_output. By setting the iam_role to None, it means that the IAM role will
                 # not be used for resolving the value for the IAM role. Once resolved, however, the
-                # the iam_role will be used for all subsequent actions on the stack.
+                # the iam_role will be used for all subsequent actions on the stack. Since the Stack
+                # Output resolver uses the target stack's iam_role rather than the current stack's
+                # one anyway, it actually doesn't matter, since the stack defining that iam_role won't
+                # actually be using that iam_role.
                 self.logger.debug(
                     "Resolving iam_role requires the Stack connection manager. Temporarily setting "
                     "it to None until iam_role can be fully resolved."

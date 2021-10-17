@@ -71,7 +71,6 @@ class ResolvableProperty(abc.ABC):
     def __init__(self, name: str):
         self.name = "_" + name
         self.logger = logging.getLogger(__name__)
-        self._get_in_progress = False
         self._lock = RLock()
 
     def __get__(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']) -> Any:
@@ -83,7 +82,7 @@ class ResolvableProperty(abc.ABC):
         :return: The attribute stored with the suffix ``name`` in the instance.
         :rtype: The obtained value, as resolved by the
         """
-        with self._lock, self._no_recursive_get():
+        with self._lock, self._no_recursive_get(stack):
             if hasattr(stack, self.name):
                 return self.get_resolved_value(stack, stack_class)
 
@@ -99,14 +98,21 @@ class ResolvableProperty(abc.ABC):
             self.assign_value_to_stack(stack, value)
 
     @contextmanager
-    def _no_recursive_get(self):
-        if self._get_in_progress:
+    def _no_recursive_get(self, stack: 'stack.Stack'):
+        # We don't care about recursive gets on the same property but different Stack instances,
+        # only recursive gets on the same stack. Some Resolvers access the same property on OTHER
+        # stacks and that actually shouldn't be a problem. Remember, these descriptor instances are
+        # set on the CLASS and so instance variables on them are shared across all classes that
+        # access them. Thus, we set this "get_in_progress" attribute on the stack instance rather
+        # than the descriptor instance.
+        get_status_name = f'_{self.name}_get_in_progress'
+        if getattr(stack, get_status_name, False):
             raise RecursiveResolve(f"Resolving Stack.{self.name[1:]} required resolving itself")
-        self._get_in_progress = True
+        setattr(stack, get_status_name, True)
         try:
             yield
         finally:
-            self._get_in_progress = False
+            setattr(stack, get_status_name, False)
 
     def get_setup_resolver_for_stack(self, stack: 'stack.Stack', resolver: Resolver) -> Resolver:
         """Obtains a clone of the resolver with the stack set on it and the setup method having
