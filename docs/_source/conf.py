@@ -42,6 +42,7 @@ author = sceptre.__author__
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx_autodoc_typehints',
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.coverage',
@@ -199,3 +200,5 @@ nitpick_ignore = [
     ('py:class', 'json.encoder.JSONEncoder'),
     ('py:class', 'sceptre.config.reader.Attributes')
 ]
+
+set_type_checking_flag = True

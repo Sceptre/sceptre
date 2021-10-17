@@ -8,7 +8,7 @@ from typing import Any, TYPE_CHECKING, Type, Union, TypeVar
 from sceptre.helpers import _call_func_on_values
 
 if TYPE_CHECKING:
-    from sceptre.stack import Stack
+    from sceptre import stack
 
 T_Container = TypeVar('T_Container', bound=Union[dict, list])
 
@@ -28,7 +28,7 @@ class Resolver(abc.ABC):
     :param stack: The associated stack of the resolver.
     """
 
-    def __init__(self, argument: Any = None, stack: 'Stack' = None):
+    def __init__(self, argument: Any = None, stack: 'stack.Stack' = None):
         self.logger = logging.getLogger(__name__)
         self.argument = argument
         self.stack = stack
@@ -51,7 +51,7 @@ class Resolver(abc.ABC):
         """
         pass  # pragma: no cover
 
-    def clone(self, stack: 'Stack'):
+    def clone(self, stack: 'stack.Stack'):
         """
         Produces a "fresh" copy of the Resolver, with the specified stack.
 
@@ -74,7 +74,7 @@ class ResolvableProperty(abc.ABC):
         self._get_in_progress = False
         self._lock = RLock()
 
-    def __get__(self, stack: 'Stack', stack_class: Type['Stack']):
+    def __get__(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']):
         """
         Attribute getter which resolves the resolver(s).
 
@@ -85,7 +85,7 @@ class ResolvableProperty(abc.ABC):
             if hasattr(stack, self.name):
                 return self.get_resolved_value(stack, stack_class)
 
-    def __set__(self, stack: 'Stack', value: Any):
+    def __set__(self, stack: 'stack.Stack', value: Any):
         """
         Attribute setter which adds a stack reference to any resolvers in the
         data structure `value` and calls the setup method.
@@ -103,7 +103,7 @@ class ResolvableProperty(abc.ABC):
         finally:
             self._get_in_progress = False
 
-    def get_setup_resolver_for_stack(self, stack: 'Stack', resolver: Resolver):
+    def get_setup_resolver_for_stack(self, stack: 'stack.Stack', resolver: Resolver):
         # We clone the resolver when we assign the value so that every stack gets its own resolver
         # rather than potentially having one resolver instance shared in memory across multiple
         # stacks.
@@ -112,12 +112,12 @@ class ResolvableProperty(abc.ABC):
         return clone
 
     @abc.abstractmethod
-    def get_resolved_value(self, stack: 'Stack', stack_class: Type['Stack']) -> Any:
+    def get_resolved_value(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']) -> Any:
         """Implement this method to return the value of the resolvable_property."""
         pass
 
     @abc.abstractmethod
-    def assign_value_to_stack(self, stack: 'Stack', value: Any):
+    def assign_value_to_stack(self, stack: 'stack.Stack', value: Any):
         """Implement this method to assign the value to the resolvable property."""
         pass
 
@@ -138,7 +138,7 @@ class ResolvableContainerProperty(ResolvableProperty):
     :type name: str
     """
 
-    def __get__(self, stack: 'Stack', stack_class: Type['Stack']):
+    def __get__(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']):
         container = super().__get__(stack, stack_class)
 
         with self._lock:
@@ -147,7 +147,7 @@ class ResolvableContainerProperty(ResolvableProperty):
 
         return container
 
-    def get_resolved_value(self, stack: 'Stack', stack_class: Type['Stack']):
+    def get_resolved_value(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']):
         keys_to_delete = []
 
         def resolve(attr: Union[dict, list], key: Union[int, str], value: Resolver):
@@ -187,14 +187,14 @@ class ResolvableContainerProperty(ResolvableProperty):
 
         return container
 
-    def assign_value_to_stack(self, stack: 'Stack', value: Union[dict, list]):
+    def assign_value_to_stack(self, stack: 'stack.Stack', value: Union[dict, list]):
         cloned = self._clone_container_with_resolvers(value, stack)
         setattr(stack, self.name, cloned)
 
     def _clone_container_with_resolvers(
         self,
         container: T_Container,
-        stack: 'Stack'
+        stack: 'stack.Stack'
     ) -> T_Container:
         """Recurses into the the container
 
@@ -219,7 +219,7 @@ class ResolvableContainerProperty(ResolvableProperty):
 
         return recurse(container)
 
-    def _resolve_deferred_resolvers(self, stack: 'Stack', container: T_Container):
+    def _resolve_deferred_resolvers(self, stack: 'stack.Stack', container: T_Container):
         def raise_if_not_resolved(attr, key, value):
             # If this function has been hit, it means that after attempting to resolve all the
             # ResolveLaters, there STILL are ResolveLaters left in the container. Rather than
@@ -278,7 +278,7 @@ class ResolvableValueProperty(ResolvableProperty):
     :type name: str
     """
 
-    def get_resolved_value(self, stack: 'Stack', stack_class: Type['Stack']):
+    def get_resolved_value(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']):
         raw_value = getattr(stack, self.name)
         if isinstance(raw_value, Resolver):
             value = raw_value.resolve()
@@ -290,7 +290,7 @@ class ResolvableValueProperty(ResolvableProperty):
 
         return value
 
-    def assign_value_to_stack(self, stack: 'Stack', value: Any):
+    def assign_value_to_stack(self, stack: 'stack.Stack', value: Any):
         if isinstance(value, Resolver):
             value = self.get_setup_resolver_for_stack(stack, value)
         setattr(stack, self.name, value)

@@ -297,8 +297,10 @@ as ommiting the field, will result in no timeout. Supports only positive
 integer value.
 
 .. _project_dependency_config:
+
 is_project_dependency
 ~~~~~~~~~~~~~~~~~~~~~
+
 * Resolvable: No
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set

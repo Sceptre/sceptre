@@ -260,7 +260,8 @@ class Stack(object):
     def connection_manager(self):
         """
         Returns ConnectionManager.
-         :returns: ConnectionManager.
+
+        :returns: ConnectionManager.
         :rtype: ConnectionManager
         """
         if self._connection_manager is None:
