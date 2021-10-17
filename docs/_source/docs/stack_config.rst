@@ -296,6 +296,7 @@ the specified timeout, the Stack will be rolled back. Specifiyng zero, as well
 as ommiting the field, will result in no timeout. Supports only positive
 integer value.
 
+.. _project_dependency_config:
 is_project_dependency
 ~~~~~~~~~~~~~~~~~~~~~
 * Resolvable: No
@@ -321,6 +322,9 @@ as a CloudFormation service role, but project dependency stacks will have no ser
 It is recommended that you only have one project dependency stack. More than one is possible, but
 it is best to define all project dependencies in a single stack and output the values needed by the
 rest of the project form that stack.
+
+For more information on how to configure a project's dependencies, see
+:ref:`Setting dependencies stack groups <setting_dependencies_for_stack_groups>`.
 
 Cascading Config
 ----------------
@@ -419,19 +423,20 @@ Examples
        tag_1: value_1
        tag_2: value_2
 
-.. _template_path: #template_path
+.. _template_path: #template-path
 .. _template: #template
 .. _dependencies: #dependencies
 .. _hooks: #hooks
 .. _notifications: #notifications
-.. _on_failure: #on_failure
+.. _on_failure: #on-failure
 .. _parameters: #parameters
 .. _protected: #protected
-.. _role_arn: #role_arn
-.. _sceptre_user_data: #sceptre_user_data
-.. _stack_name: #stack_name
-.. _stack_tags: #stack_tags
-.. _stack_timeout: #stack_timeout
+.. _role_arn: #role-arn
+.. _sceptre_user_data: #sceptre-user-data
+.. _stack_name: #stack-name
+.. _stack_tags: #stack-tags
+.. _stack_timeout: #stack-timeout
+.. _is_project_dependency: #is-project-dependency
 .. _AWS CloudFormation API documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStack.html
 .. _AWS Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStack.html
 .. _CloudFormation Service Role: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-iam-servicerole.html

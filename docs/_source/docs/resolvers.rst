@@ -229,7 +229,7 @@ This resolver can be used in a Stack config file with the following syntax:
      param1: !<custom_resolver_command_name> <value> <optional-aws-profile>
 
 
-resolver arguments
+Resolver arguments
 ^^^^^^^^^^^^^^^^^^
 Resolver arguments can be a simple string or a complex data structure.
 
@@ -245,7 +245,7 @@ Resolver arguments can be a simple string or a complex data structure.
 .. _Custom Resolvers: #custom-resolvers
 .. _this is great place to start: https://docs.python.org/3/distributing/
 
-resolving to nothing
+Resolving to nothing
 ^^^^^^^^^^^^^^^^^^^^
 When a resolver returns ``None``, this means that it resolves to "nothing". For resolvers set for
 single values (such as for ``template_bucket_name`` or ``role_arn``), this just means the value is

@@ -27,6 +27,8 @@ made available via ``stack_group_confg`` attribute on ``Stack()``.
 
 profile
 ~~~~~~~
+* Resolvable: No
+* Inheritance strategy: Overrides parent if set by child
 
 The name of the profile as defined in ``~/.aws/config`` and
 ``~/.aws/credentials``. Use the `aws configure --profile <profile_id>` command
@@ -36,17 +38,23 @@ Reference: `AWS_CLI_Configure`_
 
 project_code
 ~~~~~~~~~~~~
+* Resolvable: No
+* Inheritance strategy: Overrides parent if set by child
 
 A string which is prepended to the Stack names of all Stacks built by Sceptre.
 
 region
 ~~~~~~
+* Resolvable: No
+* Inheritance strategy: Overrides parent if set by child
 
 The AWS region to build Stacks in. Sceptre should work in any `region which
 supports CloudFormation`_.
 
 template_bucket_name
 ~~~~~~~~~~~~~~~~~~~~
+* Resolvable: Yes
+* Inheritance strategy: Overrides parent if set by child
 
 The name of an S3 bucket to upload CloudFormation Templates to. Note that S3
 bucket names must be globally unique. If the bucket does not exist, Sceptre
@@ -59,6 +67,8 @@ supplied in this way have a lower maximum length, so using the
 
 template_key_prefix
 ~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Inheritance strategy: Overrides parent if set by child
 
 A string which is prefixed onto the key used to store templates uploaded to S3.
 Templates are stored using the key:
@@ -76,7 +86,9 @@ Note that if ``template_bucket_name`` is not supplied, this parameter is
 ignored.
 
 j2_environment
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
+* Resolvable: No
+* Inheritance strategy: Child configs will be merged with parent configs
 
 A dictionary that is combined with the default jinja2 environment.
 It's converted to keyword arguments then passed to [jinja2.Environment](https://jinja.palletsprojects.com/en/2.11.x/api/#jinja2.Environment).
@@ -121,7 +133,8 @@ General configurations should be defined at a high level, and more specific
 configurations should be defined at a lower directory level.
 
 YAML files that define configuration settings with conflicting keys, the child
-configuration file will take precedence.
+configuration file will usually take precedence (see the specific config keys as documented
+for the inheritance strategy employed).
 
 In the above directory structure, ``config/config.yaml`` will be read in first,
 followed by ``config/account-1/config.yaml``, followed by
@@ -130,6 +143,31 @@ followed by ``config/account-1/config.yaml``, followed by
 For example, if you wanted the ``dev`` StackGroup to build to a different
 region, this setting could be specified in the ``config/dev/config.yaml`` file,
 and would only be applied to builds in the ``dev`` StackGroup.
+
+.. _setting_dependencies_for_stack_groups:
+
+Setting Dependencies for StackGroups
+------------------------------------
+There are a few types of AWS infrastructure that Sceptre and/or your CloudFormation stacks can
+utilise and can be a part of a normal sceptre project. These include:
+* The S3 bucket where templates are uploaded to and then referenced from for stack actions (i.e. the
+`template_bucket_name`` config key).
+* The CloudFormation service role added to the stack(s) that CloudFormation uses to execute stack
+actions (i.e. the ``role_arn`` config key).
+* SNS topics that cloudformation will notify with the results of stack actions (i.e. the
+``notifications`` config key).
+
+These sorts of dependencies CAN be defined in Sceptre and added at the StackGroup level, referenced
+using ``!stack_output``. They can even can be set in the highest-level config.yaml, right next to
+``project_code`` and ``region``. Doing so will make it so that every stack in the StackGroup (or
+even in the entire project) will be have those dependencies and get those values from Sceptre-managed
+stacks.
+
+**Important**: You might have already considered this might cause a circular dependency for those
+dependency stacks, the ones that output the template bucket name, role arn, or topic arns. In order
+to break the circular dependency, you can set ``is_project_dependency: True`` on those dependency
+stacks. As described in the documentation for :ref:`is_project_dependency <project_dependency_config>`.
+
 
 .. _stack_group_config_templating:
 
