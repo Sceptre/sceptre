@@ -1,0 +1,2 @@
+is_project_dependency: True
+template_path: project-dependencies/bucket.yaml

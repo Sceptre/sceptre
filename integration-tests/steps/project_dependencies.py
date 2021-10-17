@@ -6,11 +6,14 @@ from behave.runner import Context
 
 from sceptre.context import SceptreContext
 from sceptre.plan.plan import SceptrePlan
+from helpers import get_cloudformation_stack_name, retry_boto_call
 
 
 @given('all files in template bucket for stack "{stack_name}" are deleted at cleanup')
 def step_impl(context: Context, stack_name):
-
+    """Add this as a given to ensure that the template bucket is cleaned up before we attempt to
+    delete it; Otherwise, it will fail since you can't delete a bucket with objects in it.
+    """
     context.add_cleanup(
         cleanup_template_files_in_bucket,
         context.sceptre_dir,
@@ -46,6 +49,24 @@ def step_impl(context: Context, stack_name):
             assert False, "Could not found uploaded template"
 
 
+@then('the stack "{resource_stack_name}" has a role defined by stack "{role_stack_name}"')
+def step_impl(context, resource_stack_name, role_stack_name):
+    role_stack_resources = get_stack_resources(context, role_stack_name)
+    role_name = role_stack_resources[0]['PhysicalResourceId']
+    resource_stack = describe_stack(context, resource_stack_name)
+    found_role_arn = resource_stack['RoleARN']
+    assert found_role_arn.endswith(role_name)
+
+
+@then('the stack "{resource_stack_name}" has a notification defined by stack "{topic_stack_name}"')
+def step_impl(context, resource_stack_name, topic_stack_name):
+    topic_stack_resources = get_stack_resources(context, topic_stack_name)
+    topic = topic_stack_resources[0]['PhysicalResourceId']
+    resource_stack = describe_stack(context, resource_stack_name)
+    notification_arns = resource_stack['NotificationARNs']
+    assert topic in notification_arns
+
+
 def cleanup_template_files_in_bucket(sceptre_dir, stack_name):
     sceptre_context = SceptreContext(
         command_path=stack_name + '.yaml',
@@ -64,3 +85,21 @@ def get_template_buckets(plan: SceptrePlan):
         for stack in plan.command_stacks
         if stack.template_bucket_name is not None
     ]
+
+
+def get_stack_resources(context, stack_name):
+    cf_stack_name = get_cloudformation_stack_name(context, stack_name)
+    resources = retry_boto_call(
+        context.client.describe_stack_resources,
+        StackName=cf_stack_name
+    )
+    return resources['StackResources']
+
+
+def describe_stack(context, stack_name):
+    cf_stack_name = get_cloudformation_stack_name(context, stack_name)
+    response = retry_boto_call(
+        context.client.describe_stacks,
+        StackName=cf_stack_name
+    )
+    return response['Stacks'][0]
