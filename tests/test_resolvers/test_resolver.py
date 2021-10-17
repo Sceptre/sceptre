@@ -403,7 +403,7 @@ class TestResolvableValueProperty:
         class RecursiveResolver(Resolver):
             def resolve(self):
                 # This should blow up!
-                value = self.stack.resolvable_value_property
+                self.stack.resolvable_value_property
 
         resolver = RecursiveResolver()
         self.mock_object.resolvable_value_property = resolver
