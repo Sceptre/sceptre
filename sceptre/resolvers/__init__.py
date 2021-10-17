@@ -11,6 +11,9 @@ if TYPE_CHECKING:
     from sceptre.stack import Stack
 
 
+logger = logging.getLogger(__name__)
+
+
 class RecursiveResolve(Exception):
     pass
 
@@ -144,10 +147,17 @@ class ResolvableContainerProperty(ResolvableProperty):
         return container
 
     def get_resolved_value(self, stack: 'Stack', stack_class: Type['Stack']):
+        keys_to_delete = []
+
         def resolve(attr: Union[dict, list], key: Union[int, str], value: Resolver):
             # Update the container key's value with the resolved value, if possible...
             try:
-                attr[key] = value.resolve()
+                result = value.resolve()
+                if result is None:
+                    logger.debug(f"Removing item {key} because resolver returned None.")
+                    keys_to_delete.append((attr, key))
+                else:
+                    attr[key] = result
             except RecursiveResolve:
                 # It's possible that resolving the resolver might attempt to access another
                 # resolvable property's value in this same container. In this case, we'll delay
@@ -164,6 +174,9 @@ class ResolvableContainerProperty(ResolvableProperty):
         _call_func_on_values(
             resolve, container, Resolver
         )
+        for attr, key in keys_to_delete:
+            del attr[key]
+
         return container
 
     def assign_value_to_stack(self, stack: 'Stack', value: Union[dict, list]):
@@ -228,7 +241,12 @@ class ResolvableContainerProperty(ResolvableProperty):
         def __call__(self):
             """Resolve the value."""
             attr = getattr(self._instance, self._name)
-            attr[self._key] = self._resolution_function()
+            result = self._resolution_function()
+            if result is None:
+                logger.debug(f"Removing item {self._key} because resolver returned None.")
+                del attr[self._key]
+            else:
+                attr[self._key] = self._resolution_function()
 
 
 class ResolvableValueProperty(ResolvableProperty):
