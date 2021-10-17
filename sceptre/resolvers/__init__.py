@@ -74,12 +74,14 @@ class ResolvableProperty(abc.ABC):
         self._get_in_progress = False
         self._lock = RLock()
 
-    def __get__(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']):
+    def __get__(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']) -> Any:
         """
         Attribute getter which resolves the resolver(s).
 
+        :param stack: The Stack instance the property is being retrieved for
+        :param stack_class: The class of the stack that the property is being retrieved for.
         :return: The attribute stored with the suffix ``name`` in the instance.
-        :rtype: dict or list
+        :rtype: The obtained value, as resolved by the
         """
         with self._lock, self._no_recursive_get():
             if hasattr(stack, self.name):
@@ -89,6 +91,9 @@ class ResolvableProperty(abc.ABC):
         """
         Attribute setter which adds a stack reference to any resolvers in the
         data structure `value` and calls the setup method.
+
+        :param stack: The Stack instance the value is being set onto
+        :param value: The value being set on the property
         """
         with self._lock:
             self.assign_value_to_stack(stack, value)
@@ -103,7 +108,14 @@ class ResolvableProperty(abc.ABC):
         finally:
             self._get_in_progress = False
 
-    def get_setup_resolver_for_stack(self, stack: 'stack.Stack', resolver: Resolver):
+    def get_setup_resolver_for_stack(self, stack: 'stack.Stack', resolver: Resolver) -> Resolver:
+        """Obtains a clone of the resolver with the stack set on it and the setup method having
+        been called on it.
+
+        :param stack: The stack to set on the Resolver
+        :param resolver: The Resolver to clone and set up
+        :return: The cloned resolver.
+        """
         # We clone the resolver when we assign the value so that every stack gets its own resolver
         # rather than potentially having one resolver instance shared in memory across multiple
         # stacks.
@@ -138,7 +150,7 @@ class ResolvableContainerProperty(ResolvableProperty):
     :type name: str
     """
 
-    def __get__(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']):
+    def __get__(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']) -> T_Container:
         container = super().__get__(stack, stack_class)
 
         with self._lock:
@@ -147,7 +159,15 @@ class ResolvableContainerProperty(ResolvableProperty):
 
         return container
 
-    def get_resolved_value(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']):
+    def get_resolved_value(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']) -> T_Container:
+        """Obtains the resolved value for this property. Any resolvers that resolve to None will have
+        their key/index removed from their dict/list where they are. Other resolvers will havie their
+        key/index's value replace with the resolved value to avoid redundant resolutions.
+
+        :param stack: The Stack instance to obtain the value for
+        :param stack_class: The class of the Stack instance.
+        :return: The fully resolved container.
+        """
         keys_to_delete = []
 
         def resolve(attr: Union[dict, list], key: Union[int, str], value: Resolver):
@@ -181,13 +201,19 @@ class ResolvableContainerProperty(ResolvableProperty):
         _call_func_on_values(
             resolve, container, Resolver
         )
-
+        # Remove keys and indexes from their containers that had resolvers resolve to None.
         for attr, key in keys_to_delete:
             del attr[key]
 
         return container
 
     def assign_value_to_stack(self, stack: 'stack.Stack', value: Union[dict, list]):
+        """Assigns a copy of the specified value to the stack instance. This method copies the value
+        rather than directly assigns it to avoid bugs related to shared objects in memory.
+
+        :param stack: The stack to assign the value to
+        :param value: The value to assign
+        """
         cloned = self._clone_container_with_resolvers(value, stack)
         setattr(stack, self.name, cloned)
 
@@ -278,7 +304,14 @@ class ResolvableValueProperty(ResolvableProperty):
     :type name: str
     """
 
-    def get_resolved_value(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']):
+    def get_resolved_value(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']) -> Any:
+        """Gets the fully-resolved value from the property. Resolvers will be replaced on the stack
+        instance with their resolved value to avoid redundant resolutions.
+
+        :param stack: The Stack instance to obtain the value from
+        :param stack_class: The class of the Stack instance
+        :return: The fully resolved value
+        """
         raw_value = getattr(stack, self.name)
         if isinstance(raw_value, Resolver):
             value = raw_value.resolve()
@@ -291,6 +324,12 @@ class ResolvableValueProperty(ResolvableProperty):
         return value
 
     def assign_value_to_stack(self, stack: 'stack.Stack', value: Any):
+        """Assigns the value to the Stack instance passed, setting up and cloning the value if it
+        is a Resolver.
+
+        :param stack: The Stack instance to set the value on
+        :param value: The value to set
+        """
         if isinstance(value, Resolver):
             value = self.get_setup_resolver_for_stack(stack, value)
         setattr(stack, self.name, value)
