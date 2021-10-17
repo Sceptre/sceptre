@@ -84,6 +84,12 @@ and builds that Stack before the current one.
 This resolver will add a dependency for the Stack in which needs the output
 from.
 
+**Important**: You cannot use the stack_output resolver on stacks where ``is_project_dependency`` is
+``True``. If the stack_output resolver is used on a project dependency stack, it will resolve to
+``None`` and that key/value pair will be removed from the dict or list it was defined in. This is
+to avoid unresolvable tangles of dependencies, since project dependencies are supposed to be the
+highest level dependency in the project, depending on no other stacks.
+
 stack_output_external
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -156,15 +162,23 @@ custom_resolver.py
 
             Parameters
             ----------
-            argument: str
-                The argument of the resolver.
+            argument: Any
+                The argument of the resolver. This can be any value able to be defined in yaml.
             stack: sceptre.stack.Stack
-                The associated stack of the resolver.
-
+                The associated stack of the resolver. This will normally be None when the resolver is
+                instantiated, but will be set before the resolver is resolved.
             """
 
-            def __init__(self, *args, **kwargs):
-                super(CustomResolver, self).__init__(*args, **kwargs)
+            def __init__(self, argument, stack=None):
+                super(CustomResolver, self).__init__(argument, stack)
+
+            def setup(self):
+                """
+                Setup is invoked after the stack has been set on the resolver, whether or not the
+                resolver is ever resolved.
+
+                Implement this method for any setup behavior you want (such as adding to stack dependencies).
+                """
 
             def resolve(self):
                 """
