@@ -6,6 +6,7 @@ sceptre.config.strategies
 This module contains the implementations of the strategies used to merge config
 attributes.
 """
+from copy import deepcopy
 
 
 def list_join(a, b):
@@ -26,12 +27,12 @@ def list_join(a, b):
         raise TypeError('{} is not a list'.format(b))
 
     if a is None:
-        return list(b) if b else []
+        return deepcopy(b)
 
     if b is not None:
         return a + b
 
-    return list(a) if a else []
+    return deepcopy(a)
 
 
 def dict_merge(a, b):
@@ -51,13 +52,12 @@ def dict_merge(a, b):
         raise TypeError('{} is not a dict'.format(b))
 
     if a is None:
-        return dict(b) if b else {}
+        return deepcopy(b)
 
     if b is not None:
-        a.update(b)
-        return a
+        return deepcopy({**a, **b})
 
-    return dict(a) if a else {}
+    return deepcopy(a)
 
 
 def child_wins(a, b):
