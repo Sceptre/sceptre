@@ -70,4 +70,4 @@ def child_wins(a, b):
     :type b: object
     :returns: b
     """
-    return b
+    return deepcopy(b)
