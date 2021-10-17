@@ -196,8 +196,7 @@ class ResolvableContainerProperty(ResolvableProperty):
             return_value = {}
             for key, val in value.items():
                 cloned = self._clone_container_recursively(val, stack)
-                if cloned is not None:
-                    return_value[key] = cloned
+                return_value[key] = cloned
             return return_value
         return value
 
