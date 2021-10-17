@@ -13,7 +13,7 @@ from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.helpers import get_external_stack_name, sceptreise_path
 from sceptre.hooks import HookProperty
-from sceptre.resolvers import ResolvableContainerProperty, ResolvableValueProperty
+from sceptre.resolvers import ResolvableContainerProperty, ResolvableValueProperty, RecursiveResolve
 from sceptre.template import Template
 
 
@@ -265,9 +265,29 @@ class Stack(object):
         :rtype: ConnectionManager
         """
         if self._connection_manager is None:
-            self._connection_manager = ConnectionManager(
-                self.region, self.profile, self.external_name, self.iam_role
+            cache_connection_manager = True
+            try:
+                iam_role = self.iam_role
+            except RecursiveResolve:
+                # This would be the case if the value of iam_role is currently being resolved and is
+                # attempting to access this connection_manager property, such as when using
+                # !stack_output. By setting the iam_role to None, it means that the IAM role will
+                # not be used for resolving the value for the IAM role. Once resolved, however, the
+                # the iam_role will be used for all subsequent actions on the stack.
+                self.logger.debug(
+                    "Resolving iam_role requires the Stack connection manager. Temporarily setting "
+                    "it to None until iam_role can be fully resolved."
+                )
+                iam_role = None
+                cache_connection_manager = False
+
+            connection_manager = ConnectionManager(
+                self.region, self.profile, self.external_name, iam_role
             )
+            if cache_connection_manager:
+                self._connection_manager = connection_manager
+            else:
+                return connection_manager
 
         return self._connection_manager
 
