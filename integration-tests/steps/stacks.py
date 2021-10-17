@@ -1,16 +1,15 @@
-import os
-import time
-from contextlib import contextmanager
-
-import boto3
-import yaml
 from behave import *
+import time
+import os
+import yaml
+import boto3
+from contextlib import contextmanager
 from botocore.exceptions import ClientError
-
 from helpers import read_template_file, get_cloudformation_stack_name
 from helpers import retry_boto_call
-from sceptre.context import SceptreContext
+
 from sceptre.plan.plan import SceptrePlan
+from sceptre.context import SceptreContext
 
 
 def set_stack_timeout(context, stack_name, stack_timeout):
