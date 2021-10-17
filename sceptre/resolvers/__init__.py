@@ -3,13 +3,14 @@ import abc
 import logging
 from contextlib import contextmanager
 from threading import RLock
-from typing import Any, TYPE_CHECKING, Type, Union
+from typing import Any, TYPE_CHECKING, Type, Union, TypeVar
 
 from sceptre.helpers import _call_func_on_values
 
 if TYPE_CHECKING:
     from sceptre.stack import Stack
 
+T_Container = TypeVar('T_Container', bound=Union[dict, list])
 
 logger = logging.getLogger(__name__)
 
@@ -141,8 +142,8 @@ class ResolvableContainerProperty(ResolvableProperty):
         container = super().__get__(stack, stack_class)
 
         with self._lock:
-            # Resolve any deferred resolvers, now that the recursive lock has been released.
-            self.resolve_deferred_resolvers(stack, container)
+            # Resolve any deferred resolvers, now that the recursive get lock has been released.
+            self._resolve_deferred_resolvers(stack, container)
 
         return container
 
@@ -187,27 +188,38 @@ class ResolvableContainerProperty(ResolvableProperty):
         return container
 
     def assign_value_to_stack(self, stack: 'Stack', value: Union[dict, list]):
-        cloned = self._clone_container_recursively(value, stack)
+        cloned = self._clone_container_with_resolvers(value, stack)
         setattr(stack, self.name, cloned)
 
-    def _clone_container_recursively(self, value: Any, stack: 'Stack'):
-        if isinstance(value, Resolver):
-            return self.get_setup_resolver_for_stack(stack, value)
-        if isinstance(value, list):
-            return_value = []
-            for item in value:
-                cloned = self._clone_container_recursively(item, stack)
-                return_value.append(cloned)
-            return return_value
-        elif isinstance(value, dict):
-            return_value = {}
-            for key, val in value.items():
-                cloned = self._clone_container_recursively(val, stack)
-                return_value[key] = cloned
-            return return_value
-        return value
+    def _clone_container_with_resolvers(
+        self,
+        container: T_Container,
+        stack: 'Stack'
+    ) -> T_Container:
+        """Recurses into the the container
 
-    def resolve_deferred_resolvers(self, stack: 'Stack', container: Union[dict, list]):
+        :param value:
+        :param stack:
+        :return:
+        """
+        def recurse(obj):
+            if isinstance(obj, Resolver):
+                return self.get_setup_resolver_for_stack(stack, obj)
+            if isinstance(obj, list):
+                return [
+                    recurse(item)
+                    for item in obj
+                ]
+            elif isinstance(obj, dict):
+                return {
+                    key: recurse(val)
+                    for key, val in obj.items()
+                }
+            return obj
+
+        return recurse(container)
+
+    def _resolve_deferred_resolvers(self, stack: 'Stack', container: T_Container):
         def raise_if_not_resolved(attr, key, value):
             # If this function has been hit, it means that after attempting to resolve all the
             # ResolveLaters, there STILL are ResolveLaters left in the container. Rather than
