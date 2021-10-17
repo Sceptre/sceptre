@@ -154,6 +154,7 @@ utilise and can be a part of a normal sceptre project. These include:
 `template_bucket_name`` config key).
 * The CloudFormation service role added to the stack(s) that CloudFormation uses to execute stack
 actions (i.e. the ``role_arn`` config key).
+* The role that Sceptre will assume to execute stack actions (i.e. the ``iam_role`` config key).
 * SNS topics that cloudformation will notify with the results of stack actions (i.e. the
 ``notifications`` config key).
 
@@ -163,10 +164,17 @@ using ``!stack_output``. They can even can be set in the highest-level config.ya
 even in the entire project) will be have those dependencies and get those values from Sceptre-managed
 stacks.
 
+Beyond the above mentioned config keys, it is possible to set the `dependencies` config key in a
+StackGroup config to be inherited by all Stack configs in that group. All dependencies in child
+stacks will be added to their inherited StackGroup dependencies, so be careful how you structure
+dependencies.
+
 **Important**: You might have already considered this might cause a circular dependency for those
 dependency stacks, the ones that output the template bucket name, role arn, or topic arns. In order
 to break the circular dependency, you can set ``is_project_dependency: True`` on those dependency
-stacks. As described in the documentation for :ref:`is_project_dependency <project_dependency_config>`.
+stacks. As described in the documentation for :ref:`is_project_dependency <project_dependency_config>`,
+stacks marked with ``is_project_dependency: True`` will ignore dependencies and any !stack_output
+resolvers will resolve to nothing.
 
 
 .. _stack_group_config_templating:

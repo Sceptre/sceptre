@@ -209,7 +209,7 @@ to create, update or delete resources.
 
 iam_role
 ~~~~~~~~
-* Resolvable: No
+* Resolvable: Yes
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
@@ -231,6 +231,11 @@ CI/CD system like Jenkins.
 
 In order to use this argument, however, the role needs to have an AssumeRolePolicyDocument that
 permits the user to assume that role.
+
+**Important**: If you use set the value of the ``iam_role`` with ``!stack_output``, that `iam_role`
+will not actually be used to obtain the stack_output, but it WILL be used for all subsequent stack
+actions. Therefore, it is important that the user executing the stack have permissions to get stack
+outputs for the stack outputting the ``iam_role``.
 
 sceptre_user_data
 ~~~~~~~~~~~~~~~~~
@@ -310,7 +315,9 @@ or even all stacks. This is useful for defining stacks for the project, such as 
 SNS notification topics, and/or an IAM service role.
 
 The biggest dependency between a "normal" stack config and a stack marked as a project dependency is
-that **the stack_output resolver will always resolve to nothing on project dependency stacks.**
+that stacks marked with ``is_project_dependency: True`` will ignore all dependencies of their own.
+Project dependencies are not allowed to have dependencies. Furthermore, the
+**the stack_output resolver will always resolve to nothing on project dependency stacks.**
 
 For example, this allows you to safely set the ``template_bucket_name`` on the top-level StackGroup
 config as the output from a project_dependency stack. This means that every **other** stack not marked
