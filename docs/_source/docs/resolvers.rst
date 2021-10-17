@@ -244,3 +244,17 @@ Resolver arguments can be a simple string or a complex data structure.
 
 .. _Custom Resolvers: #custom-resolvers
 .. _this is great place to start: https://docs.python.org/3/distributing/
+
+resolving to nothing
+^^^^^^^^^^^^^^^^^^^^
+When a resolver returns ``None``, this means that it resolves to "nothing". For resolvers set for
+single values (such as for ``template_bucket_name`` or ``role_arn``), this just means the value is
+``None`` and treated like those values aren't actually set. But for resolvers inside of containers
+like lists or dicts, when they resolve to "nothing", that item gets completely removed from their
+containing list or dict.
+
+This feature would be useful if you wanted to define a resolver that sometimes would resolve to be a
+given stack parameter and sometimes would be not defined at all and use the template's default value
+for that parameter. The resolver could just return `None` in those cases it wants to resolve to
+nothing, similar to the AWS::NoValue pseudo-parameter that can be referenced in a CloudFormation
+template.
