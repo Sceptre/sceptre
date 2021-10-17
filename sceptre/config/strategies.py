@@ -30,7 +30,7 @@ def list_join(a, b):
         return deepcopy(b)
 
     if b is not None:
-        return a + b
+        return deepcopy(a + b)
 
     return deepcopy(a)
 
