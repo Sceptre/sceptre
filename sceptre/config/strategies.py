@@ -21,21 +21,17 @@ def list_join(a, b):
     """
     if a and not isinstance(a, list):
         raise TypeError('{} is not a list'.format(a))
-    elif a:
-        a = list(a)
 
     if b and not isinstance(b, list):
         raise TypeError('{} is not a list'.format(b))
-    elif b:
-        b = list(b)
 
     if a is None:
-        return b
+        return list(b) if b else []
 
     if b is not None:
         return a + b
 
-    return a
+    return list(a) if a else []
 
 
 def dict_merge(a, b):
@@ -55,13 +51,13 @@ def dict_merge(a, b):
         raise TypeError('{} is not a dict'.format(b))
 
     if a is None:
-        return b
+        return dict(b) if b else {}
 
     if b is not None:
         a.update(b)
         return a
 
-    return a
+    return dict(a) if a else {}
 
 
 def child_wins(a, b):
