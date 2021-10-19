@@ -79,10 +79,13 @@ class TestStackDiffer:
             **{
                 'spec': StackActions,
                 'stack': self.stack,
-                'describe.side_effect': self.describe_stack
+                'describe.side_effect': self.describe_stack,
+                'fetch_remote_template_summary.side_effect': self.get_template_summary
             }
         )
         self.deployed_parameters = dict(self.parameters)
+        self.deployed_parameter_defaults = {}
+        self.no_echo_parameters = []
         self.deployed_tags = dict(self.tags)
         self.deployed_notification_arns = list(self.notifications)
         self.deployed_role_arn = self.role_arn
@@ -115,6 +118,23 @@ class TestStackDiffer:
                     ],
                 },
             ],
+        }
+
+    def get_template_summary(self):
+        params = []
+        for param, value in self.deployed_parameters.items():
+            entry = {
+                'ParameterKey': param,
+            }
+            if param in self.deployed_parameter_defaults:
+                entry['DefaultValue'] = self.deployed_parameter_defaults[param]
+            if param in self.no_echo_parameters:
+                entry['NoEcho'] = True
+
+            params.append(entry)
+
+        return {
+            'Parameters': params
         }
 
     @property
@@ -284,6 +304,63 @@ class TestStackDiffer:
         self.command_capturer.compare_templates.assert_called_with(
             '{}',
             self.actions.generate.return_value
+        )
+
+    def test_diff__deployed_stack_has_default_values__doesnt_pass_parameter__compares_identical_configs(self):
+        self.deployed_parameters['new'] = 'default value'
+        self.deployed_parameter_defaults['new'] = 'default value'
+        self.differ.diff(self.actions)
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            self.expected_generated_config,
+            self.expected_generated_config
+        )
+
+    def test_diff__deployed_stack_has_default_values__passes_the_parameter__compares_identical_configs(self):
+        self.deployed_parameters['new'] = 'default value'
+        self.deployed_parameter_defaults['new'] = 'default value'
+        self.parameters['new'] = 'default value'
+        self.differ.diff(self.actions)
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            self.expected_generated_config,
+            self.expected_generated_config
+        )
+
+    def test_diff__deployed_stack_has_default_values__passes_different_value__compares_different_configs(self):
+        self.deployed_parameters['new'] = 'default value'
+        self.deployed_parameter_defaults['new'] = 'default value'
+        self.parameters['new'] = 'custom value'
+        self.differ.diff(self.actions)
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            self.expected_deployed_config,
+            self.expected_generated_config
+        )
+
+    def test_diff__stack_exists_with_same_config_but_template_does_not__compares_identical_configs(self):
+        self.actions.fetch_remote_template_summary.side_effect = None
+        self.actions.fetch_remote_template_summary.return_value = None
+        self.actions.fetch_remote_template.return_value = None
+        self.differ.diff(self.actions)
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            self.expected_generated_config,
+            self.expected_generated_config
+        )
+
+    def test_diff__deployed_parameter_has_linebreak_but_otherwise_no_difference__compares_identical_configs(self):
+        self.deployed_parameters['param'] = self.deployed_parameters['param'] + '\n'
+        self.differ.diff(self.actions)
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            self.expected_generated_config,
+            self.expected_generated_config
+        )
+
+    def test_diff__no_echo_default_parameter__generated_stack_doesnt_pass_parameter__compares_identical_configs(self):
+        self.deployed_parameters['new'] = '****'
+        self.deployed_parameter_defaults['new'] = 'default value'
+        self.no_echo_parameters.append('new')
+        self.differ.diff(self.actions)
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            self.expected_generated_config,
+            self.expected_generated_config
         )
 
 
