@@ -2,6 +2,13 @@
 
 This documents how to release the Fox fork of Sceptre.
 
+## Merge upstream
+
+To raise a PR to merge upstream master into develop:
+
+- Go to https://github.com/fsa-streamotion/sceptre/compare/develop...Sceptre:master
+- PR title Merge upstream master => develop
+
 ## Bump version
 
 Raise a PR against develop that bumps the version. For example, see [this](https://github.com/fsa-streamotion/sceptre/pull/24) PR.
