@@ -106,13 +106,15 @@ Add the following configuration to ``config/dev/vpc.yaml``:
 
 .. code-block:: yaml
 
-   template_path: vpc.yaml
+   template:
+     path: templates/vpc.yaml
+     type: file
    parameters:
      CidrBlock: 10.0.0.0/16
 
-``template_path`` specifies the relative path to the CloudFormation, Python or
+``template`` specifies the relative path to the CloudFormation, Python or
 Jinja2 template to use to launch the Stack. Sceptre will use the ``templates``
-directory as the root templates directory to base your ``template_path`` from.
+directory as the root templates directory to base your ``path`` from.
 
 ``parameters`` lists the parameters which are supplied to the template
 ``vpc.yaml``.
@@ -134,7 +136,7 @@ You should now have a Sceptre project that looks a bit like:
 ..
 
    Note: You do not need to make sure the Template and Stack config names
-   match, since you define the ``template_path`` in your Stack config, but it
+   match, since you define the ``template`` in your Stack config, but it
    can be useful to keep track of what is going on.
 
 You will also notice that we have two ``config.yaml`` files, one in ``config/``

@@ -45,7 +45,9 @@ Stack:
 
 .. code-block:: yaml
 
-    template_path: dns-extras.j2
+    template
+      path: templates/dns-extras.j2
+      type: file
     dependencies:
     - prod/route53/domain-zone.yaml
     parameters:
