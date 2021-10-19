@@ -64,7 +64,7 @@ class StackDiffer(Generic[DiffType]):
         is_stack_deployed = bool(deployed_config)
 
         if is_stack_deployed:
-            self._remove_default_parameters(stack_actions, generated_config, deployed_config)
+            self._remove_default_parameters_that_arent_passed(stack_actions, generated_config, deployed_config)
 
         generated_template = self._generate_template(stack_actions)
         deployed_template = self._get_deployed_template(stack_actions, is_stack_deployed)
@@ -159,7 +159,7 @@ class StackDiffer(Generic[DiffType]):
                 role_arn=stack.get('RoleARN')
             )
 
-    def _remove_default_parameters(
+    def _remove_default_parameters_that_arent_passed(
         self,
         stack_actions: StackActions,
         generated_config: StackConfiguration,
