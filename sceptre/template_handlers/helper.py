@@ -117,6 +117,9 @@ def render_jinja_template(template_dir, filename, jinja_vars, stack_group_config
     :type filename: str
     :param jinja_vars: Dict of variables to render into the template.
     :type jinja_vars: dict
+    :param stack_group_config: The Stack group config to use as defaults.
+    :type stack_group_config: dict
+
     :returns: The body of the CloudFormation template.
     :rtype: str
     """
