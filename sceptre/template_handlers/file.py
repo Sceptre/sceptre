@@ -36,7 +36,7 @@ class File(TemplateHandler):
                     os.path.dirname(path),
                     os.path.basename(path),
                     {"sceptre_user_data": self.sceptre_user_data},
-                    self.stack_group_config
+                    self.stack_group_config.get("j2_environment", {})
                 )
             elif file_extension == ".py":
                 return helper.call_sceptre_handler(path,

@@ -60,7 +60,7 @@ class S3(TemplateHandler):
                             os.path.dirname(f.name),
                             os.path.basename(f.name),
                             {"sceptre_user_data": self.sceptre_user_data},
-                            self.stack_group_config
+                            self.stack_group_config.get("j2_environment", {})
                         )
                     elif path.suffix in python_template_suffix:
                         template = helper.call_sceptre_handler(

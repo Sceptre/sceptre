@@ -104,7 +104,7 @@ def print_template_traceback(path):
         )
 
 
-def render_jinja_template(template_dir, filename, jinja_vars, stack_group_config):
+def render_jinja_template(template_dir, filename, jinja_vars, j2_environment):
     """
     Renders a jinja template.
 
@@ -117,7 +117,7 @@ def render_jinja_template(template_dir, filename, jinja_vars, stack_group_config
     :type filename: str
     :param jinja_vars: Dict of variables to render into the template.
     :type jinja_vars: dict
-    :param stack_group_config: The Stack group config to use as defaults.
+    :param j2_environment: The jinja2 environment.
     :type stack_group_config: dict
 
     :returns: The body of the CloudFormation template.
@@ -134,8 +134,7 @@ def render_jinja_template(template_dir, filename, jinja_vars, stack_group_config
         "undefined": StrictUndefined
     }
     j2_environment_config = strategies.dict_merge(
-        default_j2_environment_config,
-        stack_group_config.get("j2_environment", {})
+        default_j2_environment_config, j2_environment
     )
     j2_environment = Environment(**j2_environment_config)
 

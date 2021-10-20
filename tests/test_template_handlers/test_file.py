@@ -60,22 +60,20 @@ def test_render_jinja_template(filename, sceptre_user_data, expected):
         template_dir=jinja_template_dir,
         filename=filename,
         jinja_vars={"sceptre_user_data": sceptre_user_data},
-        stack_group_config={}
+        j2_environment={}
     )
     expected_yaml = yaml.safe_load(expected)
     result_yaml = yaml.safe_load(result)
     assert expected_yaml == result_yaml
 
 
-@pytest.mark.parametrize("stack_group_config,expected_keys", [
+@pytest.mark.parametrize("j2_environment,expected_keys", [
     ({}, ["autoescape", "loader", "undefined"]),
-    ({"j2_environment": {"lstrip_blocks": True}},
-     ["autoescape", "loader", "undefined", "lstrip_blocks"]),
-    ({"j2_environment": {"lstrip_blocks": True, "extensions": ["test-ext"]}},
-     ["autoescape", "loader", "undefined", "lstrip_blocks", "extensions"])
+    ({"lstrip_blocks": True}, ["autoescape", "loader", "undefined", "lstrip_blocks"]),
+    ({"lstrip_blocks": True, "extensions": ["test-ext"]}, ["autoescape", "loader", "undefined", "lstrip_blocks", "extensions"])
 ])
 @patch("sceptre.template_handlers.helper.Environment")
-def test_render_jinja_template_j2_environment_config(mock_environment, stack_group_config, expected_keys):
+def test_render_jinja_template_j2_environment_config(mock_environment, j2_environment, expected_keys):
     filename = "vpc.j2"
     sceptre_user_data = {"vpc_id": "10.0.0.0/16"}
     jinja_template_dir = os.path.join(
@@ -86,6 +84,6 @@ def test_render_jinja_template_j2_environment_config(mock_environment, stack_gro
         template_dir=jinja_template_dir,
         filename=filename,
         jinja_vars={"sceptre_user_data": sceptre_user_data},
-        stack_group_config=stack_group_config
+        j2_environment=j2_environment
     )
     assert list(mock_environment.call_args.kwargs) == expected_keys
