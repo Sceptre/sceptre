@@ -164,7 +164,7 @@ using ``!stack_output``. They can even can be set in the highest-level config.ya
 even in the entire project) will be have those dependencies and get those values from Sceptre-managed
 stacks.
 
-Beyond the above mentioned config keys, it is possible to set the `dependencies` config key in a
+Beyond the above mentioned config keys, it is possible to set the ``dependencies`` config key in a
 StackGroup config to be inherited by all Stack configs in that group. All dependencies in child
 stacks will be added to their inherited StackGroup dependencies, so be careful how you structure
 dependencies.
