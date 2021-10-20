@@ -58,7 +58,8 @@ def test_render_jinja_template(filename, sceptre_user_data, expected):
     result = helper.render_jinja_template(
         template_dir=jinja_template_dir,
         filename=filename,
-        jinja_vars={"sceptre_user_data": sceptre_user_data}
+        jinja_vars={"sceptre_user_data": sceptre_user_data},
+        stack_group_config={}
     )
     expected_yaml = yaml.safe_load(expected)
     result_yaml = yaml.safe_load(result)

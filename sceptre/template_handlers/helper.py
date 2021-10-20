@@ -104,7 +104,7 @@ def print_template_traceback(path):
         )
 
 
-def render_jinja_template(template_dir, filename, jinja_vars, stack_group_config={}):
+def render_jinja_template(template_dir, filename, jinja_vars, stack_group_config):
     """
     Renders a jinja template.
 
@@ -128,14 +128,14 @@ def render_jinja_template(template_dir, filename, jinja_vars, stack_group_config
             default=True,
         ),
         "loader": FileSystemLoader(template_dir),
-        "undefined": StrictUndefined,
+        "undefined": StrictUndefined
     }
-
     j2_environment_config = strategies.dict_merge(
         default_j2_environment_config,
         stack_group_config.get("j2_environment", {})
     )
     j2_environment = Environment(**j2_environment_config)
+
     template = j2_environment.get_template(filename)
 
     body = template.render(**jinja_vars)
