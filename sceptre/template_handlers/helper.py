@@ -6,6 +6,7 @@ import traceback
 from importlib.machinery import SourceFileLoader
 from jinja2 import Environment, select_autoescape, FileSystemLoader, StrictUndefined
 from sceptre.exceptions import TemplateSceptreHandlerError
+from sceptre.config import strategies
 
 logger = logging.getLogger(__name__)
 
@@ -103,7 +104,7 @@ def print_template_traceback(path):
         )
 
 
-def render_jinja_template(template_dir, filename, jinja_vars):
+def render_jinja_template(template_dir, filename, jinja_vars, stack_group_config={}):
     """
     Renders a jinja template.
 
@@ -120,14 +121,22 @@ def render_jinja_template(template_dir, filename, jinja_vars):
     :rtype: str
     """
     logger.debug("%s Rendering CloudFormation template", filename)
-    env = Environment(
-        autoescape=select_autoescape(
+
+    default_j2_environment_config = {
+        "autoescape": select_autoescape(
             disabled_extensions=('j2',),
             default=True,
         ),
-        loader=FileSystemLoader(template_dir),
-        undefined=StrictUndefined
+        "loader": FileSystemLoader(template_dir),
+        "undefined": StrictUndefined,
+    }
+
+    j2_environment_config = strategies.dict_merge(
+        default_j2_environment_config,
+        stack_group_config.get("j2_environment", {})
     )
-    template = env.get_template(filename)
+    j2_environment = Environment(**j2_environment_config)
+    template = j2_environment.get_template(filename)
+
     body = template.render(**jinja_vars)
     return body

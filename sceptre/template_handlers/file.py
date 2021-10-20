@@ -35,7 +35,8 @@ class File(TemplateHandler):
                 return helper.render_jinja_template(
                     os.path.dirname(path),
                     os.path.basename(path),
-                    {"sceptre_user_data": self.sceptre_user_data}
+                    {"sceptre_user_data": self.sceptre_user_data},
+                    self.stack_group_config
                 )
             elif file_extension == ".py":
                 return helper.call_sceptre_handler(path,
