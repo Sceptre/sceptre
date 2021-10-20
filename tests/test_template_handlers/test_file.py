@@ -69,8 +69,10 @@ def test_render_jinja_template(filename, sceptre_user_data, expected):
 
 @pytest.mark.parametrize("j2_environment,expected_keys", [
     ({}, ["autoescape", "loader", "undefined"]),
-    ({"lstrip_blocks": True}, ["autoescape", "loader", "undefined", "lstrip_blocks"]),
-    ({"lstrip_blocks": True, "extensions": ["test-ext"]}, ["autoescape", "loader", "undefined", "lstrip_blocks", "extensions"])
+    ({"lstrip_blocks": True},
+     ["autoescape", "loader", "undefined", "lstrip_blocks"]),
+    ({"lstrip_blocks": True, "extensions": ["test-ext"]},
+     ["autoescape", "loader", "undefined", "lstrip_blocks", "extensions"])
 ])
 @patch("sceptre.template_handlers.helper.Environment")
 def test_render_jinja_template_j2_environment_config(mock_environment, j2_environment, expected_keys):
