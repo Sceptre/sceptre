@@ -156,7 +156,8 @@ class ConnectionManager(object):
                     sts_response = sts_client.assume_role(
                         RoleArn=iam_role,
                         RoleSessionName="{0}-session".format(
-                            iam_role.split("/")[-1]
+                            # maximal 64 chars are supported for role_session_name
+                            iam_role.split("/")[-1][:64]
                         )
                     )
 
