@@ -4,7 +4,6 @@ import yaml
 
 import sceptre.template_handlers.helper as helper
 from unittest.mock import patch
-from sceptre.template import Template
 
 
 @pytest.mark.parametrize("filename,sceptre_user_data,expected", [
@@ -70,18 +69,15 @@ def test_render_jinja_template(filename, sceptre_user_data, expected):
 
 @pytest.mark.parametrize("stack_group_config,expected_keys", [
     ({}, ["autoescape", "loader", "undefined"]),
-    ({"j2_environment": {"lstrip_blocks": True}}, ["autoescape", "loader", "undefined", "lstrip_blocks"]),
-    ({"j2_environment": {"lstrip_blocks": True, "extensions": ["test-ext"]}}, ["autoescape", "loader", "undefined", "lstrip_blocks", "extensions"])
+    ({"j2_environment": {"lstrip_blocks": True}},
+     ["autoescape", "loader", "undefined", "lstrip_blocks"]),
+    ({"j2_environment": {"lstrip_blocks": True, "extensions": ["test-ext"]}},
+     ["autoescape", "loader", "undefined", "lstrip_blocks", "extensions"])
 ])
 @patch("sceptre.template_handlers.helper.Environment")
 def test_render_jinja_template_j2_environment_config(mock_environment, stack_group_config, expected_keys):
     filename = "vpc.j2"
     sceptre_user_data = {"vpc_id": "10.0.0.0/16"}
-    handler_config = {"type": "file", "path": filename}
-    template = Template(name="template_name",
-                        handler_config=handler_config,
-                        sceptre_user_data=sceptre_user_data,
-                        stack_group_config=stack_group_config)
     jinja_template_dir = os.path.join(
         os.getcwd(),
         "tests/fixtures/templates"
