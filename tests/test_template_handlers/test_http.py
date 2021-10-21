@@ -38,7 +38,7 @@ class TestHttp(object):
 
     @patch('sceptre.template_handlers.helper.render_jinja_template')
     @patch('sceptre.template_handlers.http.Http._get_template')
-    def test_handler_jinja_template(slef, mock_get_template, mock_render_jinja_template):
+    def test_handler_jinja_template(self, mock_get_template, mock_render_jinja_template):
         mock_get_template_response = {
             "Description": "test template",
             "AWSTemplateFormatVersion": "2010-09-09",
