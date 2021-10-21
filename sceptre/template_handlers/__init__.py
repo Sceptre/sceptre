@@ -25,6 +25,9 @@ class TemplateHandler:
 
     :param connection_manager: Connection manager used to call AWS
     :type connection_manager: sceptre.connection_manager.ConnectionManager
+
+    :param stack_group_config: The Stack group config to use as defaults.
+    :type stack_group_config: dict
     """
 
     __metaclass__ = abc.ABCMeta
