@@ -962,3 +962,17 @@ class StackActions(object):
             if e.response['Error']['Code'] == 'ValidationError':
                 return None
             raise
+
+    @add_stack_hooks
+    def diff(self, stack_differ):
+        """
+        Returns a diff of Template and Remote Template
+        using a specific diff library.
+
+        :param stack_differ: The diff lib to use, default difflib.
+        :type: sceptre.diffing.stack_differ.StackDiffer
+
+        :returns: A StackDiff object.
+        :rtype: sceptre.diffing.stack_differ.StackDiff
+        """
+        return stack_differ.diff(self)

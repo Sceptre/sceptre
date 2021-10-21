@@ -1156,3 +1156,13 @@ class TestStackActions(object):
         }
         result = self.actions.fetch_remote_template()
         assert result == template_body
+
+    def test_diff__invokes_diff_method_on_injected_differ_with_self(self):
+        differ = Mock()
+        self.actions.diff(differ)
+        differ.diff.assert_called_with(self.actions)
+
+    def test_diff__returns_result_of_injected_differs_diff_method(self):
+        differ = Mock()
+        result = self.actions.diff(differ)
+        assert result == differ.diff.return_value

@@ -1,6 +1,6 @@
+import datetime
 import json
 from abc import abstractmethod
-from datetime import datetime
 from typing import TextIO, Generic, List
 
 import cfn_flip
