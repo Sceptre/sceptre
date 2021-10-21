@@ -63,6 +63,9 @@ class StackDiffer(Generic[DiffType]):
         deployed_config = self._create_deployed_stack_config(stack_actions)
         is_stack_deployed = bool(deployed_config)
 
+        if is_stack_deployed:
+            self._remove_default_parameters_that_arent_passed(stack_actions, generated_config, deployed_config)
+
         generated_template = self._generate_template(stack_actions)
         deployed_template = self._get_deployed_template(stack_actions, is_stack_deployed)
 
@@ -112,7 +115,7 @@ class StackDiffer(Generic[DiffType]):
             if isinstance(value, Resolver):
                 # There might be some resolvers that we can still resolve values for.
                 try:
-                    value_to_use = value.resolve()
+                    value_to_use = str(value.resolve()).rstrip('\n')
                 except Exception:
                     # We catch any errors out of the resolver, since that usually indicates the stack
                     # doesn't exist yet. In the end, this value likely won't matter, because if the
@@ -143,7 +146,7 @@ class StackDiffer(Generic[DiffType]):
                 return None
             return StackConfiguration(
                 parameters={
-                    param['ParameterKey']: param.get('ResolvedValue', param['ParameterValue'])
+                    param['ParameterKey']: param.get('ResolvedValue', param['ParameterValue']).rstrip('\n')
                     for param
                     in stack.get('Parameters', [])
                 },
@@ -155,6 +158,38 @@ class StackDiffer(Generic[DiffType]):
                 notifications=stack['NotificationARNs'],
                 role_arn=stack.get('RoleARN')
             )
+
+    def _remove_default_parameters_that_arent_passed(
+        self,
+        stack_actions: StackActions,
+        generated_config: StackConfiguration,
+        deployed_config: StackConfiguration
+    ):
+        deployed_config_default_map = self._get_parameter_default_map(stack_actions)
+        for parameter_key, default_value in deployed_config_default_map.items():
+            # If the generated config defines that parameter, leave that in the deployed config
+            # so we can see the diff.
+            if parameter_key in generated_config.parameters:
+                continue
+
+            # But if the stack config is relying on the template's default value for this parameter,
+            # remove that parameter from the deployed config... but only if its value is set to the
+            # default value. If we don't do this, it will show up as a difference when it isn't.
+            if deployed_config.parameters[parameter_key] == default_value:
+                del deployed_config.parameters[parameter_key]
+
+    def _get_parameter_default_map(self, stack_actions: StackActions):
+        template_summary = stack_actions.fetch_remote_template_summary()
+        if template_summary is None:
+            return {}
+
+        parameters = template_summary['Parameters']
+        default_map = {
+            parameter['ParameterKey']: '****' if parameter.get('NoEcho') else parameter['DefaultValue']
+            for parameter in parameters
+            if 'DefaultValue' in parameter
+        }
+        return default_map
 
     def _get_deployed_template(self, stack_actions: StackActions, is_deployed: bool) -> str:
         if is_deployed:

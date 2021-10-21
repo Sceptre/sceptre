@@ -963,6 +963,20 @@ class StackActions(object):
                 return None
             raise
 
+    def fetch_remote_template_summary(self):
+        try:
+            template_summary = self.connection_manager.call(
+                service='cloudformation',
+                command='get_template_summary',
+                kwargs={'StackName': self.stack.external_name}
+            )
+            return template_summary
+        except botocore.exceptions.ClientError as e:
+            # AWS returns a ValidationError if the stack doesn't exist
+            if e.response['Error']['Code'] == 'ValidationError':
+                return None
+            raise
+
     @add_stack_hooks
     def diff(self, stack_differ):
         """

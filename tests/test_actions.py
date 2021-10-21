@@ -1157,6 +1157,41 @@ class TestStackActions(object):
         result = self.actions.fetch_remote_template()
         assert result == template_body
 
+    def test_fetch_remote_template_summary__calls_cloudformation_get_template_summary(self):
+        self.actions.fetch_remote_template_summary()
+
+        self.actions.connection_manager.call.assert_called_with(
+            service='cloudformation',
+            command='get_template_summary',
+            kwargs={
+                'StackName': self.stack.external_name,
+            }
+        )
+
+    def test_fetch_remote_template_summary__returns_response_from_cloudformation(self):
+        def get_template_summary(service, command, kwargs):
+            assert (service, command) == ('cloudformation', 'get_template_summary')
+            return {'template': 'summary'}
+
+        self.actions.connection_manager.call.side_effect = get_template_summary
+        result = self.actions.fetch_remote_template_summary()
+        assert result == {'template': 'summary'}
+
+    def test_fetch_remote_template_summary__cloudformation_returns_validation_error__returns_none(self):
+        self.actions.connection_manager.call.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": "ValidationError",
+                    "Message": "An error occurred (ValidationError) "
+                               "when calling the GetTemplate operation: "
+                               "Stack with id foo does not exist"
+                }
+            },
+            sentinel.operation
+        )
+        result = self.actions.fetch_remote_template_summary()
+        assert result is None
+
     def test_diff__invokes_diff_method_on_injected_differ_with_self(self):
         differ = Mock()
         self.actions.diff(differ)
