@@ -68,7 +68,7 @@ def test_render_jinja_template(filename, sceptre_user_data, expected):
     assert expected_yaml == result_yaml
 
 
-@pytest.mark.skipif(sys.version_info < (3, 7), reason="requires Python >= 3.7")
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires Python >= 3.8")
 @pytest.mark.parametrize("j2_environment,expected_keys", [
     ({}, ["autoescape", "loader", "undefined"]),
     ({"lstrip_blocks": True},
