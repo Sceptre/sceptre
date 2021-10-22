@@ -298,13 +298,23 @@ class DifflibStackDiffer(StackDiffer[List[str]]):
         deployed: Optional[StackConfiguration],
         generated: StackConfiguration,
     ) -> List[str]:
-        deployed_dict = dict(deployed._asdict()) if deployed else {}
+        deployed_dict = self._make_stack_configuration_comparable(deployed)
+        generated_dict = self._make_stack_configuration_comparable(generated)
         deployed_string = cfn_flip.dump_yaml(deployed_dict)
-        generated_string = cfn_flip.dump_yaml(dict(generated._asdict()))
+        generated_string = cfn_flip.dump_yaml(generated_dict)
         return self._make_string_diff(
             deployed_string,
             generated_string
         )
+
+    def _make_stack_configuration_comparable(self, config: Optional[StackConfiguration]):
+        as_dict = dict(config._asdict()) if config is not None else {}
+        return {
+            key: value for key, value in as_dict.items()
+            # stack_name isn't always going to be the same, otherwise we wouldn't be comparing them.
+            # It's more confusing to have it in the diff output than to just remove it.
+            if value and key != 'stack_name'
+        }
 
     def compare_templates(
         self,
