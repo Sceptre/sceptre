@@ -56,13 +56,24 @@ class TestCli(object):
         self.patcher_StackActions.stop()
 
     @patch("sys.exit")
-    def test_catch_excecptions(self, mock_exit):
+    def test_catch_exceptions(self, mock_exit):
         @catch_exceptions
         def raises_exception():
             raise SceptreException()
 
         raises_exception()
         mock_exit.assert_called_once_with(1)
+
+    def test_catch_exceptions_debug_mode(self):
+        @catch_exceptions
+        def raises_exception():
+            raise SceptreException()
+
+        logger = logging.getLogger("sceptre")
+        logger.setLevel(logging.DEBUG)
+
+        with pytest.raises(SceptreException):
+            raises_exception()
 
     @pytest.mark.parametrize("command,files,output", [
         # one --var option
