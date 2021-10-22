@@ -1,4 +1,5 @@
 import datetime
+import itertools
 import json
 from abc import abstractmethod
 from typing import TextIO, Generic, List
@@ -20,8 +21,8 @@ class DiffWriter(Generic[DiffType]):
     readable. This is an abstract base class, so the abstract methods need to be implemented to
     create a DiffWriter for a given DiffType.
     """
-    STAR_BAR = '*' * 80
-    LINE_BAR = '-' * 80
+    STAR_BAR = '*' * 5
+    LINE_BAR = '-' * 5
 
     def __init__(self, stack_diff: StackDiff, output_stream: TextIO, output_format: str):
         """Initializes the DiffWriter
@@ -38,6 +39,8 @@ class DiffWriter(Generic[DiffType]):
         self.template_diff = stack_diff.template_diff
         self.config_diff = stack_diff.config_diff
         self.is_deployed = stack_diff.is_deployed
+
+        self.collected_lines = []
 
         self.output_stream = output_stream
         self.output_format = output_format
@@ -64,6 +67,15 @@ class DiffWriter(Generic[DiffType]):
         self._output(self.LINE_BAR)
         self._write_template_difference()
 
+        self._output_to_stream()
+
+    @property
+    def max_line_length(self) -> int:
+        return len(max(
+            itertools.chain.from_iterable(line.splitlines() for line in self.collected_lines),
+            key=len
+        ))
+
     def _write_new_stack_details(self):
         stack_config_text = self._dump_stack_config(self.stack_diff.generated_config)
         self._output(
@@ -81,7 +93,7 @@ class DiffWriter(Generic[DiffType]):
 
     def _output(self, *lines: str):
         lines_with_breaks = [f'{line}\n' for line in lines]
-        self.output_stream.writelines(lines_with_breaks)
+        self.collected_lines.extend(lines_with_breaks)
 
     def _dump_stack_config(self, stack_config: StackConfiguration) -> str:
         stack_config_dict = dict(stack_config._asdict())
@@ -121,6 +133,15 @@ class DiffWriter(Generic[DiffType]):
             '',
             diff_text
         )
+
+    def _output_to_stream(self):
+        max_line_length = self.max_line_length
+        for line in self.collected_lines:
+            if self.STAR_BAR in line:
+                line = f"{'*' * max_line_length}\n"
+            elif self.LINE_BAR in line:
+                line = f"{'-' * max_line_length}\n"
+            self.output_stream.write(line)
 
     @abstractmethod
     def dump_diff(self, diff: DiffType) -> str:
