@@ -155,7 +155,7 @@ class DeepDiffWriter(DiffWriter[DeepDiff]):
 
         # Yaml is more readable, but DeepDiff doesn't provide to_yaml method.
         loaded = json.loads(jsonified)
-        return yaml.dump(loaded)
+        return yaml.dump(loaded, indent=4)
 
 
 class DiffLibWriter(DiffWriter[List[str]]):

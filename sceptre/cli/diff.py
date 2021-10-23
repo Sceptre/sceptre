@@ -5,6 +5,7 @@ from typing import Dict, TextIO
 
 import click
 import yaml
+from cfn_tools import ODict
 from click import Context
 from yaml import Dumper
 
@@ -74,6 +75,7 @@ def diff_command(ctx: Context, differ: str, nonzero: bool, path):
 
     # Setup proper multi-line string representation for yaml output
     yaml.add_representer(str, repr_str)
+    yaml.add_representer(ODict, repr_odict)
 
     diffs: Dict[Stack, StackDiff] = plan.diff(stack_differ)
     line_buffer = io.StringIO()
@@ -108,8 +110,11 @@ def output_buffer_with_normalized_bar_lengths(buffer: TextIO, output_stream: Tex
         output_stream.write(line)
 
 
-def repr_str(dumper: Dumper, data):
+def repr_str(dumper: Dumper, data: str):
     if '\n' in data:
         return dumper.represent_scalar(u'tag:yaml.org,2002:str', data, style='|')
     return dumper.represent_str(data)
 
+
+def repr_odict(dumper: Dumper, data: ODict):
+    return dumper.represent_dict(data)
