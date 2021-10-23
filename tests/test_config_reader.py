@@ -90,6 +90,7 @@ class TestConfigReader(object):
 
         assert config == {
             "project_path": project_path,
+            "templates_path": "templates",
             "stack_group_path": os.path.split(target)[0],
             "filepath": target
         }
@@ -133,6 +134,7 @@ class TestConfigReader(object):
 
             assert config_a == {
                 "project_path": project_path,
+                "templates_path": "templates",
                 "stack_group_path": "A",
                 "keyA": "A",
                 "shared": "A"
@@ -142,6 +144,7 @@ class TestConfigReader(object):
 
             assert config_b == {
                 "project_path": project_path,
+                "templates_path": "templates",
                 "stack_group_path": "A/B",
                 "keyA": "A",
                 "keyB": "B",
@@ -155,6 +158,7 @@ class TestConfigReader(object):
 
             assert config_c == {
                 "project_path": project_path,
+                "templates_path": "templates",
                 "stack_group_path": "A/B/C",
                 "keyA": "A",
                 "keyB": "B",
@@ -188,6 +192,7 @@ class TestConfigReader(object):
 
             assert config == {
                 "project_path": project_path,
+                "templates_path": "templates",
                 "stack_group_path": "A",
                 "config": "config",
                 "base_config": "base_config"
@@ -206,6 +211,7 @@ class TestConfigReader(object):
         )
         assert config == {
             "project_path": self.test_project_path,
+            "templates_path": "templates",
             "stack_group_path": "account/stack-group/region"
         }
 
@@ -227,6 +233,7 @@ class TestConfigReader(object):
         assert config == {
             'project_path': self.context.project_path,
             "stack_group_path": "account/stack-group/region",
+            "templates_path": "templates",
             "parameters": {
                 "param1": "user_variable_value",
                 "param2": "environment_variable_value",
@@ -326,6 +333,8 @@ class TestConfigReader(object):
             template_bucket_name='stack_group_template_bucket_name',
             template_key_prefix=None,
             stack_group_config={
+                "project_path": self.context.project_path,
+                "templates_path": "templates",
                 "custom_key": "custom_value"
             }
         )

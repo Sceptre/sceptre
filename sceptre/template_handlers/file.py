@@ -26,7 +26,9 @@ class File(TemplateHandler):
 
     def handle(self):
         file_extension = os.path.splitext(self.arguments["path"])[1]
-        path = self.arguments["path"]
+        path = os.path.join(self.stack_group_config.get("project_path"),
+                            self.stack_group_config.get("templates_path"),
+                            self.arguments["path"])
         try:
             if file_extension in {".json", ".yaml", ".template"}:
                 with open(path) as template_file:

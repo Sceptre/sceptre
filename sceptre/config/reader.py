@@ -310,6 +310,7 @@ class ConfigReader(object):
         # Adding properties from class
         config = {
             "project_path": self.context.project_path,
+            "templates_path": self.context.templates_path,
             "stack_group_path": directory_path
         }
 
@@ -568,7 +569,6 @@ class ConfigReader(object):
             for key in
             set(stack_group_config) - set(CONFIG_MERGE_STRATEGIES)
         }
-        parsed_config.pop("project_path")
         parsed_config.pop("stack_group_path")
         return parsed_config
 
