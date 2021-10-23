@@ -1,5 +1,4 @@
 import datetime
-import itertools
 import json
 from abc import abstractmethod
 from typing import TextIO, Generic, List
@@ -21,7 +20,6 @@ class DiffWriter(Generic[DiffType]):
     readable. This is an abstract base class, so the abstract methods need to be implemented to
     create a DiffWriter for a given DiffType.
     """
-    # We'll lengthen these to full width when we compute outputs
     STAR_BAR = '*' * 80
     LINE_BAR = '-' * 80
 
@@ -40,8 +38,6 @@ class DiffWriter(Generic[DiffType]):
         self.template_diff = stack_diff.template_diff
         self.config_diff = stack_diff.config_diff
         self.is_deployed = stack_diff.is_deployed
-
-        self.collected_lines: List[str] = []
 
         self.output_stream = output_stream
         self.output_format = output_format
@@ -68,14 +64,6 @@ class DiffWriter(Generic[DiffType]):
         self._output(self.LINE_BAR)
         self._write_template_difference()
 
-        self._output_to_stream()
-
-    def compute_max_line_length(self) -> int:
-        return len(max(
-            itertools.chain.from_iterable(line.splitlines() for line in self.collected_lines),
-            key=len
-        ))
-
     def _write_new_stack_details(self):
         stack_config_text = self._dump_stack_config(self.stack_diff.generated_config)
         self._output(
@@ -93,7 +81,7 @@ class DiffWriter(Generic[DiffType]):
 
     def _output(self, *lines: str):
         lines_with_breaks = [f'{line}\n' for line in lines]
-        self.collected_lines.extend(lines_with_breaks)
+        self.output_stream.writelines(lines_with_breaks)
 
     def _dump_stack_config(self, stack_config: StackConfiguration) -> str:
         stack_config_dict = dict(stack_config._asdict())
@@ -117,7 +105,7 @@ class DiffWriter(Generic[DiffType]):
 
         diff_text = self.dump_diff(self.config_diff)
         self._output(
-            'Config difference:',
+            f'Config difference for {self.stack_name}:',
             '',
             diff_text
         )
@@ -129,21 +117,10 @@ class DiffWriter(Generic[DiffType]):
 
         diff_text = self.dump_diff(self.template_diff)
         self._output(
-            'Template difference:',
+            f'Template difference for {self.stack_name}:',
             '',
             diff_text
         )
-
-    def _output_to_stream(self):
-        max_line_length = self.compute_max_line_length()
-        full_length_star_bar = '*' * max_line_length
-        full_length_line_bar = '-' * max_line_length
-        for line in self.collected_lines:
-            if self.STAR_BAR in line:
-                line = line.replace(self.STAR_BAR, full_length_star_bar)
-            elif self.LINE_BAR in line:
-                line = line.replace(self.LINE_BAR, full_length_line_bar)
-            self.output_stream.write(line)
 
     @abstractmethod
     def dump_diff(self, diff: DiffType) -> str:
