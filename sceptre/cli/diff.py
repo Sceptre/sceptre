@@ -4,7 +4,9 @@ from logging import getLogger
 from typing import Dict, TextIO
 
 import click
+import yaml
 from click import Context
+from yaml import Dumper
 
 from sceptre.cli.helpers import catch_exceptions
 from sceptre.context import SceptreContext
@@ -70,9 +72,13 @@ def diff_command(ctx: Context, differ: str, nonzero: bool, path):
     else:
         raise ValueError(f"Unexpected differ type: {differ}")
 
+    # Setup proper multi-line string representation for yaml output
+    yaml.add_representer(str, repr_str)
+
     diffs: Dict[Stack, StackDiff] = plan.diff(stack_differ)
     line_buffer = io.StringIO()
     differences = 0
+
     for stack_diff in diffs.values():
         writer = writer_class(stack_diff, line_buffer, output_format)
         writer.write()
@@ -100,3 +106,10 @@ def output_buffer_with_normalized_bar_lengths(buffer: TextIO, output_stream: Tex
         if DiffWriter.LINE_BAR in line:
             line = line.replace(DiffWriter.LINE_BAR, full_length_line_bar)
         output_stream.write(line)
+
+
+def repr_str(dumper: Dumper, data):
+    if '\n' in data:
+        return dumper.represent_scalar(u'tag:yaml.org,2002:str', data, style='|')
+    return dumper.represent_str(data)
+
