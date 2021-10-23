@@ -21,8 +21,9 @@ class DiffWriter(Generic[DiffType]):
     readable. This is an abstract base class, so the abstract methods need to be implemented to
     create a DiffWriter for a given DiffType.
     """
-    STAR_BAR = '*' * 5
-    LINE_BAR = '-' * 5
+    # We'll lengthen these to full width when we compute outputs
+    STAR_BAR = '*' * 80
+    LINE_BAR = '-' * 80
 
     def __init__(self, stack_diff: StackDiff, output_stream: TextIO, output_format: str):
         """Initializes the DiffWriter
@@ -40,7 +41,7 @@ class DiffWriter(Generic[DiffType]):
         self.config_diff = stack_diff.config_diff
         self.is_deployed = stack_diff.is_deployed
 
-        self.collected_lines = []
+        self.collected_lines: List[str] = []
 
         self.output_stream = output_stream
         self.output_format = output_format
@@ -69,8 +70,7 @@ class DiffWriter(Generic[DiffType]):
 
         self._output_to_stream()
 
-    @property
-    def max_line_length(self) -> int:
+    def compute_max_line_length(self) -> int:
         return len(max(
             itertools.chain.from_iterable(line.splitlines() for line in self.collected_lines),
             key=len
@@ -135,12 +135,14 @@ class DiffWriter(Generic[DiffType]):
         )
 
     def _output_to_stream(self):
-        max_line_length = self.max_line_length
+        max_line_length = self.compute_max_line_length()
+        full_length_star_bar = '*' * max_line_length
+        full_length_line_bar = '-' * max_line_length
         for line in self.collected_lines:
             if self.STAR_BAR in line:
-                line = f"{'*' * max_line_length}\n"
+                line = line.replace(self.STAR_BAR, full_length_star_bar)
             elif self.LINE_BAR in line:
-                line = f"{'-' * max_line_length}\n"
+                line = line.replace(self.LINE_BAR, full_length_line_bar)
             self.output_stream.write(line)
 
     @abstractmethod
