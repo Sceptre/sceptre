@@ -46,7 +46,7 @@ class TemplateHandler:
         self.connection_manager = connection_manager
 
         if stack_group_config is None:
-            stack_group_config={}
+            stack_group_config = {}
         self.stack_group_config = stack_group_config
 
     @abc.abstractmethod
