@@ -98,6 +98,12 @@ def diff_command(ctx: Context, differ: str, nonzero: bool, path):
 
 
 def output_buffer_with_normalized_bar_lengths(buffer: TextIO, output_stream: TextIO):
+    """Takes the output from a buffer and ensures that the star and line bars are the same length
+    across the entire buffer and that their length is the full width of longest line.
+
+    :param buffer: The input stream to normalize bar lengths for
+    :param output_stream: The stream to output the normalized buffer into
+    """
     lines = buffer.readlines()
     max_length = len(max(lines, key=len))
     full_length_star_bar = '*' * max_length
@@ -110,11 +116,30 @@ def output_buffer_with_normalized_bar_lengths(buffer: TextIO, output_stream: Tex
         output_stream.write(line)
 
 
-def repr_str(dumper: Dumper, data: str):
+def repr_str(dumper: Dumper, data: str) -> str:
+    """A YAML Representer that handles strings, breaking multi-line strings into something a lot
+    more readable in the yaml output. This is useful for representing long, multiline strings in
+    templates or in stack parameters.
+
+    :param dumper: The Dumper that is being used to serialize this object
+    :param data: The string to serialize
+    :return: The represented string
+    """
     if '\n' in data:
         return dumper.represent_scalar(u'tag:yaml.org,2002:str', data, style='|')
     return dumper.represent_str(data)
 
 
-def repr_odict(dumper: Dumper, data: ODict):
+def repr_odict(dumper: Dumper, data: ODict) -> str:
+    """A YAML Representer for cfn-flip's ODict objects.
+
+    ODicts are a variation on OrderedDicts for that library. Since the Diff command makes extensive
+    use of ODicts, they can end up in diff output and the PyYaml library doesn't otherwise calls the
+    dicts like !!ODict, which looks weird. We can just treat them like normal dicts when we serialize
+    them, though.
+
+    :param dumper: The Dumper that is being used to serialize this object
+    :param data: The ODict object to serialize
+    :return: The serialized ODict
+    """
     return dumper.represent_dict(data)
