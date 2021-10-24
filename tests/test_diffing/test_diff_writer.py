@@ -149,7 +149,7 @@ class TestDiffWriter:
             DiffWriter.STAR_BAR,
             self.diff_detected_message,
             DiffWriter.LINE_BAR,
-            'Config difference:',
+            f'Config difference for {self.stack_name}:',
             '',
             self.diff_output,
             DiffWriter.LINE_BAR,
@@ -168,7 +168,7 @@ class TestDiffWriter:
             DiffWriter.LINE_BAR,
             'No stack config difference',
             DiffWriter.LINE_BAR,
-            'Template difference:',
+            f'Template difference for {self.stack_name}:',
             '',
             self.diff_output
         )
@@ -183,11 +183,11 @@ class TestDiffWriter:
             DiffWriter.STAR_BAR,
             self.diff_detected_message,
             DiffWriter.LINE_BAR,
-            'Config difference:',
+            f'Config difference for {self.stack_name}:',
             '',
             self.diff_output,
             DiffWriter.LINE_BAR,
-            'Template difference:',
+            f'Template difference for {self.stack_name}:',
             '',
             self.diff_output
         )

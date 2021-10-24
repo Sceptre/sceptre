@@ -516,15 +516,29 @@ class TestDifflibStackDiffer:
 
     def test_compare_stack_configurations__returns_diff_of_deployed_and_generated_when_converted_to_dicts(self):
         comparison = self.differ.compare_stack_configurations(self.config1, self.config2)
-        expected_config_1 = self.serialize(dict(self.config1._asdict()))
-        expected_config_2 = self.serialize(dict(self.config2._asdict()))
+        expected_config_1_dict = self.make_config_comparable(self.config1)
+        expected_config_2_dict = self.make_config_comparable(self.config2)
+        expected_config_1 = self.serialize(expected_config_1_dict)
+        expected_config_2 = self.serialize(expected_config_2_dict)
         expected = self.create_expected_diff(expected_config_1, expected_config_2)
 
         assert comparison == expected
 
+    def make_config_comparable(self, config: StackConfiguration):
+        config_dict = dict(config._asdict())
+        without_empty_values = {
+            key: value
+            for key, value in config_dict.items()
+            if value and key != 'stack_name'
+        }
+        return without_empty_values
+
     def test_compare_stack_configurations__deployed_is_none__returns_diff_with_none(self):
         comparison = self.differ.compare_stack_configurations(None, self.config2)
-        expected = self.create_expected_diff(self.serialize({}), self.serialize(dict(self.config2._asdict())))
+        expected = self.create_expected_diff(
+            self.serialize({}),
+            self.serialize(self.make_config_comparable(self.config2))
+        )
         assert comparison == expected
 
     @pytest.mark.parametrize(
