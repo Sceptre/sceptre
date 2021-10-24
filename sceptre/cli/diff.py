@@ -4,10 +4,7 @@ from logging import getLogger
 from typing import Dict, TextIO, Type
 
 import click
-import yaml
-from cfn_tools import ODict
 from click import Context
-from yaml import Dumper
 
 from sceptre.cli.helpers import catch_exceptions
 from sceptre.context import SceptreContext
