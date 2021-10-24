@@ -278,9 +278,26 @@ class TestDeepDiffWriter:
         self.config2.parameters['new_key'] = 'new value'
 
         result = self.writer.dump_diff(self.config_diff)
-        expected_dict = json.loads(self.config_diff.to_json(indent=4, default_mapping=deepdiff_json_defaults))
-        expected_yaml = yaml.dump(expected_dict)
+        expected_dict = self.config_diff.to_dict()
+        expected_yaml = yaml.dump(expected_dict, indent=4)
         assert result == expected_yaml
+
+    def test_dump_diff__output_format_is_yaml__diff_has_multiline_strings__strips_out_extra_spaces(self):
+        self.config1.parameters['long_param'] = 'here \nis \nmy \nlong \nstring'
+        self.config2.parameters['long_param'] = 'here \nis \nmy \nother \nlong \nstring'
+
+        dumped = self.writer.dump_diff(self.config_diff)
+        loaded = yaml.safe_load(dumped)
+        assert ' ' not in loaded['values_changed']["root.parameters['long_param']"]['new_value']
+        assert ' ' not in loaded['values_changed']["root.parameters['long_param']"]['old_value']
+        expected_diff = '\n'.join(
+            difflib.unified_diff(
+                self.config1.parameters['long_param'].splitlines(),
+                self.config2.parameters['long_param'].splitlines(),
+                lineterm=''
+            )
+        ).replace(' \n', '\n')
+        assert expected_diff == loaded['values_changed']["root.parameters['long_param']"]['diff']
 
 
 class TestDiffLibWriter:

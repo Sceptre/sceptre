@@ -11,7 +11,6 @@ from deepdiff.serialization import json_convertor_default
 
 from sceptre.diffing.stack_differ import StackConfiguration, StackDiff, DiffType
 
-
 deepdiff_json_defaults = {
     datetime.date: lambda x: x.isoformat(),
     StackConfiguration: lambda x: dict(x._asdict())
