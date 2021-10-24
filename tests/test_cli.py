@@ -912,3 +912,22 @@ class TestCli(object):
         encoder = CustomJsonEncoder()
         response = encoder.encode(datetime.datetime(2016, 5, 3))
         assert response == '"2016-05-03 00:00:00"'
+
+    def test_diff_command__diff_type_is_deepdiff__passes_deepdiff_stack_differ_to_actions(self):
+        assert False
+
+    def test_diff_command__diff_type_is_difflib__passes_difflib_stack_differ_to_actions(self):
+        assert False
+
+    def test_diff_command__nonzero_is_true__differences__returns_count_of_differences_as_exit_code(self):
+        assert False
+
+    def test_diff_command__nonzero_is_true__no_differences__returns_0(self):
+        assert False
+
+    def test_diff_command__nonzero_is_false__stack_diffs_have_differences__returns_0(self):
+        assert False
+
+    def test_diff_command__nonzero_is_false__no_differences__returns_0(self):
+        assert False
+    
