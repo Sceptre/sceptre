@@ -930,4 +930,10 @@ class TestCli(object):
 
     def test_diff_command__nonzero_is_false__no_differences__returns_0(self):
         assert False
-    
+
+    def test_diff_command__star_bars_are_all_full_width_of_output(self):
+        assert False
+
+    def test_diff_command__line_bars_are_all_full_width_of_output(self):
+        assert False
+
