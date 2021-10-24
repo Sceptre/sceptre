@@ -73,10 +73,6 @@ def diff_command(ctx: Context, differ: str, nonzero: bool, path):
     else:
         raise ValueError(f"Unexpected differ type: {differ}")
 
-    # Add some representers for better yaml serialization of templates, configs, and diffs
-    yaml.add_representer(str, repr_str)
-    yaml.add_representer(ODict, repr_odict)
-
     num_stacks_with_diff = run_diff(plan, stack_differ, writer_class, sys.stdout, output_format)
 
     if nonzero and num_stacks_with_diff:
@@ -136,32 +132,3 @@ def output_buffer_with_normalized_bar_lengths(buffer: io.StringIO, output_stream
         if DiffWriter.LINE_BAR in line:
             line = line.replace(DiffWriter.LINE_BAR, full_length_line_bar)
         output_stream.write(line)
-
-
-def repr_str(dumper: Dumper, data: str) -> str:
-    """A YAML Representer that handles strings, breaking multi-line strings into something a lot
-    more readable in the yaml output. This is useful for representing long, multiline strings in
-    templates or in stack parameters.
-
-    :param dumper: The Dumper that is being used to serialize this object
-    :param data: The string to serialize
-    :return: The represented string
-    """
-    if '\n' in data:
-        return dumper.represent_scalar(u'tag:yaml.org,2002:str', data, style='|')
-    return dumper.represent_str(data)
-
-
-def repr_odict(dumper: Dumper, data: ODict) -> str:
-    """A YAML Representer for cfn-flip's ODict objects.
-
-    ODicts are a variation on OrderedDicts for that library. Since the Diff command makes extensive
-    use of ODicts, they can end up in diff output and the PyYaml library doesn't otherwise calls the
-    dicts like !!ODict, which looks weird. We can just treat them like normal dicts when we serialize
-    them, though.
-
-    :param dumper: The Dumper that is being used to serialize this object
-    :param data: The ODict object to serialize
-    :return: The serialized ODict
-    """
-    return dumper.represent_dict(data)

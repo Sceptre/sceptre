@@ -4,6 +4,9 @@ from typing import NamedTuple, Dict, List, Optional, Callable, Tuple, Generic, T
 
 import cfn_flip
 import deepdiff
+import yaml
+from cfn_tools import ODict
+from yaml import Dumper
 
 from sceptre.plan.actions import StackActions
 from sceptre.resolvers import Resolver
@@ -31,6 +34,39 @@ class StackDiff(NamedTuple):
     is_deployed: bool
     generated_config: StackConfiguration
     generated_template: str
+
+
+def repr_str(dumper: Dumper, data: str) -> str:
+    """A YAML Representer that handles strings, breaking multi-line strings into something a lot
+    more readable in the yaml output. This is useful for representing long, multiline strings in
+    templates or in stack parameters.
+
+    :param dumper: The Dumper that is being used to serialize this object
+    :param data: The string to serialize
+    :return: The represented string
+    """
+    if '\n' in data:
+        return dumper.represent_scalar(u'tag:yaml.org,2002:str', data, style='|')
+    return dumper.represent_str(data)
+
+
+def repr_odict(dumper: Dumper, data: ODict) -> str:
+    """A YAML Representer for cfn-flip's ODict objects.
+
+    ODicts are a variation on OrderedDicts for that library. Since the Diff command makes extensive
+    use of ODicts, they can end up in diff output and the PyYaml library doesn't otherwise calls the
+    dicts like !!ODict, which looks weird. We can just treat them like normal dicts when we serialize
+    them, though.
+
+    :param dumper: The Dumper that is being used to serialize this object
+    :param data: The ODict object to serialize
+    :return: The serialized ODict
+    """
+    return dumper.represent_dict(data)
+
+
+yaml.add_representer(str, repr_str)
+yaml.add_representer(ODict, repr_odict)
 
 
 class StackDiffer(Generic[DiffType]):
@@ -201,7 +237,7 @@ class StackDiffer(Generic[DiffType]):
     def compare_templates(
         self,
         deployed: str,
-        generated: str,
+        generated: str
     ) -> DiffType:
         """Implement this method to return the diff for the templates
 
@@ -214,7 +250,7 @@ class StackDiffer(Generic[DiffType]):
     def compare_stack_configurations(
         self,
         deployed: Optional[StackConfiguration],
-        generated: StackConfiguration,
+        generated: StackConfiguration
     ) -> DiffType:
         """Implement this method to return the diff for the stack configurations.
 
@@ -260,7 +296,7 @@ class DeepDiffStackDiffer(StackDiffer[deepdiff.DeepDiff]):
             verbose_level=self.VERBOSITY_LEVEL_TO_INDICATE_CHANGED_VALUES
         )
 
-    def compare_templates(self, deployed: str, generated: str,) -> deepdiff.DeepDiff:
+    def compare_templates(self, deployed: str, generated: str) -> deepdiff.DeepDiff:
         # We don't actually care about the original formats here, since we only care about the
         # template VALUES.
         deployed_dict, _ = self.load_template(deployed)
@@ -279,6 +315,7 @@ class DifflibStackDiffer(StackDiffer[List[str]]):
 
     Because difflib generates diffs off of lists of strings, both StackConfigurations and
     """
+
     def __init__(
         self,
         *,
