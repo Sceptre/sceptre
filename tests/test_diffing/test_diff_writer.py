@@ -1,5 +1,4 @@
 import difflib
-import json
 from copy import deepcopy
 from io import StringIO
 from typing import TextIO
@@ -269,8 +268,8 @@ class TestDeepDiffWriter:
         self.config2.parameters['new_key'] = 'new value'
 
         result = self.writer.dump_diff(self.config_diff)
-        expected_dict = json.loads(self.config_diff.to_json(indent=4, default_mapping=deepdiff_json_defaults))
-        expected_yaml = yaml.dump(expected_dict)
+        expected_dict = self.config_diff.to_dict()
+        expected_yaml = yaml.dump(expected_dict, indent=4)
         assert result == expected_yaml
 
     def test_dump_diff__output_format_is_text__outputs_to_yaml(self):
