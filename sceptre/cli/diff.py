@@ -1,7 +1,7 @@
 import io
 import sys
 from logging import getLogger
-from typing import Dict, TextIO
+from typing import Dict, TextIO, Type
 
 import click
 import yaml
@@ -12,7 +12,7 @@ from yaml import Dumper
 from sceptre.cli.helpers import catch_exceptions
 from sceptre.context import SceptreContext
 from sceptre.diffing.diff_writer import DeepDiffWriter, DiffLibWriter, DiffWriter
-from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff
+from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff, StackDiffer
 from sceptre.plan.plan import SceptrePlan
 from sceptre.stack import Stack
 
@@ -73,42 +73,64 @@ def diff_command(ctx: Context, differ: str, nonzero: bool, path):
     else:
         raise ValueError(f"Unexpected differ type: {differ}")
 
-    # Setup proper multi-line string representation for yaml output
+    # Add some representers for better yaml serialization of templates, configs, and diffs
     yaml.add_representer(str, repr_str)
     yaml.add_representer(ODict, repr_odict)
 
+    num_stacks_with_diff = run_diff(plan, stack_differ, writer_class, sys.stdout, output_format)
+
+    if nonzero and num_stacks_with_diff:
+        logger.warning(
+            "A difference was detected. Exiting with the number of stacks with differences as the "
+            "exit code."
+        )
+        exit(num_stacks_with_diff)
+
+
+def run_diff(
+    plan: SceptrePlan,
+    stack_differ: StackDiffer,
+    writer_class: Type[DiffWriter],
+    output_buffer: TextIO,
+    output_format: str,
+) -> int:
+    """Runs the action of the diff command, outputting the results to the output_buffer.
+
+    :param plan: The SceptrePlan used to run the diff command across all stacks
+    :param stack_differ: The StackDiffer used by the diff command
+    :param writer_class: The DiffWriter class to be instantiated for each StackDiff
+    :param output_buffer: The buffer to write the diff results to
+    :param output_format: The format to output the results in
+    :return: The number of stacks that had a difference
+    """
     diffs: Dict[Stack, StackDiff] = plan.diff(stack_differ)
     line_buffer = io.StringIO()
-    differences = 0
+
+    num_stacks_with_diff = 0
 
     for stack_diff in diffs.values():
         writer = writer_class(stack_diff, line_buffer, output_format)
         writer.write()
         if writer.has_difference:
-            differences += 1
+            num_stacks_with_diff += 1
 
-    line_buffer.seek(0)
-    output_buffer_with_normalized_bar_lengths(line_buffer, sys.stdout)
-    if nonzero and differences:
-        logger.warning(
-            "A difference was detected. Exiting with the number of stacks with differences as the "
-            "exit code."
-        )
-        exit(differences)
+    output_buffer_with_normalized_bar_lengths(line_buffer, output_buffer)
+    return num_stacks_with_diff
 
 
-def output_buffer_with_normalized_bar_lengths(buffer: TextIO, output_stream: TextIO):
+def output_buffer_with_normalized_bar_lengths(buffer: io.StringIO, output_stream: TextIO):
     """Takes the output from a buffer and ensures that the star and line bars are the same length
     across the entire buffer and that their length is the full width of longest line.
 
     :param buffer: The input stream to normalize bar lengths for
     :param output_stream: The stream to output the normalized buffer into
     """
-    lines = buffer.readlines()
-    max_length = len(max(lines, key=len))
+    buffer.seek(0)
+    max_length = len(max(buffer, key=len))
+    buffer.seek(0)
     full_length_star_bar = '*' * max_length
     full_length_line_bar = '-' * max_length
-    for line in lines:
+    for line in buffer:
         if DiffWriter.STAR_BAR in line:
             line = line.replace(DiffWriter.STAR_BAR, full_length_star_bar)
         if DiffWriter.LINE_BAR in line:
