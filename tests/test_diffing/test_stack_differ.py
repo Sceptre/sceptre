@@ -529,7 +529,7 @@ class TestDifflibStackDiffer:
         without_empty_values = {
             key: value
             for key, value in config_dict.items()
-            if value and key != 'stack_name'
+            if value not in (None, [], {}) and key != 'stack_name'
         }
         return without_empty_values
 

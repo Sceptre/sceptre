@@ -350,7 +350,7 @@ class DifflibStackDiffer(StackDiffer[List[str]]):
             key: value for key, value in as_dict.items()
             # stack_name isn't always going to be the same, otherwise we wouldn't be comparing them.
             # It's more confusing to have it in the diff output than to just remove it.
-            if value and key != 'stack_name'
+            if value not in (None, [], {}) and key != 'stack_name'
         }
 
     def compare_templates(
