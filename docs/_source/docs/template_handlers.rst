@@ -38,7 +38,8 @@ Example:
 
 .. note::
 
-   The ``path`` property is relative to the sceptre_project_dir/templates directory.
+   The ``path`` property can contain an absolute or relative path to the template file.
+   This handler assumes a relative path to be from sceptre_project_dir/templates
 
 
 s3

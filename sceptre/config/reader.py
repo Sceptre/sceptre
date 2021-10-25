@@ -310,7 +310,6 @@ class ConfigReader(object):
         # Adding properties from class
         config = {
             "project_path": self.context.project_path,
-            "templates_path": self.context.templates_path,
             "stack_group_path": directory_path
         }
 
