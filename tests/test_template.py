@@ -44,7 +44,9 @@ class TestTemplate(object):
             name="template_name",
             handler_config={"type": "file", "path": "/folder/template.py"},
             sceptre_user_data={},
-            stack_group_config={},
+            stack_group_config={
+                "project_path": "projects"
+            },
             connection_manager=connection_manager,
         )
 

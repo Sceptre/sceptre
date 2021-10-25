@@ -5,9 +5,6 @@ Template handlers can be used to resolve a ``template`` config block to a CloudF
 fetch templates from S3, for example. Users can create their own template handlers to easily add support for other
 template loading mechanisms. See `Custom Template Handlers`_ for more information.
 
-When a ``template_path`` property is specified in the Stack config, it is wired into a ``file`` template handler by
-default. This saves you from having to specify a full ``template`` block if you just want to load a file from disk.
-
 .. warning::
 
    The ``template_path`` key is deprecated in favor of the ``template`` key.
@@ -18,10 +15,11 @@ Available Template Handlers
 file
 ~~~~~~~~~~~~~~~~~~~~
 
-Loads a template from disk. Supports JSON, YAML, Jinja2 and Python files. Will be used if the ``template_path`` Stack
-config property is set, for backwards compatibility reasons.
+Loads a template from the local file system. This handler supports templates with .json, .yaml, .template, .j2
+and .py extensions.  This is the default template handler type, specifying the ``file`` type is optional.
 
-This is the default template handler type, setting the ``file`` type is optional.
+For backwards compatability, when a ``template_path`` key is specified in the Stack config, it is wired to
+use the ``file`` template handler.
 
 Syntax:
 
@@ -40,8 +38,8 @@ Example:
 
 .. note::
 
-   The path for the ``template_path`` property is relative to the sceptre_dir/templates directory while the path for
-   this template ``path`` property is relative to the current working directory.
+   The ``path`` property can contain an absolute or relative path to the template file.
+   This handler assumes a relative path to be from sceptre_project_dir/templates
 
 
 s3

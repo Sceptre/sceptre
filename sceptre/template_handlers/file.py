@@ -1,7 +1,7 @@
-import logging
 import os
 import sceptre.template_handlers.helper as helper
 
+from pathlib import Path
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 from sceptre.template_handlers import TemplateHandler
 
@@ -12,7 +12,6 @@ class File(TemplateHandler):
     """
 
     def __init__(self, *args, **kwargs):
-        self.logger = logging.getLogger(__name__)
         super(File, self).__init__(*args, **kwargs)
 
     def schema(self):
@@ -25,28 +24,33 @@ class File(TemplateHandler):
         }
 
     def handle(self):
-        file_extension = os.path.splitext(self.arguments["path"])[1]
-        path = self.arguments["path"]
+        project_path = self.stack_group_config.get("project_path")
+        input_path = Path(self.arguments["path"])
+        if input_path.is_absolute():
+            path = str(input_path)
+        else:
+            path = str(Path(project_path) / 'templates' / input_path)
+
+        if input_path.suffix not in self.supported_template_extensions:
+            raise UnsupportedTemplateFileTypeError(
+                "Template has file extension %s. Only %s are supported.",
+                input_path.suffix, ",".join(self.supported_template_extensions)
+            )
+
         try:
-            if file_extension in {".json", ".yaml", ".template"}:
+            if input_path.suffix in self.standard_template_extensions:
                 with open(path) as template_file:
                     return template_file.read()
-            elif file_extension == ".j2":
+            elif input_path.suffix in self.jinja_template_extensions:
                 return helper.render_jinja_template(
                     os.path.dirname(path),
                     os.path.basename(path),
                     {"sceptre_user_data": self.sceptre_user_data},
                     self.stack_group_config.get("j2_environment", {})
                 )
-            elif file_extension == ".py":
+            elif input_path.suffix in self.python_template_extensions:
                 return helper.call_sceptre_handler(path,
                                                    self.sceptre_user_data)
-            else:
-                raise UnsupportedTemplateFileTypeError(
-                    "Template has file extension %s. Only .py, .yaml, "
-                    ".template, .json and .j2 are supported.",
-                    os.path.splitext(path)[1]
-                )
         except Exception as e:
             helper.print_template_traceback(path)
             raise e
