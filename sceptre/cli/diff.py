@@ -35,7 +35,7 @@ logger = getLogger(__name__)
 @click.argument('path')
 @click.pass_context
 @catch_exceptions
-def diff_command(ctx: Context, differ: str, nonzero: bool, path):
+def diff_command(ctx: Context, differ: str, nonzero: bool, path: str):
     """Indicates the difference between the currently DEPLOYED stacks in the command path and
     the stacks configured in Sceptre right now. This command will compare both the templates as well
     as the subset of stack configurations that can be compared.
