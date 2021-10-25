@@ -29,7 +29,7 @@ class File(TemplateHandler):
         if input_path.is_absolute():
             path = str(input_path)
         else:
-            path = os.path.join(project_path, "templates", input_path)
+            path = os.path.join(project_path, "templates", str(input_path))
 
         if input_path.suffix not in self.supported_template_extensions:
             raise UnsupportedTemplateFileTypeError(
