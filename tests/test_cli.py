@@ -1065,5 +1065,3 @@ class TestCli(object):
         max_line_length = len(max(output_lines, key=len))
         star_bars = [line for line in output_lines if bar in line]
         assert all(len(line) == max_line_length for line in star_bars)
-
-
