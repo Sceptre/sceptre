@@ -56,12 +56,9 @@ class S3(TemplateHandler):
                     f.seek(0)
                     f.read()
                     if path.suffix in jinja_template_suffix:
-                        template = helper.render_jinja_template(
-                            os.path.dirname(f.name),
-                            os.path.basename(f.name),
-                            {"sceptre_user_data": self.sceptre_user_data},
-                            self.stack_group_config.get("j2_environment", {})
-                        )
+                        template = helper.render_jinja_template(os.path.basename(f.name),
+                                                                {"sceptre_user_data": self.sceptre_user_data},
+                                                                self.stack_group_config.get("j2_environment", {}))
                     elif path.suffix in python_template_suffix:
                         template = helper.call_sceptre_handler(
                             f.name,
