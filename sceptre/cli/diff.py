@@ -29,8 +29,8 @@ logger = getLogger(__name__)
 @click.option(
     '--nonzero',
     is_flag=True,
-    help="If set to True, this will return a nonzero exit code if there is any difference. Defaults"
-         "to False, meaning this command only returns a nonzero if there are errors."
+    help="If this flag is passed, this will return the number of stacks with a difference as the "
+         "exit code. Otherwise, this will always return a 0 exit code except in the case of errors."
 )
 @click.argument('path')
 @click.pass_context
