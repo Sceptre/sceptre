@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import sceptre.template_handlers.helper as helper
 
 from pathlib import Path

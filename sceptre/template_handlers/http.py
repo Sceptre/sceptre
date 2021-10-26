@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import pathlib
-import os
 import requests
 import tempfile
 import sceptre.template_handlers.helper as helper
@@ -52,7 +51,7 @@ class Http(TemplateHandler):
                     f.seek(0)
                     f.read()
                     if path.suffix in self.jinja_template_extensions:
-                        template = helper.render_jinja_template(os.path.basename(f.name),
+                        template = helper.render_jinja_template(f.name,
                                                                 {"sceptre_user_data": self.sceptre_user_data},
                                                                 self.stack_group_config.get("j2_environment", {}))
                     elif path.suffix in self.python_template_extensions:
