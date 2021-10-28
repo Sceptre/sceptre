@@ -1,4 +1,4 @@
-import os
+# -*- coding: utf-8 -*-
 import sceptre.template_handlers.helper as helper
 
 from pathlib import Path
@@ -42,12 +42,9 @@ class File(TemplateHandler):
                 with open(path) as template_file:
                     return template_file.read()
             elif input_path.suffix in self.jinja_template_extensions:
-                return helper.render_jinja_template(
-                    os.path.dirname(path),
-                    os.path.basename(path),
-                    {"sceptre_user_data": self.sceptre_user_data},
-                    self.stack_group_config.get("j2_environment", {})
-                )
+                return helper.render_jinja_template(path,
+                                                    {"sceptre_user_data": self.sceptre_user_data},
+                                                    self.stack_group_config.get("j2_environment", {}))
             elif input_path.suffix in self.python_template_extensions:
                 return helper.call_sceptre_handler(path,
                                                    self.sceptre_user_data)
