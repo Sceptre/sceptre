@@ -38,12 +38,15 @@ class TemplateHandler:
     supported_template_extensions = standard_template_extensions + \
         jinja_template_extensions + python_template_extensions
 
-    def __init__(self, name, arguments=None, sceptre_user_data=None, connection_manager=None, stack_group_config={}):
+    def __init__(self, name, arguments=None, sceptre_user_data=None, connection_manager=None, stack_group_config=None):
         self.logger = logging.getLogger(__name__)
         self.name = name
         self.arguments = arguments
         self.sceptre_user_data = sceptre_user_data
         self.connection_manager = connection_manager
+
+        if stack_group_config is None:
+            stack_group_config = {}
         self.stack_group_config = stack_group_config
 
     @abc.abstractmethod

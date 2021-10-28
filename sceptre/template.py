@@ -96,55 +96,6 @@ class Template(object):
 
         return self._body
 
-    def _call_sceptre_handler(self):
-        """
-        Calls the function `sceptre_handler` within templates that are python
-        scripts.
-
-        :returns: The string returned from sceptre_handler in the template.
-        :rtype: str
-        :raises: IOError
-        :raises: TemplateSceptreHandlerError
-        """
-
-        # Get relative path as list between current working directory and where
-        # the template is
-        # NB: this is a horrible hack...
-        relpath = os.path.relpath(self.path, os.getcwd()).split(os.path.sep)
-        paths_to_add = [
-            os.path.join(os.getcwd(), os.path.sep.join(relpath[:i+1]))
-            for i in range(len(relpath[:-1]))
-        ]
-
-        # Add any directory between the current working directory and where
-        # the template is to the python path
-        for path in paths_to_add:
-            sys.path.append(path)
-        self.logger.debug(
-            "%s - Getting CloudFormation from %s", self.name, self.path
-        )
-
-        if not os.path.isfile(self.path):
-            raise IOError("No such file or directory: '%s'", self.path)
-
-        module = SourceFileLoader(self.name, self.path).load_module()
-
-        try:
-            body = module.sceptre_handler(self.sceptre_user_data)
-        except AttributeError as e:
-            if 'sceptre_handler' in str(e):
-                raise TemplateSceptreHandlerError(
-                    "The template does not have the required "
-                    "'sceptre_handler(sceptre_user_data)' function."
-                )
-            else:
-                raise e
-
-        for path in paths_to_add:
-            sys.path.remove(path)
-
-        return body
-
     def upload_to_s3(self):
         """
         Uploads the template to ``bucket_name`` and returns its URL.
