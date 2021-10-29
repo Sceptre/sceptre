@@ -86,11 +86,10 @@ class Http(TemplateHandler):
             raise e
 
     def _get_retry_session(self,
-        retries=5,
-        backoff_factor=0.3,
-        status_forcelist=(429, 500, 502, 503, 504),
-        session=None,
-    ):
+                           retries=5,
+                           backoff_factor=0.3,
+                           status_forcelist=(429, 500, 502, 503, 504),
+                           session=None):
         session = session or requests.Session()
         retry = Retry(
             total=retries,
