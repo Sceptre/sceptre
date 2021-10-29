@@ -80,6 +80,8 @@ class StackDiffer(Generic[DiffType]):
     As an abstract base class, the two comparison methods need to be implemented so that the
     StackDiff can be generated.
     """
+    def __init__(self, show_no_echo=False):
+        self.show_no_echo = show_no_echo
 
     STACK_STATUSES_INDICATING_NOT_DEPLOYED = [
         'CREATE_FAILED',
@@ -99,11 +101,11 @@ class StackDiffer(Generic[DiffType]):
         deployed_config = self._create_deployed_stack_config(stack_actions)
         is_stack_deployed = bool(deployed_config)
 
-        if is_stack_deployed:
-            self._remove_default_parameters_that_arent_passed(stack_actions, generated_config, deployed_config)
-
         generated_template = self._generate_template(stack_actions)
         deployed_template = self._get_deployed_template(stack_actions, is_stack_deployed)
+
+        if is_stack_deployed:
+            self._handle_parameters(stack_actions, generated_config, deployed_config)
 
         template_diff = self.compare_templates(deployed_template, generated_template)
         config_diff = self.compare_stack_configurations(deployed_config, generated_config)
@@ -195,13 +197,29 @@ class StackDiffer(Generic[DiffType]):
                 role_arn=stack.get('RoleARN')
             )
 
-    def _remove_default_parameters_that_arent_passed(
-        self,
+    def _handle_parameters(self,
         stack_actions: StackActions,
         generated_config: StackConfiguration,
         deployed_config: StackConfiguration
     ):
-        deployed_config_default_map = self._get_parameter_default_map(stack_actions)
+        deployed_template_summary = stack_actions.fetch_remote_template_summary()
+        generated_template_summary = stack_actions.fetch_local_template_summary()
+
+        self._remove_deployed_default_parameters_that_arent_passed(
+            deployed_template_summary,
+            generated_config,
+            deployed_config
+        )
+        if not self.show_no_echo:
+            self._mask_no_echo_parameters(generated_template_summary, generated_config)
+
+    def _remove_deployed_default_parameters_that_arent_passed(
+        self,
+        template_summary: dict,
+        generated_config: StackConfiguration,
+        deployed_config: StackConfiguration,
+    ):
+        deployed_config_default_map = self._get_parameter_default_map(template_summary)
         for parameter_key, default_value in deployed_config_default_map.items():
             # If the generated config defines that parameter, leave that in the deployed config
             # so we can see the diff.
@@ -214,8 +232,7 @@ class StackDiffer(Generic[DiffType]):
             if deployed_config.parameters[parameter_key] == default_value:
                 del deployed_config.parameters[parameter_key]
 
-    def _get_parameter_default_map(self, stack_actions: StackActions):
-        template_summary = stack_actions.fetch_remote_template_summary()
+    def _get_parameter_default_map(self, template_summary: dict) -> Dict[str, str]:
         if template_summary is None:
             return {}
 
@@ -226,6 +243,14 @@ class StackDiffer(Generic[DiffType]):
             if 'DefaultValue' in parameter
         }
         return default_map
+
+    def _mask_no_echo_parameters(self, template_summary: dict, generated_config: StackConfiguration):
+        parameters = template_summary['Parameters']
+
+        for parameter in parameters:
+            key = parameter['ParameterKey']
+            if parameter.get('NoEcho') and key in generated_config.parameters:
+                generated_config.parameters[key] = '***HIDDEN***'
 
     def _get_deployed_template(self, stack_actions: StackActions, is_deployed: bool) -> str:
         if is_deployed:
