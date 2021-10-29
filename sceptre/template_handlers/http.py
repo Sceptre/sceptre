@@ -77,7 +77,7 @@ class Http(TemplateHandler):
         :rtype: str
         """
         self.logger.debug("Downloading file from: %s", url)
-        session = self._get_retry_session(session=requests.Session())
+        session = self._get_retry_session()
         try:
             response = session.get(url, timeout=(2, 5))
             return response.content
