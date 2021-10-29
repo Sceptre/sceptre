@@ -4,6 +4,8 @@ import requests
 import tempfile
 import sceptre.template_handlers.helper as helper
 
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 from sceptre.template_handlers import TemplateHandler
 from urllib.parse import urlparse
@@ -75,9 +77,29 @@ class Http(TemplateHandler):
         :rtype: str
         """
         self.logger.debug("Downloading file from: %s", url)
+        session = self._get_retry_session(session=requests.Session())
         try:
-            response = requests.get(url)
+            response = session.get(url, timeout=(2, 5))
             return response.content
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             self.logger.fatal(e)
             raise e
+
+    def _get_retry_session(self,
+        retries=5,
+        backoff_factor=0.3,
+        status_forcelist=(429, 500, 502, 503, 504),
+        session=None,
+    ):
+        session = session or requests.Session()
+        retry = Retry(
+            total=retries,
+            read=retries,
+            connect=retries,
+            backoff_factor=backoff_factor,
+            status_forcelist=status_forcelist,
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount('http://', adapter)
+        session.mount('https://', adapter)
+        return session
