@@ -1,7 +1,7 @@
 import io
 import sys
 from logging import getLogger
-from typing import Dict, TextIO, Type
+from typing import Dict, TextIO, Type, List, Iterable
 
 import click
 from click import Context
@@ -26,16 +26,10 @@ logger = getLogger(__name__)
     help='The type of differ to use. Use "deepdiff" for recursive key/value comparison. "difflib" '
          'produces a more traditional "diff" result. Defaults to deepdiff.'
 )
-@click.option(
-    '--nonzero',
-    is_flag=True,
-    help="If this flag is passed, this will return the number of stacks with a difference as the "
-         "exit code. Otherwise, this will always return a 0 exit code except in the case of errors."
-)
 @click.argument('path')
 @click.pass_context
 @catch_exceptions
-def diff_command(ctx: Context, differ: str, nonzero: bool, path: str):
+def diff_command(ctx: Context, differ: str, path: str):
     """Indicates the difference between the currently DEPLOYED stacks in the command path and
     the stacks configured in Sceptre right now. This command will compare both the templates as well
     as the subset of stack configurations that can be compared.
@@ -70,38 +64,35 @@ def diff_command(ctx: Context, differ: str, nonzero: bool, path: str):
     else:
         raise ValueError(f"Unexpected differ type: {differ}")
 
-    num_stacks_with_diff = run_diff(plan, stack_differ, writer_class, sys.stdout, output_format)
+    diffs: Dict[Stack, StackDiff] = plan.diff(stack_differ)
+    num_stacks_with_diff = output_diffs(diffs.values(), writer_class, sys.stdout, output_format)
 
-    if nonzero and num_stacks_with_diff:
+    if num_stacks_with_diff:
         logger.warning(
-            "A difference was detected. Exiting with the number of stacks with differences as the "
-            "exit code."
+            f"{num_stacks_with_diff} stacks with differences detected."
         )
-        exit(num_stacks_with_diff)
 
 
-def run_diff(
-    plan: SceptrePlan,
-    stack_differ: StackDiffer,
+def output_diffs(
+    diffs: Iterable[StackDiff],
     writer_class: Type[DiffWriter],
     output_buffer: TextIO,
     output_format: str,
 ) -> int:
-    """Runs the action of the diff command, outputting the results to the output_buffer.
+    """Outputs the diff results to the output_buffer.
 
-    :param plan: The SceptrePlan used to run the diff command across all stacks
-    :param stack_differ: The StackDiffer used by the diff command
+    :param diffs: The differences computed
     :param writer_class: The DiffWriter class to be instantiated for each StackDiff
     :param output_buffer: The buffer to write the diff results to
     :param output_format: The format to output the results in
     :return: The number of stacks that had a difference
     """
-    diffs: Dict[Stack, StackDiff] = plan.diff(stack_differ)
+
     line_buffer = io.StringIO()
 
     num_stacks_with_diff = 0
 
-    for stack_diff in diffs.values():
+    for stack_diff in diffs:
         writer = writer_class(stack_diff, line_buffer, output_format)
         writer.write()
         if writer.has_difference:

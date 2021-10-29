@@ -927,76 +927,9 @@ class TestCli(object):
         differ_used = self.mock_stack_actions.diff.call_args.args[0]
         assert isinstance(differ_used, DifflibStackDiffer)
 
-    def test_diff_command__nonzero_is_true__differences__returns_count_of_differences_as_exit_code(self):
-        stacks = {deepcopy(self.mock_stack) for _ in range(3)}
-        stack_name_iterator = iter(['first', 'second', 'third'])
+        self.runner.invoke(cli, 'diff stacks', catch_exceptions=False)
 
-        def fake_diff(differ):
-            name = next(stack_name_iterator)
-            return StackDiff(
-                stack_name=name,
-                template_diff=DeepDiff("same", "same") if name == 'second' else DeepDiff("I'm", "different"),
-                config_diff=DeepDiff("same", "same"),
-                is_deployed=True,
-                generated_config=None,
-                generated_template=None
-            )
-
-        self.mock_stack_actions.diff.side_effect = fake_diff
-        self.mock_config_reader.construct_stacks.return_value = (stacks, stacks)
-
-        result = self.runner.invoke(cli, 'diff --nonzero stacks', catch_exceptions=False)
-        assert result.exit_code == 2
-
-    def test_diff_command__nonzero_is_true__no_differences__returns_0(self):
-        stacks = {deepcopy(self.mock_stack) for _ in range(3)}
-        stack_name_iterator = iter(['first', 'second', 'third'])
-
-        def fake_diff(differ):
-            name = next(stack_name_iterator)
-            return StackDiff(
-                stack_name=name,
-                template_diff=DeepDiff("same", "same"),
-                config_diff=DeepDiff("same", "same"),
-                is_deployed=True,
-                generated_config=None,
-                generated_template=None
-            )
-
-        self.mock_stack_actions.diff.side_effect = fake_diff
-        self.mock_config_reader.construct_stacks.return_value = (stacks, stacks)
-
-        result = self.runner.invoke(cli, 'diff --nonzero stacks', catch_exceptions=False)
-        assert result.exit_code == 0
-
-    def test_diff_command__nonzero_is_true__none_are_deployed__returns_number_of_stacks(self):
-        stacks = {deepcopy(self.mock_stack) for _ in range(3)}
-        stack_name_iterator = iter(['first', 'second', 'third'])
-
-        def fake_diff(differ):
-            name = next(stack_name_iterator)
-            return StackDiff(
-                stack_name=name,
-                template_diff=DeepDiff(None, "same"),
-                config_diff=DeepDiff(None, "same"),
-                is_deployed=False,
-                generated_config=StackConfiguration(
-                    stack_name=name,
-                    parameters={},
-                    stack_tags={},
-                    notifications=[],
-                    role_arn=None
-                ),
-                generated_template='template'
-            )
-
-        self.mock_stack_actions.diff.side_effect = fake_diff
-        self.mock_config_reader.construct_stacks.return_value = (stacks, stacks)
-
-        result = self.runner.invoke(cli, 'diff --nonzero stacks', catch_exceptions=False)
-        assert result.exit_code == 3
-
-    def test_diff_command__nonzero_is_not_set__stack_diffs_have_differences__returns_0(self):
+    def test_diff_command__stack_diffs_have_differences__returns_0(self):
         stacks = {deepcopy(self.mock_stack) for _ in range(3)}
         stack_name_iterator = iter(['first', 'second', 'third'])
 
@@ -1017,7 +950,7 @@ class TestCli(object):
         result = self.runner.invoke(cli, 'diff stacks', catch_exceptions=False)
         assert result.exit_code == 0
 
-    def test_diff_command__nonzero_is_false__no_differences__returns_0(self):
+    def test_diff_command__no_differences__returns_0(self):
         stacks = {deepcopy(self.mock_stack) for _ in range(3)}
         stack_name_iterator = iter(['first', 'second', 'third'])
 
