@@ -377,6 +377,8 @@ class DeepDiffStackDiffer(StackDiffer[deepdiff.DeepDiff]):
     ):
         """Initializes a DeepDiffStackDiffer.
 
+        :param show_no_echo: If True, local parameters passed that the template says are NoEcho
+            parameters will be displayed; Otherwise, they will be masked in the diff.
         :param universal_template_loader: This should be a callable that can load either a json or
             yaml string and return a tuple where the first element is the loaded template and the
             second element is the template format (either "json" or "yaml")
@@ -423,6 +425,8 @@ class DifflibStackDiffer(StackDiffer[List[str]]):
     ):
         """Initializes a DifflibStackDiffer.
 
+        :param show_no_echo: If True, local parameters passed that the template says are NoEcho
+            parameters will be displayed; Otherwise, they will be masked in the diff.
         :param universal_template_loader: This should be a callable that can load either a json or
             yaml string and return a tuple where the first element is the loaded template and the
             second element is the template format (either "json" or "yaml")
