@@ -63,7 +63,7 @@ def diff_command(ctx: Context, differ: str, show_no_echo: bool, path: str):
     diff results.
     2. If the resolver CANNOT be resolved, it will be replaced with a string that represents the
     resolver and its arguments. For example: !stack_output my_stack.yaml::MyOutput will resolve in
-    the parameters to "!StackOutput(my_stack.yaml::MyOutput)"
+    the parameters to "{!StackOutput(my_stack.yaml::MyOutput)}"
 
 
     """

@@ -226,13 +226,13 @@ class TestStackDiffer:
     @pytest.mark.parametrize(
         'argument, resolved_value',
         [
-            pytest.param('arg', '{!UnresolvableResolver(arg)}', id='has argument'),
+            pytest.param('arg', '{ !UnresolvableResolver(arg) }', id='has argument'),
             pytest.param(
                 {'test': 'this'},
-                '{!UnresolvableResolver({\'test\': \'this\'})}',
+                '{ !UnresolvableResolver({\'test\': \'this\'}) }',
                 id='has dict argument'
             ),
-            pytest.param(None, '{!UnresolvableResolver}', id='no argument')
+            pytest.param(None, '{ !UnresolvableResolver }', id='no argument')
         ]
     )
     def test_diff__resolver_in_parameters__resolver_raises_stack_does_not_exist_error__uses_replacement_value(

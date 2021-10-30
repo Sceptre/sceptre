@@ -180,7 +180,8 @@ class StackDiffer(Generic[DiffType]):
     def _represent_unresolvable_resolver(self, resolver: Resolver):
         base = f'!{type(resolver).__name__}'
         suffix = f'({resolver.argument})' if resolver.argument is not None else ''
-        return f'{{{base}{suffix}}}'
+        # double-braces in an f-string is just an escaped single brace
+        return f'{{ {base}{suffix} }}'
 
     def _create_deployed_stack_config(self, stack_actions: StackActions) -> Optional[StackConfiguration]:
         description = stack_actions.describe()
