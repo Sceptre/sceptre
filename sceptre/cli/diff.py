@@ -26,10 +26,19 @@ logger = getLogger(__name__)
     help='The type of differ to use. Use "deepdiff" for recursive key/value comparison. "difflib" '
          'produces a more traditional "diff" result. Defaults to deepdiff.'
 )
+@click.option(
+    '-s',
+    '--show-no-echo',
+    is_flag=True,
+    help='If set, will display the unmasked values of NoEcho parameters generated LOCALLY (NoEcho '
+         'parameters for deployed stacks will always be masked when retrieved from CloudFormation.). '
+         'If not set (the default), parameters identified as NoEcho on the local template will be '
+         'masked when presented in the diff.'
+)
 @click.argument('path')
 @click.pass_context
 @catch_exceptions
-def diff_command(ctx: Context, differ: str, path: str):
+def diff_command(ctx: Context, differ: str, show_no_echo: bool, path: str):
     """Indicates the difference between the currently DEPLOYED stacks in the command path and
     the stacks configured in Sceptre right now. This command will compare both the templates as well
     as the subset of stack configurations that can be compared.
@@ -56,10 +65,10 @@ def diff_command(ctx: Context, differ: str, path: str):
     plan = SceptrePlan(context)
 
     if differ == "deepdiff":
-        stack_differ = DeepDiffStackDiffer()
+        stack_differ = DeepDiffStackDiffer(show_no_echo)
         writer_class = DeepDiffWriter
     elif differ == 'difflib':
-        stack_differ = DifflibStackDiffer()
+        stack_differ = DifflibStackDiffer(show_no_echo)
         writer_class = DiffLibWriter
     else:
         raise ValueError(f"Unexpected differ type: {differ}")
