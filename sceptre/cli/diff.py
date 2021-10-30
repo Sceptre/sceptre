@@ -1,7 +1,7 @@
 import io
 import sys
 from logging import getLogger
-from typing import Dict, TextIO, Type, List, Iterable
+from typing import Dict, TextIO, Type, Iterable
 
 import click
 from click import Context
@@ -9,7 +9,7 @@ from click import Context
 from sceptre.cli.helpers import catch_exceptions
 from sceptre.context import SceptreContext
 from sceptre.diffing.diff_writer import DeepDiffWriter, DiffLibWriter, DiffWriter
-from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff, StackDiffer
+from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff
 from sceptre.plan.plan import SceptrePlan
 from sceptre.stack import Stack
 

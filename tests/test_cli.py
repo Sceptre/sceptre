@@ -1,28 +1,27 @@
-import logging
-from copy import deepcopy
-
-import yaml
 import datetime
-import os
 import errno
 import json
+import logging
+import os
+from copy import deepcopy
 
+import click
+import pytest
+import yaml
+from botocore.exceptions import ClientError
 from click.testing import CliRunner
 from deepdiff import DeepDiff
 from mock import MagicMock, patch, sentinel
-import pytest
-import click
-from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff, StackConfiguration
 
 from sceptre.cli import cli
-from sceptre.config.reader import ConfigReader
-from sceptre.stack import Stack
-from sceptre.plan.actions import StackActions
-from sceptre.stack_status import StackStatus
-from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
 from sceptre.cli.helpers import CustomJsonEncoder, catch_exceptions
-from botocore.exceptions import ClientError
+from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
+from sceptre.config.reader import ConfigReader
+from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff
 from sceptre.exceptions import SceptreException
+from sceptre.plan.actions import StackActions
+from sceptre.stack import Stack
+from sceptre.stack_status import StackStatus
 
 
 class TestCli(object):
