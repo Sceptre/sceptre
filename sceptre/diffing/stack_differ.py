@@ -1,4 +1,5 @@
 import difflib
+import logging
 from abc import abstractmethod
 from typing import NamedTuple, Dict, List, Optional, Callable, Tuple, Generic, TypeVar
 
@@ -8,11 +9,14 @@ import yaml
 from cfn_tools import ODict
 from yaml import Dumper
 
+from sceptre.helpers import _call_func_on_values
 from sceptre.plan.actions import StackActions
 from sceptre.resolvers import Resolver
 from sceptre.stack import Stack
 
 DiffType = TypeVar('DiffType')
+
+logger = logging.getLogger(__name__)
 
 
 class StackConfiguration(NamedTuple):
@@ -89,6 +93,11 @@ class StackDiffer(Generic[DiffType]):
     NO_ECHO_REPLACEMENT = "***HIDDEN***"
 
     def __init__(self, show_no_echo=False):
+        """Initializes the StackDiffer.
+
+        :param show_no_echo: If True, local parameters passed that the template says are NoEcho
+            parameters will be displayed; Otherwise, they will be masked in the diff.
+        """
         self.show_no_echo = show_no_echo
 
     def diff(self, stack_actions: StackActions) -> StackDiff:
@@ -119,9 +128,6 @@ class StackDiffer(Generic[DiffType]):
             generated_config,
             generated_template
         )
-
-    def _generate_template(self, stack_actions: StackActions) -> str:
-        return stack_actions.generate()
 
     def _create_generated_config(self, stack: Stack) -> StackConfiguration:
         parameters = self._extract_parameters_dict(stack)
@@ -164,14 +170,18 @@ class StackDiffer(Generic[DiffType]):
                     # this value would be shown is where the current stack DOES exist, but a new
                     # dependency is added that does not exist yet. In which case, it will show the
                     # most usable output we can provide right now.
-                    value_to_use = f'!{type(value).__name__}'
-                    if value.argument is not None:
-                        value_to_use += f': {value.argument}'
+                    value_to_use = self._represent_unresolvable_resolver(value)
             else:
                 value_to_use = value
             parameters[key] = value_to_use
 
         return parameters
+
+    def _represent_unresolvable_resolver(self, resolver: Resolver):
+        value_to_use = f'!{type(resolver).__name__}'
+        if resolver.argument is not None:
+            value_to_use += f'({resolver.argument})'
+        return value_to_use
 
     def _create_deployed_stack_config(self, stack_actions: StackActions) -> Optional[StackConfiguration]:
         description = stack_actions.describe()
@@ -260,6 +270,59 @@ class StackDiffer(Generic[DiffType]):
             key = parameter['ParameterKey']
             if parameter.get('NoEcho') and key in generated_config.parameters:
                 generated_config.parameters[key] = self.NO_ECHO_REPLACEMENT
+
+    def _generate_template(self, stack_actions: StackActions) -> str:
+        try:
+            return stack_actions.generate()
+        except Exception:
+            # If we could not generate the stack, it COULD be because there are unresolvable
+            # resolvers in the sceptre_user_data and the template / template handler uses that
+            # sceptre_user_data in order to render. The most common case of this is when generating
+            # a diff where the template's user data uses a stack output from a stack that
+            # hasn't been deployed yet. We'll replace any unresolvable resolvers and then attempt the
+            # generation one more time. If we're successful, that will be the template we use in the
+            # diff.
+            logger.debug(
+                "Error encountered attempting to render the template. Attempting to replace any "
+                "unresolved resolvers in the sceptre_user_data to see if that helps."
+            )
+            self._replace_unresolvable_user_data_resolvers(stack_actions.stack)
+            try:
+                return stack_actions.generate()
+            except Exception:
+                # We won't raise this exception here because it could be that the
+                # substituted values are invalid on the template, or some other issue. The error
+                # message raised from here wouldn't be understandible to the user since we've swapped
+                # out the resolvers here, so we'll pass here and then reraise the original error.
+                logger.debug(
+                    "Attempting to render the template with replaced sceptre_user_data failed. "
+                    "Reraising original error.",
+                    exc_info=True
+                )
+                pass
+            raise
+
+    def _replace_unresolvable_user_data_resolvers(self, stack: Stack):
+        """Recursively traverses the sceptre_user_data and replaces unresolvable resolvers with
+        placeholder values so that we can continue to render the diff, even if the resolvers can't
+        be resolved right now.
+
+        :param stack: The stack whose sceptre_user_data cannot be resolved.
+        """
+        def resolve_or_replace(attr, key, value: Resolver):
+            try:
+                attr[key] = value.resolve()
+            except Exception:
+                resolver_representation = self._represent_unresolvable_resolver(value)
+                attr[key] = f'{{{resolver_representation}}}'
+
+        # Because the name is mangled, we cannot access the user data normally, so we need to access
+        # it directly out of the __dict__.
+        user_data = stack.__dict__['__sceptre_user_data']
+        if not user_data:
+            return
+
+        _call_func_on_values(resolve_or_replace, user_data, Resolver)
 
     def _get_deployed_template(self, stack_actions: StackActions, is_deployed: bool) -> str:
         if is_deployed:

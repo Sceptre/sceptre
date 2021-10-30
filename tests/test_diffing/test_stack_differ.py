@@ -363,6 +363,12 @@ class TestStackDiffer:
             self.expected_generated_config
         )
 
+    def test_diff__generated_template_has_no_echo_parameter__masks_value(self):
+        assert False
+
+    def test_diff__generated_template_has_no_echo_parameter__show_no_echo__shows_value(self):
+        assert False
+
 
 class TestDeepDiffStackDiffer:
 
