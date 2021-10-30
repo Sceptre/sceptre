@@ -104,8 +104,7 @@ class StackDiffer(Generic[DiffType]):
         generated_template = self._generate_template(stack_actions)
         deployed_template = self._get_deployed_template(stack_actions, is_stack_deployed)
 
-        if is_stack_deployed:
-            self._handle_parameters(stack_actions, generated_config, deployed_config)
+        self._handle_special_parameter_situations(stack_actions, generated_config, deployed_config)
 
         template_diff = self.compare_templates(deployed_template, generated_template)
         config_diff = self.compare_stack_configurations(deployed_config, generated_config)
@@ -197,7 +196,8 @@ class StackDiffer(Generic[DiffType]):
                 role_arn=stack.get('RoleARN')
             )
 
-    def _handle_parameters(self,
+    def _handle_special_parameter_situations(
+        self,
         stack_actions: StackActions,
         generated_config: StackConfiguration,
         deployed_config: StackConfiguration
@@ -205,11 +205,12 @@ class StackDiffer(Generic[DiffType]):
         deployed_template_summary = stack_actions.fetch_remote_template_summary()
         generated_template_summary = stack_actions.fetch_local_template_summary()
 
-        self._remove_deployed_default_parameters_that_arent_passed(
-            deployed_template_summary,
-            generated_config,
-            deployed_config
-        )
+        if deployed_config is not None:
+            self._remove_deployed_default_parameters_that_arent_passed(
+                deployed_template_summary,
+                generated_config,
+                deployed_config
+            )
         if not self.show_no_echo:
             self._mask_no_echo_parameters(generated_template_summary, generated_config)
 
@@ -299,6 +300,7 @@ class DeepDiffStackDiffer(StackDiffer[deepdiff.DeepDiff]):
 
     def __init__(
         self,
+        show_no_echo=False,
         *,
         universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load
     ):
@@ -308,6 +310,7 @@ class DeepDiffStackDiffer(StackDiffer[deepdiff.DeepDiff]):
             yaml string and return a tuple where the first element is the loaded template and the
             second element is the template format (either "json" or "yaml")
         """
+        super().__init__(show_no_echo)
         self.load_template = universal_template_loader
 
     def compare_stack_configurations(
@@ -343,6 +346,7 @@ class DifflibStackDiffer(StackDiffer[List[str]]):
 
     def __init__(
         self,
+        show_no_echo=False,
         *,
         universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load
     ):
@@ -352,7 +356,7 @@ class DifflibStackDiffer(StackDiffer[List[str]]):
             yaml string and return a tuple where the first element is the loaded template and the
             second element is the template format (either "json" or "yaml")
         """
-        super().__init__()
+        super().__init__(show_no_echo)
         self.load_template = universal_template_loader
 
     def compare_stack_configurations(
