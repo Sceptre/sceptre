@@ -63,9 +63,10 @@ def diff_command(ctx: Context, differ: str, show_no_echo: bool, path: str):
     diff results.
     2. If the resolver CANNOT be resolved, it will be replaced with a string that represents the
     resolver and its arguments. For example: !stack_output my_stack.yaml::MyOutput will resolve in
-    the parameters to "{!StackOutput(my_stack.yaml::MyOutput)}"
+    the parameters to "{ !StackOutput(my_stack.yaml::MyOutput) }".
 
-
+    Particularly in cases where the replaced value doesn't work in the template as the template logic
+    requires and causes an error, there is nothing further Sceptre can do and diffing will fail.
     """
     context = SceptreContext(
         command_path=path,
