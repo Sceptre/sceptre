@@ -178,10 +178,9 @@ class StackDiffer(Generic[DiffType]):
         return parameters
 
     def _represent_unresolvable_resolver(self, resolver: Resolver):
-        value_to_use = f'!{type(resolver).__name__}'
-        if resolver.argument is not None:
-            value_to_use += f'({resolver.argument})'
-        return value_to_use
+        base = f'!{type(resolver).__name__}'
+        suffix = f'({resolver.argument})' if resolver.argument is not None else ''
+        return f'{{{base}{suffix}}}'
 
     def _create_deployed_stack_config(self, stack_actions: StackActions) -> Optional[StackConfiguration]:
         description = stack_actions.describe()
@@ -313,8 +312,7 @@ class StackDiffer(Generic[DiffType]):
             try:
                 attr[key] = value.resolve()
             except Exception:
-                resolver_representation = self._represent_unresolvable_resolver(value)
-                attr[key] = f'{{{resolver_representation}}}'
+                attr[key] = self._represent_unresolvable_resolver(value)
 
         # Because the name is mangled, we cannot access the user data normally, so we need to access
         # it directly out of the __dict__.

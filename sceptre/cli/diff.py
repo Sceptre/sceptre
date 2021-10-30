@@ -43,7 +43,7 @@ def diff_command(ctx: Context, differ: str, show_no_echo: bool, path: str):
     the stacks configured in Sceptre right now. This command will compare both the templates as well
     as the subset of stack configurations that can be compared.
 
-    Note: Some settings (such as sceptre_user_data) are not available in a CloudFormation stack
+    Some settings (such as sceptre_user_data) are not available in a CloudFormation stack
     description, so the diff will not be indicated. Currently compared stack configurations are:
 
     \b
@@ -51,6 +51,21 @@ def diff_command(ctx: Context, differ: str, show_no_echo: bool, path: str):
       * notifications
       * role_arn
       * stack_tags
+
+    Important: There are resolvers (notably !stack_output, among others) that rely on other stacks
+    to be already deployed when they are resolved. When producing a diff on Stack Configs that have
+    such resolvers that point to non-deployed stacks, this presents a challenge, since this means
+    those resolvers cannot be resolved. This particularly applies to stack parameters and when a
+    stack's template uses sceptre_user_data with resolvers in it. In order to continue to be useful
+    when producing a diff in these conditions, this command will do the following:
+
+    1. If the resolver CAN be resolved, it will be resolved and the resolved value will be in the
+    diff results.
+    2. If the resolver CANNOT be resolved, it will be replaced with a string that represents the
+    resolver and its arguments. For example: !stack_output my_stack.yaml::MyOutput will resolve in
+    the parameters to "!StackOutput(my_stack.yaml::MyOutput)"
+
+
     """
     context = SceptreContext(
         command_path=path,
