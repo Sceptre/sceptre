@@ -80,14 +80,16 @@ class StackDiffer(Generic[DiffType]):
     As an abstract base class, the two comparison methods need to be implemented so that the
     StackDiff can be generated.
     """
-    def __init__(self, show_no_echo=False):
-        self.show_no_echo = show_no_echo
-
     STACK_STATUSES_INDICATING_NOT_DEPLOYED = [
         'CREATE_FAILED',
         'ROLLBACK_COMPLETE',
         'DELETE_COMPLETE',
     ]
+
+    NO_ECHO_REPLACEMENT = "***HIDDEN***"
+
+    def __init__(self, show_no_echo=False):
+        self.show_no_echo = show_no_echo
 
     def diff(self, stack_actions: StackActions) -> StackDiff:
         """Produces a StackDiff between the currently deployed stack (if it exists) and the stack
@@ -206,12 +208,18 @@ class StackDiffer(Generic[DiffType]):
         generated_template_summary = stack_actions.fetch_local_template_summary()
 
         if deployed_config is not None:
+            # If the parameter is not passed by Sceptre and the value on the deployed parameter is
+            # the default value, we'll actually remove it from the deployed parameters list so it
+            # doesn't show up as a false positive.
             self._remove_deployed_default_parameters_that_arent_passed(
                 deployed_template_summary,
                 generated_config,
                 deployed_config
             )
         if not self.show_no_echo:
+            # We don't actually want to show parameters Sceptre is passing that the local template
+            # marks as NoEcho parameters (unless show_no_echo is set to true). Therefore those
+            # parameter values will be masked.
             self._mask_no_echo_parameters(generated_template_summary, generated_config)
 
     def _remove_deployed_default_parameters_that_arent_passed(
@@ -251,7 +259,7 @@ class StackDiffer(Generic[DiffType]):
         for parameter in parameters:
             key = parameter['ParameterKey']
             if parameter.get('NoEcho') and key in generated_config.parameters:
-                generated_config.parameters[key] = '***HIDDEN***'
+                generated_config.parameters[key] = self.NO_ECHO_REPLACEMENT
 
     def _get_deployed_template(self, stack_actions: StackActions, is_deployed: bool) -> str:
         if is_deployed:
