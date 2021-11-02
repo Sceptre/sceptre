@@ -68,8 +68,8 @@ http
 ~~~~~~~~~~~~~
 
 Downloads a template from a url on the web.  By default, this handler will attempt to download
-templates with 5 retries and a download timeout is set to 5 seconds.  The retry and timeout
-options can be overriden by setting the `http_template_handler key`_ in the stack group config
+templates with 5 retries and a download timeout of 5 seconds.  The default retry and timeout
+options can be overridden by setting the `http_template_handler key`_ in the stack group config
 file.
 
 Syntax:

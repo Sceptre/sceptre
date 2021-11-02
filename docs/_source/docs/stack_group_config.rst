@@ -96,7 +96,7 @@ This will impact :ref:`Templating` of stacks by modifying the behavior of jinja.
 http_template_handler
 ~~~~~~~~~~~~~~~~~~~~~
 
-Optios passed to the `http template handler`_.
+Options passed to the `http template handler`_.
   * retries - The number of retry attempts (default is 5)
   * timeout - The timeout for the session in seconds (default is 5)
 

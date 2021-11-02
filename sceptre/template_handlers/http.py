@@ -82,9 +82,9 @@ class Http(TemplateHandler):
         Get template from the web
         :param url: The url to the template
         :type: str
-        :returns: The number of retry attempts.
+        :param retries: The number of retry attempts.
         :rtype: int
-        :returns: The timeout for the session in seconds.
+        :param timeout: The timeout for the session in seconds.
         :rtype: int
         """
         self.logger.debug("Downloading file from: %s", url)
