@@ -24,11 +24,18 @@ from sceptre.stack import Stack
 class ResolvableResolver(Resolver):
     RESOLVED_VALUE = "I'm resolved!"
 
+    def __init__(self, argument=None, stack=None):
+        # we don't want to call super().__init__ since you can't deepcopy resolvers with locks in py36
+        self.argument = argument
+
     def resolve(self):
         return self.RESOLVED_VALUE
 
 
 class UnresolvableResolver(Resolver):
+    def __init__(self, argument=None, stack=None):
+        # we don't want to call super().__init__ since you can't deepcopy resolvers with locks in py36
+        self.argument = argument
 
     def resolve(self):
         raise StackDoesNotExistError()
