@@ -67,8 +67,10 @@ Example:
 http
 ~~~~~~~~~~~~~
 
-Downloads a template from a url on the web.  This handler supports templates with .json, .yaml,
-.template, .j2 and .py extensions.
+Downloads a template from a url on the web.  By default, this handler will attempt to download
+templates with 5 retries and a download timeout of 5 seconds.  The default retry and timeout
+options can be overridden by setting the `http_template_handler key`_ in the stack group config
+file.
 
 Syntax:
 
@@ -85,6 +87,7 @@ Example:
    template:
      type: http
      url: https://raw.githubusercontent.com/acme/infra-templates/v1/storage/bucket.yaml
+
 
 
 Custom Template Handlers
@@ -216,3 +219,4 @@ This template handler can be used in a Stack config file with the following synt
 .. _jsonschema library: https://github.com/Julian/jsonschema
 .. _Custom Template Handlers: #custom-template-handlers
 .. _Boto3: https://aws.amazon.com/sdk-for-python/
+.. _http_template_handler key: stack_group_config.html#http-template-handler
