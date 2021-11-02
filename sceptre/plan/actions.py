@@ -95,7 +95,7 @@ class StackActions(object):
                     "%s - Stack already exists", self.stack.name
                 )
 
-                status = "COMPLETE"
+                status = StackStatus.COMPLETE
             else:
                 raise
 
