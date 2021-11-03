@@ -531,7 +531,7 @@ class ConfigReader(object):
         stack = Stack(
             name=stack_name,
             project_code=config["project_code"],
-            template_path=self._get_absolute_template_path(config.get("template_path")),
+            template_path=self._get_relative_template_path(config.get("template_path")),
             template_handler_config=config.get("template"),
             region=config["region"],
             template_bucket_name=config.get("template_bucket_name"),
@@ -571,7 +571,7 @@ class ConfigReader(object):
         parsed_config.pop("stack_group_path")
         return parsed_config
 
-    def _get_absolute_template_path(self, template_path):
+    def _get_relative_template_path(self, template_path):
         if not template_path:
             return None
 
