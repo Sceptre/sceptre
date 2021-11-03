@@ -216,14 +216,32 @@ class TestStackDiffer:
         diff = self.differ.diff(self.actions)
         assert diff.stack_name == self.external_name
 
-    def test_diff__resolver_in_parameters__cannot_be_resolved__uses_resolvable_value(self):
-        self.parameters_property.side_effect = StackDoesNotExistError()
+    def test_diff__resolver_in_parameters__can_be_resolved__uses_resolved_value(self):
         self.parameters.update(
             resolvable=ResolvableResolver(),
         )
         self.differ.diff(self.actions)
         expected_generated_config = self.expected_generated_config
         expected_generated_config.parameters['resolvable'] = ResolvableResolver.RESOLVED_VALUE
+
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            ANY,
+            expected_generated_config
+        )
+
+    def test_diff__list_of_resolvers_in_parameters__resolves_each_of_them(self):
+        self.parameters.update(
+            list_of_resolvers=[
+                ResolvableResolver(),
+                ResolvableResolver()
+            ]
+        )
+        self.differ.diff(self.actions)
+        expected_generated_config = self.expected_generated_config
+        expected_generated_config.parameters['list_of_resolvers'] = [
+            ResolvableResolver.RESOLVED_VALUE,
+            ResolvableResolver.RESOLVED_VALUE
+        ]
 
         self.command_capturer.compare_stack_configurations.assert_called_with(
             ANY,
@@ -242,18 +260,36 @@ class TestStackDiffer:
             pytest.param(None, '{ !UnresolvableResolver }', id='no argument')
         ]
     )
-    def test_diff__resolver_in_parameters__resolver_raises_stack_does_not_exist_error__uses_replacement_value(
+    def test_diff__resolver_in_parameters__resolver_raises_error__uses_replacement_value(
         self,
         argument,
         resolved_value
     ):
-        self.parameters_property.side_effect = StackDoesNotExistError()
         self.parameters.update(
             unresolvable=UnresolvableResolver(argument),
         )
         self.differ.diff(self.actions)
         expected_generated_config = self.expected_generated_config
         expected_generated_config.parameters['unresolvable'] = resolved_value
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            ANY,
+            expected_generated_config
+        )
+
+    def test_diff__list_of_resolvers_in_parameters__some_cannot_be_resolved__uses_replacement_value(self):
+        self.parameters.update(
+            list_of_resolvers=[
+                ResolvableResolver(),
+                UnresolvableResolver()
+            ]
+        )
+        self.differ.diff(self.actions)
+        expected_generated_config = self.expected_generated_config
+        expected_generated_config.parameters['list_of_resolvers'] = [
+            ResolvableResolver.RESOLVED_VALUE,
+            '{ !UnresolvableResolver }'
+        ]
+
         self.command_capturer.compare_stack_configurations.assert_called_with(
             ANY,
             expected_generated_config

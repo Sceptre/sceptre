@@ -152,30 +152,19 @@ class StackDiffer(Generic[DiffType]):
         :param stack: The stack to extract the parameters from
         :return: A dictionary of stack parameters to be compared.
         """
-        parameters = {}
+
+        def resolve_or_replace(attr, key, value: Resolver):
+            try:
+                attr[key] = str(value.resolve()).rstrip('\n')
+            except Exception:
+                attr[key] = self._represent_unresolvable_resolver(value)
+
         # parameters is a ResolvableProperty, but the underlying, pre-resolved parameters are
         # stored in _parameters. We might not actually be able to resolve values, such as in the
         # case where it attempts to get a value from a stack that doesn't exist yet.
-        for key, value in stack._parameters.items():
-            if isinstance(value, Resolver):
-                # There might be some resolvers that we can still resolve values for.
-                try:
-                    value_to_use = str(value.resolve()).rstrip('\n')
-                except Exception:
-                    # We catch any errors out of the resolver, since that usually indicates the stack
-                    # doesn't exist yet. In the end, this value likely won't matter, because if the
-                    # stack this one is dependent upon doesn't exist, this one most likely won't
-                    # exist either, so when deployed version is compared to this one, it will
-                    # indicate we're creating a new stack where one doesn't exist. The only place
-                    # this value would be shown is where the current stack DOES exist, but a new
-                    # dependency is added that does not exist yet. In which case, it will show the
-                    # most usable output we can provide right now.
-                    value_to_use = self._represent_unresolvable_resolver(value)
-            else:
-                value_to_use = value
-            parameters[key] = value_to_use
-
-        return parameters
+        unresolved_parameters_dict = stack._parameters
+        _call_func_on_values(resolve_or_replace, unresolved_parameters_dict, Resolver)
+        return stack.parameters
 
     def _represent_unresolvable_resolver(self, resolver: Resolver):
         base = f'!{type(resolver).__name__}'
