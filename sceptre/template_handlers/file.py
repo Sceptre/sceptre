@@ -24,7 +24,6 @@ class File(TemplateHandler):
         }
 
     def handle(self):
-        project_path = self.stack_group_config.get("project_path")
         input_path = Path(self.arguments["path"])
         path = str(input_path)
 
