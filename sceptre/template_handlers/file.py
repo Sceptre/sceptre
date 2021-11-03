@@ -26,10 +26,7 @@ class File(TemplateHandler):
     def handle(self):
         project_path = self.stack_group_config.get("project_path")
         input_path = Path(self.arguments["path"])
-        if input_path.is_absolute():
-            path = str(input_path)
-        else:
-            path = str(Path(project_path) / 'templates' / input_path)
+        path = str(input_path)
 
         if input_path.suffix not in self.supported_template_extensions:
             raise UnsupportedTemplateFileTypeError(
