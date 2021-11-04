@@ -196,6 +196,26 @@ class TestStackActions(object):
         mock_wait_for_completion.assert_called_once_with()
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
+    def test_create_stack_already_exists(
+            self, mock_wait_for_completion
+    ):
+        self.actions.stack._template = Mock(spec=Template)
+        self.actions.stack._template.get_boto_call_parameter.return_value = {
+            "Template": sentinel.template
+        }
+        mock_wait_for_completion.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": "AlreadyExistsException",
+                    "Message": "Stack already [{}] exists".format(self.actions.stack.name)
+                }
+            },
+            sentinel.operation
+        )
+        response = self.actions.create()
+        assert response == StackStatus.COMPLETE
+
+    @patch("sceptre.plan.actions.StackActions._wait_for_completion")
     def test_update_sends_correct_request(self, mock_wait_for_completion):
         self.actions.stack._template = Mock(spec=Template)
         self.actions.stack._template.get_boto_call_parameter.return_value = {

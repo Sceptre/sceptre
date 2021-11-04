@@ -568,7 +568,6 @@ class ConfigReader(object):
             for key in
             set(stack_group_config) - set(CONFIG_MERGE_STRATEGIES)
         }
-        parsed_config.pop("project_path")
         parsed_config.pop("stack_group_path")
         return parsed_config
 
