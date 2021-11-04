@@ -4,6 +4,7 @@ import pytest
 import yaml
 
 import sceptre.template_handlers.helper as helper
+from sceptre.exceptions import TemplateNotFoundError
 from unittest.mock import patch
 
 
@@ -52,17 +53,20 @@ Outputs:
 """
     )
 ])
-def test_render_jinja_template(filename, sceptre_user_data, expected):
-    jinja_template_dir = os.path.join(
+@patch("pathlib.Path.exists")
+def test_render_jinja_template(mock_pathlib,
+                               filename,
+                               sceptre_user_data,
+                               expected):
+    mock_pathlib.return_value = True
+    jinja_template_path = os.path.join(
         os.getcwd(),
-        "tests/fixtures/templates"
+        "tests/fixtures/templates",
+        filename
     )
-    result = helper.render_jinja_template(
-        template_dir=jinja_template_dir,
-        filename=filename,
-        jinja_vars={"sceptre_user_data": sceptre_user_data},
-        j2_environment={}
-    )
+    result = helper.render_jinja_template(path=jinja_template_path,
+                                          jinja_vars={"sceptre_user_data": sceptre_user_data},
+                                          j2_environment={})
     expected_yaml = yaml.safe_load(expected)
     result_yaml = yaml.safe_load(result)
     assert expected_yaml == result_yaml
@@ -77,17 +81,28 @@ def test_render_jinja_template(filename, sceptre_user_data, expected):
      ["autoescape", "loader", "undefined", "lstrip_blocks", "extensions"])
 ])
 @patch("sceptre.template_handlers.helper.Environment")
-def test_render_jinja_template_j2_environment_config(mock_environment, j2_environment, expected_keys):
+@patch("pathlib.Path.exists")
+def test_render_jinja_template_j2_environment_config(mock_pathlib,
+                                                     mock_environment,
+                                                     j2_environment,
+                                                     expected_keys):
+    mock_pathlib.return_value = True
     filename = "vpc.j2"
     sceptre_user_data = {"vpc_id": "10.0.0.0/16"}
-    jinja_template_dir = os.path.join(
+    jinja_template_path = os.path.join(
         os.getcwd(),
-        "tests/fixtures/templates"
+        "tests/fixtures/templates",
+        filename
     )
-    _ = helper.render_jinja_template(
-        template_dir=jinja_template_dir,
-        filename=filename,
-        jinja_vars={"sceptre_user_data": sceptre_user_data},
-        j2_environment=j2_environment
-    )
+    _ = helper.render_jinja_template(path=jinja_template_path,
+                                     jinja_vars={"sceptre_user_data": sceptre_user_data},
+                                     j2_environment=j2_environment)
     assert list(mock_environment.call_args.kwargs) == expected_keys
+
+
+def test_render_jinja_template_non_existing_file():
+    jinja_template_path = os.path.join("/ref/to/nowhere/boom.j2")
+    with pytest.raises(TemplateNotFoundError):
+        helper.render_jinja_template(path=jinja_template_path,
+                                     jinja_vars={"sceptre_user_data": {}},
+                                     j2_environment={})
