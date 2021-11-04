@@ -191,7 +191,7 @@ class StackDiffer(Generic[DiffType]):
                 return None
             return StackConfiguration(
                 parameters={
-                    param['ParameterKey']: param.get('ResolvedValue', param['ParameterValue']).rstrip('\n')
+                    param['ParameterKey']: param['ParameterValue'].rstrip('\n')
                     for param
                     in stack.get('Parameters', [])
                 },
@@ -252,12 +252,30 @@ class StackDiffer(Generic[DiffType]):
             return {}
 
         parameters = template_summary['Parameters']
-        default_map = {
-            parameter['ParameterKey']: '****' if parameter.get('NoEcho') else parameter['DefaultValue']
-            for parameter in parameters
-            if 'DefaultValue' in parameter
-        }
+        default_map = {}
+
+        for parameter in parameters:
+            key = parameter['ParameterKey']
+            value = self._handle_default_value(parameter)
+            if value is not None:
+                default_map[key] = value
+
         return default_map
+
+    def _handle_default_value(self, parameter):
+        default_value = parameter.get('DefaultValue')
+        param_type = parameter['ParameterType']
+
+        if default_value is None:
+            return None
+
+        if parameter.get('NoEcho'):
+            default_value = '****'
+        elif 'List' in param_type:
+            # Eliminate whitespace around commas
+            default_value = ','.join(value.strip() for value in default_value.split(','))
+
+        return default_value
 
     def _mask_no_echo_parameters(self, template_summary: dict, generated_config: StackConfiguration):
         parameters = template_summary['Parameters']

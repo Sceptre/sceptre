@@ -1,5 +1,6 @@
 import difflib
 import json
+from collections import defaultdict
 from copy import deepcopy
 from typing import Union, Optional
 from unittest.mock import Mock, PropertyMock, ANY, DEFAULT
@@ -78,6 +79,7 @@ class TestStackDiffer:
         self.deployed_parameters = deepcopy(self.parameters_on_stack_config)
         self.deployed_parameter_defaults = {}
         self.deployed_no_echo_parameters = []
+        self.deployed_parameter_types = defaultdict(lambda: 'String')
         self.local_no_echo_parameters = []
         self.deployed_tags = dict(self.tags)
         self.deployed_notification_arns = list(self.notifications)
@@ -136,6 +138,7 @@ class TestStackDiffer:
                         {
                             'ParameterKey': key,
                             'ParameterValue': value,
+                            'ResolvedValue': "I'm resolved and don't matter for the diff!"
                         }
                         for key, value in self.deployed_parameters.items()
                     ],
@@ -158,9 +161,13 @@ class TestStackDiffer:
         for param, value in self.deployed_parameters.items():
             entry = {
                 'ParameterKey': param,
+                'ParameterType': self.deployed_parameter_types[param]
             }
             if param in self.deployed_parameter_defaults:
-                entry['DefaultValue'] = self.deployed_parameter_defaults[param]
+                default_value = self.deployed_parameter_defaults[param]
+                if 'List' in entry['ParameterType']:
+                    default_value = ', '.join(val.strip() for val in default_value.split(','))
+                entry['DefaultValue'] = default_value
             if param in self.deployed_no_echo_parameters:
                 entry['NoEcho'] = True
 
@@ -393,6 +400,17 @@ class TestStackDiffer:
         self.deployed_parameters['new'] = 'default value'
         self.deployed_parameter_defaults['new'] = 'default value'
         self.differ.diff(self.actions)
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            self.expected_generated_config,
+            self.expected_generated_config
+        )
+
+    def test_diff__deployed_stack_has_list_default_parameter__doesnt_pass_parameter__compares_identical_configs(self):
+        self.deployed_parameters['new'] = 'first,second,third'
+        self.deployed_parameter_defaults['new'] = 'first, second, third'
+        self.deployed_parameter_types['new'] = 'CommaDelimitedList'
+        self.differ.diff(self.actions)
+
         self.command_capturer.compare_stack_configurations.assert_called_with(
             self.expected_generated_config,
             self.expected_generated_config
