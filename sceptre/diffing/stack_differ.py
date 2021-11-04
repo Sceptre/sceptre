@@ -164,7 +164,14 @@ class StackDiffer(Generic[DiffType]):
         # case where it attempts to get a value from a stack that doesn't exist yet.
         unresolved_parameters_dict = stack._parameters
         _call_func_on_values(resolve_or_replace, unresolved_parameters_dict, Resolver)
-        return stack.parameters
+
+        formatted_parameters = {}
+        for key, value in stack.parameters.items():
+            if isinstance(value, list):
+                value = ','.join(value)
+            formatted_parameters[key] = value
+
+        return formatted_parameters
 
     def _represent_unresolvable_resolver(self, resolver: Resolver):
         base = f'!{type(resolver).__name__}'
