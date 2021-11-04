@@ -1,5 +1,4 @@
 import difflib
-import json
 from copy import deepcopy
 from io import StringIO
 from typing import TextIO
@@ -149,7 +148,7 @@ class TestDiffWriter:
             DiffWriter.STAR_BAR,
             self.diff_detected_message,
             DiffWriter.LINE_BAR,
-            'Config difference:',
+            f'Config difference for {self.stack_name}:',
             '',
             self.diff_output,
             DiffWriter.LINE_BAR,
@@ -168,7 +167,7 @@ class TestDiffWriter:
             DiffWriter.LINE_BAR,
             'No stack config difference',
             DiffWriter.LINE_BAR,
-            'Template difference:',
+            f'Template difference for {self.stack_name}:',
             '',
             self.diff_output
         )
@@ -183,11 +182,11 @@ class TestDiffWriter:
             DiffWriter.STAR_BAR,
             self.diff_detected_message,
             DiffWriter.LINE_BAR,
-            'Config difference:',
+            f'Config difference for {self.stack_name}:',
             '',
             self.diff_output,
             DiffWriter.LINE_BAR,
-            'Template difference:',
+            f'Template difference for {self.stack_name}:',
             '',
             self.diff_output
         )
@@ -269,8 +268,8 @@ class TestDeepDiffWriter:
         self.config2.parameters['new_key'] = 'new value'
 
         result = self.writer.dump_diff(self.config_diff)
-        expected_dict = json.loads(self.config_diff.to_json(indent=4, default_mapping=deepdiff_json_defaults))
-        expected_yaml = yaml.dump(expected_dict)
+        expected_dict = self.config_diff.to_dict()
+        expected_yaml = yaml.dump(expected_dict, indent=4)
         assert result == expected_yaml
 
     def test_dump_diff__output_format_is_text__outputs_to_yaml(self):
@@ -278,9 +277,26 @@ class TestDeepDiffWriter:
         self.config2.parameters['new_key'] = 'new value'
 
         result = self.writer.dump_diff(self.config_diff)
-        expected_dict = json.loads(self.config_diff.to_json(indent=4, default_mapping=deepdiff_json_defaults))
-        expected_yaml = yaml.dump(expected_dict)
+        expected_dict = self.config_diff.to_dict()
+        expected_yaml = yaml.dump(expected_dict, indent=4)
         assert result == expected_yaml
+
+    def test_dump_diff__output_format_is_yaml__diff_has_multiline_strings__strips_out_extra_spaces(self):
+        self.config1.parameters['long_param'] = 'here \nis \nmy \nlong \nstring'
+        self.config2.parameters['long_param'] = 'here \nis \nmy \nother \nlong \nstring'
+
+        dumped = self.writer.dump_diff(self.config_diff)
+        loaded = yaml.safe_load(dumped)
+        assert ' ' not in loaded['values_changed']["root.parameters['long_param']"]['new_value']
+        assert ' ' not in loaded['values_changed']["root.parameters['long_param']"]['old_value']
+        expected_diff = '\n'.join(
+            difflib.unified_diff(
+                self.config1.parameters['long_param'].splitlines(),
+                self.config2.parameters['long_param'].splitlines(),
+                lineterm=''
+            )
+        ).replace(' \n', '\n')
+        assert expected_diff == loaded['values_changed']["root.parameters['long_param']"]['diff']
 
 
 class TestDiffLibWriter:

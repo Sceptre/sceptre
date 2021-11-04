@@ -964,11 +964,18 @@ class StackActions(object):
             raise
 
     def fetch_remote_template_summary(self):
+        return self._get_template_summary(StackName=self.stack.external_name)
+
+    def fetch_local_template_summary(self):
+        boto_call_parameter = self.stack.template.get_boto_call_parameter()
+        return self._get_template_summary(**boto_call_parameter)
+
+    def _get_template_summary(self, **kwargs) -> Optional[dict]:
         try:
             template_summary = self.connection_manager.call(
                 service='cloudformation',
                 command='get_template_summary',
-                kwargs={'StackName': self.stack.external_name}
+                kwargs=kwargs
             )
             return template_summary
         except botocore.exceptions.ClientError as e:

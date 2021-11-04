@@ -1,15 +1,22 @@
 import difflib
+import logging
 from abc import abstractmethod
 from typing import NamedTuple, Dict, List, Optional, Callable, Tuple, Generic, TypeVar
 
 import cfn_flip
 import deepdiff
+import yaml
+from cfn_tools import ODict
+from yaml import Dumper
 
+from sceptre.helpers import _call_func_on_values
 from sceptre.plan.actions import StackActions
 from sceptre.resolvers import Resolver
 from sceptre.stack import Stack
 
 DiffType = TypeVar('DiffType')
+
+logger = logging.getLogger(__name__)
 
 
 class StackConfiguration(NamedTuple):
@@ -33,6 +40,39 @@ class StackDiff(NamedTuple):
     generated_template: str
 
 
+def repr_str(dumper: Dumper, data: str) -> str:
+    """A YAML Representer that handles strings, breaking multi-line strings into something a lot
+    more readable in the yaml output. This is useful for representing long, multiline strings in
+    templates or in stack parameters.
+
+    :param dumper: The Dumper that is being used to serialize this object
+    :param data: The string to serialize
+    :return: The represented string
+    """
+    if '\n' in data:
+        return dumper.represent_scalar(u'tag:yaml.org,2002:str', data, style='|')
+    return dumper.represent_str(data)
+
+
+def repr_odict(dumper: Dumper, data: ODict) -> str:
+    """A YAML Representer for cfn-flip's ODict objects.
+
+    ODicts are a variation on OrderedDicts for that library. Since the Diff command makes extensive
+    use of ODicts, they can end up in diff output and the PyYaml library doesn't otherwise calls the
+    dicts like !!ODict, which looks weird. We can just treat them like normal dicts when we serialize
+    them, though.
+
+    :param dumper: The Dumper that is being used to serialize this object
+    :param data: The ODict object to serialize
+    :return: The serialized ODict
+    """
+    return dumper.represent_dict(data)
+
+
+yaml.add_representer(str, repr_str)
+yaml.add_representer(ODict, repr_odict)
+
+
 class StackDiffer(Generic[DiffType]):
     """A utility for producing a StackDiff that indicates the full difference between a given stack
     as it is currently DEPLOYED on CloudFormation and the stack as it exists in the local Sceptre
@@ -44,12 +84,21 @@ class StackDiffer(Generic[DiffType]):
     As an abstract base class, the two comparison methods need to be implemented so that the
     StackDiff can be generated.
     """
-
     STACK_STATUSES_INDICATING_NOT_DEPLOYED = [
         'CREATE_FAILED',
         'ROLLBACK_COMPLETE',
         'DELETE_COMPLETE',
     ]
+
+    NO_ECHO_REPLACEMENT = "***HIDDEN***"
+
+    def __init__(self, show_no_echo=False):
+        """Initializes the StackDiffer.
+
+        :param show_no_echo: If True, local parameters passed that the template says are NoEcho
+            parameters will be displayed; Otherwise, they will be masked in the diff.
+        """
+        self.show_no_echo = show_no_echo
 
     def diff(self, stack_actions: StackActions) -> StackDiff:
         """Produces a StackDiff between the currently deployed stack (if it exists) and the stack
@@ -63,11 +112,10 @@ class StackDiffer(Generic[DiffType]):
         deployed_config = self._create_deployed_stack_config(stack_actions)
         is_stack_deployed = bool(deployed_config)
 
-        if is_stack_deployed:
-            self._remove_default_parameters_that_arent_passed(stack_actions, generated_config, deployed_config)
-
         generated_template = self._generate_template(stack_actions)
         deployed_template = self._get_deployed_template(stack_actions, is_stack_deployed)
+
+        self._handle_special_parameter_situations(stack_actions, generated_config, deployed_config)
 
         template_diff = self.compare_templates(deployed_template, generated_template)
         config_diff = self.compare_stack_configurations(deployed_config, generated_config)
@@ -80,9 +128,6 @@ class StackDiffer(Generic[DiffType]):
             generated_config,
             generated_template
         )
-
-    def _generate_template(self, stack_actions: StackActions) -> str:
-        return stack_actions.generate()
 
     def _create_generated_config(self, stack: Stack) -> StackConfiguration:
         parameters = self._extract_parameters_dict(stack)
@@ -107,32 +152,32 @@ class StackDiffer(Generic[DiffType]):
         :param stack: The stack to extract the parameters from
         :return: A dictionary of stack parameters to be compared.
         """
-        parameters = {}
+
+        def resolve_or_replace(attr, key, value: Resolver):
+            try:
+                attr[key] = str(value.resolve()).rstrip('\n')
+            except Exception:
+                attr[key] = self._represent_unresolvable_resolver(value)
+
         # parameters is a ResolvableProperty, but the underlying, pre-resolved parameters are
         # stored in _parameters. We might not actually be able to resolve values, such as in the
         # case where it attempts to get a value from a stack that doesn't exist yet.
-        for key, value in stack._parameters.items():
-            if isinstance(value, Resolver):
-                # There might be some resolvers that we can still resolve values for.
-                try:
-                    value_to_use = str(value.resolve()).rstrip('\n')
-                except Exception:
-                    # We catch any errors out of the resolver, since that usually indicates the stack
-                    # doesn't exist yet. In the end, this value likely won't matter, because if the
-                    # stack this one is dependent upon doesn't exist, this one most likely won't
-                    # exist either, so when deployed version is compared to this one, it will
-                    # indicate we're creating a new stack where one doesn't exist. The only place
-                    # this value would be shown is where the current stack DOES exist, but a new
-                    # dependency is added that does not exist yet. In which case, it will show the
-                    # most usable output we can provide right now.
-                    value_to_use = f'!{type(value).__name__}'
-                    if value.argument is not None:
-                        value_to_use += f': {value.argument}'
-            else:
-                value_to_use = value
-            parameters[key] = value_to_use
+        unresolved_parameters_dict = stack._parameters
+        _call_func_on_values(resolve_or_replace, unresolved_parameters_dict, Resolver)
 
-        return parameters
+        formatted_parameters = {}
+        for key, value in stack.parameters.items():
+            if isinstance(value, list):
+                value = ','.join(value)
+            formatted_parameters[key] = value
+
+        return formatted_parameters
+
+    def _represent_unresolvable_resolver(self, resolver: Resolver):
+        base = f'!{type(resolver).__name__}'
+        suffix = f'({resolver.argument})' if resolver.argument is not None else ''
+        # double-braces in an f-string is just an escaped single brace
+        return f'{{ {base}{suffix} }}'
 
     def _create_deployed_stack_config(self, stack_actions: StackActions) -> Optional[StackConfiguration]:
         description = stack_actions.describe()
@@ -146,7 +191,7 @@ class StackDiffer(Generic[DiffType]):
                 return None
             return StackConfiguration(
                 parameters={
-                    param['ParameterKey']: param.get('ResolvedValue', param['ParameterValue']).rstrip('\n')
+                    param['ParameterKey']: param['ParameterValue'].rstrip('\n')
                     for param
                     in stack.get('Parameters', [])
                 },
@@ -159,13 +204,37 @@ class StackDiffer(Generic[DiffType]):
                 role_arn=stack.get('RoleARN')
             )
 
-    def _remove_default_parameters_that_arent_passed(
+    def _handle_special_parameter_situations(
         self,
         stack_actions: StackActions,
         generated_config: StackConfiguration,
         deployed_config: StackConfiguration
     ):
-        deployed_config_default_map = self._get_parameter_default_map(stack_actions)
+        deployed_template_summary = stack_actions.fetch_remote_template_summary()
+        generated_template_summary = stack_actions.fetch_local_template_summary()
+
+        if deployed_config is not None:
+            # If the parameter is not passed by Sceptre and the value on the deployed parameter is
+            # the default value, we'll actually remove it from the deployed parameters list so it
+            # doesn't show up as a false positive.
+            self._remove_deployed_default_parameters_that_arent_passed(
+                deployed_template_summary,
+                generated_config,
+                deployed_config
+            )
+        if not self.show_no_echo:
+            # We don't actually want to show parameters Sceptre is passing that the local template
+            # marks as NoEcho parameters (unless show_no_echo is set to true). Therefore those
+            # parameter values will be masked.
+            self._mask_no_echo_parameters(generated_template_summary, generated_config)
+
+    def _remove_deployed_default_parameters_that_arent_passed(
+        self,
+        template_summary: dict,
+        generated_config: StackConfiguration,
+        deployed_config: StackConfiguration,
+    ):
+        deployed_config_default_map = self._get_parameter_default_map(template_summary)
         for parameter_key, default_value in deployed_config_default_map.items():
             # If the generated config defines that parameter, leave that in the deployed config
             # so we can see the diff.
@@ -178,18 +247,95 @@ class StackDiffer(Generic[DiffType]):
             if deployed_config.parameters[parameter_key] == default_value:
                 del deployed_config.parameters[parameter_key]
 
-    def _get_parameter_default_map(self, stack_actions: StackActions):
-        template_summary = stack_actions.fetch_remote_template_summary()
+    def _get_parameter_default_map(self, template_summary: dict) -> Dict[str, str]:
         if template_summary is None:
             return {}
 
         parameters = template_summary['Parameters']
-        default_map = {
-            parameter['ParameterKey']: '****' if parameter.get('NoEcho') else parameter['DefaultValue']
-            for parameter in parameters
-            if 'DefaultValue' in parameter
-        }
+        default_map = {}
+
+        for parameter in parameters:
+            key = parameter['ParameterKey']
+            value = self._handle_default_value(parameter)
+            if value is not None:
+                default_map[key] = value
+
         return default_map
+
+    def _handle_default_value(self, parameter):
+        default_value = parameter.get('DefaultValue')
+        param_type = parameter['ParameterType']
+
+        if default_value is None:
+            return None
+
+        if parameter.get('NoEcho'):
+            default_value = '****'
+        elif 'List' in param_type:
+            # Eliminate whitespace around commas
+            default_value = ','.join(value.strip() for value in default_value.split(','))
+
+        return default_value
+
+    def _mask_no_echo_parameters(self, template_summary: dict, generated_config: StackConfiguration):
+        parameters = template_summary['Parameters']
+
+        for parameter in parameters:
+            key = parameter['ParameterKey']
+            if parameter.get('NoEcho') and key in generated_config.parameters:
+                generated_config.parameters[key] = self.NO_ECHO_REPLACEMENT
+
+    def _generate_template(self, stack_actions: StackActions) -> str:
+        try:
+            return stack_actions.generate()
+        except Exception:
+            # If we could not generate the stack, it COULD be because there are unresolvable
+            # resolvers in the sceptre_user_data and the template / template handler uses that
+            # sceptre_user_data in order to render. The most common case of this is when generating
+            # a diff where the template's user data uses a stack output from a stack that
+            # hasn't been deployed yet. We'll replace any unresolvable resolvers and then attempt the
+            # generation one more time. If we're successful, that will be the template we use in the
+            # diff.
+            logger.debug(
+                "Error encountered attempting to render the template. Attempting to replace any "
+                "unresolved resolvers in the sceptre_user_data to see if that helps."
+            )
+            self._replace_unresolvable_user_data_resolvers(stack_actions.stack)
+            try:
+                return stack_actions.generate()
+            except Exception:
+                # We won't raise this exception here because it could be that the
+                # substituted values are invalid on the template, or some other issue. The error
+                # message raised from here wouldn't be understandible to the user since we've swapped
+                # out the resolvers here, so we'll pass here and then reraise the original error.
+                logger.debug(
+                    "Attempting to render the template with replaced sceptre_user_data failed. "
+                    "Reraising original error.",
+                    exc_info=True
+                )
+                pass
+            raise
+
+    def _replace_unresolvable_user_data_resolvers(self, stack: Stack):
+        """Recursively traverses the sceptre_user_data and replaces unresolvable resolvers with
+        placeholder values so that we can continue to render the diff, even if the resolvers can't
+        be resolved right now.
+
+        :param stack: The stack whose sceptre_user_data cannot be resolved.
+        """
+        def resolve_or_replace(attr, key, value: Resolver):
+            try:
+                attr[key] = value.resolve()
+            except Exception:
+                attr[key] = self._represent_unresolvable_resolver(value)
+
+        # Because the name is mangled, we cannot access the user data normally, so we need to access
+        # it directly out of the __dict__.
+        user_data = stack.__dict__['__sceptre_user_data']
+        if not user_data:
+            return
+
+        _call_func_on_values(resolve_or_replace, user_data, Resolver)
 
     def _get_deployed_template(self, stack_actions: StackActions, is_deployed: bool) -> str:
         if is_deployed:
@@ -201,7 +347,7 @@ class StackDiffer(Generic[DiffType]):
     def compare_templates(
         self,
         deployed: str,
-        generated: str,
+        generated: str
     ) -> DiffType:
         """Implement this method to return the diff for the templates
 
@@ -214,7 +360,7 @@ class StackDiffer(Generic[DiffType]):
     def compare_stack_configurations(
         self,
         deployed: Optional[StackConfiguration],
-        generated: StackConfiguration,
+        generated: StackConfiguration
     ) -> DiffType:
         """Implement this method to return the diff for the stack configurations.
 
@@ -238,15 +384,19 @@ class DeepDiffStackDiffer(StackDiffer[deepdiff.DeepDiff]):
 
     def __init__(
         self,
+        show_no_echo=False,
         *,
         universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load
     ):
         """Initializes a DeepDiffStackDiffer.
 
+        :param show_no_echo: If True, local parameters passed that the template says are NoEcho
+            parameters will be displayed; Otherwise, they will be masked in the diff.
         :param universal_template_loader: This should be a callable that can load either a json or
             yaml string and return a tuple where the first element is the loaded template and the
             second element is the template format (either "json" or "yaml")
         """
+        super().__init__(show_no_echo)
         self.load_template = universal_template_loader
 
     def compare_stack_configurations(
@@ -260,7 +410,7 @@ class DeepDiffStackDiffer(StackDiffer[deepdiff.DeepDiff]):
             verbose_level=self.VERBOSITY_LEVEL_TO_INDICATE_CHANGED_VALUES
         )
 
-    def compare_templates(self, deployed: str, generated: str,) -> deepdiff.DeepDiff:
+    def compare_templates(self, deployed: str, generated: str) -> deepdiff.DeepDiff:
         # We don't actually care about the original formats here, since we only care about the
         # template VALUES.
         deployed_dict, _ = self.load_template(deployed)
@@ -279,18 +429,22 @@ class DifflibStackDiffer(StackDiffer[List[str]]):
 
     Because difflib generates diffs off of lists of strings, both StackConfigurations and
     """
+
     def __init__(
         self,
+        show_no_echo=False,
         *,
         universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load
     ):
         """Initializes a DifflibStackDiffer.
 
+        :param show_no_echo: If True, local parameters passed that the template says are NoEcho
+            parameters will be displayed; Otherwise, they will be masked in the diff.
         :param universal_template_loader: This should be a callable that can load either a json or
             yaml string and return a tuple where the first element is the loaded template and the
             second element is the template format (either "json" or "yaml")
         """
-        super().__init__()
+        super().__init__(show_no_echo)
         self.load_template = universal_template_loader
 
     def compare_stack_configurations(
@@ -298,13 +452,23 @@ class DifflibStackDiffer(StackDiffer[List[str]]):
         deployed: Optional[StackConfiguration],
         generated: StackConfiguration,
     ) -> List[str]:
-        deployed_dict = dict(deployed._asdict()) if deployed else {}
+        deployed_dict = self._make_stack_configuration_comparable(deployed)
+        generated_dict = self._make_stack_configuration_comparable(generated)
         deployed_string = cfn_flip.dump_yaml(deployed_dict)
-        generated_string = cfn_flip.dump_yaml(dict(generated._asdict()))
+        generated_string = cfn_flip.dump_yaml(generated_dict)
         return self._make_string_diff(
             deployed_string,
             generated_string
         )
+
+    def _make_stack_configuration_comparable(self, config: Optional[StackConfiguration]):
+        as_dict = dict(config._asdict()) if config is not None else {}
+        return {
+            key: value for key, value in as_dict.items()
+            # stack_name isn't always going to be the same, otherwise we wouldn't be comparing them.
+            # It's more confusing to have it in the diff output than to just remove it.
+            if value not in (None, [], {}) and key != 'stack_name'
+        }
 
     def compare_templates(
         self,

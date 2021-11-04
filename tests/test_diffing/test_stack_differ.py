@@ -1,7 +1,9 @@
 import difflib
 import json
+from collections import defaultdict
+from copy import deepcopy
 from typing import Union, Optional
-from unittest.mock import Mock, PropertyMock, ANY
+from unittest.mock import Mock, PropertyMock, ANY, DEFAULT
 
 import cfn_flip
 import pytest
@@ -23,11 +25,18 @@ from sceptre.stack import Stack
 class ResolvableResolver(Resolver):
     RESOLVED_VALUE = "I'm resolved!"
 
+    def __init__(self, argument=None, stack=None):
+        # we don't want to call super().__init__ since you can't deepcopy resolvers with locks in py36
+        self.argument = argument
+
     def resolve(self):
         return self.RESOLVED_VALUE
 
 
 class UnresolvableResolver(Resolver):
+    def __init__(self, argument=None, stack=None):
+        # we don't want to call super().__init__ since you can't deepcopy resolvers with locks in py36
+        self.argument = argument
 
     def resolve(self):
         raise StackDoesNotExistError()
@@ -36,6 +45,7 @@ class UnresolvableResolver(Resolver):
 class ImplementedStackDiffer(StackDiffer):
 
     def __init__(self, command_capturer: Mock):
+        super().__init__()
         self.command_capturer = command_capturer
 
     def compare_templates(self, deployed: str, generated: str) -> DiffType:
@@ -55,7 +65,7 @@ class TestStackDiffer:
         self.name = 'my/stack'
         self.external_name = "full-stack-name"
         self.role_arn = 'role_arn'
-        self.parameters = {
+        self.parameters_on_stack_config = {
             'param': 'some_value'
         }
         self.tags = {
@@ -64,28 +74,13 @@ class TestStackDiffer:
         self.notifications = [
             'notification_arn1'
         ]
-        self.stack: Union[Stack, Mock] = Mock(
-            spec=Stack,
-            external_name=self.external_name,
-            _parameters=self.parameters,
-            role_arn=self.role_arn,
-            tags=self.tags,
-            notifications=self.notifications
-        )
-        self.stack.name = self.name
-        self.parameters_property = PropertyMock(return_value=self.parameters)
-        type(self.stack).parameters = self.parameters_property
-        self.actions: Union[StackActions, Mock] = Mock(
-            **{
-                'spec': StackActions,
-                'stack': self.stack,
-                'describe.side_effect': self.describe_stack,
-                'fetch_remote_template_summary.side_effect': self.get_template_summary
-            }
-        )
-        self.deployed_parameters = dict(self.parameters)
+        self.sceptre_user_data = {}
+
+        self.deployed_parameters = deepcopy(self.parameters_on_stack_config)
         self.deployed_parameter_defaults = {}
-        self.no_echo_parameters = []
+        self.deployed_no_echo_parameters = []
+        self.deployed_parameter_types = defaultdict(lambda: 'String')
+        self.local_no_echo_parameters = []
         self.deployed_tags = dict(self.tags)
         self.deployed_notification_arns = list(self.notifications)
         self.deployed_role_arn = self.role_arn
@@ -93,6 +88,46 @@ class TestStackDiffer:
         self.command_capturer = Mock()
         self.differ = ImplementedStackDiffer(self.command_capturer)
         self.stack_status = 'CREATE_COMPLETE'
+
+        self._stack = None
+        self._actions = None
+        self._parameters = None
+
+    @property
+    def parameters_on_stack(self):
+        if self._parameters is None:
+            self._parameters = deepcopy(self.parameters_on_stack_config)
+        return self._parameters
+
+    @property
+    def stack(self) -> Union[Stack, Mock]:
+        if not self._stack:
+            self._stack = Mock(
+                spec=Stack,
+                external_name=self.external_name,
+                _parameters=self.parameters_on_stack,
+                role_arn=self.role_arn,
+                tags=self.tags,
+                notifications=self.notifications,
+                __sceptre_user_data=self.sceptre_user_data
+            )
+            self._stack.name = self.name
+            type(self._stack).parameters = PropertyMock(side_effect=lambda: self.parameters_on_stack)
+        return self._stack
+
+    @property
+    def actions(self) -> Union[StackActions, Mock]:
+        if not self._actions:
+            self._actions = Mock(
+                **{
+                    'spec': StackActions,
+                    'stack': self.stack,
+                    'describe.side_effect': self.describe_stack,
+                    'fetch_remote_template_summary.side_effect': self.get_remote_template_summary,
+                    'fetch_local_template_summary.side_effect': self.get_local_template_summary,
+                }
+            )
+        return self._actions
 
     def describe_stack(self):
         return {
@@ -103,6 +138,7 @@ class TestStackDiffer:
                         {
                             'ParameterKey': key,
                             'ParameterValue': value,
+                            'ResolvedValue': "I'm resolved and don't matter for the diff!"
                         }
                         for key, value in self.deployed_parameters.items()
                     ],
@@ -120,17 +156,35 @@ class TestStackDiffer:
             ],
         }
 
-    def get_template_summary(self):
+    def get_remote_template_summary(self):
         params = []
         for param, value in self.deployed_parameters.items():
             entry = {
                 'ParameterKey': param,
+                'ParameterType': self.deployed_parameter_types[param]
             }
             if param in self.deployed_parameter_defaults:
-                entry['DefaultValue'] = self.deployed_parameter_defaults[param]
-            if param in self.no_echo_parameters:
+                default_value = self.deployed_parameter_defaults[param]
+                if 'List' in entry['ParameterType']:
+                    default_value = ', '.join(val.strip() for val in default_value.split(','))
+                entry['DefaultValue'] = default_value
+            if param in self.deployed_no_echo_parameters:
                 entry['NoEcho'] = True
 
+            params.append(entry)
+
+        return {
+            'Parameters': params
+        }
+
+    def get_local_template_summary(self):
+        params = []
+        for param, value in self.parameters_on_stack.items():
+            entry = {
+                'ParameterKey': param
+            }
+            if param in self.local_no_echo_parameters:
+                entry['NoEcho'] = True
             params.append(entry)
 
         return {
@@ -141,9 +195,9 @@ class TestStackDiffer:
     def expected_generated_config(self):
         return StackConfiguration(
             stack_name=self.external_name,
-            parameters=self.parameters,
-            stack_tags=self.tags,
-            notifications=self.notifications,
+            parameters=self.parameters_on_stack_config,
+            stack_tags=deepcopy(self.tags),
+            notifications=deepcopy(self.notifications),
             role_arn=self.role_arn
         )
 
@@ -152,8 +206,8 @@ class TestStackDiffer:
         return StackConfiguration(
             stack_name=self.external_name,
             parameters=self.deployed_parameters,
-            stack_tags=self.deployed_tags,
-            notifications=self.deployed_notification_arns,
+            stack_tags=deepcopy(self.deployed_tags),
+            notifications=deepcopy(self.deployed_notification_arns),
             role_arn=self.deployed_role_arn
         )
 
@@ -189,9 +243,8 @@ class TestStackDiffer:
         diff = self.differ.diff(self.actions)
         assert diff.stack_name == self.external_name
 
-    def test_diff__resolver_in_parameters__cannot_be_resolved__uses_resolvable_value(self):
-        self.parameters_property.side_effect = StackDoesNotExistError()
-        self.parameters.update(
+    def test_diff__resolver_in_parameters__can_be_resolved__uses_resolved_value(self):
+        self.parameters_on_stack_config.update(
             resolvable=ResolvableResolver(),
         )
         self.differ.diff(self.actions)
@@ -203,30 +256,67 @@ class TestStackDiffer:
             expected_generated_config
         )
 
+    def test_diff__list_of_resolvers_in_parameters__resolves_each_of_them(self):
+        self.parameters_on_stack_config.update(
+            list_of_resolvers=[
+                ResolvableResolver(),
+                ResolvableResolver()
+            ]
+        )
+        self.differ.diff(self.actions)
+        expected_generated_config = self.expected_generated_config
+        expected_generated_config.parameters['list_of_resolvers'] = ','.join([
+            ResolvableResolver.RESOLVED_VALUE,
+            ResolvableResolver.RESOLVED_VALUE
+        ])
+
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            ANY,
+            expected_generated_config
+        )
+
     @pytest.mark.parametrize(
         'argument, resolved_value',
         [
-            pytest.param('arg', '!UnresolvableResolver: arg', id='has argument'),
+            pytest.param('arg', '{ !UnresolvableResolver(arg) }', id='has argument'),
             pytest.param(
                 {'test': 'this'},
-                '!UnresolvableResolver: {\'test\': \'this\'}',
+                '{ !UnresolvableResolver({\'test\': \'this\'}) }',
                 id='has dict argument'
             ),
-            pytest.param(None, '!UnresolvableResolver', id='no argument')
+            pytest.param(None, '{ !UnresolvableResolver }', id='no argument')
         ]
     )
-    def test_diff__resolver_in_parameters__resolver_raises_stack_does_not_exist_error__uses_replacement_value(
+    def test_diff__resolver_in_parameters__resolver_raises_error__uses_replacement_value(
         self,
         argument,
         resolved_value
     ):
-        self.parameters_property.side_effect = StackDoesNotExistError()
-        self.parameters.update(
+        self.parameters_on_stack_config.update(
             unresolvable=UnresolvableResolver(argument),
         )
         self.differ.diff(self.actions)
         expected_generated_config = self.expected_generated_config
         expected_generated_config.parameters['unresolvable'] = resolved_value
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            ANY,
+            expected_generated_config
+        )
+
+    def test_diff__list_of_resolvers_in_parameters__some_cannot_be_resolved__uses_replacement_value(self):
+        self.parameters_on_stack_config.update(
+            list_of_resolvers=[
+                ResolvableResolver(),
+                UnresolvableResolver()
+            ]
+        )
+        self.differ.diff(self.actions)
+        expected_generated_config = self.expected_generated_config
+        expected_generated_config.parameters['list_of_resolvers'] = ','.join([
+            ResolvableResolver.RESOLVED_VALUE,
+            '{ !UnresolvableResolver }'
+        ])
+
         self.command_capturer.compare_stack_configurations.assert_called_with(
             ANY,
             expected_generated_config
@@ -315,10 +405,21 @@ class TestStackDiffer:
             self.expected_generated_config
         )
 
+    def test_diff__deployed_stack_has_list_default_parameter__doesnt_pass_parameter__compares_identical_configs(self):
+        self.deployed_parameters['new'] = 'first,second,third'
+        self.deployed_parameter_defaults['new'] = 'first, second, third'
+        self.deployed_parameter_types['new'] = 'CommaDelimitedList'
+        self.differ.diff(self.actions)
+
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            self.expected_generated_config,
+            self.expected_generated_config
+        )
+
     def test_diff__deployed_stack_has_default_values__passes_the_parameter__compares_identical_configs(self):
         self.deployed_parameters['new'] = 'default value'
         self.deployed_parameter_defaults['new'] = 'default value'
-        self.parameters['new'] = 'default value'
+        self.parameters_on_stack_config['new'] = 'default value'
         self.differ.diff(self.actions)
         self.command_capturer.compare_stack_configurations.assert_called_with(
             self.expected_generated_config,
@@ -328,7 +429,7 @@ class TestStackDiffer:
     def test_diff__deployed_stack_has_default_values__passes_different_value__compares_different_configs(self):
         self.deployed_parameters['new'] = 'default value'
         self.deployed_parameter_defaults['new'] = 'default value'
-        self.parameters['new'] = 'custom value'
+        self.parameters_on_stack_config['new'] = 'custom value'
         self.differ.diff(self.actions)
         self.command_capturer.compare_stack_configurations.assert_called_with(
             self.expected_deployed_config,
@@ -356,12 +457,131 @@ class TestStackDiffer:
     def test_diff__no_echo_default_parameter__generated_stack_doesnt_pass_parameter__compares_identical_configs(self):
         self.deployed_parameters['new'] = '****'
         self.deployed_parameter_defaults['new'] = 'default value'
-        self.no_echo_parameters.append('new')
+        self.deployed_no_echo_parameters.append('new')
         self.differ.diff(self.actions)
         self.command_capturer.compare_stack_configurations.assert_called_with(
             self.expected_generated_config,
             self.expected_generated_config
         )
+
+    def test_diff__generated_template_has_no_echo_parameter__masks_value(self):
+        self.parameters_on_stack_config['hide_me'] = "don't look at me!"
+        self.local_no_echo_parameters.append('hide_me')
+
+        expected_generated_config = self.expected_generated_config
+        expected_generated_config.parameters['hide_me'] = StackDiffer.NO_ECHO_REPLACEMENT
+
+        self.differ.diff(self.actions)
+
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            self.expected_deployed_config,
+            expected_generated_config,
+        )
+
+    def test_diff__generated_template_has_no_echo_parameter__show_no_echo__shows_value(self):
+        self.parameters_on_stack_config['hide_me'] = "don't look at me!"
+        self.local_no_echo_parameters.append('hide_me')
+        self.differ.show_no_echo = True
+        self.differ.diff(self.actions)
+
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            self.expected_deployed_config,
+            self.expected_generated_config,
+        )
+
+    def test_diff__local_generation_raises_an_error__replaces_unresolvable_sceptre_user_data(self):
+        has_raised = False
+
+        def generate():
+            nonlocal has_raised
+            if not has_raised:
+                has_raised = True
+                raise ValueError()
+            return DEFAULT
+
+        unresolvable_mock = Mock(**{
+            'spec': Resolver,
+            'argument': 'test',
+            'resolve.side_effect': RuntimeError()
+        })
+        self.sceptre_user_data.update(
+            unresolvable=unresolvable_mock
+        )
+        self.actions.generate.side_effect = generate
+
+        self.differ.diff(self.actions)
+
+        assert self.sceptre_user_data['unresolvable'] == '{ !Mock(test) }'
+
+    def test_diff__local_generation_raises_an_error__resolves_resolvable_sceptre_user_data(self):
+        has_raised = False
+
+        def generate():
+            nonlocal has_raised
+            if not has_raised:
+                has_raised = True
+                raise ValueError()
+            return DEFAULT
+
+        resolvable_mock = Mock(
+            **{
+                'spec': Resolver,
+                'argument': 'test',
+                'resolve.return_value': 'resolved'
+            }
+        )
+        self.sceptre_user_data.update(
+            resolvable=resolvable_mock
+        )
+        self.actions.generate.side_effect = generate
+
+        self.differ.diff(self.actions)
+
+        assert self.sceptre_user_data['resolvable'] == 'resolved'
+
+    def test_diff__local_generation_raises_an_error__reattempts_generation(self):
+        has_raised = False
+
+        def generate():
+            nonlocal has_raised
+            if not has_raised:
+                has_raised = True
+                raise ValueError()
+            return DEFAULT
+
+        resolvable_mock = Mock(
+            **{
+                'spec': Resolver,
+                'argument': 'test',
+                'resolve.return_value': 'resolved'
+            }
+        )
+        self.sceptre_user_data.update(
+            resolvable=resolvable_mock
+        )
+        self.actions.generate.side_effect = generate
+
+        self.differ.diff(self.actions)
+
+        assert self.actions.generate.call_count == 2
+
+    def test_diff__local_generation_raises_an_error_twice__raises_exception(self):
+        resolvable_mock = Mock(
+            **{
+                'spec': Resolver,
+                'argument': 'test',
+                'resolve.return_value': 'resolved'
+            }
+        )
+        self.sceptre_user_data.update(
+            resolvable=resolvable_mock
+        )
+        self.actions.generate.side_effect = ValueError()
+
+        with pytest.raises(ValueError):
+            self.differ.diff(self.actions)
+
+        assert self.actions.generate.call_count == 2
 
 
 class TestDeepDiffStackDiffer:
@@ -516,15 +736,29 @@ class TestDifflibStackDiffer:
 
     def test_compare_stack_configurations__returns_diff_of_deployed_and_generated_when_converted_to_dicts(self):
         comparison = self.differ.compare_stack_configurations(self.config1, self.config2)
-        expected_config_1 = self.serialize(dict(self.config1._asdict()))
-        expected_config_2 = self.serialize(dict(self.config2._asdict()))
+        expected_config_1_dict = self.make_config_comparable(self.config1)
+        expected_config_2_dict = self.make_config_comparable(self.config2)
+        expected_config_1 = self.serialize(expected_config_1_dict)
+        expected_config_2 = self.serialize(expected_config_2_dict)
         expected = self.create_expected_diff(expected_config_1, expected_config_2)
 
         assert comparison == expected
 
+    def make_config_comparable(self, config: StackConfiguration):
+        config_dict = dict(config._asdict())
+        without_empty_values = {
+            key: value
+            for key, value in config_dict.items()
+            if value not in (None, [], {}) and key != 'stack_name'
+        }
+        return without_empty_values
+
     def test_compare_stack_configurations__deployed_is_none__returns_diff_with_none(self):
         comparison = self.differ.compare_stack_configurations(None, self.config2)
-        expected = self.create_expected_diff(self.serialize({}), self.serialize(dict(self.config2._asdict())))
+        expected = self.create_expected_diff(
+            self.serialize({}),
+            self.serialize(self.make_config_comparable(self.config2))
+        )
         assert comparison == expected
 
     @pytest.mark.parametrize(

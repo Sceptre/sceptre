@@ -1,11 +1,13 @@
 import datetime
 import json
+import re
 from abc import abstractmethod
 from typing import TextIO, Generic, List
 
 import cfn_flip
 import yaml
 from deepdiff import DeepDiff
+from deepdiff.serialization import json_convertor_default
 
 from sceptre.diffing.stack_differ import StackConfiguration, StackDiff, DiffType
 
@@ -105,7 +107,7 @@ class DiffWriter(Generic[DiffType]):
 
         diff_text = self.dump_diff(self.config_diff)
         self._output(
-            'Config difference:',
+            f'Config difference for {self.stack_name}:',
             '',
             diff_text
         )
@@ -117,7 +119,7 @@ class DiffWriter(Generic[DiffType]):
 
         diff_text = self.dump_diff(self.template_diff)
         self._output(
-            'Template difference:',
+            f'Template difference for {self.stack_name}:',
             '',
             diff_text
         )
@@ -149,13 +151,45 @@ class DeepDiffWriter(DiffWriter[DeepDiff]):
         return len(self.template_diff) > 0
 
     def dump_diff(self, diff: DeepDiff) -> str:
-        jsonified = diff.to_json(default_mapping=deepdiff_json_defaults, indent=4)
+        as_diff_dict = diff.to_dict()
         if self.output_format == 'json':
-            return jsonified
+            return json.dumps(
+                as_diff_dict,
+                indent=4,
+                default=json_convertor_default(default_mapping=deepdiff_json_defaults)
+            )
 
-        # Yaml is more readable, but DeepDiff doesn't provide to_yaml method.
-        loaded = json.loads(jsonified)
-        return yaml.dump(loaded)
+        compatible = self._make_strings_block_compatible(as_diff_dict)
+        return yaml.dump(compatible, indent=4)
+
+    def _make_strings_block_compatible(self, obj):
+        """A recursive method that strips out extraneous spaces that precede line breaks.
+
+        PyYaml disallows block styling for multiline strings if any of the lines has a space followed
+        by a line break.
+
+        DeepDiff will actually provide a difflib-style diff for multiline strings when there has
+        been a value changed from one multiline string to another multiline string. However, when
+        it produces that diff, every line ends with at least one space. This keeps it from being
+        formatted as a block (the most useful way to display it) by PyYaml. Therefore, this function
+        recurses into the deepdiff-generated data structure and strips all strings of those extraneous
+        spaces that precede line breaks.
+
+        :param obj: The DeepDiff generated diff dict (or some value this method has recursed into
+            from that dict).
+        :return: The object, stripped of extraneous spaces that precede line breaks.
+        """
+        if isinstance(obj, dict):
+            return {
+                key: self._make_strings_block_compatible(value)
+                for key, value in obj.items()
+            }
+        elif isinstance(obj, list):
+            return [self._make_strings_block_compatible(item) for item in obj]
+        elif isinstance(obj, str):
+            return re.sub('[ ]*\n', '\n', obj)
+        else:
+            return obj
 
 
 class DiffLibWriter(DiffWriter[List[str]]):
