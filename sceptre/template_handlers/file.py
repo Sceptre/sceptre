@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 import sceptre.template_handlers.helper as helper
 
+from os import path
 from pathlib import Path
+
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 from sceptre.template_handlers import TemplateHandler
+from sceptre.helpers import sceptreise_path
 
 
 class File(TemplateHandler):
@@ -25,7 +28,7 @@ class File(TemplateHandler):
 
     def handle(self):
         input_path = Path(self.arguments["path"])
-        path = str(input_path)
+        path = self._get_relative_template_path(str(input_path))
 
         if input_path.suffix not in self.supported_template_extensions:
             raise UnsupportedTemplateFileTypeError(
@@ -47,3 +50,9 @@ class File(TemplateHandler):
         except Exception as e:
             helper.print_template_traceback(path)
             raise e
+
+    def _get_relative_template_path(self, template_path):
+        return path.join(
+            self.stack_group_config.get("project_path"), "templates",
+            sceptreise_path(template_path)
+        )
