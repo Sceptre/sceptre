@@ -716,16 +716,17 @@ class TestDifflibStackDiffer:
             }
         }
 
-    def create_expected_diff(self, first, second):
-        deployed_dict, deployed_format = cfn_flip.load(first)
-        generated_dict, generated_format = cfn_flip.load(second)
-        dumpers = {
-            'json': cfn_flip.dump_json,
-            'yaml': cfn_flip.dump_yaml
-        }
-        first_reformatted = dumpers[generated_format](deployed_dict)
-        second_reformatted = dumpers[generated_format](generated_dict)
-        first_list, second_list = first_reformatted.splitlines(), second_reformatted.splitlines()
+    def create_expected_diff(self, first, second, already_formatted=False):
+        if not already_formatted:
+            deployed_dict, deployed_format = cfn_flip.load(first)
+            generated_dict, generated_format = cfn_flip.load(second)
+            dumpers = {
+                'json': cfn_flip.dump_json,
+                'yaml': cfn_flip.dump_yaml
+            }
+            first = dumpers[generated_format](deployed_dict)
+            second = dumpers[generated_format](generated_dict)
+        first_list, second_list = first.splitlines(), second.splitlines()
         return list(difflib.unified_diff(
             first_list,
             second_list,
@@ -756,8 +757,25 @@ class TestDifflibStackDiffer:
     def test_compare_stack_configurations__deployed_is_none__returns_diff_with_none(self):
         comparison = self.differ.compare_stack_configurations(None, self.config2)
         expected = self.create_expected_diff(
-            self.serialize({}),
+            self.serialize(None),
             self.serialize(self.make_config_comparable(self.config2))
+        )
+        assert comparison == expected
+
+    def test_compare_stack_configurations__deployed_is_none__all_configs_are_falsey__returns_diff_with_none(self):
+        empty_config = StackConfiguration(
+            stack_name='stack',
+            parameters={},
+            stack_tags={},
+            notifications=[],
+            role_arn=None
+        )
+        comparison = self.differ.compare_stack_configurations(None, empty_config)
+
+        expected = self.create_expected_diff(
+            self.serialize(None),
+            self.serialize(self.make_config_comparable(empty_config)),
+            already_formatted=True
         )
         assert comparison == expected
 
