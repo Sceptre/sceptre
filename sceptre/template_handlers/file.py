@@ -6,7 +6,7 @@ from pathlib import Path
 
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 from sceptre.template_handlers import TemplateHandler
-from sceptre.helpers import sceptreise_path
+from sceptre.helpers import normalise_path
 
 
 class File(TemplateHandler):
@@ -28,7 +28,7 @@ class File(TemplateHandler):
 
     def handle(self):
         input_path = Path(self.arguments["path"])
-        path = self._get_relative_template_path(str(input_path))
+        path = self._resolve_template_path(str(input_path))
 
         if input_path.suffix not in self.supported_template_extensions:
             raise UnsupportedTemplateFileTypeError(
@@ -51,8 +51,15 @@ class File(TemplateHandler):
             helper.print_template_traceback(path)
             raise e
 
-    def _get_relative_template_path(self, template_path):
+    def _resolve_template_path(self, template_path):
+        """
+        Return the project_path joined to template_path as
+        a string.
+
+        Note that os.path.join defers to an absolute path
+        if the input is absolute.
+        """
         return path.join(
-            self.stack_group_config.get("project_path"), "templates",
-            sceptreise_path(template_path)
+            self.stack_group_config["project_path"], "templates",
+            normalise_path(template_path)
         )
