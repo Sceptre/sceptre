@@ -453,13 +453,13 @@ class DifflibStackDiffer(StackDiffer[List[str]]):
         generated: StackConfiguration,
     ) -> List[str]:
         if deployed is None:
-            deployed_dict = None
+            comparable_deployed = None
         else:
-            deployed_dict = self._make_stack_configuration_comparable(deployed)
+            comparable_deployed = self._make_stack_configuration_comparable(deployed)
 
-        generated_dict = self._make_stack_configuration_comparable(generated)
-        deployed_string = cfn_flip.dump_yaml(deployed_dict)
-        generated_string = cfn_flip.dump_yaml(generated_dict)
+        comparable_generated = self._make_stack_configuration_comparable(generated)
+        deployed_string = cfn_flip.dump_yaml(comparable_deployed)
+        generated_string = cfn_flip.dump_yaml(comparable_generated)
         return self._make_string_diff(
             deployed_string,
             generated_string
