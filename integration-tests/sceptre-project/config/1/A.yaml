@@ -1,2 +1,2 @@
 stack_timeout: 1
-template_path: malformed_template.json
+template_path: /Users/jfalkenstein/sceptre/integration-tests/sceptre-project/templates/updated_template.json

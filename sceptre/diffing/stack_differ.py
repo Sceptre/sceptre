@@ -452,7 +452,11 @@ class DifflibStackDiffer(StackDiffer[List[str]]):
         deployed: Optional[StackConfiguration],
         generated: StackConfiguration,
     ) -> List[str]:
-        deployed_dict = self._make_stack_configuration_comparable(deployed)
+        if deployed is None:
+            deployed_dict = None
+        else:
+            deployed_dict = self._make_stack_configuration_comparable(deployed)
+
         generated_dict = self._make_stack_configuration_comparable(generated)
         deployed_string = cfn_flip.dump_yaml(deployed_dict)
         generated_string = cfn_flip.dump_yaml(generated_dict)
@@ -462,7 +466,7 @@ class DifflibStackDiffer(StackDiffer[List[str]]):
         )
 
     def _make_stack_configuration_comparable(self, config: Optional[StackConfiguration]):
-        as_dict = dict(config._asdict()) if config is not None else {}
+        as_dict = dict(config._asdict())
         return {
             key: value for key, value in as_dict.items()
             # stack_name isn't always going to be the same, otherwise we wouldn't be comparing them.
