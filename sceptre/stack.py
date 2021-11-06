@@ -118,8 +118,8 @@ class Stack(object):
     notifications = ResolvableContainerProperty("notifications")
     s3_details = ResolvableContainerProperty("s3_details")
     tags = ResolvableContainerProperty('tags')
-    iam_role = ResolvableValueProperty('iam_role')
 
+    iam_role = ResolvableValueProperty('iam_role')
     template_bucket_name = ResolvableValueProperty("template_bucket_name")
     role_arn = ResolvableValueProperty('role_arn')
 
