@@ -22,7 +22,7 @@ def null_context():
     '-n',
     '--no-placeholders',
     is_flag=True,
-    help="If True, will supply placeholder values for resolvers that cannot be resolved."
+    help="If True, placeholder values will be supplied for resolvers that cannot be resolved."
 )
 @click.argument("path")
 @click.pass_context
@@ -45,8 +45,8 @@ def validate_command(ctx, no_placeholders, path):
     )
 
     plan = SceptrePlan(context)
-    context = null_context() if no_placeholders else allow_resolver_placeholders()
-    with context:
+    execution_context = null_context() if no_placeholders else allow_resolver_placeholders()
+    with execution_context:
         responses = plan.validate()
 
     for stack, response in responses.items():
@@ -61,7 +61,7 @@ def validate_command(ctx, no_placeholders, path):
     '-n',
     '--no-placeholders',
     is_flag=True,
-    help="If True, will supply placeholder values for resolvers that cannot be resolved."
+    help="If True, placeholder values will be supplied for resolvers that cannot be resolved."
 )
 @click.argument("path")
 @click.pass_context
@@ -85,8 +85,8 @@ def generate_command(ctx, no_placeholders, path):
 
     plan = SceptrePlan(context)
 
-    context = null_context() if no_placeholders else allow_resolver_placeholders()
-    with context:
+    execution_context = null_context() if no_placeholders else allow_resolver_placeholders()
+    with execution_context:
         responses = plan.generate()
 
     output = [template for template in responses.values()]
@@ -98,7 +98,7 @@ def generate_command(ctx, no_placeholders, path):
     '-n',
     '--no-placeholders',
     is_flag=True,
-    help="If True, will supply placeholder values for resolvers that cannot be resolved."
+    help="If True, placeholder values will be supplied for resolvers that cannot be resolved."
 )
 @click.argument("path")
 @click.pass_context
@@ -124,8 +124,8 @@ def estimate_cost_command(ctx, no_placeholders, path):
 
     plan = SceptrePlan(context)
 
-    context = null_context() if no_placeholders else allow_resolver_placeholders()
-    with context:
+    execution_context = null_context() if no_placeholders else allow_resolver_placeholders()
+    with execution_context:
         responses = plan.estimate_cost()
 
     for stack, response in responses.items():

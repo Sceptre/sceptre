@@ -296,6 +296,7 @@ class TestConfigReader(object):
     ):
         mock_Stack.return_value = sentinel.stack
         sentinel.stack.dependencies = []
+        sentinel.stack.is_project_dependency = False
 
         mock_collect_s3_details.return_value = sentinel.s3_details
         self.context.project_path = os.path.abspath("tests/fixtures-vpc")
