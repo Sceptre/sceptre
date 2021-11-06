@@ -5,19 +5,9 @@ Template handlers can be used to resolve a ``template`` config block to a CloudF
 fetch templates from S3, for example. Users can create their own template handlers to easily add support for other
 template loading mechanisms. See `Custom Template Handlers`_ for more information.
 
-When a ``template_path`` property is specified in the Stack config, it is wired into a ``file`` template handler by
-default. This saves you from having to specify a full ``template`` block if you just want to load a file from disk.
-Sceptre implements resolvers, which can be used to resolve a value of a
-CloudFormation ``parameter`` or ``sceptre_user_data`` value at runtime. This is
-most commonly used to chain the outputs of one Stack to the inputs of another.
+.. warning::
 
-Syntax:
-
-.. code-block:: yaml
-
-   template:
-     type: s3
-     path: <bucket>/<key>
+   The ``template_path`` key is deprecated in favor of the ``template`` key.
 
 Available Template Handlers
 ---------------------------
@@ -25,8 +15,11 @@ Available Template Handlers
 file
 ~~~~~~~~~~~~~~~~~~~~
 
-Loads a template from disk. Supports JSON, YAML, Jinja2 and Python files. Will be used if the ``template_path`` Stack
-config property is set, for backwards compatibility reasons.
+Loads a template from the local file system. This handler supports templates with .json, .yaml, .template, .j2
+and .py extensions.  This is the default template handler type, specifying the ``file`` type is optional.
+
+For backwards compatability, when a ``template_path`` key is specified in the Stack config, it is wired to
+use the ``file`` template handler.
 
 Syntax:
 
@@ -41,14 +34,19 @@ Example:
 .. code-block:: yaml
 
    template:
-     type: file
      path: storage/bucket.yaml
+
+.. note::
+
+   The ``path`` property can contain an absolute or relative path to the template file.
+   This handler assumes a relative path to be from sceptre_project_dir/templates
+
 
 s3
 ~~~~~~~~~~~~~
 
-Downloads a template from an S3 bucket. The template will be kept in memory and not be persisted to disk. Currently
-only supports YAML / JSON CloudFormation templates,
+Downloads a template from an S3 bucket.  The bucket is accessed with the same credentials that is used to run sceptre.
+This handler supports templates with .json, .yaml, .template, .j2 and .py extensions.
 
 Syntax:
 
@@ -64,7 +62,33 @@ Example:
 
    template:
      type: s3
-     path: infra-templates/s3/v1/bucket.yaml
+     path: infra-templates/v1/storage/bucket.yaml
+
+http
+~~~~~~~~~~~~~
+
+Downloads a template from a url on the web.  By default, this handler will attempt to download
+templates with 5 retries and a download timeout of 5 seconds.  The default retry and timeout
+options can be overridden by setting the `http_template_handler key`_ in the stack group config
+file.
+
+Syntax:
+
+.. code-block:: yaml
+
+   template:
+     type: http
+     url: <url>
+
+Example:
+
+.. code-block:: yaml
+
+   template:
+     type: http
+     url: https://raw.githubusercontent.com/acme/infra-templates/v1/storage/bucket.yaml
+
+
 
 Custom Template Handlers
 ------------------------
@@ -195,3 +219,4 @@ This template handler can be used in a Stack config file with the following synt
 .. _jsonschema library: https://github.com/Julian/jsonschema
 .. _Custom Template Handlers: #custom-template-handlers
 .. _Boto3: https://aws.amazon.com/sdk-for-python/
+.. _http_template_handler key: stack_group_config.html#http-template-handler

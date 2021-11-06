@@ -14,7 +14,7 @@ from botocore.exceptions import ClientError
 from sceptre.template import Template
 from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
-from sceptre.exceptions import TemplateSceptreHandlerError
+from sceptre.exceptions import TemplateSceptreHandlerError, TemplateNotFoundError
 from sceptre.template_handlers import TemplateHandler
 
 
@@ -44,9 +44,22 @@ class TestTemplate(object):
             name="template_name",
             handler_config={"type": "file", "path": "/folder/template.py"},
             sceptre_user_data={},
-            stack_group_config={},
+            stack_group_config={
+                "project_path": "projects"
+            },
             connection_manager=connection_manager,
         )
+
+    def test_initialise_template_default_handler_type(self):
+        template = Template(
+            name="template_name",
+            handler_config={"path": "/folder/template.py"},
+            sceptre_user_data={},
+            stack_group_config={},
+            connection_manager={},
+        )
+
+        assert template.handler_config == {"type": "file", "path": "/folder/template.py"}
 
     def test_initialise_template(self):
         assert self.template.handler_config == {"type": "file", "path": "/folder/template.py"}
@@ -198,10 +211,10 @@ class TestTemplate(object):
         self.template.name = "vpc"
         self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
-            "tests/fixtures/templates/vpc.json"
+            "tests/fixtures-vpc/templates/vpc.json"
         )
         output = self.template.body
-        output_dict = json.loads(output)
+        output_dict = yaml.safe_load(output)
         with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
             expected_output_dict = json.loads(f.read())
         assert output_dict == expected_output_dict
@@ -225,7 +238,7 @@ class TestTemplate(object):
             "tests/fixtures/templates/vpc.template"
         )
         output = self.template.body
-        output_dict = json.loads(output)
+        output_dict = yaml.safe_load(output)
         with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
             expected_output_dict = json.loads(f.read())
         assert output_dict == expected_output_dict
@@ -239,7 +252,7 @@ class TestTemplate(object):
             "tests/fixtures/templates/chdir.py"
         )
         try:
-            json.loads(self.template.body)
+            yaml.safe_load(self.template.body)
         except ValueError:
             assert False
         finally:
@@ -247,7 +260,7 @@ class TestTemplate(object):
 
     def test_body_with_missing_file(self):
         self.template.handler_config["path"] = "incorrect/template/path.py"
-        with pytest.raises(IOError):
+        with pytest.raises(TemplateNotFoundError):
             self.template.body
 
     def test_body_with_python_template(self):
@@ -257,7 +270,7 @@ class TestTemplate(object):
             os.getcwd(),
             "tests/fixtures/templates/vpc.py"
         )
-        actual_output = json.loads(self.template.body)
+        actual_output = yaml.safe_load(self.template.body)
         with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
             expected_output = json.loads(f.read())
         assert actual_output == expected_output
@@ -269,10 +282,46 @@ class TestTemplate(object):
             os.getcwd(),
             "tests/fixtures/templates/vpc_sgt.py"
         )
-        actual_output = json.loads(self.template.body)
+        actual_output = yaml.safe_load(self.template.body)
         with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
             expected_output = json.loads(f.read())
         assert actual_output == expected_output
+
+    def test_body_injects_yaml_start_marker(self):
+        self.template.name = "vpc"
+        self.template.handler_config["path"] = os.path.join(
+            os.getcwd(),
+            "tests/fixtures/templates/vpc.without_start_marker.yaml"
+        )
+        output = self.template.body
+        with open("tests/fixtures/templates/vpc.yaml", "r") as f:
+            expected_output = f.read()
+        assert output == expected_output
+
+    def test_body_with_existing_yaml_start_marker(self):
+        self.template.name = "vpc"
+        self.template.handler_config["path"] = os.path.join(
+            os.getcwd(),
+            "tests/fixtures/templates/vpc.yaml"
+        )
+        output = self.template.body
+        with open("tests/fixtures/templates/vpc.yaml", "r") as f:
+            expected_output = f.read()
+        assert output == expected_output
+
+    def test_body_with_existing_yaml_start_marker_j2(self):
+        self.template.name = "vpc"
+        self.template.handler_config["path"] = os.path.join(
+            os.getcwd(),
+            "tests/fixtures/templates/vpc.yaml.j2"
+        )
+        self.template.sceptre_user_data = {
+            "vpc_id": "10.0.0.0/16"
+        }
+        output = self.template.body
+        with open("tests/fixtures/templates/compiled_vpc.yaml", "r") as f:
+            expected_output = f.read()
+        assert output == expected_output.rstrip()
 
     def test_body_injects_sceptre_user_data(self):
         self.template.sceptre_user_data = {
@@ -284,7 +333,7 @@ class TestTemplate(object):
             "tests/fixtures/templates/vpc_sud.py"
         )
 
-        actual_output = json.loads(self.template.body)
+        actual_output = yaml.safe_load(self.template.body)
         with open("tests/fixtures/templates/compiled_vpc_sud.json", "r") as f:
             expected_output = json.loads(f.read())
         assert actual_output == expected_output
@@ -331,96 +380,4 @@ class TestTemplate(object):
         }
 
         result = self.template.body
-        assert result == sentinel.template_handler_argument
-
-
-@pytest.mark.parametrize("filename,sceptre_user_data,expected", [
-    (
-        "vpc.j2",
-        {"vpc_id": "10.0.0.0/16"},
-        """Resources:
-  VPC:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: 10.0.0.0/16
-Outputs:
-  VpcId:
-    Value:
-      Ref: VPC"""
-    ),
-    (
-        "vpc.yaml.j2",
-        {"vpc_id": "10.0.0.0/16"},
-        """Resources:
-  VPC:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: 10.0.0.0/16
-Outputs:
-  VpcId:
-    Value:
-      Ref: VPC"""
-    ),
-    (
-        "sg.j2",
-        [
-            {"name": "sg_a", "inbound_ip": "10.0.0.0"},
-            {"name": "sg_b", "inbound_ip": "10.0.0.1"}
-        ],
-        """Resources:
-    sg_a:
-        Type: "AWS::EC2::SecurityGroup"
-        Properties:
-            InboundIp: 10.0.0.0
-    sg_b:
-        Type: "AWS::EC2::SecurityGroup"
-        Properties:
-            InboundIp: 10.0.0.1
-"""
-    )
-])
-def test_render_jinja_template(filename, sceptre_user_data, expected):
-    jinja_template_dir = os.path.join(
-        os.getcwd(),
-        "tests/fixtures/templates"
-    )
-    handler_config = {"type": "file", "path": filename}
-    template = Template(name="template_name",
-                        handler_config=handler_config,
-                        sceptre_user_data=sceptre_user_data,
-                        stack_group_config={})
-    result = template._render_jinja_template(
-        template_dir=jinja_template_dir,
-        filename=filename,
-        jinja_vars={"sceptre_user_data": sceptre_user_data}
-    )
-    expected_yaml = yaml.safe_load(expected)
-    result_yaml = yaml.safe_load(result)
-    assert expected_yaml == result_yaml
-
-
-@pytest.mark.parametrize("stack_group_config,expected_keys", [
-    ({}, ["autoescape", "loader", "undefined"]),
-    ({"j2_environment": {"lstrip_blocks": True}}, ["autoescape", "loader", "undefined", "lstrip_blocks"]),
-    ({"j2_environment": {"lstrip_blocks": True, "extensions": [
-     "test-ext"]}}, ["autoescape", "loader", "undefined", "lstrip_blocks", "extensions"])
-])
-@patch("sceptre.template.Environment")
-def test_render_jinja_template_j2_environment_config(mock_environment, stack_group_config, expected_keys):
-    filename = "vpc.j2"
-    sceptre_user_data = {"vpc_id": "10.0.0.0/16"}
-    handler_config = {"type": "file", "path": filename}
-    template = Template(name="template_name",
-                        handler_config=handler_config,
-                        sceptre_user_data=sceptre_user_data,
-                        stack_group_config=stack_group_config)
-    jinja_template_dir = os.path.join(
-        os.getcwd(),
-        "tests/fixtures/templates"
-    )
-    template._render_jinja_template(
-        template_dir=jinja_template_dir,
-        filename=filename,
-        jinja_vars={"sceptre_user_data": sceptre_user_data}
-    )
-    assert list(mock_environment.call_args.kwargs) == expected_keys
+        assert result == "---\n" + str(sentinel.template_handler_argument)

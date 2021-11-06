@@ -25,16 +25,29 @@ class TemplateHandler:
 
     :param connection_manager: Connection manager used to call AWS
     :type connection_manager: sceptre.connection_manager.ConnectionManager
+
+    :param stack_group_config: The Stack group config to use as defaults.
+    :type stack_group_config: dict
     """
 
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, name, arguments=None, sceptre_user_data=None, connection_manager=None):
+    standard_template_extensions = [".json", ".yaml", ".template"]
+    jinja_template_extensions = [".j2"]
+    python_template_extensions = [".py"]
+    supported_template_extensions = standard_template_extensions + \
+        jinja_template_extensions + python_template_extensions
+
+    def __init__(self, name, arguments=None, sceptre_user_data=None, connection_manager=None, stack_group_config=None):
         self.logger = logging.getLogger(__name__)
         self.name = name
         self.arguments = arguments
         self.sceptre_user_data = sceptre_user_data
         self.connection_manager = connection_manager
+
+        if stack_group_config is None:
+            stack_group_config = {}
+        self.stack_group_config = stack_group_config
 
     @abc.abstractmethod
     def schema(self):

@@ -102,7 +102,9 @@ CloudFormation Example:
 
 .. code-block:: yaml
 
-  template_path: generated/lambda-packaged.json
+  template:
+    path: generated/lambda-packaged.json
+    type: file
   stack_name: cfn-lambda-example
   hooks:
     before_launch:
@@ -117,7 +119,9 @@ SAM Example:
 
 .. code-block:: yaml
 
-  template_path: generated/sam-packaged.yaml
+  template:
+    path: generated/sam-packaged.yaml
+    type: file
   stack_name: sam-example
   hooks:
     before_launch:
