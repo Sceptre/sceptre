@@ -275,14 +275,13 @@ class Stack(object):
             try:
                 iam_role = self.iam_role
             except RecursiveResolve:
-                # This would be the case if the value of iam_role is currently being resolved and is
-                # attempting to access this connection_manager property, such as when using
-                # !stack_output. By setting the iam_role to None, it means that the IAM role will
-                # not be used for resolving the value for the IAM role. Once resolved, however, the
-                # the iam_role will be used for all subsequent actions on the stack. Since the Stack
-                # Output resolver uses the target stack's iam_role rather than the current stack's
-                # one anyway, it actually doesn't matter, since the stack defining that iam_role won't
-                # actually be using that iam_role.
+                # This would be the case when iam_role is set with a resolver (especially stack_output)
+                # that uses the stack's connection manager. This creates a temporary condition where
+                # you need the iam role to get the iam role. To get around this, it will temporarily
+                # return None but will re-attempt to resolve the value in future accesses.
+                # Since the Stack Output resolver (the most likely culprit) uses the target stack's
+                # iam_role rather than the current stack's one anyway, it actually doesn't matter,
+                # since the stack defining that iam_role won't actually be using that iam_role.
                 self.logger.debug(
                     "Resolving iam_role requires the Stack connection manager. Temporarily setting "
                     "it to None until iam_role can be fully resolved."
