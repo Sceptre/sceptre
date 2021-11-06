@@ -14,12 +14,20 @@ T_Container = TypeVar('T_Container', bound=Union[dict, list])
 
 logger = logging.getLogger(__name__)
 
-
+# This is a toggle used for globally enabling placeholder values out of resolvers when they error
+# while resolving. This is important when performing actions on stacks like validation or generation
+# when their dependencies have not been deployed yet and those dependencies are expressed in stack
+# resolvers that are used in those actions, especially sceptre_user_data.
 _RESOLVE_PLACEHOLDER_ON_ERROR = False
 
 
 @contextmanager
 def use_resolver_placeholders_on_error():
+    """A context manager that toggles on placeholders for resolvers that error out. This should NOT
+    be used while creating/launching stacks, but it is often required when validating or generating
+    stacks whose dependencies haven't yet been deployed and that reference those dependencies with
+    resolvers, especially in the sceptre_user_data.
+    """
     global _RESOLVE_PLACEHOLDER_ON_ERROR
     try:
         _RESOLVE_PLACEHOLDER_ON_ERROR = True
@@ -64,7 +72,7 @@ class Resolver(abc.ABC):
         """
         pass  # pragma: no cover
 
-    def clone(self, stack: 'stack.Stack'):
+    def clone(self, stack: 'stack.Stack') -> 'Resolver':
         """
         Produces a "fresh" copy of the Resolver, with the specified stack.
 
@@ -72,7 +80,17 @@ class Resolver(abc.ABC):
         """
         return type(self)(self.argument, stack)
 
-    def create_placeholder_value(self):
+    def create_placeholder_value(self) -> str:
+        """Creates a placeholder value to be substituted for the resolved value when placeholders are
+        allowed and the value cannot be resolved.
+
+        The placeholder will look like one of:
+          * { !ClassName } -> used when there is no argument
+          * { !ClassName(argument) } -> used when there is a string argument
+          * { !ClassName({'key': 'value'}) } -> used when there is a dict argument
+
+        :return: The placeholder value
+        """
         base = f'!{self.__class__.__name__}'
         suffix = f'({self.argument})' if self.argument is not None else ''
         # double-braces in an f-string is just an escaped single brace
