@@ -8,7 +8,7 @@ from sceptre.resolvers import (
     Resolver,
     ResolvableContainerProperty,
     ResolvableValueProperty,
-    RecursiveResolve
+    RecursiveResolve, use_resolver_placeholders_on_error
 )
 
 
@@ -40,6 +40,18 @@ class TestResolver(object):
     def test_init(self):
         assert self.mock_resolver.stack == sentinel.stack
         assert self.mock_resolver.argument == sentinel.argument
+
+    @pytest.mark.parametrize(
+        'argument,expected',
+        [
+            pytest.param(None, '{ !MockResolver }', id='No argument'),
+            pytest.param('hello', '{ !MockResolver(hello) }', id='string argument'),
+            pytest.param({'a': 1}, "{ !MockResolver({'a': 1}) }", id='dict argument')
+        ]
+    )
+    def test_create_placeholder_value__returns_expected_string(self, argument, expected):
+        resolver = MockResolver(argument)
+        assert resolver.create_placeholder_value() == expected
 
 
 class TestResolvableContainerPropertyDescriptor(object):
@@ -356,6 +368,44 @@ class TestResolvableContainerPropertyDescriptor(object):
         }
         expected = {'some key': 'some value', 'none key': None}
         assert self.mock_object.resolvable_container_property == expected
+
+    def test_get__resolver_raises_error__placeholders_allowed__returns_placeholder(self):
+        class ErroringResolver(Resolver):
+            def resolve(self):
+                raise ValueError()
+
+        resolver = ErroringResolver()
+        self.mock_object.resolvable_container_property = {
+            'resolver': resolver
+        }
+        with use_resolver_placeholders_on_error():
+            result = self.mock_object.resolvable_container_property
+
+        assert result == {'resolver': resolver.create_placeholder_value()}
+
+    def test_get__resolver_raises_error__placeholders_not_allowed__raises_error(self):
+        class ErroringResolver(Resolver):
+            def resolve(self):
+                raise ValueError()
+
+        resolver = ErroringResolver()
+        self.mock_object.resolvable_container_property = {
+            'resolver': resolver
+        }
+        with pytest.raises(ValueError):
+            self.mock_object.resolvable_container_property
+
+    def test_get__resolver_raises_recursive_resolve__placeholders_allowed__raises_error(self):
+        class RecursiveResolver(Resolver):
+            def resolve(self):
+                raise RecursiveResolve()
+
+        resolver = RecursiveResolver()
+        self.mock_object.resolvable_container_property = {
+            'resolver': resolver
+        }
+        with use_resolver_placeholders_on_error(), pytest.raises(RecursiveResolve):
+            self.mock_object.resolvable_container_property
 
 
 class TestResolvableValueProperty:
