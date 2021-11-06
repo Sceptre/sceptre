@@ -15,17 +15,17 @@ T_Container = TypeVar('T_Container', bound=Union[dict, list])
 logger = logging.getLogger(__name__)
 
 
-RESOLVE_PLACEHOLDER_ON_ERROR = False
+_RESOLVE_PLACEHOLDER_ON_ERROR = False
 
 
 @contextmanager
-def allow_resolver_placeholders():
-    global RESOLVE_PLACEHOLDER_ON_ERROR
+def use_resolver_placeholders_on_error():
+    global _RESOLVE_PLACEHOLDER_ON_ERROR
     try:
-        RESOLVE_PLACEHOLDER_ON_ERROR = True
+        _RESOLVE_PLACEHOLDER_ON_ERROR = True
         yield
     finally:
-        RESOLVE_PLACEHOLDER_ON_ERROR = False
+        _RESOLVE_PLACEHOLDER_ON_ERROR = False
 
 
 class RecursiveResolve(Exception):
@@ -165,7 +165,7 @@ class ResolvableProperty(abc.ABC):
             # Recursive resolve issues shouldn't be masked by a placeholder.
             raise
         except Exception:
-            if RESOLVE_PLACEHOLDER_ON_ERROR:
+            if _RESOLVE_PLACEHOLDER_ON_ERROR:
                 placeholder_value = resolver.create_placeholder_value()
                 logger.debug(
                     (
