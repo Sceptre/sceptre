@@ -121,11 +121,11 @@ class Stack(object):
     parameters = ResolvableContainerProperty("parameters")
     sceptre_user_data = ResolvableContainerProperty("sceptre_user_data")
     notifications = ResolvableContainerProperty("notifications")
-    s3_details = ResolvableContainerProperty("s3_details")
+    s3_details = ResolvableContainerProperty("s3_details", placeholder_override=None)
     tags = ResolvableContainerProperty('tags')
 
-    iam_role = ResolvableValueProperty('iam_role')
-    template_bucket_name = ResolvableValueProperty("template_bucket_name")
+    iam_role = ResolvableValueProperty('iam_role', placeholder_override=None)
+    template_bucket_name = ResolvableValueProperty("template_bucket_name", placeholder_override=None)
     role_arn = ResolvableValueProperty('role_arn')
 
     hooks = HookProperty("hooks")

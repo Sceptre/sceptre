@@ -97,6 +97,8 @@ class Resolver(abc.ABC):
         return f'{{ {base}{suffix} }}'
 
 
+NO_OVERRIDE = 'NO_OVERRIDE'
+
 class ResolvableProperty(abc.ABC):
     """
     This is an abstract base class for a descriptor used to store an attribute that have values
@@ -105,9 +107,11 @@ class ResolvableProperty(abc.ABC):
     :param name: Attribute suffix used to store the property in the instance.
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, placeholder_override=NO_OVERRIDE):
         self.name = "_" + name
         self.logger = logging.getLogger(__name__)
+        self.placeholder_override = placeholder_override
+
         self._lock = RLock()
 
     def __get__(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']) -> Any:
@@ -184,7 +188,11 @@ class ResolvableProperty(abc.ABC):
             raise
         except Exception:
             if _RESOLVE_PLACEHOLDER_ON_ERROR:
-                placeholder_value = resolver.create_placeholder_value()
+                if self.placeholder_override == NO_OVERRIDE:
+                    placeholder_value = resolver.create_placeholder_value()
+                else:
+                    placeholder_value = self.placeholder_override
+
                 logger.debug(
                     (
                         "Error encountered while resolving resolver. This is allowed for current "
