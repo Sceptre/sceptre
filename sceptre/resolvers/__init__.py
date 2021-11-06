@@ -15,6 +15,19 @@ T_Container = TypeVar('T_Container', bound=Union[dict, list])
 logger = logging.getLogger(__name__)
 
 
+RESOLVE_PLACEHOLDER_ON_ERROR = False
+
+
+@contextmanager
+def allow_resolver_placeholders():
+    global RESOLVE_PLACEHOLDER_ON_ERROR
+    try:
+        RESOLVE_PLACEHOLDER_ON_ERROR = True
+        yield
+    finally:
+        RESOLVE_PLACEHOLDER_ON_ERROR = False
+
+
 class RecursiveResolve(Exception):
     pass
 
@@ -58,6 +71,12 @@ class Resolver(abc.ABC):
         :param stack: The stack to set on the cloned resolver
         """
         return type(self)(self.argument, stack)
+
+    def create_placeholder_value(self):
+        base = f'!{self.__class__.__name__}'
+        suffix = f'({self.argument})' if self.argument is not None else ''
+        # double-braces in an f-string is just an escaped single brace
+        return f'{{ {base}{suffix} }}'
 
 
 class ResolvableProperty(abc.ABC):
@@ -139,6 +158,21 @@ class ResolvableProperty(abc.ABC):
         """Implement this method to assign the value to the resolvable property."""
         pass
 
+    def resolve_resolver_value(self, resolver: 'Resolver') -> Any:
+        try:
+            return resolver.resolve()
+        except RecursiveResolve:
+            # Recursive resolve issues shouldn't be masked by a placeholder.
+            raise
+        except Exception:
+            if RESOLVE_PLACEHOLDER_ON_ERROR:
+                logger.debug(
+                    "Error encountered while resolving resolver. Resolving it to placeholder value instead.",
+                    exc_info=True
+                )
+                return resolver.create_placeholder_value()
+            raise
+
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__}({self.name[1:]})>'
 
@@ -179,7 +213,7 @@ class ResolvableContainerProperty(ResolvableProperty):
         def resolve(attr: Union[dict, list], key: Union[int, str], value: Resolver):
             # Update the container key's value with the resolved value, if possible...
             try:
-                result = value.resolve()
+                result = self.resolve_resolver_value(value)
                 if result is None:
                     logger.debug(f"Removing item {key} because resolver returned None.")
                     # We gather up resolvers (and their immediate containers) that resolve to None,
@@ -320,7 +354,7 @@ class ResolvableValueProperty(ResolvableProperty):
         """
         raw_value = getattr(stack, self.name)
         if isinstance(raw_value, Resolver):
-            value = raw_value.resolve()
+            value = self.resolve_resolver_value(raw_value)
             # Overwrite the stored resolver value with the resolved value to avoid resolving the
             # same value multiple times.
             setattr(stack, self.name, value)
