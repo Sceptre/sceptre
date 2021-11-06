@@ -166,11 +166,15 @@ class ResolvableProperty(abc.ABC):
             raise
         except Exception:
             if RESOLVE_PLACEHOLDER_ON_ERROR:
+                placeholder_value = resolver.create_placeholder_value()
                 logger.debug(
-                    "Error encountered while resolving resolver. Resolving it to placeholder value instead.",
+                    (
+                        "Error encountered while resolving resolver. This is allowed for current "
+                        f"operation. Resolving it to placeholder value instead: {placeholder_value}",
+                    ),
                     exc_info=True
                 )
-                return resolver.create_placeholder_value()
+                return placeholder_value
             raise
 
     def __repr__(self) -> str:

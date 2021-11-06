@@ -1,3 +1,5 @@
+from contextlib import contextmanager
+
 import click
 import webbrowser
 
@@ -7,13 +9,25 @@ from sceptre.cli.helpers import (
     write
 )
 from sceptre.plan.plan import SceptrePlan
+from sceptre.resolvers import allow_resolver_placeholders
+
+
+@contextmanager
+def null_context():
+    yield
 
 
 @click.command(name="validate", short_help="Validates the template.")
+@click.option(
+    '-n',
+    '--no-placeholders',
+    is_flag=True,
+    help="If True, will supply placeholder values for resolvers that cannot be resolved."
+)
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
-def validate_command(ctx, path):
+def validate_command(ctx, no_placeholders, path):
     """
     Validates the template used for stack in PATH.
     \f
@@ -31,7 +45,9 @@ def validate_command(ctx, path):
     )
 
     plan = SceptrePlan(context)
-    responses = plan.validate()
+    context = null_context() if no_placeholders else allow_resolver_placeholders()
+    with context:
+        responses = plan.validate()
 
     for stack, response in responses.items():
         if response['ResponseMetadata']['HTTPStatusCode'] == 200:
@@ -41,10 +57,16 @@ def validate_command(ctx, path):
 
 
 @click.command(name="generate", short_help="Prints the template.")
+@click.option(
+    '-n',
+    '--no-placeholders',
+    is_flag=True,
+    help="If True, will supply placeholder values for resolvers that cannot be resolved."
+)
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
-def generate_command(ctx, path):
+def generate_command(ctx, no_placeholders, path):
     """
     Prints the template used for stack in PATH.
     \f
@@ -62,16 +84,26 @@ def generate_command(ctx, path):
     )
 
     plan = SceptrePlan(context)
-    responses = plan.generate()
+
+    context = null_context() if no_placeholders else allow_resolver_placeholders()
+    with context:
+        responses = plan.generate()
+
     output = [template for template in responses.values()]
     write(output, context.output_format)
 
 
 @click.command(name="estimate-cost", short_help="Estimates the cost of the template.")
+@click.option(
+    '-n',
+    '--no-placeholders',
+    is_flag=True,
+    help="If True, will supply placeholder values for resolvers that cannot be resolved."
+)
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
-def estimate_cost_command(ctx, path):
+def estimate_cost_command(ctx, no_placeholders, path):
     """
     Prints a URI to STOUT that provides an estimated cost based on the
     resources in the stack. This command will also attempt to open a web
@@ -91,7 +123,10 @@ def estimate_cost_command(ctx, path):
     )
 
     plan = SceptrePlan(context)
-    responses = plan.estimate_cost()
+
+    context = null_context() if no_placeholders else allow_resolver_placeholders()
+    with context:
+        responses = plan.estimate_cost()
 
     for stack, response in responses.items():
         if response['ResponseMetadata']['HTTPStatusCode'] == 200:
