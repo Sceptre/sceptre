@@ -99,12 +99,16 @@ class Resolver(abc.ABC):
 
 NO_OVERRIDE = 'NO_OVERRIDE'
 
+
 class ResolvableProperty(abc.ABC):
     """
     This is an abstract base class for a descriptor used to store an attribute that have values
     associated with Resolver objects.
 
     :param name: Attribute suffix used to store the property in the instance.
+    :param placeholder_override: If specified, this is the value that will be used as the placeholder
+        rather than the resolver's returned placeholder value, but only when placeholders are allowed
+        via the use_resolver_placeholders_on_error context manager.
     """
 
     def __init__(self, name: str, placeholder_override=NO_OVERRIDE):
@@ -181,6 +185,14 @@ class ResolvableProperty(abc.ABC):
         pass
 
     def resolve_resolver_value(self, resolver: 'Resolver') -> Any:
+        """Returns the resolved parameter value.
+
+        If the resolver happens to raise an error and placeholders are currently allowed for resolvers,
+        a placeholder will be returned instead of reraising the error.
+
+        :param resolver: The resolver to resolve.
+        :return: The resolved value (or placeholder, in certain circumstances)
+        """
         try:
             return resolver.resolve()
         except RecursiveResolve:
