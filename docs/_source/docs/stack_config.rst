@@ -333,7 +333,7 @@ as a CloudFormation service role, but project dependency stacks will have no ser
 
 It is recommended that you only have one project dependency stack. More than one is possible, but
 it is best to define all project dependencies in a single stack and output the values needed by the
-rest of the project form that stack.
+rest of the project from that stack.
 
 For more information on how to configure a project's dependencies, see
 :ref:`Setting dependencies stack groups <setting_dependencies_for_stack_groups>`.
