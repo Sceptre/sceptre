@@ -109,6 +109,12 @@ class StackOutput(StackOutputBase):
         """
         Adds dependency to a Stack.
         """
+        if self.stack.is_project_dependency:
+            # Project dependencies are not allowed to reference other project stack outputs because
+            # that can lead to a tangle of dependencies that cannot be resolved. Instead, resolvers
+            # on project dependencies will always return None. Therefore, there is no setup required.
+            return
+
         dep_stack_name, self.output_key = self.argument.split("::")
         self.dependency_stack_name = sceptreise_path(normalise_path(dep_stack_name))
         self.stack.dependencies.append(self.dependency_stack_name)
@@ -120,10 +126,15 @@ class StackOutput(StackOutputBase):
         :returns: The value of the Stack output.
         :rtype: str
         """
-        self.logger.debug("Resolving Stack output: {0}".format(self.argument))
+        self.logger.debug(f"Resolving Stack output: {self.argument}")
+        if self.stack.is_project_dependency:
+            # Project dependencies are not allowed to reference other project stack outputs.
+            # Therefore, any attempt to resolve another stack's output will result in None being
+            # returned.
+            self.logger.debug(f"Resolving to None because {self.stack.name} is project dependency.")
+            return None
 
         friendly_stack_name = self.dependency_stack_name.replace(TEMPLATE_EXTENSION, "")
-
         stack = next(
             stack for stack in self.stack.dependencies if stack.name == friendly_stack_name
         )
