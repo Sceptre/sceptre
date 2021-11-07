@@ -6,7 +6,10 @@ from threading import RLock
 from typing import Any, TYPE_CHECKING, Type, Union, TypeVar
 
 from sceptre.helpers import _call_func_on_values
-
+from sceptre.resolvers.placeholders import (
+    create_placeholder_value,
+    are_placeholders_enabled
+)
 
 if TYPE_CHECKING:
     from sceptre import stack
@@ -61,17 +64,24 @@ class Resolver(abc.ABC):
         return type(self)(self.argument, stack)
 
 
+NO_OVERRIDE = 'NO_OVERRIDE'
+
+
 class ResolvableProperty(abc.ABC):
     """
     This is an abstract base class for a descriptor used to store an attribute that have values
     associated with Resolver objects.
 
     :param name: Attribute suffix used to store the property in the instance.
+    :param placeholder_override: If specified, this is the value that will be used as the placeholder
+        rather than the resolver's returned placeholder value, but only when placeholders are allowed
+        via the use_resolver_placeholders_on_error context manager.
     """
 
-    def __init__(self, name):
+    def __init__(self, name: str, placeholder_override=NO_OVERRIDE):
         self.name = "_" + name
         self.logger = logging.getLogger(__name__)
+        self.placeholder_override = placeholder_override
 
         self._lock = RLock()
 
@@ -144,10 +154,30 @@ class ResolvableProperty(abc.ABC):
     def resolve_resolver_value(self, resolver: 'Resolver') -> Any:
         """Returns the resolved parameter value.
 
+        If the resolver happens to raise an error and placeholders are currently allowed for resolvers,
+        a placeholder will be returned instead of reraising the error.
+
         :param resolver: The resolver to resolve.
-        :return: The resolved value
+        :return: The resolved value (or placeholder, in certain circumstances)
         """
-        return resolver.resolve()
+        try:
+            return resolver.resolve()
+        except RecursiveResolve:
+            # Recursive resolve issues shouldn't be masked by a placeholder.
+            raise
+        except Exception:
+            if are_placeholders_enabled():
+                if self.placeholder_override == NO_OVERRIDE:
+                    placeholder_value = create_placeholder_value(resolver)
+                else:
+                    placeholder_value = self.placeholder_override
+
+                logger.debug(
+                    "Error encountered while resolving resolver. This is allowed for current "
+                    f"operation. Resolving it to placeholder value instead: {placeholder_value}"
+                )
+                return placeholder_value
+            raise
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__}({self.name[1:]})>'
