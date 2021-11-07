@@ -270,12 +270,10 @@ class Stack(object):
         return hash(str(self))
 
     @property
-    def connection_manager(self):
-        """
-        Returns ConnectionManager.
+    def connection_manager(self) -> ConnectionManager:
+        """Returns the ConnectionManager for the stack, creating it if it has not yet been created.
 
         :returns: ConnectionManager.
-        :rtype: ConnectionManager
         """
         if self._connection_manager is None:
             cache_connection_manager = True
@@ -285,13 +283,13 @@ class Stack(object):
                 # This would be the case when iam_role is set with a resolver (especially stack_output)
                 # that uses the stack's connection manager. This creates a temporary condition where
                 # you need the iam role to get the iam role. To get around this, it will temporarily
-                # return None but will re-attempt to resolve the value in future accesses.
+                # use None as the iam_role but will re-attempt to resolve the value in future accesses.
                 # Since the Stack Output resolver (the most likely culprit) uses the target stack's
                 # iam_role rather than the current stack's one anyway, it actually doesn't matter,
                 # since the stack defining that iam_role won't actually be using that iam_role.
                 self.logger.debug(
                     "Resolving iam_role requires the Stack connection manager. Temporarily setting "
-                    "it to None until iam_role can be fully resolved."
+                    "the iam_role to None until it can be fully resolved."
                 )
                 iam_role = None
                 cache_connection_manager = False
@@ -301,7 +299,7 @@ class Stack(object):
             )
             if cache_connection_manager:
                 self._connection_manager = connection_manager
-            else:
+            else:  # Return early without caching the connection manager.
                 return connection_manager
 
         return self._connection_manager
