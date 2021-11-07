@@ -6,7 +6,10 @@ from threading import RLock
 from typing import Any, TYPE_CHECKING, Type, Union, TypeVar
 
 from sceptre.helpers import _call_func_on_values
-from sceptre.resolvers.placeholders import RESOLVE_PLACEHOLDER_ON_ERROR, create_placeholder_value
+from sceptre.resolvers.placeholders import (
+    create_placeholder_value,
+    are_placeholders_enabled
+)
 
 if TYPE_CHECKING:
     from sceptre import stack
@@ -59,19 +62,6 @@ class Resolver(abc.ABC):
         :param stack: The stack to set on the cloned resolver
         """
         return type(self)(self.argument, stack)
-
-    def create_placeholder_value(self) -> str:
-        """Creates a placeholder value to be substituted for the resolved value when placeholders are
-        allowed and the value cannot be resolved.
-
-        The placeholder will look like one of:
-          * { !ClassName } -> used when there is no argument
-          * { !ClassName(argument) } -> used when there is a string argument
-          * { !ClassName({'key': 'value'}) } -> used when there is a dict argument
-
-        :return: The placeholder value
-        """
-        return create_placeholder_value(self)
 
 
 NO_OVERRIDE = 'NO_OVERRIDE'
@@ -176,9 +166,9 @@ class ResolvableProperty(abc.ABC):
             # Recursive resolve issues shouldn't be masked by a placeholder.
             raise
         except Exception:
-            if RESOLVE_PLACEHOLDER_ON_ERROR:
+            if are_placeholders_enabled():
                 if self.placeholder_override == NO_OVERRIDE:
-                    placeholder_value = resolver.create_placeholder_value()
+                    placeholder_value = create_placeholder_value(resolver)
                 else:
                     placeholder_value = self.placeholder_override
 

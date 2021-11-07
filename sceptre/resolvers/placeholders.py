@@ -1,6 +1,7 @@
 import typing
 from contextlib import contextmanager
 from enum import Enum
+from threading import Lock
 
 if typing.TYPE_CHECKING:
     from sceptre import resolvers
@@ -9,7 +10,7 @@ if typing.TYPE_CHECKING:
 # while resolving. This is important when performing actions on stacks like validation or generation
 # when their dependencies have not been deployed yet and those dependencies are expressed in stack
 # resolvers that are used in those actions, especially sceptre_user_data.
-RESOLVE_PLACEHOLDER_ON_ERROR = False
+_RESOLVE_PLACEHOLDER_ON_ERROR = False
 
 
 class PlaceholderType(Enum):
@@ -18,6 +19,7 @@ class PlaceholderType(Enum):
 
 
 _PLACEHOLDER_TYPE = PlaceholderType.explicit
+_placeholder_lock = Lock()
 
 
 @contextmanager
@@ -30,14 +32,21 @@ def use_resolver_placeholders_on_error(placeholder_type: PlaceholderType = Place
     :param placeholder_type: The type of placeholder that should be resolved when resolvers encounter
         an error. The "explicit" enum will
     """
-    global RESOLVE_PLACEHOLDER_ON_ERROR
+    global _RESOLVE_PLACEHOLDER_ON_ERROR
     global _PLACEHOLDER_TYPE
     try:
-        RESOLVE_PLACEHOLDER_ON_ERROR = True
-        _PLACEHOLDER_TYPE = placeholder_type
+        with _placeholder_lock:
+            _RESOLVE_PLACEHOLDER_ON_ERROR = True
+            _PLACEHOLDER_TYPE = placeholder_type
         yield
     finally:
-        RESOLVE_PLACEHOLDER_ON_ERROR = False
+        with _placeholder_lock:
+            _RESOLVE_PLACEHOLDER_ON_ERROR = False
+
+
+def are_placeholders_enabled():
+    with _placeholder_lock:
+        return _RESOLVE_PLACEHOLDER_ON_ERROR
 
 
 def create_placeholder_value(resolver: 'resolvers.Resolver'):
