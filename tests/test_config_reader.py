@@ -305,9 +305,7 @@ class TestConfigReader(object):
         mock_Stack.assert_any_call(
             name="account/stack-group/region/vpc",
             project_code="account_project_code",
-            template_path=os.path.join(
-                self.context.project_path, "templates/path/to/template"
-            ),
+            template_path="path/to/template",
             template_handler_config=None,
             region="region_region",
             profile="account_profile",
