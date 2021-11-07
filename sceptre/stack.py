@@ -121,13 +121,19 @@ class Stack(object):
     parameters = ResolvableContainerProperty("parameters")
     sceptre_user_data = ResolvableContainerProperty("sceptre_user_data")
     notifications = ResolvableContainerProperty("notifications")
-    tags = ResolvableContainerProperty("tags")
-
-    s3_details = ResolvableContainerProperty("s3_details")
-    template_bucket_name = ResolvableValueProperty("template_bucket_name")
-    template_key_prefix = ResolvableValueProperty("template_key_prefix")
-    role_arn = ResolvableValueProperty("role_arn")
-    iam_role = ResolvableValueProperty('iam_role')
+    tags = ResolvableContainerProperty('tags')
+    # placeholder_override=None here means that if the template_bucket_name is a resolver,
+    # placeholders have been enabled, and that stack hasn't been deployed yet, commands that would
+    # otherwise attempt to upload the template (like validate) won't actually use the template bucket
+    # and will act as if there was no template bucket set.
+    s3_details = ResolvableContainerProperty("s3_details", placeholder_override=None)
+    template_bucket_name = ResolvableValueProperty("template_bucket_name", placeholder_override=None)
+    template_key_prefix = ResolvableValueProperty("template_key_prefix", placeholder_override=None)
+    # Similarly, the placeholder_override=None for iam_role means that actions that would otherwise
+    # use the iam_role will act as if there was no iam role when the iam_role stack has not been
+    # deployed for commands that allow placeholders (like validate).
+    iam_role = ResolvableValueProperty('iam_role', placeholder_override=None)
+    role_arn = ResolvableValueProperty('role_arn')
 
     hooks = HookProperty("hooks")
 
