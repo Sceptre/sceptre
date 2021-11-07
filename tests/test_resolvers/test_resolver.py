@@ -10,6 +10,7 @@ from sceptre.resolvers import (
     ResolvableValueProperty,
     RecursiveResolve
 )
+from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error, create_placeholder_value
 
 
 class MockResolver(Resolver):
@@ -25,7 +26,15 @@ class MockResolver(Resolver):
 
 class MockClass(object):
     resolvable_container_property = ResolvableContainerProperty("resolvable_container_property")
+    container_with_placeholder_override = ResolvableContainerProperty(
+        "container_with_placeholder_override",
+        placeholder_override='container'
+    )
     resolvable_value_property = ResolvableValueProperty('resolvable_value_property')
+    value_with_placeholder_override = ResolvableValueProperty(
+        'value_with_placeholder_override',
+        placeholder_override=None
+    )
     config = MagicMock()
 
 
@@ -376,6 +385,58 @@ class TestResolvableContainerPropertyDescriptor:
         expected = {'some key': 'some value', 'none key': None}
         assert self.mock_object.resolvable_container_property == expected
 
+    def test_get__resolver_raises_error__placeholders_allowed__returns_placeholder(self):
+        class ErroringResolver(Resolver):
+            def resolve(self):
+                raise ValueError()
+
+        resolver = ErroringResolver()
+        self.mock_object.resolvable_container_property = {
+            'resolver': resolver
+        }
+        with use_resolver_placeholders_on_error():
+            result = self.mock_object.resolvable_container_property
+
+        assert result == {'resolver': create_placeholder_value(resolver)}
+
+    def test_get__resolver_raises_error__placeholders_not_allowed__raises_error(self):
+        class ErroringResolver(Resolver):
+            def resolve(self):
+                raise ValueError()
+
+        resolver = ErroringResolver()
+        self.mock_object.resolvable_container_property = {
+            'resolver': resolver
+        }
+        with pytest.raises(ValueError):
+            self.mock_object.resolvable_container_property
+
+    def test_get__resolver_raises_recursive_resolve__placeholders_allowed__raises_error(self):
+        class RecursiveResolver(Resolver):
+            def resolve(self):
+                raise RecursiveResolve()
+
+        resolver = RecursiveResolver()
+        self.mock_object.resolvable_container_property = {
+            'resolver': resolver
+        }
+        with use_resolver_placeholders_on_error(), pytest.raises(RecursiveResolve):
+            self.mock_object.resolvable_container_property
+
+    def test_get__resolver_raises_error__placeholders_allowed__placeholder_override__returns_override(self):
+        class ErroringResolver(Resolver):
+            def resolve(self):
+                raise ValueError()
+
+        resolver = ErroringResolver()
+        self.mock_object.container_with_placeholder_override = {
+            'resolver': resolver
+        }
+        with use_resolver_placeholders_on_error():
+            result = self.mock_object.container_with_placeholder_override
+
+        assert result == {'resolver': 'container'}
+
 
 class TestResolvableValueProperty:
     def setup_method(self, test_method):
@@ -442,3 +503,47 @@ class TestResolvableValueProperty:
         stack2.resolvable_value_property = OtherStackResolver()
 
         assert stack2.resolvable_value_property == 'stack1'
+
+    def test_get__resolver_raises_error__placeholders_allowed__returns_placeholder(self):
+        class ErroringResolver(Resolver):
+            def resolve(self):
+                raise ValueError()
+
+        resolver = ErroringResolver()
+        self.mock_object.resolvable_value_property = resolver
+        with use_resolver_placeholders_on_error():
+            result = self.mock_object.resolvable_value_property
+
+        assert result == create_placeholder_value(resolver)
+
+    def test_get__resolver_raises_error__placeholders_not_allowed__raises_error(self):
+        class ErroringResolver(Resolver):
+            def resolve(self):
+                raise ValueError()
+
+        resolver = ErroringResolver()
+        self.mock_object.resolvable_value_property = resolver
+        with pytest.raises(ValueError):
+            self.mock_object.resolvable_value_property
+
+    def test_get__resolver_raises_recursive_resolve__placeholders_allowed__raises_error(self):
+        class RecursiveResolver(Resolver):
+            def resolve(self):
+                raise RecursiveResolve()
+
+        resolver = RecursiveResolver()
+        self.mock_object.resolvable_value_property = resolver
+        with use_resolver_placeholders_on_error(), pytest.raises(RecursiveResolve):
+            self.mock_object.resolvable_value_property
+
+    def test_get__resolver_raises_error__placeholders_allowed__placeholder_override__returns_override(self):
+        class ErroringResolver(Resolver):
+            def resolve(self):
+                raise ValueError()
+
+        resolver = ErroringResolver()
+        self.mock_object.value_with_placeholder_override = resolver
+        with use_resolver_placeholders_on_error():
+            result = self.mock_object.value_with_placeholder_override
+
+        assert result is None
