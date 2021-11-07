@@ -309,16 +309,15 @@ integer value.
 
 is_project_dependency
 ~~~~~~~~~~~~~~~~~~~~~
-
 * Resolvable: No
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
 A project dependency stack is intended to be a stack that is utilized by other stacks in the project,
-or even all stacks. This is useful for defining stacks for the project, such as a template bucket,
+or even all stacks. This is useful for defining stacks to support the project, such as a template bucket,
 SNS notification topics, and/or an IAM service role.
 
-The biggest dependency between a "normal" stack config and a stack marked as a project dependency is
+The biggest difference between a "normal" stack config and a stack marked as a project dependency is
 that stacks marked with ``is_project_dependency: True`` will ignore all dependencies of their own.
 Project dependencies are not allowed to have dependencies. Furthermore, the
 **the stack_output resolver will always resolve to nothing on project dependency stacks.**
@@ -334,7 +333,7 @@ as a CloudFormation service role, but project dependency stacks will have no ser
 
 It is recommended that you only have one project dependency stack. More than one is possible, but
 it is best to define all project dependencies in a single stack and output the values needed by the
-rest of the project form that stack.
+rest of the project from that stack.
 
 For more information on how to configure a project's dependencies, see
 :ref:`Setting dependencies stack groups <setting_dependencies_for_stack_groups>`.
