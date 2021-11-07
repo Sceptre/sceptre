@@ -525,4 +525,4 @@ class TestResolvableValueProperty:
         with use_resolver_placeholders_on_error():
             result = self.mock_object.value_with_placeholder_override
 
-        assert result == None
+        assert result is None
