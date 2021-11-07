@@ -60,9 +60,6 @@ class Resolver(abc.ABC):
         return type(self)(self.argument, stack)
 
 
-NO_OVERRIDE = 'NO_OVERRIDE'
-
-
 class ResolvableProperty(abc.ABC):
     """
     This is an abstract base class for a descriptor used to store an attribute that have values
@@ -147,7 +144,7 @@ class ResolvableProperty(abc.ABC):
         """Returns the resolved parameter value.
 
         :param resolver: The resolver to resolve.
-        :return: The resolved value (or placeholder, in certain circumstances)
+        :return: The resolved value
         """
         return resolver.resolve()
 
