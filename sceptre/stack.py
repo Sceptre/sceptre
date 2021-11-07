@@ -108,11 +108,6 @@ class Stack(object):
             will result in no timeout. Supports only positive integer value.
     :type stack_timeout: int
 
-    :param is_project_dependency: Indicates whether or not the the stack is a\
-            special dependency of the stack. If True, disables all dependencies\
-            on the the current stack.
-    :type is_project_dependency: bool
-
     :param stack_group_config: The StackGroup config for the Stack
     :type stack_group_config: dict
 
