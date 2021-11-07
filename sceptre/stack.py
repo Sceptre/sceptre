@@ -108,6 +108,11 @@ class Stack(object):
             will result in no timeout. Supports only positive integer value.
     :type stack_timeout: int
 
+    :param is_project_dependency: Indicates whether or not the the stack is a\
+            special dependency of the stack. If True, disables all dependencies\
+            on the the current stack.
+    :type is_project_dependency: bool
+
     :param stack_group_config: The StackGroup config for the Stack
     :type stack_group_config: dict
 
@@ -132,7 +137,7 @@ class Stack(object):
         parameters=None, sceptre_user_data=None, hooks=None, s3_details=None,
         iam_role=None, dependencies=None, role_arn=None, protected=False, tags=None,
         external_name=None, notifications=None, on_failure=None, profile=None,
-        stack_timeout=0, stack_group_config={}
+        stack_timeout=0, is_project_dependency=False, stack_group_config={}
     ):
         self.logger = logging.getLogger(__name__)
 
@@ -149,7 +154,7 @@ class Stack(object):
         self.external_name = external_name or get_external_stack_name(self.project_code, self.name)
         self.template_path = template_path
         self.template_handler_config = template_handler_config
-        self.s3_details = s3_details
+        self.is_project_dependency = is_project_dependency
         self._template = None
         self._connection_manager = None
 
