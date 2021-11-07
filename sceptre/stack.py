@@ -8,13 +8,12 @@ This module implements a Stack class, which stores a Stack's data.
 """
 
 import logging
-from typing import Mapping, Sequence
 
 from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.helpers import get_external_stack_name, sceptreise_path
 from sceptre.hooks import HookProperty
-from sceptre.resolvers import ResolvableProperty
+from sceptre.resolvers import ResolvableContainerProperty
 from sceptre.template import Template
 
 
@@ -109,14 +108,21 @@ class Stack(object):
             will result in no timeout. Supports only positive integer value.
     :type stack_timeout: int
 
+    :param is_project_dependency: Indicates whether or not the the stack is a\
+            special dependency of the stack. If True, disables all dependencies\
+            on the the current stack.
+    :type is_project_dependency: bool
+
     :param stack_group_config: The StackGroup config for the Stack
     :type stack_group_config: dict
 
     """
 
-    parameters = ResolvableProperty("parameters")
-    _sceptre_user_data = ResolvableProperty("_sceptre_user_data")
-    notifications = ResolvableProperty("notifications")
+    parameters = ResolvableContainerProperty("parameters")
+    sceptre_user_data = ResolvableContainerProperty("sceptre_user_data")
+    notifications = ResolvableContainerProperty("notifications")
+    tags = ResolvableContainerProperty('tags')
+
     hooks = HookProperty("hooks")
 
     def __init__(
@@ -152,15 +158,16 @@ class Stack(object):
         self.role_arn = role_arn
         self.on_failure = on_failure
         self.dependencies = dependencies or []
-        self.tags = tags or {}
         self.stack_timeout = stack_timeout
-        self.iam_role = iam_role
         self.profile = profile
+
+        self.iam_role = iam_role
+        self.tags = tags or {}
         self.hooks = hooks or {}
         self.parameters = parameters or {}
-        self._sceptre_user_data = sceptre_user_data or {}
-        self._sceptre_user_data_is_resolved = False
+        self.sceptre_user_data = sceptre_user_data or {}
         self.notifications = notifications or []
+
         self.stack_group_config = stack_group_config or {}
 
     def __repr__(self):
@@ -264,17 +271,6 @@ class Stack(object):
         return self._connection_manager
 
     @property
-    def sceptre_user_data(self):
-        """Returns sceptre_user_data after ensuring that it is fully resolved.
-
-        :rtype: dict or list or None
-        """
-        if not self._sceptre_user_data_is_resolved:
-            self._sceptre_user_data_is_resolved = True
-            self._resolve_sceptre_user_data()
-        return self._sceptre_user_data
-
-    @property
     def template(self):
         """
         Returns the CloudFormation Template used to create the Stack.
@@ -300,15 +296,3 @@ class Stack(object):
                 connection_manager=self.connection_manager
             )
         return self._template
-
-    def _resolve_sceptre_user_data(self):
-        data = self._sceptre_user_data
-        if isinstance(data, Mapping):
-            iterator = data.values()
-        elif isinstance(data, Sequence):
-            iterator = data
-        else:
-            return
-        for value in iterator:
-            if isinstance(value, ResolvableProperty.ResolveLater):
-                value()
