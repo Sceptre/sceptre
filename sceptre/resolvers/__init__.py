@@ -144,7 +144,7 @@ class ResolvableProperty(abc.ABC):
         """Returns the resolved parameter value.
 
         :param resolver: The resolver to resolve.
-        :return: The resolved value (or placeholder, in certain circumstances)
+        :return: The resolved value
         """
         return resolver.resolve()
 
