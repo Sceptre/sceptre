@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from unittest.mock import call, Mock
+from unittest.mock import call
 
 import pytest
 from mock import sentinel, MagicMock
