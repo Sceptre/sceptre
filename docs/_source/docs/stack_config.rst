@@ -3,7 +3,7 @@ Stack Config
 
 A Stack config stores configurations related to a particular Stack, such as the path to
 that Stack’s Template, and any parameters that Stack may require. Many of these configuration keys
-support resolvers and can be inherited from the parent StackGroup configs.
+support resolvers and can be inherited from parent StackGroup configs.
 
 .. _stack_config-structure:
 
