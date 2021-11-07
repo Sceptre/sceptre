@@ -13,7 +13,7 @@ from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.helpers import get_external_stack_name, sceptreise_path
 from sceptre.hooks import HookProperty
-from sceptre.resolvers import ResolvableContainerProperty, ResolvableValueProperty
+from sceptre.resolvers import ResolvableContainerProperty, ResolvableValueProperty, RecursiveResolve
 from sceptre.template import Template
 
 
@@ -122,6 +122,7 @@ class Stack(object):
     template_bucket_name = ResolvableValueProperty("template_bucket_name")
     template_key_prefix = ResolvableValueProperty("template_key_prefix")
     role_arn = ResolvableValueProperty("role_arn")
+    iam_role = ResolvableValueProperty('iam_role')
 
     hooks = HookProperty("hooks")
 
@@ -258,16 +259,37 @@ class Stack(object):
         return hash(str(self))
 
     @property
-    def connection_manager(self):
-        """
-        Returns ConnectionManager.
-         :returns: ConnectionManager.
-        :rtype: ConnectionManager
+    def connection_manager(self) -> ConnectionManager:
+        """Returns the ConnectionManager for the stack, creating it if it has not yet been created.
+
+        :returns: ConnectionManager.
         """
         if self._connection_manager is None:
-            self._connection_manager = ConnectionManager(
-                self.region, self.profile, self.external_name, self.iam_role
+            cache_connection_manager = True
+            try:
+                iam_role = self.iam_role
+            except RecursiveResolve:
+                # This would be the case when iam_role is set with a resolver (especially stack_output)
+                # that uses the stack's connection manager. This creates a temporary condition where
+                # you need the iam role to get the iam role. To get around this, it will temporarily
+                # use None as the iam_role but will re-attempt to resolve the value in future accesses.
+                # Since the Stack Output resolver (the most likely culprit) uses the target stack's
+                # iam_role rather than the current stack's one anyway, it actually doesn't matter,
+                # since the stack defining that iam_role won't actually be using that iam_role.
+                self.logger.debug(
+                    "Resolving iam_role requires the Stack connection manager. Temporarily setting "
+                    "the iam_role to None until it can be fully resolved."
+                )
+                iam_role = None
+                cache_connection_manager = False
+
+            connection_manager = ConnectionManager(
+                self.region, self.profile, self.external_name, iam_role
             )
+            if cache_connection_manager:
+                self._connection_manager = connection_manager
+            else:  # Return early without caching the connection manager.
+                return connection_manager
 
         return self._connection_manager
 
