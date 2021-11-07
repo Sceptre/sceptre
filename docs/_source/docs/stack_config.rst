@@ -317,7 +317,7 @@ A project dependency stack is intended to be a stack that is utilized by other s
 or even all stacks. This is useful for defining stacks to support the project, such as a template bucket,
 SNS notification topics, and/or an IAM service role.
 
-The biggest dependency between a "normal" stack config and a stack marked as a project dependency is
+The biggest difference between a "normal" stack config and a stack marked as a project dependency is
 that stacks marked with ``is_project_dependency: True`` will ignore all dependencies of their own.
 Project dependencies are not allowed to have dependencies. Furthermore, the
 **the stack_output resolver will always resolve to nothing on project dependency stacks.**
