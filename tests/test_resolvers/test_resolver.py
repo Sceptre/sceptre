@@ -50,6 +50,7 @@ class TestResolver(object):
         assert self.mock_resolver.stack == sentinel.stack
         assert self.mock_resolver.argument == sentinel.argument
 
+
 class TestResolvableContainerPropertyDescriptor:
 
     def setup_method(self, test_method):
@@ -489,6 +490,19 @@ class TestResolvableValueProperty:
 
         with pytest.raises(RecursiveResolve):
             self.mock_object.resolvable_value_property
+
+    def test_get__resolvable_value_property_references_same_property_of_other_stack__resolves(self):
+        stack1 = MockClass()
+        stack1.resolvable_value_property = 'stack1'
+
+        class OtherStackResolver(Resolver):
+            def resolve(self):
+                return stack1.resolvable_value_property
+
+        stack2 = MockClass()
+        stack2.resolvable_value_property = OtherStackResolver()
+
+        assert stack2.resolvable_value_property == 'stack1'
 
     def test_get__resolver_raises_error__placeholders_allowed__returns_placeholder(self):
         class ErroringResolver(Resolver):

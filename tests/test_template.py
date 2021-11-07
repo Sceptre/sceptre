@@ -200,6 +200,17 @@ class TestTemplate(object):
 
         assert boto_parameter == {"TemplateURL": sentinel.template_url}
 
+    def test_get_boto_call_parameter__has_s3_details_but_bucket_name_is_none__gets_template_body_dict(self):
+        self.template._body = sentinel.body
+        self.template.s3_details = {
+            "bucket_name": None,
+            "bucket_key": sentinel.bucket_key
+        }
+
+        boto_parameter = self.template.get_boto_call_parameter()
+
+        assert boto_parameter == {"TemplateBody": sentinel.body}
+
     def test_get_template_details_without_upload(self):
         self.template.s3_details = None
         self.template._body = sentinel.body

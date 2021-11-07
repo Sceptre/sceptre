@@ -128,7 +128,7 @@ class Stack(object):
     # and will act as if there was no template bucket set.
     s3_details = ResolvableContainerProperty("s3_details", placeholder_override=None)
     template_bucket_name = ResolvableValueProperty("template_bucket_name", placeholder_override=None)
-
+    template_key_prefix = ResolvableValueProperty("template_key_prefix", placeholder_override=None)
     # Similarly, the placeholder_override=None for iam_role means that actions that would otherwise
     # use the iam_role will act as if there was no iam role when the iam_role stack has not been
     # deployed for commands that allow placeholders (like validate).
@@ -156,7 +156,6 @@ class Stack(object):
         self.name = sceptreise_path(name)
         self.project_code = project_code
         self.region = region
-        self.template_key_prefix = template_key_prefix
         self.required_version = required_version
         self.external_name = external_name or get_external_stack_name(self.project_code, self.name)
         self.template_path = template_path
@@ -176,6 +175,7 @@ class Stack(object):
         self.hooks = hooks or {}
         self.role_arn = role_arn
         self.s3_details = s3_details
+        self.template_key_prefix = template_key_prefix
         self.template_bucket_name = template_bucket_name
         self.parameters = parameters or {}
         self.sceptre_user_data = sceptre_user_data or {}

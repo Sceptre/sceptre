@@ -215,7 +215,8 @@ class Template(object):
         :returns: The boto call parameter for the template.
         :rtype: dict
         """
-        if self.s3_details and self.s3_details.get("bucket_name"):
+        # If bucket_name is set to None, it should be ignored and not uploaded.
+        if self.s3_details and self.s3_details.get("bucket_name") is not None:
             url = self.upload_to_s3()
             return {"TemplateURL": url}
         else:
