@@ -14,6 +14,9 @@ from sceptre.resolvers import use_resolver_placeholders_on_error
 
 @contextmanager
 def null_context():
+    """A context manager that does nothing. This is identical to the NullContext in py3.7+, but isn't
+    available in py3.6, so providing it here instead.
+    """
     yield
 
 
