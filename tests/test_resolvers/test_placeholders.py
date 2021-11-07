@@ -1,7 +1,11 @@
 import pytest
 
 from sceptre.resolvers import are_placeholders_enabled, Resolver
-from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error, PlaceholderType, create_placeholder_value
+from sceptre.resolvers.placeholders import (
+    use_resolver_placeholders_on_error,
+    PlaceholderType,
+    create_placeholder_value
+)
 
 
 class TestPlaceholders:
@@ -29,7 +33,12 @@ class TestPlaceholders:
         'placeholder_type,argument,expected',
         [
             pytest.param(PlaceholderType.explicit, None, '{ !MyResolver }', id='explicit no argument'),
-            pytest.param(PlaceholderType.explicit, 'argument', '{ !MyResolver(argument) }', id='explicit string argument'),
+            pytest.param(
+                PlaceholderType.explicit,
+                'argument',
+                '{ !MyResolver(argument) }',
+                id='explicit string argument'
+            ),
             pytest.param(
                 PlaceholderType.explicit,
                 {'key': 'value'},
@@ -52,4 +61,3 @@ class TestPlaceholders:
             result = create_placeholder_value(resolver)
 
         assert result == expected
-
