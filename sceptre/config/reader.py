@@ -56,7 +56,8 @@ CONFIG_MERGE_STRATEGIES = {
     "template_bucket_name": strategies.child_wins,
     "template_key_value": strategies.child_wins,
     "template_path": strategies.child_wins,
-    "template": strategies.child_wins
+    "template": strategies.child_wins,
+    "is_project_dependency": strategies.child_wins
 }
 
 STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
@@ -269,7 +270,9 @@ class ConfigReader(object):
         """
         stacks = set()
         for stack in stack_map.values():
-            if not self.context.ignore_dependencies:
+            if self.context.ignore_dependencies or stack.is_project_dependency:
+                stack.dependencies = []
+            else:
                 for i, dep in enumerate(stack.dependencies):
                     try:
                         if not isinstance(dep, Stack):
@@ -285,9 +288,6 @@ class ConfigReader(object):
                             "have their full path from `config` defined."
                             .format(stackname=stack.name, dep=dep,
                                     stackkeys=", ".join(stack_map.keys())))
-
-            else:
-                stack.dependencies = []
             stacks.add(stack)
         return stacks
 
@@ -530,6 +530,12 @@ class ConfigReader(object):
         s3_details = self._collect_s3_details(
             stack_name, config
         )
+        is_project_dependency = config.get("is_project_dependency", False)
+        if is_project_dependency:
+            dependencies = []
+        else:
+            dependencies = config.get("dependencies", [])
+
         stack = Stack(
             name=stack_name,
             project_code=config["project_code"],
@@ -545,7 +551,7 @@ class ConfigReader(object):
             sceptre_user_data=config.get("sceptre_user_data", {}),
             hooks=config.get("hooks", {}),
             s3_details=s3_details,
-            dependencies=config.get("dependencies", []),
+            dependencies=dependencies,
             role_arn=config.get("role_arn"),
             protected=config.get("protect", False),
             tags=config.get("stack_tags", {}),
@@ -553,7 +559,8 @@ class ConfigReader(object):
             notifications=config.get("notifications"),
             on_failure=config.get("on_failure"),
             stack_timeout=config.get("stack_timeout", 0),
-            stack_group_config=parsed_stack_group_config
+            stack_group_config=parsed_stack_group_config,
+            is_project_dependency=is_project_dependency
         )
 
         del self.templating_vars["stack_group_config"]
