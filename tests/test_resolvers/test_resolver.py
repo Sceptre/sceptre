@@ -310,3 +310,22 @@ class TestResolvableContainerPropertyDescriptor(object):
         }
         with pytest.raises(RecursiveResolve):
             self.mock_object.resolvable_container_property
+
+    def test_get__resolvable_container_property_references_same_property_of_other_stack__resolves(self):
+        stack1 = MockClass()
+        stack1.resolvable_container_property = {
+            'testing': 'stack1'
+        }
+
+        class OtherStackResolver(Resolver):
+            def resolve(self):
+                return stack1.resolvable_container_property['testing']
+
+        stack2 = MockClass()
+        stack2.resolvable_container_property = {
+            'resolver': OtherStackResolver()
+        }
+
+        assert stack2.resolvable_container_property == {
+            'resolver': 'stack1'
+        }
