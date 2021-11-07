@@ -34,6 +34,7 @@ def use_resolver_placeholders_on_error(placeholder_type: PlaceholderType = Place
     """
     global _RESOLVE_PLACEHOLDER_ON_ERROR
     global _PLACEHOLDER_TYPE
+    current_placeholder_type = _PLACEHOLDER_TYPE
     try:
         with _placeholder_lock:
             _RESOLVE_PLACEHOLDER_ON_ERROR = True
@@ -42,6 +43,7 @@ def use_resolver_placeholders_on_error(placeholder_type: PlaceholderType = Place
     finally:
         with _placeholder_lock:
             _RESOLVE_PLACEHOLDER_ON_ERROR = False
+            _PLACEHOLDER_TYPE = current_placeholder_type
 
 
 def are_placeholders_enabled():

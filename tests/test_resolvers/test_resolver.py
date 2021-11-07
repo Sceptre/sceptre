@@ -10,7 +10,7 @@ from sceptre.resolvers import (
     ResolvableValueProperty,
     RecursiveResolve
 )
-from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error
+from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error, create_placeholder_value
 
 
 class MockResolver(Resolver):
@@ -49,19 +49,6 @@ class TestResolver(object):
     def test_init(self):
         assert self.mock_resolver.stack == sentinel.stack
         assert self.mock_resolver.argument == sentinel.argument
-
-    @pytest.mark.parametrize(
-        'argument,expected',
-        [
-            pytest.param(None, '{ !MockResolver }', id='No argument'),
-            pytest.param('hello', '{ !MockResolver(hello) }', id='string argument'),
-            pytest.param({'a': 1}, "{ !MockResolver({'a': 1}) }", id='dict argument')
-        ]
-    )
-    def test_create_placeholder_value__returns_expected_string(self, argument, expected):
-        resolver = MockResolver(argument)
-        assert resolver.create_placeholder_value() == expected
-
 
 class TestResolvableContainerPropertyDescriptor:
 
@@ -409,7 +396,7 @@ class TestResolvableContainerPropertyDescriptor:
         with use_resolver_placeholders_on_error():
             result = self.mock_object.resolvable_container_property
 
-        assert result == {'resolver': resolver.create_placeholder_value()}
+        assert result == {'resolver': create_placeholder_value(resolver)}
 
     def test_get__resolver_raises_error__placeholders_not_allowed__raises_error(self):
         class ErroringResolver(Resolver):
@@ -513,7 +500,7 @@ class TestResolvableValueProperty:
         with use_resolver_placeholders_on_error():
             result = self.mock_object.resolvable_value_property
 
-        assert result == resolver.create_placeholder_value()
+        assert result == create_placeholder_value(resolver)
 
     def test_get__resolver_raises_error__placeholders_not_allowed__raises_error(self):
         class ErroringResolver(Resolver):
