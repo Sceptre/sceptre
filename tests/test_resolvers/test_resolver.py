@@ -41,6 +41,7 @@ class TestResolver(object):
         assert self.mock_resolver.stack == sentinel.stack
         assert self.mock_resolver.argument == sentinel.argument
 
+
 class TestResolvableContainerPropertyDescriptor:
 
     def setup_method(self, test_method):
