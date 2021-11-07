@@ -67,9 +67,6 @@ class ResolvableProperty(abc.ABC):
     associated with Resolver objects.
 
     :param name: Attribute suffix used to store the property in the instance.
-    :param placeholder_override: If specified, this is the value that will be used as the placeholder
-        rather than the resolver's returned placeholder value, but only when placeholders are allowed
-        via the use_resolver_placeholders_on_error context manager.
     """
 
     def __init__(self, name):
