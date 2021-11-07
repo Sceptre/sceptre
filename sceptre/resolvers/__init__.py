@@ -337,7 +337,7 @@ class ResolvableContainerProperty(ResolvableProperty):
                 logger.debug(f"Removing item {self._key} because resolver returned None.")
                 del attr[self._key]
             else:
-                attr[self._key] = self._resolution_function()
+                attr[self._key] = result
 
 
 class ResolvableValueProperty(ResolvableProperty):

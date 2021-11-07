@@ -63,7 +63,7 @@ class TestResolver(object):
         assert resolver.create_placeholder_value() == expected
 
 
-class TestResolvableContainerPropertyDescriptor(object):
+class TestResolvableContainerPropertyDescriptor:
 
     def setup_method(self, test_method):
         self.mock_object = MockClass()
@@ -333,6 +333,25 @@ class TestResolvableContainerPropertyDescriptor(object):
         }
         with pytest.raises(RecursiveResolve):
             self.mock_object.resolvable_container_property
+
+    def test_get__resolvable_container_property_references_same_property_of_other_stack__resolves(self):
+        stack1 = MockClass()
+        stack1.resolvable_container_property = {
+            'testing': 'stack1'
+        }
+
+        class OtherStackResolver(Resolver):
+            def resolve(self):
+                return stack1.resolvable_container_property['testing']
+
+        stack2 = MockClass()
+        stack2.resolvable_container_property = {
+            'resolver': OtherStackResolver()
+        }
+
+        assert stack2.resolvable_container_property == {
+            'resolver': 'stack1'
+        }
 
     def test_get__resolver_resolves_to_none__value_is_list__deletes_that_item_from_list(self):
         class MyResolver(Resolver):
