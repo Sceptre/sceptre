@@ -207,7 +207,7 @@ class ResolvableContainerProperty(ResolvableProperty):
 
     def get_resolved_value(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']) -> T_Container:
         """Obtains the resolved value for this property. Any resolvers that resolve to None will have
-        their key/index removed from their dict/list where they are. Other resolvers will havie their
+        their key/index removed from their dict/list where they are. Other resolvers will have their
         key/index's value replace with the resolved value to avoid redundant resolutions.
 
         :param stack: The Stack instance to obtain the value for
