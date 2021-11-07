@@ -1,12 +1,9 @@
 # -*- coding: utf-8 -*-
 import sceptre.template_handlers.helper as helper
 
-from os import path
 from pathlib import Path
-
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 from sceptre.template_handlers import TemplateHandler
-from sceptre.helpers import normalise_path
 
 
 class File(TemplateHandler):
@@ -27,8 +24,12 @@ class File(TemplateHandler):
         }
 
     def handle(self):
+        project_path = self.stack_group_config.get("project_path")
         input_path = Path(self.arguments["path"])
-        path = self._resolve_template_path(str(input_path))
+        if input_path.is_absolute():
+            path = str(input_path)
+        else:
+            path = str(Path(project_path) / 'templates' / input_path)
 
         if input_path.suffix not in self.supported_template_extensions:
             raise UnsupportedTemplateFileTypeError(
@@ -50,16 +51,3 @@ class File(TemplateHandler):
         except Exception as e:
             helper.print_template_traceback(path)
             raise e
-
-    def _resolve_template_path(self, template_path):
-        """
-        Return the project_path joined to template_path as
-        a string.
-
-        Note that os.path.join defers to an absolute path
-        if the input is absolute.
-        """
-        return path.join(
-            self.stack_group_config["project_path"], "templates",
-            normalise_path(template_path)
-        )
