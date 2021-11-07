@@ -309,7 +309,6 @@ integer value.
 
 is_project_dependency
 ~~~~~~~~~~~~~~~~~~~~~
-
 * Resolvable: No
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
