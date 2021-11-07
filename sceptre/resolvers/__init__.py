@@ -290,7 +290,7 @@ class ResolvableContainerProperty(ResolvableProperty):
         return container
 
     def assign_value_to_stack(self, stack: 'stack.Stack', value: Union[dict, list]):
-        """Assigns a copy of the specified value to the stack instance. This method copies the value
+        """Assigns a COPY of the specified value to the stack instance. This method copies the value
         rather than directly assigns it to avoid bugs related to shared objects in memory.
 
         :param stack: The stack to assign the value to
@@ -304,11 +304,12 @@ class ResolvableContainerProperty(ResolvableProperty):
         container: T_Container,
         stack: 'stack.Stack'
     ) -> T_Container:
-        """Recurses into the the container
+        """Recurses into the container, cloning and setting up resolvers and creating a copy of all
+        nested containers.
 
-        :param value:
-        :param stack:
-        :return:
+        :param container: The container being recursed into and cloned
+        :param stack: The stack the container is being copied for
+        :return: The fully copied container with resolvers fully set up.
         """
         def recurse(obj):
             if isinstance(obj, Resolver):
