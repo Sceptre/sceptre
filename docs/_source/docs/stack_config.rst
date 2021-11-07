@@ -314,7 +314,7 @@ is_project_dependency
 * Inheritance strategy: Overrides parent if set
 
 A project dependency stack is intended to be a stack that is utilized by other stacks in the project,
-or even all stacks. This is useful for defining stacks for the project, such as a template bucket,
+or even all stacks. This is useful for defining stacks to support the project, such as a template bucket,
 SNS notification topics, and/or an IAM service role.
 
 The biggest dependency between a "normal" stack config and a stack marked as a project dependency is
