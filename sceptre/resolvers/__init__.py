@@ -60,15 +60,15 @@ class Resolver(abc.ABC):
         return type(self)(self.argument, stack)
 
 
+NO_OVERRIDE = 'NO_OVERRIDE'
+
+
 class ResolvableProperty(abc.ABC):
     """
     This is an abstract base class for a descriptor used to store an attribute that have values
     associated with Resolver objects.
 
     :param name: Attribute suffix used to store the property in the instance.
-    :param placeholder_override: If specified, this is the value that will be used as the placeholder
-        rather than the resolver's returned placeholder value, but only when placeholders are allowed
-        via the use_resolver_placeholders_on_error context manager.
     """
 
     def __init__(self, name):
@@ -289,3 +289,45 @@ class ResolvableContainerProperty(ResolvableProperty):
             """Resolve the value."""
             attr = getattr(self._instance, self._name)
             attr[self._key] = self._resolution_function()
+
+
+class ResolvableValueProperty(ResolvableProperty):
+    """
+    This is a descriptor class used to store an attribute that may BE a single
+    Resolver object. If it is a resolver, it will be resolved upon access of this property.
+    When resolved, the resolved value will replace the resolver on the stack in order to avoid
+    redundant resolutions.
+
+    :param name: Attribute suffix used to store the property in the instance.
+    :type name: str
+    """
+
+    def get_resolved_value(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']) -> Any:
+        """Gets the fully-resolved value from the property. Resolvers will be replaced on the stack
+        instance with their resolved value to avoid redundant resolutions.
+
+        :param stack: The Stack instance to obtain the value from
+        :param stack_class: The class of the Stack instance
+        :return: The fully resolved value
+        """
+        raw_value = getattr(stack, self.name)
+        if isinstance(raw_value, Resolver):
+            value = self.resolve_resolver_value(raw_value)
+            # Overwrite the stored resolver value with the resolved value to avoid resolving the
+            # same value multiple times.
+            setattr(stack, self.name, value)
+        else:
+            value = raw_value
+
+        return value
+
+    def assign_value_to_stack(self, stack: 'stack.Stack', value: Any):
+        """Assigns the value to the Stack instance passed, setting up and cloning the value if it
+        is a Resolver.
+
+        :param stack: The Stack instance to set the value on
+        :param value: The value to set
+        """
+        if isinstance(value, Resolver):
+            value = self.get_setup_resolver_for_stack(stack, value)
+        setattr(stack, self.name, value)
