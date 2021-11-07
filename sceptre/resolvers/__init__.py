@@ -208,7 +208,7 @@ class ResolvableProperty(abc.ABC):
                 logger.debug(
                     (
                         "Error encountered while resolving resolver. This is allowed for current "
-                        f"operation. Resolving it to placeholder value instead: {placeholder_value}",
+                        f"operation. Resolving it to placeholder value instead: {placeholder_value}"
                     ),
                     exc_info=True
                 )
