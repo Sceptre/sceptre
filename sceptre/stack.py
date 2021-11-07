@@ -121,7 +121,6 @@ class Stack(object):
     s3_details = ResolvableContainerProperty("s3_details")
     template_bucket_name = ResolvableValueProperty("template_bucket_name")
     template_key_prefix = ResolvableValueProperty("template_key_prefix")
-
     role_arn = ResolvableValueProperty("role_arn")
 
     hooks = HookProperty("hooks")
