@@ -6,6 +6,7 @@ from threading import RLock
 from typing import Any, TYPE_CHECKING, Type, Union, TypeVar
 
 from sceptre.helpers import _call_func_on_values
+from sceptre.resolvers.placeholders import RESOLVE_PLACEHOLDER_ON_ERROR, create_placeholder_value
 
 if TYPE_CHECKING:
     from sceptre import stack
@@ -13,27 +14,6 @@ if TYPE_CHECKING:
 T_Container = TypeVar('T_Container', bound=Union[dict, list])
 
 logger = logging.getLogger(__name__)
-
-# This is a toggle used for globally enabling placeholder values out of resolvers when they error
-# while resolving. This is important when performing actions on stacks like validation or generation
-# when their dependencies have not been deployed yet and those dependencies are expressed in stack
-# resolvers that are used in those actions, especially sceptre_user_data.
-_RESOLVE_PLACEHOLDER_ON_ERROR = False
-
-
-@contextmanager
-def use_resolver_placeholders_on_error():
-    """A context manager that toggles on placeholders for resolvers that error out. This should NOT
-    be used while creating/launching stacks, but it is often required when validating or generating
-    stacks whose dependencies haven't yet been deployed and that reference those dependencies with
-    resolvers, especially in the sceptre_user_data.
-    """
-    global _RESOLVE_PLACEHOLDER_ON_ERROR
-    try:
-        _RESOLVE_PLACEHOLDER_ON_ERROR = True
-        yield
-    finally:
-        _RESOLVE_PLACEHOLDER_ON_ERROR = False
 
 
 class RecursiveResolve(Exception):
@@ -91,10 +71,7 @@ class Resolver(abc.ABC):
 
         :return: The placeholder value
         """
-        base = f'!{self.__class__.__name__}'
-        suffix = f'({self.argument})' if self.argument is not None else ''
-        # double-braces in an f-string is just an escaped single brace
-        return f'{{ {base}{suffix} }}'
+        return create_placeholder_value(self)
 
 
 NO_OVERRIDE = 'NO_OVERRIDE'
@@ -199,18 +176,15 @@ class ResolvableProperty(abc.ABC):
             # Recursive resolve issues shouldn't be masked by a placeholder.
             raise
         except Exception:
-            if _RESOLVE_PLACEHOLDER_ON_ERROR:
+            if RESOLVE_PLACEHOLDER_ON_ERROR:
                 if self.placeholder_override == NO_OVERRIDE:
                     placeholder_value = resolver.create_placeholder_value()
                 else:
                     placeholder_value = self.placeholder_override
 
                 logger.debug(
-                    (
-                        "Error encountered while resolving resolver. This is allowed for current "
-                        f"operation. Resolving it to placeholder value instead: {placeholder_value}"
-                    ),
-                    exc_info=True
+                    "Error encountered while resolving resolver. This is allowed for current "
+                    f"operation. Resolving it to placeholder value instead: {placeholder_value}"
                 )
                 return placeholder_value
             raise

@@ -9,7 +9,7 @@ from sceptre.cli.helpers import (
     write
 )
 from sceptre.plan.plan import SceptrePlan
-from sceptre.resolvers import use_resolver_placeholders_on_error
+from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error, PlaceholderType
 
 
 @contextmanager
@@ -48,7 +48,12 @@ def validate_command(ctx, no_placeholders, path):
     )
 
     plan = SceptrePlan(context)
-    execution_context = null_context() if no_placeholders else use_resolver_placeholders_on_error()
+
+    if no_placeholders:
+        execution_context = null_context()
+    else:
+        execution_context = use_resolver_placeholders_on_error(PlaceholderType.alphanum)
+
     with execution_context:
         responses = plan.validate()
 
@@ -127,7 +132,10 @@ def estimate_cost_command(ctx, no_placeholders, path):
 
     plan = SceptrePlan(context)
 
-    execution_context = null_context() if no_placeholders else use_resolver_placeholders_on_error()
+    if no_placeholders:
+        execution_context = null_context()
+    else:
+        execution_context = use_resolver_placeholders_on_error(PlaceholderType.alphanum)
     with execution_context:
         responses = plan.estimate_cost()
 

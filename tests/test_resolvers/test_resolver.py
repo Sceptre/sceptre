@@ -8,8 +8,9 @@ from sceptre.resolvers import (
     Resolver,
     ResolvableContainerProperty,
     ResolvableValueProperty,
-    RecursiveResolve, use_resolver_placeholders_on_error
+    RecursiveResolve
 )
+from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error
 
 
 class MockResolver(Resolver):
