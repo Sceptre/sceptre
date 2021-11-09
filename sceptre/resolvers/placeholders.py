@@ -1,9 +1,9 @@
-import typing
 from contextlib import contextmanager
 from enum import Enum
 from threading import Lock
+from typing import TYPE_CHECKING, Any
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     from sceptre import resolvers
 
 # This is a toggle used for globally enabling placeholder values out of resolvers when they error
@@ -14,36 +14,30 @@ _RESOLVE_PLACEHOLDER_ON_ERROR = False
 
 
 class PlaceholderType(Enum):
-    explicit = 1
-    alphanum = 2
+    explicit = 1  # Looks like "{ !MyClass(argument) }"
+    alphanum = 2  # Looks like MyClassargument
+    none = 3  # Resolves to None
 
 
-_PLACEHOLDER_TYPE = PlaceholderType.explicit
 _placeholder_lock = Lock()
 
 
 @contextmanager
-def use_resolver_placeholders_on_error(placeholder_type: PlaceholderType = PlaceholderType.explicit):
+def use_resolver_placeholders_on_error():
     """A context manager that toggles on placeholders for resolvers that error out. This should NOT
     be used while creating/launching stacks, but it is often required when validating or generating
     stacks whose dependencies haven't yet been deployed and that reference those dependencies with
     resolvers, especially in the sceptre_user_data.
-
-    :param placeholder_type: The type of placeholder that should be resolved when resolvers encounter
-        an error. The "explicit" enum will
     """
     global _RESOLVE_PLACEHOLDER_ON_ERROR
-    global _PLACEHOLDER_TYPE
-    current_placeholder_type = _PLACEHOLDER_TYPE
+
     try:
         with _placeholder_lock:
             _RESOLVE_PLACEHOLDER_ON_ERROR = True
-            _PLACEHOLDER_TYPE = placeholder_type
         yield
     finally:
         with _placeholder_lock:
             _RESOLVE_PLACEHOLDER_ON_ERROR = False
-            _PLACEHOLDER_TYPE = current_placeholder_type
 
 
 def are_placeholders_enabled():
@@ -51,8 +45,8 @@ def are_placeholders_enabled():
         return _RESOLVE_PLACEHOLDER_ON_ERROR
 
 
-def create_placeholder_value(resolver: 'resolvers.Resolver'):
-    placeholder_func = _placeholders[_PLACEHOLDER_TYPE]
+def create_placeholder_value(resolver: 'resolvers.Resolver', placeholder_type: PlaceholderType) -> Any:
+    placeholder_func = _placeholders[placeholder_type]
     return placeholder_func(resolver)
 
 
@@ -97,5 +91,6 @@ def _create_alphanumeric_placeholder(resolver: 'resolvers.Resolver') -> str:
 
 _placeholders = {
     PlaceholderType.explicit: _create_explicit_resolver_placeholder,
-    PlaceholderType.alphanum: _create_alphanumeric_placeholder
+    PlaceholderType.alphanum: _create_alphanumeric_placeholder,
+    PlaceholderType.none: lambda resolver: None
 }

@@ -48,7 +48,7 @@ def validate_command(ctx, no_placeholders, path):
     if no_placeholders:
         execution_context = null_context()
     else:
-        execution_context = use_resolver_placeholders_on_error(PlaceholderType.alphanum)
+        execution_context = use_resolver_placeholders_on_error()
 
     with execution_context:
         responses = plan.validate()
@@ -98,16 +98,10 @@ def generate_command(ctx, no_placeholders, path):
 
 
 @click.command(name="estimate-cost", short_help="Estimates the cost of the template.")
-@click.option(
-    '-n',
-    '--no-placeholders',
-    is_flag=True,
-    help="If True, no placeholder values will be supplied for resolvers that cannot be resolved."
-)
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
-def estimate_cost_command(ctx, no_placeholders, path):
+def estimate_cost_command(ctx, path):
     """
     Prints a URI to STOUT that provides an estimated cost based on the
     resources in the stack. This command will also attempt to open a web
@@ -127,13 +121,7 @@ def estimate_cost_command(ctx, no_placeholders, path):
     )
 
     plan = SceptrePlan(context)
-
-    if no_placeholders:
-        execution_context = null_context()
-    else:
-        execution_context = use_resolver_placeholders_on_error(PlaceholderType.alphanum)
-    with execution_context:
-        responses = plan.estimate_cost()
+    responses = plan.estimate_cost()
 
     for stack, response in responses.items():
         if response['ResponseMetadata']['HTTPStatusCode'] == 200:

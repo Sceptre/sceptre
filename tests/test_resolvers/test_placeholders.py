@@ -47,7 +47,8 @@ class TestPlaceholders:
             ),
             pytest.param(PlaceholderType.alphanum, None, 'MyResolver', id='alphanum no argument'),
             pytest.param(PlaceholderType.alphanum, 'argument', 'MyResolverargument', id='alphanum string argument'),
-            pytest.param(PlaceholderType.alphanum, {'key': 'value'}, 'MyResolverkeyvalue', id='alphanum dict argument')
+            pytest.param(PlaceholderType.alphanum, {'key': 'value'}, 'MyResolverkeyvalue', id='alphanum dict argument'),
+            pytest.param(PlaceholderType.none, 'something', None)
         ]
     )
     def test_create_placeholder_value(self, placeholder_type, argument, expected):
@@ -57,7 +58,7 @@ class TestPlaceholders:
 
         resolver = MyResolver(argument)
 
-        with use_resolver_placeholders_on_error(placeholder_type):
-            result = create_placeholder_value(resolver)
+        with use_resolver_placeholders_on_error():
+            result = create_placeholder_value(resolver, placeholder_type)
 
         assert result == expected
