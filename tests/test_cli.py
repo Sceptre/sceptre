@@ -1,24 +1,27 @@
-import logging
-import yaml
 import datetime
-import os
 import errno
 import json
+import logging
+import os
+from copy import deepcopy
 
-from click.testing import CliRunner
-from mock import MagicMock, patch, sentinel
-import pytest
 import click
+import pytest
+import yaml
+from botocore.exceptions import ClientError
+from click.testing import CliRunner
+from deepdiff import DeepDiff
+from mock import MagicMock, patch, sentinel
 
 from sceptre.cli import cli
-from sceptre.config.reader import ConfigReader
-from sceptre.stack import Stack
-from sceptre.plan.actions import StackActions
-from sceptre.stack_status import StackStatus
-from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
 from sceptre.cli.helpers import CustomJsonEncoder, catch_exceptions
-from botocore.exceptions import ClientError
+from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
+from sceptre.config.reader import ConfigReader
+from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff
 from sceptre.exceptions import SceptreException
+from sceptre.plan.actions import StackActions
+from sceptre.stack import Stack
+from sceptre.stack_status import StackStatus
 
 
 class TestCli(object):
@@ -913,20 +916,84 @@ class TestCli(object):
         response = encoder.encode(datetime.datetime(2016, 5, 3))
         assert response == '"2016-05-03 00:00:00"'
 
-    def test_stack_name(self):
-        self.mock_stack_actions.stack_name.return_value = "mock-stack"
-        result = self.runner.invoke(
-            cli, ["stack-name", "dev/vpc.yaml"]
-        )
-        assert result.exit_code == 0
-        assert result.output == "mock-stack\n"
+    def test_diff_command__diff_type_is_deepdiff__passes_deepdiff_stack_differ_to_actions(self):
+        self.runner.invoke(cli, 'diff -t deepdiff dev/vpc.yaml')
+        differ_used = self.mock_stack_actions.diff.call_args.args[0]
+        assert isinstance(differ_used, DeepDiffStackDiffer)
 
-    def test_detect_stack_drift(self):
-        self.mock_stack_actions.detect_stack_drift.return_value = [
-            "mock-stack", {"some": "json"}
-        ]
-        result = self.runner.invoke(
-            cli, ["detect-stack-drift", "dev/vpc.yaml"]
-        )
+    def test_diff_command__diff_type_is_difflib__passes_difflib_stack_differ_to_actions(self):
+        self.runner.invoke(cli, 'diff -t difflib dev/vpc.yaml')
+        differ_used = self.mock_stack_actions.diff.call_args.args[0]
+        assert isinstance(differ_used, DifflibStackDiffer)
+
+        self.runner.invoke(cli, 'diff stacks', catch_exceptions=False)
+
+    def test_diff_command__stack_diffs_have_differences__returns_0(self):
+        stacks = {deepcopy(self.mock_stack) for _ in range(3)}
+        stack_name_iterator = iter(['first', 'second', 'third'])
+
+        def fake_diff(differ):
+            name = next(stack_name_iterator)
+            return StackDiff(
+                stack_name=name,
+                template_diff=DeepDiff("I'm", "different"),
+                config_diff=DeepDiff("same", "same"),
+                is_deployed=True,
+                generated_config=None,
+                generated_template=None
+            )
+
+        self.mock_stack_actions.diff.side_effect = fake_diff
+        self.mock_config_reader.construct_stacks.return_value = (stacks, stacks)
+
+        result = self.runner.invoke(cli, 'diff stacks', catch_exceptions=False)
         assert result.exit_code == 0
-        assert result.output == '{\n  "mock-stack": {\n    "some": "json"\n  }\n}\n'
+
+    def test_diff_command__no_differences__returns_0(self):
+        stacks = {deepcopy(self.mock_stack) for _ in range(3)}
+        stack_name_iterator = iter(['first', 'second', 'third'])
+
+        def fake_diff(differ):
+            name = next(stack_name_iterator)
+            return StackDiff(
+                stack_name=name,
+                template_diff=DeepDiff("same", "same"),
+                config_diff=DeepDiff("same", "same"),
+                is_deployed=True,
+                generated_config=None,
+                generated_template=None
+            )
+
+        self.mock_stack_actions.diff.side_effect = fake_diff
+        self.mock_config_reader.construct_stacks.return_value = (stacks, stacks)
+
+        result = self.runner.invoke(cli, 'diff stacks', catch_exceptions=False)
+        assert result.exit_code == 0
+
+    @pytest.mark.parametrize(
+        ['bar'],
+        [('**********',), ('----------',)]
+    )
+    def test_diff_command__bars_are_all_full_width_of_output(self, bar):
+        stacks = {deepcopy(self.mock_stack) for _ in range(3)}
+        stack_name_iterator = iter(['first', 'second', 'third'])
+
+        def fake_diff(differ):
+            name = next(stack_name_iterator)
+            return StackDiff(
+                stack_name=name,
+                template_diff=DeepDiff("same", "same"),
+                config_diff=DeepDiff("same", "same"),
+                is_deployed=True,
+                generated_config=None,
+                generated_template=None
+            )
+
+        self.mock_stack_actions.diff.side_effect = fake_diff
+        self.mock_config_reader.construct_stacks.return_value = (stacks, stacks)
+
+        result = self.runner.invoke(cli, 'diff stacks', catch_exceptions=False)
+        output_lines = result.stdout.splitlines()
+        max_line_length = len(max(output_lines, key=len))
+        star_bars = [line for line in output_lines if bar in line]
+        assert all(len(line) == max_line_length for line in star_bars)

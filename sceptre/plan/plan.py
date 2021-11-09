@@ -7,12 +7,15 @@ This module implements a SceptrePlan, which is responsible for holding all
 nessessary information for a command to execute.
 """
 from os import path, walk
+from typing import Dict
 
+from sceptre.diffing.stack_differ import StackDiff
 from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.config.graph import StackGraph
 from sceptre.config.reader import ConfigReader
 from sceptre.plan.executor import SceptrePlanExecutor
 from sceptre.helpers import sceptreise_path
+from sceptre.stack import Stack
 
 
 class SceptrePlan(object):
@@ -355,22 +358,21 @@ class SceptrePlan(object):
             if not f.endswith(self.context.config_file)
         ]
 
-    def stack_name(self, *args):
+    def fetch_remote_template(self, *args):
         """
-        Returns the Stack name for a running stack.
+        Returns a generated Template for a given Stack
 
-        :returns: A list of Stack Names.
+        :returns: A list of Stacks and their template body.
         :rtype: List[str]
         """
-        self.resolve(command=self.stack_name.__name__)
+        self.resolve(command=self.fetch_remote_template.__name__)
         return self._execute(*args)
 
-    def detect_stack_drift(self, *args):
+    def diff(self, *args) -> Dict[Stack, StackDiff]:
         """
-        Detects stack drift for a running stack.
+        Show diffs between the running and generated stack.
 
-        :returns: A list of detected drift against running stacks.
-        :rtype: List[str]
+        :returns: A dict where the keys are Stack objects and the values are StackDiffs.
         """
-        self.resolve(command=self.detect_stack_drift.__name__)
+        self.resolve(command=self.diff.__name__)
         return self._execute(*args)
