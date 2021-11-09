@@ -514,7 +514,7 @@ class TestResolvableValueProperty:
         with use_resolver_placeholders_on_error():
             result = self.mock_object.resolvable_value_property
 
-        assert result == create_placeholder_value(resolver)
+        assert result == create_placeholder_value(resolver, PlaceholderType.explicit)
 
     def test_get__resolver_raises_error__placeholders_not_allowed__raises_error(self):
         class ErroringResolver(Resolver):
