@@ -9,9 +9,7 @@ import yaml
 from cfn_tools import ODict
 from yaml import Dumper
 
-from sceptre.helpers import _call_func_on_values
 from sceptre.plan.actions import StackActions
-from sceptre.resolvers import Resolver
 from sceptre.stack import Stack
 
 DiffType = TypeVar('DiffType')
@@ -152,19 +150,6 @@ class StackDiffer(Generic[DiffType]):
         :param stack: The stack to extract the parameters from
         :return: A dictionary of stack parameters to be compared.
         """
-
-        def resolve_or_replace(attr, key, value: Resolver):
-            try:
-                attr[key] = str(value.resolve()).rstrip('\n')
-            except Exception:
-                attr[key] = self._represent_unresolvable_resolver(value)
-
-        # parameters is a ResolvableProperty, but the underlying, pre-resolved parameters are
-        # stored in _parameters. We might not actually be able to resolve values, such as in the
-        # case where it attempts to get a value from a stack that doesn't exist yet.
-        unresolved_parameters_dict = stack._parameters
-        _call_func_on_values(resolve_or_replace, unresolved_parameters_dict, Resolver)
-
         formatted_parameters = {}
         for key, value in stack.parameters.items():
             if isinstance(value, list):
@@ -172,12 +157,6 @@ class StackDiffer(Generic[DiffType]):
             formatted_parameters[key] = value
 
         return formatted_parameters
-
-    def _represent_unresolvable_resolver(self, resolver: Resolver):
-        base = f'!{type(resolver).__name__}'
-        suffix = f'({resolver.argument})' if resolver.argument is not None else ''
-        # double-braces in an f-string is just an escaped single brace
-        return f'{{ {base}{suffix} }}'
 
     def _create_deployed_stack_config(self, stack_actions: StackActions) -> Optional[StackConfiguration]:
         description = stack_actions.describe()
@@ -286,56 +265,7 @@ class StackDiffer(Generic[DiffType]):
                 generated_config.parameters[key] = self.NO_ECHO_REPLACEMENT
 
     def _generate_template(self, stack_actions: StackActions) -> str:
-        try:
-            return stack_actions.generate()
-        except Exception:
-            # If we could not generate the stack, it COULD be because there are unresolvable
-            # resolvers in the sceptre_user_data and the template / template handler uses that
-            # sceptre_user_data in order to render. The most common case of this is when generating
-            # a diff where the template's user data uses a stack output from a stack that
-            # hasn't been deployed yet. We'll replace any unresolvable resolvers and then attempt the
-            # generation one more time. If we're successful, that will be the template we use in the
-            # diff.
-            logger.debug(
-                "Error encountered attempting to render the template. Attempting to replace any "
-                "unresolved resolvers in the sceptre_user_data to see if that helps."
-            )
-            self._replace_unresolvable_user_data_resolvers(stack_actions.stack)
-            try:
-                return stack_actions.generate()
-            except Exception:
-                # We won't raise this exception here because it could be that the
-                # substituted values are invalid on the template, or some other issue. The error
-                # message raised from here wouldn't be understandible to the user since we've swapped
-                # out the resolvers here, so we'll pass here and then reraise the original error.
-                logger.debug(
-                    "Attempting to render the template with replaced sceptre_user_data failed. "
-                    "Reraising original error.",
-                    exc_info=True
-                )
-                pass
-            raise
-
-    def _replace_unresolvable_user_data_resolvers(self, stack: Stack):
-        """Recursively traverses the sceptre_user_data and replaces unresolvable resolvers with
-        placeholder values so that we can continue to render the diff, even if the resolvers can't
-        be resolved right now.
-
-        :param stack: The stack whose sceptre_user_data cannot be resolved.
-        """
-        def resolve_or_replace(attr, key, value: Resolver):
-            try:
-                attr[key] = value.resolve()
-            except Exception:
-                attr[key] = self._represent_unresolvable_resolver(value)
-
-        # Because the name is mangled, we cannot access the user data normally, so we need to access
-        # it directly out of the __dict__.
-        user_data = stack.__dict__['__sceptre_user_data']
-        if not user_data:
-            return
-
-        _call_func_on_values(resolve_or_replace, user_data, Resolver)
+        return stack_actions.generate()
 
     def _get_deployed_template(self, stack_actions: StackActions, is_deployed: bool) -> str:
         if is_deployed:
