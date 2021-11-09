@@ -7,30 +7,26 @@ This module implements the StackActions class which provides the functionality
 available to a Stack.
 """
 
+import json
 import logging
 import time
-
-from os import path
+import urllib
 from datetime import datetime, timedelta
+from os import path
+from typing import Union, Optional
 
 import botocore
-import json
-import yaml
-
 from dateutil.tz import tzutc
 
 from sceptre.connection_manager import ConnectionManager
-from sceptre.hooks import add_stack_hooks
-from sceptre.stack_status import StackStatus
-from sceptre.stack_status import StackChangeSetStatus
-
 from sceptre.exceptions import CannotUpdateFailedStackError
-from sceptre.exceptions import UnknownStackStatusError
-from sceptre.exceptions import UnknownStackChangeSetStatusError
-from sceptre.exceptions import StackDoesNotExistError
 from sceptre.exceptions import ProtectedStackError
-
-import urllib
+from sceptre.exceptions import StackDoesNotExistError
+from sceptre.exceptions import UnknownStackChangeSetStatusError
+from sceptre.exceptions import UnknownStackStatusError
+from sceptre.hooks import add_stack_hooks
+from sceptre.stack_status import StackChangeSetStatus
+from sceptre.stack_status import StackStatus
 
 
 class StackActions(object):
@@ -97,7 +93,7 @@ class StackActions(object):
                     "%s - Stack already exists", self.stack.name
                 )
 
-                status = "COMPLETE"
+                status = StackStatus.COMPLETE
             else:
                 raise
 
@@ -930,131 +926,74 @@ class StackActions(object):
         else:  # pragma: no cover
             raise Exception("This else should not be reachable.")
 
+    def fetch_remote_template(self) -> Optional[str]:
+        """
+        Returns the Template for the remote Stack
+
+        :returns: the template body.
+        """
+        self.logger.debug(f"{self.stack.name} - Fetching remote template")
+
+        original_template = self._fetch_original_template_stage()
+
+        if isinstance(original_template, dict):
+            # While not documented behavior, boto3 will attempt to deserialize the TemplateBody
+            # with json.loads and return the template as a dict if it is successful; otherwise (such
+            # as in when the template is in yaml, it will return the string. Therefore, we need to
+            # dump the template to json if we get a dict.
+            original_template = json.dumps(original_template, indent=4)
+
+        return original_template
+
+    def _fetch_original_template_stage(self) -> Optional[Union[str, dict]]:
+        try:
+            response = self.connection_manager.call(
+                service="cloudformation",
+                command="get_template",
+                kwargs={
+                    "StackName": self.stack.external_name,
+                    "TemplateStage": 'Original'
+                }
+            )
+            return response['TemplateBody']
+            # Sometimes boto returns a string, sometimes a dictionary
+        except botocore.exceptions.ClientError as e:
+            # AWS returns a ValidationError if the stack doesn't exist
+            if e.response['Error']['Code'] == 'ValidationError':
+                return None
+            raise
+
+    def fetch_remote_template_summary(self):
+        return self._get_template_summary(StackName=self.stack.external_name)
+
+    def fetch_local_template_summary(self):
+        boto_call_parameter = self.stack.template.get_boto_call_parameter()
+        return self._get_template_summary(**boto_call_parameter)
+
+    def _get_template_summary(self, **kwargs) -> Optional[dict]:
+        try:
+            template_summary = self.connection_manager.call(
+                service='cloudformation',
+                command='get_template_summary',
+                kwargs=kwargs
+            )
+            return template_summary
+        except botocore.exceptions.ClientError as e:
+            # AWS returns a ValidationError if the stack doesn't exist
+            if e.response['Error']['Code'] == 'ValidationError':
+                return None
+            raise
+
     @add_stack_hooks
-    def stack_name(self, print_name):
+    def diff(self, stack_differ):
         """
-        Returns the Stack's stack name.
+        Returns a diff of Template and Remote Template
+        using a specific diff library.
 
-        :param print_name: Also print the internal stack name.
-        :type print_name: bool
-        :returns: The Stack's stack name (external_name).
-        :rtype: str
+        :param stack_differ: The diff lib to use, default difflib.
+        :type: sceptre.diffing.stack_differ.StackDiffer
+
+        :returns: A StackDiff object.
+        :rtype: sceptre.diffing.stack_differ.StackDiff
         """
-        return_value = self.stack.external_name
-
-        if print_name:
-            return_value = self.name + ": " + return_value
-
-        return return_value
-
-    @add_stack_hooks
-    def detect_stack_drift(self):
-        """
-        Detects stack drift for a running stack.
-
-        :returns: The stack drift.
-        :rtype: Tuple[str, Union[str, dict]]
-        """
-        response = self._detect_stack_drift()
-
-        detection_id = response["StackDriftDetectionId"]
-        status = self._wait_for_drift(detection_id)
-
-        if status == "DETECTION_COMPLETE":
-            response = self._describe_stack_resource_drifts()
-            return_value = (self.stack.external_name, response)
-        else:
-            return_value = (self.stack.external_name, status)
-
-        return return_value
-
-    def _wait_for_drift(self, detection_id):
-        """
-        Waits for drift detection to complete.
-
-        :param detection_id: The drift detection ID.
-        :type detection_id: str
-
-        :returns: The drift status.
-        :rtype: str
-        """
-        timeout = 300
-        elapsed = 0
-
-        while True:
-            if elapsed >= timeout:
-                return "TIMED_OUT"
-
-            self.logger.debug("%s - Waiting for drift detection", self.stack.name)
-            response = self._describe_stack_drift_detection_status(detection_id)
-
-            status = response["DetectionStatus"]
-            self._print_drift_status(response)
-
-            if status == "DETECTION_IN_PROGRESS":
-                time.sleep(10)
-                elapsed += 10
-            else:
-                return status
-
-    def _print_drift_status(self, response):
-        """
-        Print the drift status while waiting for
-        drift detection to complete.
-        """
-        keys = [
-            "StackDriftDetectionId",
-            "DetectionStatus",
-            "DetectionStatusReason",
-            "StackDriftStatus"
-        ]
-
-        for key in keys:
-            if key in response:
-                self.logger.debug(
-                    "%s - %s - %s",
-                    self.stack.name,
-                    key, response[key]
-                )
-
-    def _detect_stack_drift(self):
-        """
-        Run detect_stack_drift.
-        """
-        self.logger.debug("%s - Detecting Stack Drift", self.stack.name)
-
-        return self.connection_manager.call(
-            service="cloudformation",
-            command="detect_stack_drift",
-            kwargs={
-                "StackName": self.stack.external_name
-            }
-        )
-
-    def _describe_stack_drift_detection_status(self, detection_id):
-        """
-        Run describe_stack_drift_detection_status.
-        """
-        self.logger.debug("%s - Detecting Stack Drift Detection Status", self.stack.name)
-
-        return self.connection_manager.call(
-            service="cloudformation",
-            command="describe_stack_drift_detection_status",
-            kwargs={
-                "StackDriftDetectionId": detection_id
-            }
-        )
-
-    def _describe_stack_resource_drifts(self):
-        """
-        Detects stack resource_drifts for a running stack.
-        """
-        self.logger.debug("%s - Detecting Stack Drift", self.stack.name)
-
-        return self.connection_manager.call(
-            service="cloudformation",
-            command="describe_stack_resource_drifts",
-            kwargs={
-                "StackName": self.stack.external_name
-            }
-        )
+        return stack_differ.diff(self)

@@ -14,7 +14,7 @@ from botocore.exceptions import ClientError
 from sceptre.template import Template
 from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
-from sceptre.exceptions import TemplateSceptreHandlerError
+from sceptre.exceptions import TemplateSceptreHandlerError, TemplateNotFoundError
 from sceptre.template_handlers import TemplateHandler
 
 
@@ -44,7 +44,9 @@ class TestTemplate(object):
             name="template_name",
             handler_config={"type": "file", "path": "/folder/template.py"},
             sceptre_user_data={},
-            stack_group_config={},
+            stack_group_config={
+                "project_path": "projects"
+            },
             connection_manager=connection_manager,
         )
 
@@ -258,7 +260,7 @@ class TestTemplate(object):
 
     def test_body_with_missing_file(self):
         self.template.handler_config["path"] = "incorrect/template/path.py"
-        with pytest.raises(IOError):
+        with pytest.raises(TemplateNotFoundError):
             self.template.body
 
     def test_body_with_python_template(self):

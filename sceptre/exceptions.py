@@ -180,3 +180,10 @@ class TemplateHandlerArgumentsInvalidError(SceptreException):
     Error raised when the arguments passed to a Template Handler do not
     adhere to the specified JSON schema.
     """
+
+
+class TemplateNotFoundError(SceptreException):
+    """
+    Error raised when a Template file is not found
+    """
+    pass
