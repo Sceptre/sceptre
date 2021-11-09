@@ -1,6 +1,5 @@
 import logging
 import webbrowser
-from contextlib import contextmanager
 
 import click
 
@@ -9,16 +8,10 @@ from sceptre.cli.helpers import (
     write
 )
 from sceptre.context import SceptreContext
+from sceptre.helpers import null_context
 from sceptre.plan.plan import SceptrePlan
 from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error, PlaceholderType
 
-
-@contextmanager
-def null_context():
-    """A context manager that does nothing. This is identical to the nullcontext in py3.7+, but isn't
-    available in py3.6, so providing it here instead.
-    """
-    yield
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +21,7 @@ logger = logging.getLogger(__name__)
     '-n',
     '--no-placeholders',
     is_flag=True,
-    help="If True, placeholder values will be supplied for resolvers that cannot be resolved."
+    help="If True, no placeholder values will be supplied for resolvers that cannot be resolved."
 )
 @click.argument("path")
 @click.pass_context
@@ -72,7 +65,7 @@ def validate_command(ctx, no_placeholders, path):
     '-n',
     '--no-placeholders',
     is_flag=True,
-    help="If True, placeholder values will be supplied for resolvers that cannot be resolved."
+    help="If True, no placeholder values will be supplied for resolvers that cannot be resolved."
 )
 @click.argument("path")
 @click.pass_context
@@ -109,7 +102,7 @@ def generate_command(ctx, no_placeholders, path):
     '-n',
     '--no-placeholders',
     is_flag=True,
-    help="If True, placeholder values will be supplied for resolvers that cannot be resolved."
+    help="If True, no placeholder values will be supplied for resolvers that cannot be resolved."
 )
 @click.argument("path")
 @click.pass_context

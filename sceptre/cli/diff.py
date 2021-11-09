@@ -10,7 +10,9 @@ from sceptre.cli.helpers import catch_exceptions
 from sceptre.context import SceptreContext
 from sceptre.diffing.diff_writer import DeepDiffWriter, DiffLibWriter, DiffWriter
 from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff
+from sceptre.helpers import null_context
 from sceptre.plan.plan import SceptrePlan
+from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error
 from sceptre.stack import Stack
 
 logger = getLogger(__name__)
@@ -35,10 +37,16 @@ logger = getLogger(__name__)
          'If not set (the default), parameters identified as NoEcho on the local template will be '
          'masked when presented in the diff.'
 )
+@click.option(
+    '-n',
+    '--no-placeholders',
+    is_flag=True,
+    help="If True, no placeholder values will be supplied for resolvers that cannot be resolved."
+)
 @click.argument('path')
 @click.pass_context
 @catch_exceptions
-def diff_command(ctx: Context, differ: str, show_no_echo: bool, path: str):
+def diff_command(ctx: Context, differ: str, show_no_echo: bool, no_placeholders: bool, path: str):
     """Indicates the difference between the currently DEPLOYED stacks in the command path and
     the stacks configured in Sceptre right now. This command will compare both the templates as well
     as the subset of stack configurations that can be compared.
@@ -89,7 +97,14 @@ def diff_command(ctx: Context, differ: str, show_no_echo: bool, path: str):
     else:
         raise ValueError(f"Unexpected differ type: {differ}")
 
-    diffs: Dict[Stack, StackDiff] = plan.diff(stack_differ)
+    if no_placeholders:
+        execution_context = null_context()
+    else:
+        execution_context = use_resolver_placeholders_on_error()
+
+    with execution_context:
+        diffs: Dict[Stack, StackDiff] = plan.diff(stack_differ)
+
     num_stacks_with_diff = output_diffs(diffs.values(), writer_class, sys.stdout, output_format)
 
     if num_stacks_with_diff:
