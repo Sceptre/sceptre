@@ -355,16 +355,6 @@ class SceptrePlan(object):
             if not f.endswith(self.context.config_file)
         ]
 
-    def fetch_remote_template(self, *args):
-        """
-        Returns a generated Template for a given Stack
-
-        :returns: A list of Stacks and their template body.
-        :rtype: List[str]
-        """
-        self.resolve(command=self.fetch_remote_template.__name__)
-        return self._execute(*args)
-
     def stack_name(self, *args):
         """
         Returns the Stack name for a running stack.
@@ -373,16 +363,6 @@ class SceptrePlan(object):
         :rtype: List[str]
         """
         self.resolve(command=self.stack_name.__name__)
-        return self._execute(*args)
-
-    def diff(self, *args):
-        """
-        Show diffs between the running and generated stack.
-
-        :returns: A list of Stacks and diffs against running stacks.
-        :rtype: List[str]
-        """
-        self.resolve(command=self.diff.__name__)
         return self._execute(*args)
 
     def detect_stack_drift(self, *args):

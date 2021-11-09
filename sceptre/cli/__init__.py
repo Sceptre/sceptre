@@ -26,8 +26,7 @@ from sceptre.cli.policy import set_policy_command
 from sceptre.cli.status import status_command
 from sceptre.cli.template import (validate_command, generate_command,
                                   estimate_cost_command,
-                                  fetch_remote_template_command,
-                                  stack_name_command, diff_command,
+                                  stack_name_command,
                                   detect_stack_drift_command)
 from sceptre.cli.helpers import catch_exceptions, setup_vars
 
@@ -85,7 +84,5 @@ cli.add_command(set_policy_command)
 cli.add_command(status_command)
 cli.add_command(list_group)
 cli.add_command(describe_group)
-cli.add_command(fetch_remote_template_command)
 cli.add_command(stack_name_command)
-cli.add_command(diff_command)
 cli.add_command(detect_stack_drift_command)
