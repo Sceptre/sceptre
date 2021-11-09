@@ -271,7 +271,7 @@ class Stack(object):
         Returns the CloudFormation Template used to create the Stack.
 
         :returns: The Stack's template.
-        :rtype: str
+        :rtype: Template
         """
         if self._template is None:
             if self.template_path:
