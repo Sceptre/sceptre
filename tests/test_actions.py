@@ -1246,7 +1246,6 @@ class TestStackActions(object):
         result = self.actions.fetch_remote_template_summary()
         assert result is None
 
-
     def test_diff__invokes_diff_method_on_injected_differ_with_self(self):
         differ = Mock()
         self.actions.diff(differ)
