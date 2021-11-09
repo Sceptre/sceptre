@@ -1217,7 +1217,21 @@ class TestStackActions(object):
         result = self.actions.fetch_local_template_summary()
         assert result == {'template': 'summary'}
 
-    def test_fetch_remote_template_summary__cloudformation_returns_validation_error__returns_none(self):
+    def test_fetch_local_template_summary__cloudformation_returns_validation_error_invalid_stack__raises_it(self):
+        self.actions.connection_manager.call.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": "ValidationError",
+                    "Message": "Template format error: Resource name {Invalid::Resource} is "
+                               "non alphanumeric.'"
+                }
+            },
+            sentinel.operation
+        )
+        with pytest.raises(ClientError):
+            self.actions.fetch_local_template_summary()
+
+    def test_fetch_remote_template_summary__cloudformation_returns_validation_error_for_no_stack__returns_none(self):
         self.actions.connection_manager.call.side_effect = ClientError(
             {
                 "Error": {
@@ -1231,6 +1245,7 @@ class TestStackActions(object):
         )
         result = self.actions.fetch_remote_template_summary()
         assert result is None
+
 
     def test_diff__invokes_diff_method_on_injected_differ_with_self(self):
         differ = Mock()
