@@ -8,7 +8,7 @@ from typing import Any, TYPE_CHECKING, Type, Union, TypeVar
 from sceptre.helpers import _call_func_on_values
 from sceptre.resolvers.placeholders import (
     create_placeholder_value,
-    are_placeholders_enabled
+    are_placeholders_enabled, PlaceholderType
 )
 
 if TYPE_CHECKING:
@@ -64,24 +64,20 @@ class Resolver(abc.ABC):
         return type(self)(self.argument, stack)
 
 
-NO_OVERRIDE = 'NO_OVERRIDE'
-
-
 class ResolvableProperty(abc.ABC):
     """
     This is an abstract base class for a descriptor used to store an attribute that have values
     associated with Resolver objects.
 
     :param name: Attribute suffix used to store the property in the instance.
-    :param placeholder_override: If specified, this is the value that will be used as the placeholder
-        rather than the resolver's returned placeholder value, but only when placeholders are allowed
-        via the use_resolver_placeholders_on_error context manager.
+    :param placeholder_type: The type of placeholder that should be returned, when placeholders are
+        allowed, when a resolver can't be resolved.
     """
 
-    def __init__(self, name: str, placeholder_override=NO_OVERRIDE):
+    def __init__(self, name: str, placeholder_type=PlaceholderType.explicit):
         self.name = "_" + name
         self.logger = logging.getLogger(__name__)
-        self.placeholder_override = placeholder_override
+        self.placeholder_type = placeholder_type
 
         self._lock = RLock()
 
@@ -167,10 +163,7 @@ class ResolvableProperty(abc.ABC):
             raise
         except Exception:
             if are_placeholders_enabled():
-                if self.placeholder_override == NO_OVERRIDE:
-                    placeholder_value = create_placeholder_value(resolver)
-                else:
-                    placeholder_value = self.placeholder_override
+                placeholder_value = create_placeholder_value(resolver, self.placeholder_type)
 
                 logger.debug(
                     "Error encountered while resolving resolver. This is allowed for current "

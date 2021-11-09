@@ -10,7 +10,7 @@ from sceptre.resolvers import (
     ResolvableValueProperty,
     RecursiveResolve
 )
-from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error, create_placeholder_value
+from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error, create_placeholder_value, PlaceholderType
 
 
 class MockResolver(Resolver):
@@ -26,14 +26,14 @@ class MockResolver(Resolver):
 
 class MockClass(object):
     resolvable_container_property = ResolvableContainerProperty("resolvable_container_property")
-    container_with_placeholder_override = ResolvableContainerProperty(
+    container_with_alphanum_placeholder = ResolvableContainerProperty(
         "container_with_placeholder_override",
-        placeholder_override='container'
+        PlaceholderType.alphanum
     )
     resolvable_value_property = ResolvableValueProperty('resolvable_value_property')
-    value_with_placeholder_override = ResolvableValueProperty(
+    value_with_none_placeholder = ResolvableValueProperty(
         'value_with_placeholder_override',
-        placeholder_override=None
+        PlaceholderType.none
     )
     config = MagicMock()
 
@@ -397,7 +397,7 @@ class TestResolvableContainerPropertyDescriptor:
         with use_resolver_placeholders_on_error():
             result = self.mock_object.resolvable_container_property
 
-        assert result == {'resolver': create_placeholder_value(resolver)}
+        assert result == {'resolver': create_placeholder_value(resolver, PlaceholderType.explicit)}
 
     def test_get__resolver_raises_error__placeholders_not_allowed__raises_error(self):
         class ErroringResolver(Resolver):
@@ -423,19 +423,19 @@ class TestResolvableContainerPropertyDescriptor:
         with use_resolver_placeholders_on_error(), pytest.raises(RecursiveResolve):
             self.mock_object.resolvable_container_property
 
-    def test_get__resolver_raises_error__placeholders_allowed__placeholder_override__returns_override(self):
+    def test_get__resolver_raises_error__placeholders_allowed__alternate_placeholder_type__uses_alternate(self):
         class ErroringResolver(Resolver):
             def resolve(self):
                 raise ValueError()
 
         resolver = ErroringResolver()
-        self.mock_object.container_with_placeholder_override = {
+        self.mock_object.container_with_alphanum_placeholder = {
             'resolver': resolver
         }
         with use_resolver_placeholders_on_error():
-            result = self.mock_object.container_with_placeholder_override
+            result = self.mock_object.container_with_alphanum_placeholder
 
-        assert result == {'resolver': 'container'}
+        assert result == {'resolver': create_placeholder_value(resolver, PlaceholderType.alphanum)}
 
 
 class TestResolvableValueProperty:
@@ -514,7 +514,7 @@ class TestResolvableValueProperty:
         with use_resolver_placeholders_on_error():
             result = self.mock_object.resolvable_value_property
 
-        assert result == create_placeholder_value(resolver)
+        assert result == create_placeholder_value(resolver, PlaceholderType.explicit)
 
     def test_get__resolver_raises_error__placeholders_not_allowed__raises_error(self):
         class ErroringResolver(Resolver):
@@ -536,14 +536,14 @@ class TestResolvableValueProperty:
         with use_resolver_placeholders_on_error(), pytest.raises(RecursiveResolve):
             self.mock_object.resolvable_value_property
 
-    def test_get__resolver_raises_error__placeholders_allowed__placeholder_override__returns_override(self):
+    def test_get__resolver_raises_error__placeholders_allowed__alternate_placeholder_type__uses_alternate_type(self):
         class ErroringResolver(Resolver):
             def resolve(self):
                 raise ValueError()
 
         resolver = ErroringResolver()
-        self.mock_object.value_with_placeholder_override = resolver
+        self.mock_object.value_with_none_placeholder = resolver
         with use_resolver_placeholders_on_error():
-            result = self.mock_object.value_with_placeholder_override
+            result = self.mock_object.value_with_none_placeholder
 
-        assert result is None
+        assert result == create_placeholder_value(resolver, PlaceholderType.none)

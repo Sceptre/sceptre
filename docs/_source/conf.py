@@ -190,6 +190,10 @@ intersphinx_mapping = {
         'https://boto3.readthedocs.io/en/latest/',
         'https://boto3.readthedocs.io/en/latest/objects.inv',
     ),
+    'deepdiff': (
+        'https://zepworks.com/deepdiff/current/',
+        None
+    )
 }
 
 # other configuration
@@ -198,7 +202,10 @@ nitpicky = True
 
 nitpick_ignore = [
     ('py:class', 'json.encoder.JSONEncoder'),
-    ('py:class', 'sceptre.config.reader.Attributes')
+    ('py:class', 'sceptre.config.reader.Attributes'),
+    ('py:class', 'sceptre.diffing.stack_differ.DiffType'),
+    ('py:obj', 'sceptre.diffing.stack_differ.DiffType'),
+    ('py:class', 'TextIO')
 ]
 
 set_type_checking_flag = True

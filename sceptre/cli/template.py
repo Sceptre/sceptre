@@ -1,23 +1,19 @@
-from contextlib import contextmanager
-
-import click
+import logging
 import webbrowser
 
-from sceptre.context import SceptreContext
+import click
+
 from sceptre.cli.helpers import (
     catch_exceptions,
     write
 )
+from sceptre.context import SceptreContext
+from sceptre.helpers import null_context
 from sceptre.plan.plan import SceptrePlan
 from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error, PlaceholderType
 
 
-@contextmanager
-def null_context():
-    """A context manager that does nothing. This is identical to the nullcontext in py3.7+, but isn't
-    available in py3.6, so providing it here instead.
-    """
-    yield
+logger = logging.getLogger(__name__)
 
 
 @click.command(name="validate", short_help="Validates the template.")
@@ -25,7 +21,7 @@ def null_context():
     '-n',
     '--no-placeholders',
     is_flag=True,
-    help="If True, placeholder values will be supplied for resolvers that cannot be resolved."
+    help="If True, no placeholder values will be supplied for resolvers that cannot be resolved."
 )
 @click.argument("path")
 @click.pass_context
@@ -52,7 +48,7 @@ def validate_command(ctx, no_placeholders, path):
     if no_placeholders:
         execution_context = null_context()
     else:
-        execution_context = use_resolver_placeholders_on_error(PlaceholderType.alphanum)
+        execution_context = use_resolver_placeholders_on_error()
 
     with execution_context:
         responses = plan.validate()
@@ -69,7 +65,7 @@ def validate_command(ctx, no_placeholders, path):
     '-n',
     '--no-placeholders',
     is_flag=True,
-    help="If True, placeholder values will be supplied for resolvers that cannot be resolved."
+    help="If True, no placeholder values will be supplied for resolvers that cannot be resolved."
 )
 @click.argument("path")
 @click.pass_context
@@ -102,16 +98,10 @@ def generate_command(ctx, no_placeholders, path):
 
 
 @click.command(name="estimate-cost", short_help="Estimates the cost of the template.")
-@click.option(
-    '-n',
-    '--no-placeholders',
-    is_flag=True,
-    help="If True, placeholder values will be supplied for resolvers that cannot be resolved."
-)
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
-def estimate_cost_command(ctx, no_placeholders, path):
+def estimate_cost_command(ctx, path):
     """
     Prints a URI to STOUT that provides an estimated cost based on the
     resources in the stack. This command will also attempt to open a web
@@ -131,13 +121,7 @@ def estimate_cost_command(ctx, no_placeholders, path):
     )
 
     plan = SceptrePlan(context)
-
-    if no_placeholders:
-        execution_context = null_context()
-    else:
-        execution_context = use_resolver_placeholders_on_error(PlaceholderType.alphanum)
-    with execution_context:
-        responses = plan.estimate_cost()
+    responses = plan.estimate_cost()
 
     for stack, response in responses.items():
         if response['ResponseMetadata']['HTTPStatusCode'] == 200:
@@ -146,3 +130,36 @@ def estimate_cost_command(ctx, no_placeholders, path):
             response = response["Url"]
             webbrowser.open(response, new=2)
         write(response + "\n", 'text')
+
+
+@click.command(name="fetch-remote-template", short_help="Prints the remote template.")
+@click.argument("path")
+@click.pass_context
+@catch_exceptions
+def fetch_remote_template_command(ctx, path):
+    """
+    Prints the remote template used for stack in PATH.
+    \f
+
+    :param path: Path to execute the command on.
+    :type path: str
+    """
+    context = SceptreContext(
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options"),
+        output_format=ctx.obj.get("output_format"),
+        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+    )
+
+    plan = SceptrePlan(context)
+    responses = plan.fetch_remote_template()
+    output = []
+    for stack, template in responses.items():
+        if template is None:
+            logger.warning(f"{stack.external_name} does not exist")
+        else:
+            output.append(template)
+
+    write(output, context.output_format)
