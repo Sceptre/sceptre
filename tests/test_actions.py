@@ -1,23 +1,22 @@
 # -*- coding: utf-8 -*-
+import datetime
+import json
 
 import pytest
+from botocore.exceptions import ClientError
+from dateutil.tz import tzutc
 from mock import patch, sentinel, Mock, call
 
-import datetime
-from dateutil.tz import tzutc
-
-from botocore.exceptions import ClientError
-
-from sceptre.stack import Stack
-from sceptre.plan.actions import StackActions
-from sceptre.template import Template
-from sceptre.stack_status import StackStatus
-from sceptre.stack_status import StackChangeSetStatus
 from sceptre.exceptions import CannotUpdateFailedStackError
-from sceptre.exceptions import UnknownStackStatusError
-from sceptre.exceptions import UnknownStackChangeSetStatusError
-from sceptre.exceptions import StackDoesNotExistError
 from sceptre.exceptions import ProtectedStackError
+from sceptre.exceptions import StackDoesNotExistError
+from sceptre.exceptions import UnknownStackChangeSetStatusError
+from sceptre.exceptions import UnknownStackStatusError
+from sceptre.plan.actions import StackActions
+from sceptre.stack import Stack
+from sceptre.stack_status import StackChangeSetStatus
+from sceptre.stack_status import StackStatus
+from sceptre.template import Template
 
 
 class TestStackActions(object):
@@ -36,7 +35,8 @@ class TestStackActions(object):
             tags={"tag1": "val1"}, external_name=sentinel.external_name,
             notifications=[sentinel.notification],
             on_failure=sentinel.on_failure,
-            stack_timeout=sentinel.stack_timeout
+            stack_timeout=sentinel.stack_timeout,
+
         )
         self.actions = StackActions(self.stack)
         self.stack_group_config = {}
@@ -45,6 +45,15 @@ class TestStackActions(object):
             self.stack.sceptre_user_data, self.stack_group_config,
             self.actions.connection_manager, self.stack.s3_details
         )
+        self.template._body = json.dumps({
+            'AWSTemplateFormatVersion': '2010-09-09',
+            'Resources': {
+                'Bucket': {
+                    'Type': 'AWS::S3::Bucket',
+                    'Properties': {}
+                }
+            }
+        })
         self.stack._template = self.template
 
     def teardown_method(self, test_method):
@@ -1117,3 +1126,118 @@ class TestStackActions(object):
         )
         with pytest.raises(ClientError):
             self.actions._get_cs_status(sentinel.change_set_name)
+
+    def test_fetch_remote_template__cloudformation_returns_validation_error__returns_none(self):
+        self.actions.connection_manager.call.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": "ValidationError",
+                    "Message": "An error occurred (ValidationError) "
+                               "when calling the GetTemplate operation: "
+                               "Stack with id foo does not exist"
+                }
+            },
+            sentinel.operation
+        )
+
+        result = self.actions.fetch_remote_template()
+        assert result is None
+
+    def test_fetch_remote_template__calls_cloudformation_get_template(self):
+        self.actions.connection_manager.call.return_value = {'TemplateBody': ''}
+        self.actions.fetch_remote_template()
+
+        self.actions.connection_manager.call.assert_called_with(
+            service='cloudformation',
+            command='get_template',
+            kwargs={
+                'StackName': self.stack.external_name,
+                'TemplateStage': 'Original'
+            }
+        )
+
+    def test_fetch_remote_template__dict_template__returns_json(self):
+        template_body = {
+            'AWSTemplateFormatVersion': '2010-09-09',
+            'Resources': {}
+        }
+        self.actions.connection_manager.call.return_value = {
+            'TemplateBody': template_body
+        }
+        expected = json.dumps(template_body, indent=4)
+
+        result = self.actions.fetch_remote_template()
+        assert result == expected
+
+    def test_fetch_remote_template__cloudformation_returns_string_template__returns_that_string(self):
+        template_body = "This is my template"
+        self.actions.connection_manager.call.return_value = {
+            'TemplateBody': template_body
+        }
+        result = self.actions.fetch_remote_template()
+        assert result == template_body
+
+    def test_fetch_remote_template_summary__calls_cloudformation_get_template_summary(self):
+        self.actions.fetch_remote_template_summary()
+
+        self.actions.connection_manager.call.assert_called_with(
+            service='cloudformation',
+            command='get_template_summary',
+            kwargs={
+                'StackName': self.stack.external_name,
+            }
+        )
+
+    def test_fetch_remote_template_summary__returns_response_from_cloudformation(self):
+        def get_template_summary(service, command, kwargs):
+            assert (service, command) == ('cloudformation', 'get_template_summary')
+            return {'template': 'summary'}
+
+        self.actions.connection_manager.call.side_effect = get_template_summary
+        result = self.actions.fetch_remote_template_summary()
+        assert result == {'template': 'summary'}
+
+    def test_fetch_local_template_summary__calls_cloudformation_get_template_summary(self):
+        self.actions.fetch_local_template_summary()
+
+        self.actions.connection_manager.call.assert_called_with(
+            service='cloudformation',
+            command='get_template_summary',
+            kwargs={
+                'TemplateBody': self.stack.template.body,
+            }
+        )
+
+    def test_fetch_local_template_summary__returns_response_from_cloudformation(self):
+        def get_template_summary(service, command, kwargs):
+            assert (service, command) == ('cloudformation', 'get_template_summary')
+            return {'template': 'summary'}
+
+        self.actions.connection_manager.call.side_effect = get_template_summary
+        result = self.actions.fetch_local_template_summary()
+        assert result == {'template': 'summary'}
+
+    def test_fetch_remote_template_summary__cloudformation_returns_validation_error__returns_none(self):
+        self.actions.connection_manager.call.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": "ValidationError",
+                    "Message": "An error occurred (ValidationError) "
+                               "when calling the GetTemplate operation: "
+                               "Stack with id foo does not exist"
+                }
+            },
+            sentinel.operation
+        )
+        result = self.actions.fetch_remote_template_summary()
+        assert result is None
+
+    def test_diff__invokes_diff_method_on_injected_differ_with_self(self):
+        differ = Mock()
+        self.actions.diff(differ)
+        differ.diff.assert_called_with(self.actions)
+
+    def test_diff__returns_result_of_injected_differs_diff_method(self):
+        differ = Mock()
+        result = self.actions.diff(differ)
+        assert result == differ.diff.return_value
