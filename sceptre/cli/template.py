@@ -10,8 +10,7 @@ from sceptre.cli.helpers import (
 from sceptre.context import SceptreContext
 from sceptre.helpers import null_context
 from sceptre.plan.plan import SceptrePlan
-from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error, PlaceholderType
-
+from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error
 
 logger = logging.getLogger(__name__)
 
