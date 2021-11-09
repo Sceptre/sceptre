@@ -1,3 +1,5 @@
+import logging
+
 import click
 import webbrowser
 
@@ -7,6 +9,8 @@ from sceptre.cli.helpers import (
     write
 )
 from sceptre.plan.plan import SceptrePlan
+
+logger = logging.getLogger(__name__)
 
 
 @click.command(name="validate", short_help="Validates the template.")
@@ -100,3 +104,36 @@ def estimate_cost_command(ctx, path):
             response = response["Url"]
             webbrowser.open(response, new=2)
         write(response + "\n", 'text')
+
+
+@click.command(name="fetch-remote-template", short_help="Prints the remote template.")
+@click.argument("path")
+@click.pass_context
+@catch_exceptions
+def fetch_remote_template_command(ctx, path):
+    """
+    Prints the remote template used for stack in PATH.
+    \f
+
+    :param path: Path to execute the command on.
+    :type path: str
+    """
+    context = SceptreContext(
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        options=ctx.obj.get("options"),
+        output_format=ctx.obj.get("output_format"),
+        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+    )
+
+    plan = SceptrePlan(context)
+    responses = plan.fetch_remote_template()
+    output = []
+    for stack, template in responses.items():
+        if template is None:
+            logger.warning(f"{stack.external_name} does not exist")
+        else:
+            output.append(template)
+
+    write(output, context.output_format)
