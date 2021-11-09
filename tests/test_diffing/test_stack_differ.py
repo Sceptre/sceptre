@@ -3,7 +3,7 @@ import json
 from collections import defaultdict
 from copy import deepcopy
 from typing import Union, Optional
-from unittest.mock import Mock, PropertyMock, ANY, DEFAULT
+from unittest.mock import Mock, PropertyMock
 
 import cfn_flip
 import pytest
@@ -16,9 +16,7 @@ from sceptre.diffing.stack_differ import (
     DeepDiffStackDiffer,
     DifflibStackDiffer
 )
-from sceptre.exceptions import StackDoesNotExistError
 from sceptre.plan.actions import StackActions
-from sceptre.resolvers import Resolver
 from sceptre.stack import Stack
 
 
@@ -389,6 +387,7 @@ class TestStackDiffer:
             self.expected_deployed_config,
             self.expected_generated_config,
         )
+
 
 class TestDeepDiffStackDiffer:
 
