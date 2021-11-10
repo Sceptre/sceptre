@@ -979,8 +979,11 @@ class StackActions(object):
             )
             return template_summary
         except botocore.exceptions.ClientError as e:
-            # AWS returns a ValidationError if the stack doesn't exist
-            if e.response['Error']['Code'] == 'ValidationError':
+            error_response = e.response['Error']
+            if (
+                error_response['Code'] == 'ValidationError'
+                and 'does not exist' in error_response['Message']
+            ):
                 return None
             raise
 
