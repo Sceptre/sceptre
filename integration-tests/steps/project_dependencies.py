@@ -25,7 +25,7 @@ def step_impl(context: Context, stack_name):
 
 @given('placeholders are allowed')
 def step_impl(context: Context):
-    placeholder_context = use_resolver_placeholders_on_error(PlaceholderType.alphanum)
+    placeholder_context = use_resolver_placeholders_on_error()
     placeholder_context.__enter__()
     context.add_cleanup(exit_placeholder_context, placeholder_context)
 
