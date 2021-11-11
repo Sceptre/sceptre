@@ -5,10 +5,10 @@ import boto3
 from behave import given, then, when
 from behave.runner import Context
 
+from helpers import get_cloudformation_stack_name, retry_boto_call
 from sceptre.context import SceptreContext
 from sceptre.plan.plan import SceptrePlan
-from helpers import get_cloudformation_stack_name, retry_boto_call
-from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error, PlaceholderType
+from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error
 
 
 @given('all files in template bucket for stack "{stack_name}" are deleted at cleanup')
