@@ -12,6 +12,12 @@ Feature: Project Dependencies managed within Sceptre
     When the user launches stack_group "project-deps"
     Then the template for stack "project-deps/resource" has been uploaded
 
+  Scenario: role_arn is managed in project
+    Given stack_group "project-deps" does not exist
+    And all files in template bucket for stack "project-deps/resource" are deleted at cleanup
+    When the user launches stack_group "project-deps"
+    Then the stack "project-deps/resource" has a role defined by stack "project-deps/role"
+
   Scenario: notifications are managed in project
     Given stack_group "project-deps" does not exist
     And all files in template bucket for stack "project-deps/resource" are deleted at cleanup
