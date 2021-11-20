@@ -282,4 +282,5 @@ resolver cannot be resolved), a **best-attempt placeholder value** will be suppl
 command to proceed. Depending on how your template or Stack Config is configured, the command may or
 may not actually succeed using that placeholder value.
 
-Any command that allows these placeholders can have them disabled with a ClI option.
+Any command that allows these placeholders can have them disabled with the ``--no-placeholders`` ClI
+option.

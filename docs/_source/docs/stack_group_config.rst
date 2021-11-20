@@ -174,7 +174,7 @@ actions (i.e. the ``role_arn`` config key).
 These sorts of dependencies CAN be defined in Sceptre and added at the StackGroup level, referenced
 using ``!stack_output``. They can even can be set in the highest-level config.yaml, right next to
 ``project_code`` and ``region``. Doing so will make it so that every stack in the StackGroup (or
-even in the entire project) will be have those dependencies and get those values from Sceptre-managed
+even in the entire project) will have those dependencies and get those values from Sceptre-managed
 stacks.
 
 Beyond the above mentioned config keys, it is possible to set the ``dependencies`` config key in a
@@ -182,7 +182,7 @@ StackGroup config to be inherited by all Stack configs in that group. All depend
 stacks will be added to their inherited StackGroup dependencies, so be careful how you structure
 dependencies.
 
-**Important**: You might have already considered this might cause a circular dependency for those
+**Important**: You might have already considered that this might cause a circular dependency for those
 dependency stacks, the ones that output the template bucket name, role arn, or topic arns. In order
 to break the circular dependency, you can set ``is_project_dependency: True`` on those dependency
 stacks. As described in the documentation for :ref:`is_project_dependency <project_dependency_config>`,
