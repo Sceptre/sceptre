@@ -67,58 +67,80 @@ to demonstrate ways of organising different projects.
 
 -  Application development within an externally defined VPC
 
-   .. code-block:: yaml
+    .. code-block:: yaml
 
-      - config
-          - prod
-              - application
-                  - asg.yaml
-                  - security-group.yaml
-              - database
-                  - rds.yaml
-                  - security-group.yaml
+        - config
+            - config.yaml
+            - prod
+                - application
+                    - asg.yaml
+                    - security-group.yaml
+            - database
+                - rds.yaml
+                - security-group.yaml
 
 -  DevOps team who manage all the infrastructure for their service
 
-   .. code-block:: yaml
+    .. code-block:: yaml
 
-      - config
-          - prod
-              - network
-                  - vpc.yaml
-                  - subnet.yaml
-              - frontend
-                  - api-gateway.yaml
-              - application
-                  - lambda-get-item.yaml
-                  - lambda-put-item.yaml
-              - database
-                  - dynamodb.yaml
+        - config
+            - config.yaml
+            - prod
+                - network
+                - vpc.yaml
+                - subnet.yaml
+            - frontend
+                - api-gateway.yaml
+            - application
+                - lambda-get-item.yaml
+                - lambda-put-item.yaml
+            - database
+                - dynamodb.yaml
 
 -  Centralised, company-wide networking
 
-   .. code-block:: yaml
+    .. code-block:: yaml
 
-      - config
-          - prod
-              - vpc.yaml
-              - public-subnet.yaml
-              - application-subnet.yaml
-              - database-subnet.yaml
-          - dev
-              - vpc.yaml
-              - public-subnet.yaml
-              - application-subnet.yaml
-              - database-subnet.yaml
+        - config
+            - config.yaml
+            - prod
+                - vpc.yaml
+                - public-subnet.yaml
+                - application-subnet.yaml
+                - database-subnet.yaml
+            - dev
+                - vpc.yaml
+                - public-subnet.yaml
+                - application-subnet.yaml
+                - database-subnet.yaml
 
 -  IAM management
 
-   .. code-block:: yaml
+    .. code-block:: yaml
 
-      - config
-          - account-1
-              - iam-role-admin.yaml
-              - iam-role-developer.yaml
-          - account-2
-              - iam-role-admin.yaml
-              - iam-role-developer.yaml
+        - config
+            - config.yaml
+            - account-1
+                - iam-role-admin.yaml
+                - iam-role-developer.yaml
+            - account-2
+                - iam-role-admin.yaml
+                - iam-role-developer.yaml
+
+- Replicated environments with only config differences
+
+    In this architecture, there is a var-file with each environment's configurations. The Stack
+    configs and StackGroup configs reference the various variables from those files.
+
+    .. code-block:: yaml
+
+        - config
+            - config.yaml
+            - project
+                - vpc.yaml
+                - network.yaml
+                - database.yaml
+        - vars
+            - production.yaml
+            - staging.yaml
+            - development.yaml
