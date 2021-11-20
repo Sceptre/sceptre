@@ -97,11 +97,7 @@ def diff_command(ctx: Context, differ: str, show_no_echo: bool, no_placeholders:
     else:
         raise ValueError(f"Unexpected differ type: {differ}")
 
-    if no_placeholders:
-        execution_context = null_context()
-    else:
-        execution_context = use_resolver_placeholders_on_error()
-
+    execution_context = null_context() if no_placeholders else use_resolver_placeholders_on_error()
     with execution_context:
         diffs: Dict[Stack, StackDiff] = plan.diff(stack_differ)
 
