@@ -261,7 +261,7 @@ The StackGroup Config
 
 .. code-block:: yaml
 
-    # indigo/config.yaml
+    # config/indigo/config.yaml
 
     # This is the StackGroup config for the indigo StackGroup. Any settings set here will be shared
     # by all stacks in it.
@@ -278,7 +278,7 @@ The Application Stack Config
 
 .. code-block:: yaml
 
-    # indigo/application.yaml
+    # config/indigo/application.yaml
 
     # This is the Stack config for the application stack. It inherits all configurations from all
     # StackGroup configs for StackGroups in which it resides (in this case, the
