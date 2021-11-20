@@ -1,1 +1,2 @@
-template_path: "valid_template.yaml"
+template:
+  path: "valid_template.yaml"
