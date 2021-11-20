@@ -129,8 +129,11 @@ to demonstrate ways of organising different projects.
 
 - Replicated environments with only config differences
 
-    In this architecture, there is a var-file with each environment's configurations. The Stack
-    configs and StackGroup configs reference the various variables from those files.
+    In this architecture, there is a var-file with each environment's configurations. Each var-file
+    has the same keys, but values specific to that environment. The Stack configs and StackGroup
+    configs reference keys from from those files. This way the environment could be tested in
+    non-production environments, then deployed to production by simply referencing a different
+    var-file.
 
     .. code-block:: yaml
 
