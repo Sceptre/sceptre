@@ -84,11 +84,12 @@ and builds that Stack before the current one.
 This resolver will add a dependency for the Stack in which needs the output
 from.
 
-**Important**: You cannot use the stack_output resolver on stacks where ``is_project_dependency`` is
-``True``. If the stack_output resolver is used on a project dependency stack, it will resolve to
-``None`` and that key/value pair will be removed from the dict or list it was defined in. This is
-to avoid unresolvable tangles of dependencies, since project dependencies are supposed to be the
-highest level dependency in the project, depending on no other stacks.
+**Important**: You cannot use the stack_output resolver on stacks where
+:ref:`is_project_dependency <project_dependency_config>` is ``True``. If the stack_output resolver is used
+on a project dependency stack, it will resolve to ``None`` and that key/value pair will be removed
+from the dict or list it was defined in. This is to avoid unresolvable tangles of dependencies, since
+project dependencies are supposed to be the highest level dependency in the project, depending on no
+other stacks.
 
 stack_output_external
 ~~~~~~~~~~~~~~~~~~~~~

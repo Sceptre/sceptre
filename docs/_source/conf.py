@@ -205,7 +205,11 @@ nitpick_ignore = [
     ('py:class', 'sceptre.config.reader.Attributes'),
     ('py:class', 'sceptre.diffing.stack_differ.DiffType'),
     ('py:obj', 'sceptre.diffing.stack_differ.DiffType'),
-    ('py:class', 'TextIO')
+    ('py:class', 'DiffType'),
+    ('py:class', 'TextIO'),
+    ('py:class', '_io.StringIO'),
+    ('py:class', 'yaml.loader.SafeLoader'),
+    ('py:class', 'yaml.dumper.Dumper')
 ]
 
 set_type_checking_flag = True
