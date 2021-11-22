@@ -25,9 +25,9 @@ from sceptre.cli.list import list_group
 from sceptre.cli.policy import set_policy_command
 from sceptre.cli.status import status_command
 from sceptre.cli.template import (validate_command, generate_command,
-                                  estimate_cost_command,
-                                  stack_name_command,
-                                  detect_stack_drift_command)
+                                  estimate_cost_command)
+from sceptre.cli.custom import (stack_name_command,
+                                detect_stack_drift_command)
 from sceptre.cli.helpers import catch_exceptions, setup_vars
 
 

@@ -13,9 +13,10 @@ from sceptre.config.graph import StackGraph
 from sceptre.config.reader import ConfigReader
 from sceptre.plan.executor import SceptrePlanExecutor
 from sceptre.helpers import sceptreise_path
+from sceptre.plan.plan_custom import SceptrePlanCustom
 
 
-class SceptrePlan(object):
+class SceptrePlan(SceptrePlanCustom):
 
     def __init__(self, context):
         """
@@ -354,23 +355,3 @@ class SceptrePlan(object):
             for f in files
             if not f.endswith(self.context.config_file)
         ]
-
-    def stack_name(self, *args):
-        """
-        Returns the Stack name for a running stack.
-
-        :returns: A list of Stack Names.
-        :rtype: List[str]
-        """
-        self.resolve(command=self.stack_name.__name__)
-        return self._execute(*args)
-
-    def detect_stack_drift(self, *args):
-        """
-        Detects stack drift for a running stack.
-
-        :returns: A list of detected drift against running stacks.
-        :rtype: List[str]
-        """
-        self.resolve(command=self.detect_stack_drift.__name__)
-        return self._execute(*args)
