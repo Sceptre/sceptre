@@ -12,8 +12,6 @@ if TYPE_CHECKING:
 
 T_Container = TypeVar('T_Container', bound=Union[dict, list])
 
-logger = logging.getLogger(__name__)
-
 
 class RecursiveResolve(Exception):
     pass
