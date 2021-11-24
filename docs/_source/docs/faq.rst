@@ -87,7 +87,7 @@ How do I build a Serverless application using Sceptre and SAM?
 --------------------------------------------------------------
 
 There is now a SAM Template Handler that lets you incorporate SAM applications into environments that
-are managed and deployed using Sceptre. For more information on how install and use SAM in your
+are managed and deployed using Sceptre. For more information on how to install and use SAM in your
 Sceptre project, see the `sceptre-sam-handler`_ page on PyPI.
 
 
