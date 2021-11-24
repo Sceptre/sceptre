@@ -303,9 +303,7 @@ class TestConfigReader(object):
         mock_Stack.assert_any_call(
             name="account/stack-group/region/vpc",
             project_code="account_project_code",
-            template_path=os.path.join(
-                self.context.project_path, "templates/path/to/template"
-            ),
+            template_path="path/to/template",
             template_handler_config=None,
             region="region_region",
             profile="account_profile",
@@ -326,6 +324,7 @@ class TestConfigReader(object):
             template_bucket_name='stack_group_template_bucket_name',
             template_key_prefix=None,
             stack_group_config={
+                "project_path": self.context.project_path,
                 "custom_key": "custom_value"
             }
         )
