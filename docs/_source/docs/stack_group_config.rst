@@ -20,6 +20,7 @@ Sceptre. The available keys are listed below.
 -  `template_bucket_name`_ *(optional)*
 -  `template_key_prefix`_ *(optional)*
 -  `j2_environment`_ *(optional)*
+-  `http_template_handler`_ *(optional)*
 
 Sceptre will only check for and uses the above keys in StackGroup config files
 and are directly accessible from Stack(). Any other keys added by the user are
@@ -92,6 +93,18 @@ This will impact :ref:`Templating` of stacks by modifying the behavior of jinja.
       trim_blocks: True
       newline_sequence: \n
 
+http_template_handler
+~~~~~~~~~~~~~~~~~~~~~
+
+Options passed to the `http template handler`_.
+  * retries - The number of retry attempts (default is 5)
+  * timeout - The timeout for the session in seconds (default is 5)
+
+.. code-block:: yaml
+
+   http_template_handler:
+      retries: 10
+      timeout: 20
 
 require_version
 ~~~~~~~~~~~~~~~
@@ -312,3 +325,4 @@ Examples
 .. _region which supports CloudFormation: http://docs.aws.amazon.com/general/latest/gr/rande.html#cfn_region
 .. _PEP 440: https://www.python.org/dev/peps/pep-0440/#version-specifiers
 .. _AWS_CLI_Configure: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html
+.. _http template handler: template_handlers.html#http
