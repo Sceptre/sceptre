@@ -12,7 +12,8 @@ class TestSceptrePlan(object):
     def setup_method(self, test_method):
         self.patcher_SceptrePlan = patch("sceptre.plan.plan.SceptrePlan")
         self.stack = Stack(
-            name='dev/app/stack', project_code=sentinel.project_code,
+            name='dev/app/stack', rel_path='dev/app/stack.yaml',
+            project_code=sentinel.project_code,
             template_path=sentinel.template_path, region=sentinel.region,
             profile=sentinel.profile, parameters={"key1": "val1"},
             sceptre_user_data=sentinel.sceptre_user_data, hooks={},

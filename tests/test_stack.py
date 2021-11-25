@@ -14,6 +14,7 @@ from sceptre.template import Template
 def stack_factory(**kwargs):
     call_kwargs = {
         'name': 'dev/app/stack',
+        'rel_path': 'dev/app/stack.yaml',
         'project_code': sentinel.project_code,
         'template_bucket_name': sentinel.template_bucket_name,
         'template_key_prefix': sentinel.template_key_prefix,

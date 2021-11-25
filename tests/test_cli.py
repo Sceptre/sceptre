@@ -39,6 +39,7 @@ class TestCli(object):
         self.mock_stack = MagicMock(spec=Stack)
 
         self.mock_stack.name = 'mock-stack'
+        self.mock_stack.rel_path = 'mock-stack.yaml'
         self.mock_stack.region = None
         self.mock_stack.profile = None
         self.mock_stack.external_name = None
@@ -997,3 +998,9 @@ class TestCli(object):
         max_line_length = len(max(output_lines, key=len))
         star_bars = [line for line in output_lines if bar in line]
         assert all(len(line) == max_line_length for line in star_bars)
+
+    def test_stack_name(self):
+        self.mock_stack_actions.stack_name.return_value = "vpc (from: dev/vpc.yaml)"
+        result = self.runner.invoke(cli, ["stack-name", "dev/vpc.yaml"])
+        assert result.stdout == "vpc\n"
+        assert result.exit_code == 0
