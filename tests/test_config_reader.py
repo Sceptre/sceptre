@@ -302,6 +302,7 @@ class TestConfigReader(object):
         stacks = ConfigReader(self.context).construct_stacks()
         mock_Stack.assert_any_call(
             name="account/stack-group/region/vpc",
+            rel_path="account/stack-group/region/vpc.yaml",
             project_code="account_project_code",
             template_path="path/to/template",
             template_handler_config=None,
