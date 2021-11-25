@@ -169,6 +169,7 @@ class Stack(object):
         return (
             "sceptre.stack.Stack("
             "name='{name}', "
+            "rel_path='{rel_path}', "
             "project_code={project_code}, "
             "template_path={template_path}, "
             "template_handler_config={template_handler_config}, "
@@ -193,6 +194,7 @@ class Stack(object):
             "stack_group_config={stack_group_config}"
             ")".format(
                 name=self.name,
+                rel_path=self.rel_path,
                 project_code=self.project_code,
                 template_path=self.template_path,
                 template_handler_config=self.template_handler_config,
