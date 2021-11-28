@@ -1307,3 +1307,54 @@ class TestStackActions(object):
         response = self.actions.detect_stack_drift()
 
         assert response == expected_response
+
+    @patch("sceptre.plan.actions.StackActions._describe_stack_resource_drifts")
+    @patch("sceptre.plan.actions.StackActions._describe_stack_drift_detection_status")
+    @patch("sceptre.plan.actions.StackActions._detect_stack_drift")
+    @patch("time.sleep")
+    def test_detect_stack_drift_times_out(
+        self,
+        mock_sleep,
+        mock_detect_stack_drift,
+        mock_describe_stack_drift_detection_status,
+        mock_describe_stack_resource_drifts,
+    ):
+        mock_sleep.return_value = None
+
+        mock_detect_stack_drift.return_value = {
+            "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62"
+        }
+
+        response = {
+            "StackId": "fake-stack-id",
+            "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
+            "DetectionStatus": "DETECTION_IN_PROGRESS",
+            "DetectionStatusReason": "User Initiated"
+        }
+
+        side_effect = []
+        for _ in range(0, 30):
+            side_effect.append(response)
+        mock_describe_stack_drift_detection_status.side_effect = side_effect
+
+        expected_drifts = {
+            "StackResourceDrifts": [
+                {
+                    "StackId": "fake-stack-id",
+                    "LogicalResourceId": "VPC",
+                    "PhysicalResourceId": "vpc-028c655dea7c65227",
+                    "ResourceType": "AWS::EC2::VPC",
+                    "ExpectedProperties": '{"foo":"bar"}',
+                    "ActualProperties": '{"foo":"bar"}',
+                    "PropertyDifferences": [],
+                    "StackResourceDriftStatus": "DETECTION_IN_PROGRESS"
+                }
+            ]
+        }
+
+        mock_describe_stack_resource_drifts.return_value = expected_drifts
+        expected_response = (sentinel.external_name, "TIMED_OUT")
+
+        response = self.actions.detect_stack_drift()
+
+        assert response == expected_response
