@@ -1021,15 +1021,12 @@ class StackActions(object):
 
         return return_value
 
-    def _wait_for_drift_status(self, detection_id):
+    def _wait_for_drift_status(self, detection_id: str) -> str:
         """
         Waits for drift detection to complete.
 
         :param detection_id: The drift detection ID.
-        :type detection_id: str
-
         :returns: The drift status.
-        :rtype: str
         """
         timeout = 300
         elapsed = 0
