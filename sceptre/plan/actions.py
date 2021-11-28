@@ -1038,7 +1038,7 @@ class StackActions(object):
             if elapsed >= timeout:
                 return "TIMED_OUT"
 
-            self.logger.debug("%s - Waiting for drift detection", self.stack.name)
+            self.logger.debug(f"{self.stack.name} - Waiting for drift detection")
             response = self._describe_stack_drift_detection_status(detection_id)
 
             status = response["DetectionStatus"]
