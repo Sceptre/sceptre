@@ -13,7 +13,7 @@ import time
 import urllib
 from datetime import datetime, timedelta
 from os import path
-from typing import Union, Optional
+from typing import Union, Optional, Tuple
 
 import botocore
 from dateutil.tz import tzutc
@@ -1002,12 +1002,11 @@ class StackActions(object):
         return stack_differ.diff(self)
 
     @add_stack_hooks
-    def detect_stack_drift(self):
+    def detect_stack_drift(self) -> Tuple[str, Union[str, dict]]:
         """
         Detects stack drift for a running stack.
 
         :returns: The stack drift.
-        :rtype: Tuple[str, Union[str, dict]]
         """
         response = self._detect_stack_drift()
 
