@@ -1013,7 +1013,7 @@ class StackActions(object):
         detection_id = response["StackDriftDetectionId"]
         status = self._wait_for_drift_status(detection_id)
 
-        if status == "DETECTION_COMPLETE":
+        if status in ["DETECTION_COMPLETE", "DETECTION_FAILED"]:
             response = self._describe_stack_resource_drifts()
             return_value = (self.stack.external_name, response)
         else:

@@ -1256,6 +1256,7 @@ class TestStackActions(object):
         result = self.actions.diff(differ)
         assert result == differ.diff.return_value
 
+    @pytest.mark.parametrize("detection_status", ["DETECTION_COMPLETE", "DETECTION_FAILED"])
     @patch("sceptre.plan.actions.StackActions._describe_stack_resource_drifts")
     @patch("sceptre.plan.actions.StackActions._describe_stack_drift_detection_status")
     @patch("sceptre.plan.actions.StackActions._detect_stack_drift")
@@ -1263,7 +1264,8 @@ class TestStackActions(object):
         self,
         mock_detect_stack_drift,
         mock_describe_stack_drift_detection_status,
-        mock_describe_stack_resource_drifts
+        mock_describe_stack_resource_drifts,
+        detection_status
     ):
         mock_detect_stack_drift.return_value = {
             "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62"
@@ -1278,8 +1280,8 @@ class TestStackActions(object):
             {
                 "StackId": "fake-stack-id",
                 "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
-                "StackDriftStatus": "IN_SYNC",
-                "DetectionStatus": "DETECTION_COMPLETE",
+                "StackDriftStatus": "FOO",
+                "DetectionStatus": detection_status,
                 "DriftedStackResourceCount": 0
             }
         ]
@@ -1294,7 +1296,7 @@ class TestStackActions(object):
                     "ExpectedProperties": '{"foo":"bar"}',
                     "ActualProperties": '{"foo":"bar"}',
                     "PropertyDifferences": [],
-                    "StackResourceDriftStatus": "IN_SYNC"
+                    "StackResourceDriftStatus": detection_status
                 }
             ]
         }
