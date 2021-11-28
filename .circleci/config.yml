@@ -21,6 +21,12 @@ aliases:
       - attach_workspace:
           at: /home/circleci
       - run:
+          name: 'Installing Requirements'
+          command: |
+            . ./venv/bin/activate
+            pip install -r requirements/prod.txt
+            pip install -r requirements/dev.txt
+      - run:
           name: 'Build and deploy docs'
           command: |
             chmod +x .circleci/add-known-hosts.sh
