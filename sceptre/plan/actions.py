@@ -1062,9 +1062,7 @@ class StackActions(object):
         for key in keys:
             if key in response:
                 self.logger.debug(
-                    "%s - %s - %s",
-                    self.stack.name,
-                    key, response[key]
+                    f"{self.stack.name} - {key} - {response[key]}"
                 )
 
     def _detect_stack_drift(self):
