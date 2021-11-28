@@ -1039,7 +1039,7 @@ class StackActions(object):
             response = self._describe_stack_drift_detection_status(detection_id)
 
             status = response["DetectionStatus"]
-            self._print_drift_status(response)
+            self._log_drift_status(response)
 
             if status == "DETECTION_IN_PROGRESS":
                 time.sleep(10)
@@ -1047,9 +1047,9 @@ class StackActions(object):
             else:
                 return status
 
-    def _print_drift_status(self, response):
+    def _log_drift_status(self, response):
         """
-        Print the drift status while waiting for
+        Log the drift status while waiting for
         drift detection to complete.
         """
         keys = [
