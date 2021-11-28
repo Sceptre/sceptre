@@ -1011,7 +1011,7 @@ class StackActions(object):
         response = self._detect_stack_drift()
 
         detection_id = response["StackDriftDetectionId"]
-        status = self._wait_for_drift(detection_id)
+        status = self._wait_for_drift_status(detection_id)
 
         if status == "DETECTION_COMPLETE":
             response = self._describe_stack_resource_drifts()
@@ -1021,7 +1021,7 @@ class StackActions(object):
 
         return return_value
 
-    def _wait_for_drift(self, detection_id):
+    def _wait_for_drift_status(self, detection_id):
         """
         Waits for drift detection to complete.
 
