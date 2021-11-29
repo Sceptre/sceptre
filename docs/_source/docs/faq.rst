@@ -86,51 +86,9 @@ used.
 How do I build a Serverless application using Sceptre and SAM?
 --------------------------------------------------------------
 
-There are a few different ways that Sceptre can help create serverless
-applications or lambdas.  One approach is to use the `SAM CLI`_ to build
-and deploy your SAM templates to an S3 bucket then have Sceptre deploy the
-generated SAM template to your AWS account. Examples of this approach can
-be found in these projects:
+There is now a SAM Template Handler that lets you incorporate SAM applications into environments that
+are managed and deployed using Sceptre. For more information on how to install and use SAM in your
+Sceptre project, see the `sceptre-sam-handler`_ page on PyPI.
 
-- `Sage-Bionetworks Sceptre lambda github template`_
-- `Versant SAM Sceptre skeleton example`_
 
-Another approach is to use the Sceptre `before_launch` hook to run either the
-SAM or CFN "package" command to generate the packaged version of the template.
-
-CloudFormation Example:
-
-.. code-block:: yaml
-
-  template:
-    path: generated/lambda-packaged.json
-    type: file
-  stack_name: cfn-lambda-example
-  hooks:
-    before_launch:
-      - !cmd >
-          aws --profile {{ stack_group_config.profile }} cloudformation package
-          --template-file templates/cfn-lambda.yaml
-          --s3-bucket {{ stack_group_config.template_bucket_name }}
-          --output json
-          --output-template-file templates/generated/lambda-packaged.json
-
-SAM Example:
-
-.. code-block:: yaml
-
-  template:
-    path: generated/sam-packaged.yaml
-    type: file
-  stack_name: sam-example
-  hooks:
-    before_launch:
-      - !cmd >
-          sam package --profile {{ stack_group_config.profile }}
-          --s3-bucket {{ stack_group_config.template_bucket_name }}
-          --template-file templates/sam-app.yaml
-          --output-template-file templates/generated/sam-packaged.yaml
-
-.. _SAM CLI: https://github.com/aws/aws-sam-cli
-.. _Sage-Bionetworks Sceptre lambda github template: https://github.com/Sage-Bionetworks-IT/lambda-template
-.. _Versant SAM Sceptre skeleton example: https://github.com/Versent/sam-sceptre
+.. _sceptre-sam-handler: https://pypi.org/project/sceptre-sam-handler/

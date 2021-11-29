@@ -12,7 +12,7 @@ pytest-sugar>=0.9.4,<1.0.0
 readme-renderer>=24.0,<25.0
 requests-mock>=1.9.3,<2.0
 setuptools>=40.6.2,<41.0.0
-Sphinx>=1.6.5,<5.0.0
+Sphinx>=1.6.5,<4.3
 sphinx-click>=2.0.1,<4.0.0
 sphinx-rtd-theme==0.5.2
 docutils<0.17 # temporary fix for sphinx-rtd-theme==0.5.2, it depends on docutils<0.17
