@@ -327,7 +327,9 @@ class StackDiffer(Generic[DiffType]):
             try:
                 attr[key] = value.resolve()
             except Exception:
-                attr[key] = self._represent_unresolvable_resolver(value)
+                explicit_resolver_repr = self._represent_unresolvable_resolver(value)
+                only_alphanumeric = ''.join(c for c in explicit_resolver_repr if c.isalnum())
+                attr[key] = only_alphanumeric
 
         # Because the name is mangled, we cannot access the user data normally, so we need to access
         # it directly out of the __dict__.
