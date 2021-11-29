@@ -12,8 +12,6 @@ if TYPE_CHECKING:
 
 T_Container = TypeVar('T_Container', bound=Union[dict, list])
 
-logger = logging.getLogger(__name__)
-
 
 class RecursiveResolve(Exception):
     pass
@@ -81,7 +79,7 @@ class ResolvableProperty(abc.ABC):
         :param stack: The Stack instance the property is being retrieved for
         :param stack_class: The class of the stack that the property is being retrieved for.
         :return: The attribute stored with the suffix ``name`` in the instance.
-        :rtype: The obtained value, as resolved by the
+        :rtype: The obtained value, as resolved by the property
         """
         with self._lock, self._no_recursive_get(stack):
             if hasattr(stack, self.name):

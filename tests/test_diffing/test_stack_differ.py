@@ -511,7 +511,7 @@ class TestStackDiffer:
 
         self.differ.diff(self.actions)
 
-        assert self.sceptre_user_data['unresolvable'] == '{ !Mock(test) }'
+        assert self.sceptre_user_data['unresolvable'] == 'Mocktest'
 
     def test_diff__local_generation_raises_an_error__resolves_resolvable_sceptre_user_data(self):
         has_raised = False

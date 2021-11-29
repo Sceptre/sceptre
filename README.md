@@ -50,7 +50,7 @@ building better infrastructure.
 `$ pip install sceptre`
 
 More information on installing sceptre can be found in our
-[Installation Guide](https://sceptre.cloudreach.com/latest/docs/install.html)
+[Installation Guide](https://docs.sceptre-project.org/latest/docs/install.html)
 
 ### Using Docker Image
 
@@ -257,12 +257,12 @@ plan.launch()
 ```
 
 Full API reference documentation can be found in the
-[Documentation](https://sceptre.cloudreach.com/)
+[Documentation](https://docs.sceptre-project.org/)
 
 ## Tutorial and Documentation
 
-- [Get Started](https://sceptre.cloudreach.com/latest/docs/get_started.html)
-- [Documentation](https://sceptre.cloudreach.com/)
+- [Get Started](https://docs.sceptre-project.org/latest/docs/get_started.html)
+- [Documentation](https://docs.sceptre-project.org/)
 
 ## Communication
 
