@@ -30,7 +30,6 @@ install_requirements = [
     "Jinja2>=2.8,<3",
     "jsonschema>=3.2,<3.3",
     "colorama>=0.3.9",
-    "packaging>=16.8,<17.0",
     "sceptre-cmd-resolver>=1.1.3,<2",
     "sceptre-file-resolver>=1.0.4,<2",
     "six>=1.11.0,<2.0.0",
