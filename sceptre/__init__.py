@@ -6,7 +6,7 @@ import warnings
 
 __author__ = 'Cloudreach'
 __email__ = 'sceptre@cloudreach.com'
-__version__ = '2.12.1'
+__version__ = '2.13.0'
 
 
 # Set up logging to ``/dev/null`` like a library is supposed to.
