@@ -44,11 +44,7 @@ def validate_command(ctx, no_placeholders, path):
 
     plan = SceptrePlan(context)
 
-    if no_placeholders:
-        execution_context = null_context()
-    else:
-        execution_context = use_resolver_placeholders_on_error()
-
+    execution_context = null_context() if no_placeholders else use_resolver_placeholders_on_error()
     with execution_context:
         responses = plan.validate()
 
