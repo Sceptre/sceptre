@@ -189,7 +189,7 @@ class ResolvableContainerProperty(ResolvableProperty):
             try:
                 result = self.resolve_resolver_value(value)
                 if result is None:
-                    logger.debug(f"Removing item {key} because resolver returned None.")
+                    self.logger.debug(f"Removing item {key} because resolver returned None.")
                     # We gather up resolvers (and their immediate containers) that resolve to None,
                     # since that really means the resolver resolves to nothing. This is not common,
                     # but will be the case when a StackOutput resolver is on a project dependency
@@ -302,7 +302,7 @@ class ResolvableContainerProperty(ResolvableProperty):
             attr = getattr(self._instance, self._name)
             result = self._resolution_function()
             if result is None:
-                logger.debug(f"Removing item {self._key} because resolver returned None.")
+                self.logger.debug(f"Removing item {self._key} because resolver returned None.")
                 del attr[self._key]
             else:
                 attr[self._key] = result
