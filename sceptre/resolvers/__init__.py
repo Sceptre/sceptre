@@ -163,7 +163,7 @@ class ResolvableProperty(abc.ABC):
             if are_placeholders_enabled():
                 placeholder_value = create_placeholder_value(resolver, self.placeholder_type)
 
-                logger.debug(
+                self.logger.debug(
                     "Error encountered while resolving resolver. This is allowed for current "
                     f"operation. Resolving it to placeholder value instead: {placeholder_value}"
                 )
