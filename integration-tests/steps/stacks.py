@@ -1,3 +1,9 @@
+from ast import literal_eval
+from copy import deepcopy
+from io import StringIO
+from pathlib import Path
+from typing import Type
+
 from behave import *
 import time
 import os
@@ -7,6 +13,8 @@ from contextlib import contextmanager
 from botocore.exceptions import ClientError
 from helpers import read_template_file, get_cloudformation_stack_name
 from helpers import retry_boto_call
+from sceptre.diffing.diff_writer import DeepDiffWriter, DiffWriter
+from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff
 
 from sceptre.plan.plan import SceptrePlan
 from sceptre.context import SceptreContext
@@ -112,6 +120,31 @@ def step_impl(context, dependant_stack_name, stack_name):
     assert False
 
 
+@given('the stack config for stack "{stack_name}" has changed')
+def step_impl(context, stack_name):
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir,
+        ignore_dependencies=True
+    )
+    yaml_file = Path(sceptre_context.full_config_path()) / f'{stack_name}.yaml'
+    with yaml_file.open(mode='r') as f:
+        loaded = yaml.load(f)
+
+    original_config = deepcopy(loaded)
+    loaded['stack_tags'] = {
+        'NewTag': 'NewValue'
+    }
+    dump_stack_config(yaml_file, loaded)
+
+    context.add_cleanup(dump_stack_config, yaml_file, original_config)
+
+
+def dump_stack_config(config_path: Path, config_dict: dict):
+    with config_path.open(mode='w') as f:
+        yaml.safe_dump(config_dict, f)
+
+
 @when('the user creates stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
@@ -192,7 +225,8 @@ def step_impl(context, stack_name):
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
         command_path=stack_name + '.yaml',
-        project_path=context.sceptre_dir
+        project_path=context.sceptre_dir,
+        full_scan=True
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
@@ -213,7 +247,8 @@ def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
         command_path=stack_name + '.yaml',
         project_path=context.sceptre_dir,
-        ignore_dependencies=True
+        ignore_dependencies=True,
+        full_scan=True
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
@@ -283,6 +318,27 @@ def step_impl(context, stack_name):
     context.output = list(sceptre_plan.describe_resources().values())
 
 
+@when('the user diffs stack "{stack_name}" with "{diff_type}"')
+def step_impl(context, stack_name, diff_type):
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir
+    )
+    sceptre_plan = SceptrePlan(sceptre_context)
+    differ_classes = {
+        'deepdiff': DeepDiffStackDiffer,
+        'difflib': DifflibStackDiffer
+    }
+    writer_class = {
+        'deepdiff': DeepDiffWriter,
+        'difflib': DeepDiffWriter
+    }
+
+    differ = differ_classes[diff_type]()
+    context.writer_class = writer_class[diff_type]
+    context.output = list(sceptre_plan.diff(differ).values())
+
+
 @then(
     'stack "{stack_name}" in "{region_name}" '
     'exists in "{desired_status}" state'
@@ -307,6 +363,16 @@ def step_impl(context, stack_name, desired_status):
     status = sceptre_plan.get_status()
     status = get_stack_status(context, full_name)
     assert (status == desired_status)
+
+
+@then('stack "{stack_name}" has "{tag_name}" tag with "{desired_tag_value}" value')
+def step_impl(context, stack_name, tag_name, desired_tag_value):
+    full_name = get_cloudformation_stack_name(context, stack_name)
+
+    tags = get_stack_tags(context, full_name)
+    tag = next((tag for tag in tags if tag['Key'] == tag_name), {'Value': None})
+
+    assert (tag['Value'] == desired_tag_value)
 
 
 @then('stack "{stack_name}" does not exist')
@@ -350,6 +416,50 @@ def step_impl(context, stack_name, dependant_stack_name, desired_state):
     assert (dep_status == desired_state)
 
 
+@then('a diff is returned with "{attribute}" = "{value}"')
+def step_impl(context, attribute, value):
+    for diff in context.output:
+        expected_value = literal_eval(value)
+        actual_value = getattr(diff, attribute)
+        assert actual_value == expected_value
+
+
+@then('a diff is returned with {a_or_no} "{kind}" difference')
+def step_impl(context, a_or_no, kind):
+    if a_or_no == 'a':
+        test_value = True
+    elif a_or_no == 'no':
+        test_value = False
+    else:
+        raise ValueError('Only "a" or "no" accepted in this condition')
+
+    writer_class: Type[DiffWriter] = context.writer_class
+    difference_property = f'has_{kind}_difference'
+
+    for diff in context.output:
+        diff: StackDiff
+        writer = writer_class(diff, StringIO(), 'yaml')
+        assert getattr(writer, difference_property) is test_value
+
+
+def get_stack_tags(context, stack_name, region_name=None):
+    if region_name is not None:
+        stack = boto3.resource('cloudformation', region_name=region_name).Stack
+    else:
+        stack = context.cloudformation.Stack
+
+    try:
+        stack = retry_boto_call(stack, stack_name)
+        retry_boto_call(stack.load)
+        return stack.tags
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'ValidationError' \
+                and e.response['Error']['Message'].endswith("does not exist"):
+            return None
+        else:
+            raise e
+
+
 def get_stack_status(context, stack_name, region_name=None):
     if region_name is not None:
         Stack = boto3.resource('cloudformation', region_name=region_name).Stack
@@ -371,7 +481,13 @@ def get_stack_status(context, stack_name, region_name=None):
 def create_stack(context, stack_name, body, **kwargs):
     retry_boto_call(
         context.client.create_stack,
-        StackName=stack_name, TemplateBody=body, **kwargs
+        StackName=stack_name,
+        TemplateBody=body, **kwargs,
+        Capabilities=[
+            'CAPABILITY_IAM',
+            'CAPABILITY_NAMED_IAM',
+            'CAPABILITY_AUTO_EXPAND'
+        ]
     )
 
     wait_for_final_state(context, stack_name)

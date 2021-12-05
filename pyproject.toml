@@ -2,5 +2,29 @@
 build-backend = "setuptools.build_meta"
 requires = ["setuptools", "wheel"]
 
+[tool.coverage.run]
+branch = true
+source = ["sceptre"]
+
+[tool.coverage.report]
+exclude_lines = [
+  # Have to re-enable the standard pragma
+  "pragma: no cover", # Don't complain about missing debug-only code:
+  "def __repr__",
+  "if self.debug", # Don't complain if tests don't hit defensive assertion code:
+  "raise AssertionError",
+  "raise NotImplementedError", # Don't complain if non-runnable code isn't run:
+  "if 0:",
+  "if __name__ == .__main__.:", # Don't complain about mypy-specific code
+  "if TYPE_CHECKING:",
+]
+ignore_errors = true
+fail_under = 90.0
+show_missing = true
+
 [tool.pytest.ini_options]
-addopts = "tests/ --ignore=env/ --ignore=venv/ --junitxml=test-results/junit.xml -s"
+# The "--cov" option will disable the pycharm debugger.  To enable the debugger either
+# remove this flag or add the "--no-cov" to your pycharm's pytest run configuration.
+# https://github.com/pytest-dev/pytest-cov/issues/131
+# https://stackoverflow.com/questions/34870962/how-to-debug-py-test-in-pycharm-when-coverage-is-enabled
+addopts = "-s --cov --cov-report term --cov-report term-missing --cov-report xml"

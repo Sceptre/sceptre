@@ -90,24 +90,6 @@ jobs:
             make test-all
 
       - store_test_results:
-          path: test-results
-          destination: test-results
-
-      - store_artifacts:
-          path: test-results
-          destination: test-results
-
-      - run:
-          name: 'Coverage'
-          command: |
-            . venv/bin/activate
-            make coverage
-
-      - store_test_results:
-          path: coverage.xml
-          destination: coverage-reports
-
-      - store_artifacts:
           path: coverage.xml
           destination: coverage-reports
 
@@ -138,7 +120,7 @@ jobs:
           command: |
             . ./venv/bin/activate
             mkdir -p ~/.aws
-            echo -e "[default]\nregion=eu-west-1\nsource_profile=default\nrole_arn=arn:aws:iam::582448526747:role/bootstrap-ci-service-access-ServiceRole-13M4IKJRFUISQ" > ~/.aws/config
+            echo -e "[default]\nregion=eu-west-1\nsource_profile=default\nrole_arn=arn:aws:iam::582448526747:role/sceptre-integration-test-ServiceRole-DUSW2V6ES2ZU" > ~/.aws/config
             echo -e "[default]\nregion=eu-west-1\naws_access_key_id=$CI_SERVICE_AWS_ACCESS_KEY_ID\naws_secret_access_key=$CI_SERVICE_AWS_SECRET_ACCESS_KEY" > ~/.aws/credentials
             behave --junit \
                    --junit-directory build/behave \
@@ -186,7 +168,6 @@ jobs:
           name: 'Upload Distributions'
           command: |
             . ./venv/bin/activate
-            pip install twine
             twine upload -u $PYPI_USERNAME -p $PYPI_PASSWORD dist/*
 
   deploy-latest-dockerhub:
@@ -284,25 +265,35 @@ workflows:
             branches:
               ignore: /^pull\/.*/
 
-  tag:
+  publish:
     jobs:
+      - build:
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
+      - deploy-pypi:
+          context: sceptre-core
+          requires:
+            - build
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
       - deploy-docs-tag:
           context: sceptre-core
+          requires:
+            - deploy-pypi
           filters:
             tags:
               only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
             branches:
               ignore: /.*/
       - build-docker-image:
-          filters:
-            tags:
-              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
-            branches:
-              ignore: /.*/
-      - deploy-latest-dockerhub:
-          context: sceptre-core
           requires:
-            - build-docker-image
+            - deploy-pypi
           filters:
             tags:
               only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/

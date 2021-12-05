@@ -4,6 +4,105 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.7.0 (2021.11.18)
+
+### Added
+
+- [Resolve #966] Add support for J2 Environment configuration
+- [Resolves #919] Add merge_keys option (#928)
+- [Resolves #1064] Add feature list change-set --url (#1065)
+- [Resolves #213] Add support for template handlers  (#1088)
+- [Resolves #1106] S3 template handler jinja and python support (#1110)
+- [Resolves #1124] http template handler (#1125)
+- Set file as the default template handler type (#1127)
+- Add retry and timeout to http template handler (#1145)
+- [Resolve # 683] Introducing the Diff Command (#1132)
+
+### Fixed
+
+- [Resolves #813] Fix recursive config render (#1083)
+- [Resolve #1096] Gracefully executing SAM Change sets (#1099)
+- [Resolves 556] fix incorrect stack_output_external examples (#1109)
+- [RESOLVE #946] Fixing bug preventing StackGroup dependencies (#1116)
+- [Resolve #1138] Bugfix for j2_environments (#1137)
+- [Resolve #1135] Fix path to templates (#1141)
+- [Resolve #1143] fix "create" cmd with existing stack (#1144)
+- [Resolves #1148] Correct path logic (#1149)
+
+### Nonfunctional
+
+- [Resolves #582] update imp to importlib (#1092)
+- [Resolves #1090] Install troposphere as an extra package (#1104)
+- [Resolves #1087] Add YAML document markers to template body (#1089)
+- Stop hiding critical debug info in helpers (#988) (#997)
+- [Resolves #1139] Provide useful info on invalid jinja file (#1142)
+
+## 2.6.3 (2021.08.13)
+
+### Fixed
+
+- [Resolves #1078] Fix delete CLI dependency tree
+
+## 2.6.2 (2021.08.02)
+
+### Fixed
+
+- [Resolves #1072] fix sceptre install for docker
+
+## 2.6.1 (2021.07.30)
+
+### Fixed
+
+- Fix dependencies to install sceptre-file-resolver
+- Consolidate pip requirements files
+
+## 2.6.0 (2021.07.29)
+
+### Added
+
+- Doc: added docs to release workflow in .circleci/README.md
+- Introduce an .editorconfig to sync common editor configuration across developer systems
+- Update click version
+- Update docker container to use Python 3.7
+- Make the sceptre-resolver-cmd resolver a core resolver
+- Make the sceptre-file-resolver a core resolver
+
+### Removed
+
+- Doc: Removed V1 docs
+
+### Fixed
+
+- [Resolves #1013] Fix virtual-hosted-style uri
+- Remove unnecessary padding with sceptre output command
+- Do not open a web browser during test
+- Optimize Sceptre Start Time by only Processing Dependent Configuration Files
+- [Resolves #1042] Fix OS path resolution on windows
+
+## 2.5.0 (2021.05.01)
+
+### Added
+
+- Added support for python 3.8 & 3.9
+- Support PEP-518 builds with pyproject.toml file
+- Support before_create_change_set and after_create_change_set hooks
+- Allow generate command to run hooks
+
+### Removed
+
+- Removed support for python 2.7 & 3.5
+
+### Fixed
+
+- Fix "sceptre list outpuuts" command
+- Provide more info on config parsing errors
+
+### Nonfunctional
+
+- Removed Sonarqube
+- Setup pre-commit linters and hooks
+- General documentation updates
+
 ## 2.4.0 (2020.10.03)
 
 ### Added

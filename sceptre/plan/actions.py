@@ -7,26 +7,26 @@ This module implements the StackActions class which provides the functionality
 available to a Stack.
 """
 
+import json
 import logging
 import time
-
-from os import path
+import urllib
 from datetime import datetime, timedelta
+from os import path
+from typing import Union, Optional
 
 import botocore
-import json
 from dateutil.tz import tzutc
 
 from sceptre.connection_manager import ConnectionManager
-from sceptre.hooks import add_stack_hooks
-from sceptre.stack_status import StackStatus
-from sceptre.stack_status import StackChangeSetStatus
-
 from sceptre.exceptions import CannotUpdateFailedStackError
-from sceptre.exceptions import UnknownStackStatusError
-from sceptre.exceptions import UnknownStackChangeSetStatusError
-from sceptre.exceptions import StackDoesNotExistError
 from sceptre.exceptions import ProtectedStackError
+from sceptre.exceptions import StackDoesNotExistError
+from sceptre.exceptions import UnknownStackChangeSetStatusError
+from sceptre.exceptions import UnknownStackStatusError
+from sceptre.hooks import add_stack_hooks
+from sceptre.stack_status import StackChangeSetStatus
+from sceptre.stack_status import StackStatus
 
 
 class StackActions(object):
@@ -93,7 +93,7 @@ class StackActions(object):
                     "%s - Stack already exists", self.stack.name
                 )
 
-                status = "COMPLETE"
+                status = StackStatus.COMPLETE
             else:
                 raise
 
@@ -530,7 +530,7 @@ class StackActions(object):
         change_set = self.describe_change_set(change_set_name)
         status = change_set.get("Status")
         reason = change_set.get("StatusReason")
-        if status == "FAILED" and "submitted information didn't contain changes" in reason:
+        if status == "FAILED" and self.change_set_creation_failed_due_to_no_changes(reason):
             self.logger.info(
                     "Skipping ChangeSet on Stack: {} - there are no changes".format(
                         change_set.get("StackName")
@@ -553,25 +553,77 @@ class StackActions(object):
         status = self._wait_for_completion()
         return status
 
-    def list_change_sets(self):
+    def change_set_creation_failed_due_to_no_changes(self, reason: str) -> bool:
+        """Indicates the change set failed when it was created because there were actually
+        no changes introduced from the change set.
+
+        :param reason: The reason reported by CloudFormation for the Change Set failure
+        """
+        reason = reason.lower()
+        no_change_substrings = (
+            "submitted information didn't contain changes",
+            "no updates are to be performed"  # The reason returned for SAM templates
+        )
+
+        for substring in no_change_substrings:
+            if substring in reason:
+                return True
+        return False
+
+    def list_change_sets(self, url=False):
         """
         Lists the Stack's Change Sets.
+
+        :param url: Write out a console URL instead.
+        :type url: bool
 
         :returns: The Stack's Change Sets.
         :rtype: dict or list
         """
+        response = self._list_change_sets()
+        summaries = response.get("Summaries", [])
+
+        if url:
+            summaries = self._convert_to_url(summaries)
+
+        return {self.stack.name: summaries}
+
+    def _list_change_sets(self):
         self.logger.debug("%s - Listing change sets", self.stack.name)
         try:
-            response = self.connection_manager.call(
+            return self.connection_manager.call(
                 service="cloudformation",
                 command="list_change_sets",
                 kwargs={
                     "StackName": self.stack.external_name
                 }
             )
-            return {self.stack.name: response.get("Summaries", [])}
         except botocore.exceptions.ClientError:
             return []
+
+    def _convert_to_url(self, summaries):
+        """
+        Convert the list_change_sets response from
+        CloudFormation to a URL in the AWS Console.
+        """
+        new_summaries = []
+
+        for summary in summaries:
+            stack_id = summary["StackId"]
+            change_set_id = summary["ChangeSetId"]
+
+            region = self.stack.region
+            encoded = urllib.parse.urlencode({
+                "stackId": stack_id,
+                "changeSetId": change_set_id
+            })
+
+            new_summaries.append(
+                f"https://{region}.console.aws.amazon.com/cloudformation/home?"
+                f"region={region}#/stacks/changesets/changes?{encoded}"
+            )
+
+        return new_summaries
 
     @add_stack_hooks
     def generate(self):
@@ -873,3 +925,78 @@ class StackActions(object):
             return StackChangeSetStatus.DEFUNCT
         else:  # pragma: no cover
             raise Exception("This else should not be reachable.")
+
+    def fetch_remote_template(self) -> Optional[str]:
+        """
+        Returns the Template for the remote Stack
+
+        :returns: the template body.
+        """
+        self.logger.debug(f"{self.stack.name} - Fetching remote template")
+
+        original_template = self._fetch_original_template_stage()
+
+        if isinstance(original_template, dict):
+            # While not documented behavior, boto3 will attempt to deserialize the TemplateBody
+            # with json.loads and return the template as a dict if it is successful; otherwise (such
+            # as in when the template is in yaml, it will return the string. Therefore, we need to
+            # dump the template to json if we get a dict.
+            original_template = json.dumps(original_template, indent=4)
+
+        return original_template
+
+    def _fetch_original_template_stage(self) -> Optional[Union[str, dict]]:
+        try:
+            response = self.connection_manager.call(
+                service="cloudformation",
+                command="get_template",
+                kwargs={
+                    "StackName": self.stack.external_name,
+                    "TemplateStage": 'Original'
+                }
+            )
+            return response['TemplateBody']
+            # Sometimes boto returns a string, sometimes a dictionary
+        except botocore.exceptions.ClientError as e:
+            # AWS returns a ValidationError if the stack doesn't exist
+            if e.response['Error']['Code'] == 'ValidationError':
+                return None
+            raise
+
+    def fetch_remote_template_summary(self):
+        return self._get_template_summary(StackName=self.stack.external_name)
+
+    def fetch_local_template_summary(self):
+        boto_call_parameter = self.stack.template.get_boto_call_parameter()
+        return self._get_template_summary(**boto_call_parameter)
+
+    def _get_template_summary(self, **kwargs) -> Optional[dict]:
+        try:
+            template_summary = self.connection_manager.call(
+                service='cloudformation',
+                command='get_template_summary',
+                kwargs=kwargs
+            )
+            return template_summary
+        except botocore.exceptions.ClientError as e:
+            error_response = e.response['Error']
+            if (
+                error_response['Code'] == 'ValidationError'
+                and 'does not exist' in error_response['Message']
+            ):
+                return None
+            raise
+
+    @add_stack_hooks
+    def diff(self, stack_differ):
+        """
+        Returns a diff of Template and Remote Template
+        using a specific diff library.
+
+        :param stack_differ: The diff lib to use, default difflib.
+        :type: sceptre.diffing.stack_differ.StackDiffer
+
+        :returns: A StackDiff object.
+        :rtype: sceptre.diffing.stack_differ.StackDiff
+        """
+        return stack_differ.diff(self)

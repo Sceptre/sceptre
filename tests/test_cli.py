@@ -1,24 +1,27 @@
-import logging
-import yaml
 import datetime
-import os
 import errno
 import json
+import logging
+import os
+from copy import deepcopy
 
-from click.testing import CliRunner
-from mock import MagicMock, patch, sentinel
-import pytest
 import click
+import pytest
+import yaml
+from botocore.exceptions import ClientError
+from click.testing import CliRunner
+from deepdiff import DeepDiff
+from mock import MagicMock, patch, sentinel
 
 from sceptre.cli import cli
-from sceptre.config.reader import ConfigReader
-from sceptre.stack import Stack
-from sceptre.plan.actions import StackActions
-from sceptre.stack_status import StackStatus
-from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
 from sceptre.cli.helpers import CustomJsonEncoder, catch_exceptions
-from botocore.exceptions import ClientError
+from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
+from sceptre.config.reader import ConfigReader
+from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff
 from sceptre.exceptions import SceptreException
+from sceptre.plan.actions import StackActions
+from sceptre.stack import Stack
+from sceptre.stack_status import StackStatus
 
 
 class TestCli(object):
@@ -56,13 +59,24 @@ class TestCli(object):
         self.patcher_StackActions.stop()
 
     @patch("sys.exit")
-    def test_catch_excecptions(self, mock_exit):
+    def test_catch_exceptions(self, mock_exit):
         @catch_exceptions
         def raises_exception():
             raise SceptreException()
 
         raises_exception()
         mock_exit.assert_called_once_with(1)
+
+    def test_catch_exceptions_debug_mode(self):
+        @catch_exceptions
+        def raises_exception():
+            raise SceptreException()
+
+        logger = logging.getLogger("sceptre")
+        logger.setLevel(logging.DEBUG)
+
+        with pytest.raises(SceptreException):
+            raises_exception()
 
     @pytest.mark.parametrize("command,files,output", [
         # one --var option
@@ -131,6 +145,151 @@ class TestCli(object):
             },
             {"key1": "file1", "key2": "var2"}
         ),
+        # multiple --var-file option, illustrating dictionaries not merged.
+        (
+            ["--var-file", "foo.yaml", "--var-file", "bar.yaml", "noop"],
+            {
+                "foo.yaml": {"key1": {"a": "b"}},
+                "bar.yaml": {"key1": {"c": "d"}}
+            },
+            {
+                "key1": {"c": "d"}
+            }
+        ),
+        # multiple --var-file option, dictionaries merged.
+        (
+            ["--merge-vars", "--var-file", "foo.yaml", "--var-file", "bar.yaml", "noop"],
+            {
+                "foo.yaml": {"key1": {"a": "b"}},
+                "bar.yaml": {"key1": {"c": "d"}}
+            },
+            {
+                "key1": {"a": "b", "c": "d"}
+            }
+        ),
+        # multiple --var-file option, dictionaries merged, complex example.
+        (
+            ["--merge-vars", "--var-file", "common.yaml", "--var-file", "dev.yaml", "noop"],
+            {
+                "common.yaml": {
+                    "CommonTags": {
+                        "Organization": "Parts Unlimited",
+                        "Department": "IT Operations"
+                    }
+                },
+                "dev.yaml": {"CommonTags": {"Environment": "dev"}}
+            },
+            {
+                "CommonTags": {
+                    "Organization": "Parts Unlimited",
+                    "Department": "IT Operations",
+                    "Environment": "dev"
+                }
+            }
+        ),
+        # multiple --var-file option, dictionaries merged, complex example, with overrides.
+        (
+            ["--merge-vars", "--var-file", "common.yaml", "--var-file", "dev.yaml", "noop"],
+            {
+                "common.yaml": {
+                    "CommonTags": {
+                        "Organization": "Parts Unlimited",
+                        "Department": "IT Operations",
+                        "Environment": "sandbox"
+                    }
+                },
+                "dev.yaml": {"CommonTags": {"Environment": "dev"}},
+            },
+            {
+                "CommonTags": {
+                    "Organization": "Parts Unlimited",
+                    "Department": "IT Operations",
+                    "Environment": "dev"
+                }
+            }
+        ),
+        # multiple --var-file option, dictionaries merged, complex example, with lists.
+        (
+            ["--merge-vars", "--var-file", "common.yaml", "--var-file", "test.yaml", "noop"],
+            {
+                "common.yaml": {
+                    "CommonTags": {
+                        "Organization": "Parts Unlimited",
+                        "Department": "IT Operations",
+                        "Envlist": ["sandbox", "dev"]
+                    }
+                },
+                "test.yaml": {"CommonTags": {"Envlist": ["test"]}},
+            },
+            {
+                "CommonTags": {
+                    "Organization": "Parts Unlimited",
+                    "Department": "IT Operations",
+                    "Envlist": ["test"]
+                }
+            }
+        ),
+        # multiple --var-file option, dictionaries merged, multiple levels.
+        (
+            ["--merge-vars", "--var-file", "common.yaml", "--var-file", "test.yaml", "noop"],
+            {
+                "common.yaml": {"a": {"b": {"c": "p", "d": "q"}}},
+                "test.yaml": {"a": {"b": {"c": "r", "e": "s"}}}
+            },
+            {
+                "a": {"b": {"c": "r", "d": "q", "e": "s"}}
+            }
+        ),
+        # a --var-file and --var combined.
+        (
+            ["--merge-vars", "--var-file", "common.yaml", "--var", "CommonTags.Version=1.0.0", "noop"],
+            {
+                "common.yaml": {
+                    "CommonTags": {
+                        "Organization": "Parts Unlimited",
+                        "Department": "IT Operations",
+                        "Envlist": ["sandbox", "dev"]
+                    }
+                }
+            },
+            {
+                "CommonTags": {
+                    "Organization": "Parts Unlimited",
+                    "Department": "IT Operations",
+                    "Envlist": ["sandbox", "dev"],
+                    "Version": "1.0.0"
+                }
+            }
+        ),
+        # multiple --var-file and --var combined.
+        (
+            [
+                "--merge-vars", "--var-file", "common.yaml", "--var-file", "test.yaml",
+                "--var", "CommonTags.Project=Unboxing", "noop"
+            ],
+            {
+                "common.yaml": {
+                    "CommonTags": {
+                        "Organization": "Parts Unlimited",
+                        "Department": "IT Operations",
+                        "Envlist": ["sandbox", "dev"]
+                    }
+                },
+                "test.yaml": {
+                    "CommonTags": {
+                        "Project": "Boxing"
+                    }
+                }
+            },
+            {
+                "CommonTags": {
+                    "Organization": "Parts Unlimited",
+                    "Department": "IT Operations",
+                    "Envlist": ["sandbox", "dev"],
+                    "Project": "Unboxing"
+                }
+            }
+        )
     ])
     def test_user_variables(self, command, files, output):
         @cli.command()
@@ -182,20 +341,21 @@ class TestCli(object):
 
     def test_estimate_template_cost_with_browser(self):
         self.mock_stack_actions.estimate_cost.return_value = {
-            "Url": "https://sceptre.cloudreach.com",
+            "Url": "https://docs.sceptre-project.org",
             "ResponseMetadata": {
                 "HTTPStatusCode": 200
             }
         }
 
         args = ["estimate-cost", "dev/vpc.yaml"]
-        result = self.runner.invoke(cli, args)
+        with patch('webbrowser.open', return_value=None):  # Do not open a web browser
+            result = self.runner.invoke(cli, args)
 
         self.mock_stack_actions.estimate_cost.assert_called_with()
 
         assert result.output == \
             '{0}{1}'.format("View the estimated cost for mock-stack at:\n",
-                            "https://sceptre.cloudreach.com\n\n")
+                            "https://docs.sceptre-project.org\n\n")
 
     def test_estimate_template_cost_with_no_browser(self):
         client_error = ClientError(
@@ -755,3 +915,85 @@ class TestCli(object):
         encoder = CustomJsonEncoder()
         response = encoder.encode(datetime.datetime(2016, 5, 3))
         assert response == '"2016-05-03 00:00:00"'
+
+    def test_diff_command__diff_type_is_deepdiff__passes_deepdiff_stack_differ_to_actions(self):
+        self.runner.invoke(cli, 'diff -t deepdiff dev/vpc.yaml')
+        differ_used = self.mock_stack_actions.diff.call_args.args[0]
+        assert isinstance(differ_used, DeepDiffStackDiffer)
+
+    def test_diff_command__diff_type_is_difflib__passes_difflib_stack_differ_to_actions(self):
+        self.runner.invoke(cli, 'diff -t difflib dev/vpc.yaml')
+        differ_used = self.mock_stack_actions.diff.call_args.args[0]
+        assert isinstance(differ_used, DifflibStackDiffer)
+
+        self.runner.invoke(cli, 'diff stacks', catch_exceptions=False)
+
+    def test_diff_command__stack_diffs_have_differences__returns_0(self):
+        stacks = {deepcopy(self.mock_stack) for _ in range(3)}
+        stack_name_iterator = iter(['first', 'second', 'third'])
+
+        def fake_diff(differ):
+            name = next(stack_name_iterator)
+            return StackDiff(
+                stack_name=name,
+                template_diff=DeepDiff("I'm", "different"),
+                config_diff=DeepDiff("same", "same"),
+                is_deployed=True,
+                generated_config=None,
+                generated_template=None
+            )
+
+        self.mock_stack_actions.diff.side_effect = fake_diff
+        self.mock_config_reader.construct_stacks.return_value = (stacks, stacks)
+
+        result = self.runner.invoke(cli, 'diff stacks', catch_exceptions=False)
+        assert result.exit_code == 0
+
+    def test_diff_command__no_differences__returns_0(self):
+        stacks = {deepcopy(self.mock_stack) for _ in range(3)}
+        stack_name_iterator = iter(['first', 'second', 'third'])
+
+        def fake_diff(differ):
+            name = next(stack_name_iterator)
+            return StackDiff(
+                stack_name=name,
+                template_diff=DeepDiff("same", "same"),
+                config_diff=DeepDiff("same", "same"),
+                is_deployed=True,
+                generated_config=None,
+                generated_template=None
+            )
+
+        self.mock_stack_actions.diff.side_effect = fake_diff
+        self.mock_config_reader.construct_stacks.return_value = (stacks, stacks)
+
+        result = self.runner.invoke(cli, 'diff stacks', catch_exceptions=False)
+        assert result.exit_code == 0
+
+    @pytest.mark.parametrize(
+        ['bar'],
+        [('**********',), ('----------',)]
+    )
+    def test_diff_command__bars_are_all_full_width_of_output(self, bar):
+        stacks = {deepcopy(self.mock_stack) for _ in range(3)}
+        stack_name_iterator = iter(['first', 'second', 'third'])
+
+        def fake_diff(differ):
+            name = next(stack_name_iterator)
+            return StackDiff(
+                stack_name=name,
+                template_diff=DeepDiff("same", "same"),
+                config_diff=DeepDiff("same", "same"),
+                is_deployed=True,
+                generated_config=None,
+                generated_template=None
+            )
+
+        self.mock_stack_actions.diff.side_effect = fake_diff
+        self.mock_config_reader.construct_stacks.return_value = (stacks, stacks)
+
+        result = self.runner.invoke(cli, 'diff stacks', catch_exceptions=False)
+        output_lines = result.stdout.splitlines()
+        max_line_length = len(max(output_lines, key=len))
+        star_bars = [line for line in output_lines if bar in line]
+        assert all(len(line) == max_line_length for line in star_bars)

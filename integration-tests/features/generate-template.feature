@@ -12,20 +12,26 @@ Feature: Generate template
     | invalid_template.json     |
     | jinja/valid_template.json |
     | valid_template.yaml       |
+    | valid_template_mark.yaml  |
     | valid_template_func.yaml  |
     | malformed_template.yaml   |
     | invalid_template.yaml     |
     | jinja/valid_template.yaml |
 
-  Scenario: Generate template using a valid python template file
-    Given the template for stack "1/A" is "valid_template.py"
+  Scenario: Generate template using a valid python template file that outputs json
+    Given the template for stack "1/A" is "valid_template_json.py"
     When the user generates the template for stack "1/A"
-    Then the output is the same as the string returned by "valid_template.py"
+    Then the output is the same as the contents returned by "valid_template_json.py"
 
-  Scenario: Generate template using a valid python template file with ignore dependencies
-    Given the template for stack "1/A" is "valid_template.py"
+  Scenario: Generate template using a valid python template file that outputs json with ignore dependencies
+    Given the template for stack "1/A" is "valid_template_json.py"
     When the user generates the template for stack "1/A" with ignore dependencies
-    Then the output is the same as the string returned by "valid_template.py"
+    Then the output is the same as the contents returned by "valid_template_json.py"
+
+  Scenario: Generate template using a valid python template file that outputs yaml
+    Given the template for stack "1/A" is "valid_template_yaml.py"
+    When the user generates the template for stack "1/A"
+    Then the output is the same as the contents returned by "valid_template_yaml.py"
 
   Scenario Outline: Generating erroneous python templates
     Given the template for stack "1/A" is "<filename>"
@@ -60,3 +66,8 @@ Feature: Generate template
     | filename                                | exception          |
     | jinja/invalid_template_missing_key.j2   | UndefinedError     |
     | jinja/invalid_template_missing_attr.j2  | UndefinedError     |
+
+  Scenario: Generating static templates with file template handler
+    Given the template for stack "13/A" is "valid_template.json"
+    When the user generates the template for stack "13/A"
+    Then the output is the same as the contents of "valid_template.json" template

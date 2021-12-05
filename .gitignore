@@ -25,6 +25,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
+.python-version
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -139,3 +140,6 @@ Session.vim
 tags
 # Persistent undo
 [._]*.un~
+
+# temp files
+temp/

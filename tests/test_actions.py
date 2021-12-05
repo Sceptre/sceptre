@@ -1,23 +1,22 @@
 # -*- coding: utf-8 -*-
+import datetime
+import json
 
 import pytest
+from botocore.exceptions import ClientError
+from dateutil.tz import tzutc
 from mock import patch, sentinel, Mock, call
 
-import datetime
-from dateutil.tz import tzutc
-
-from botocore.exceptions import ClientError
-
-from sceptre.stack import Stack
-from sceptre.plan.actions import StackActions
-from sceptre.template import Template
-from sceptre.stack_status import StackStatus
-from sceptre.stack_status import StackChangeSetStatus
 from sceptre.exceptions import CannotUpdateFailedStackError
-from sceptre.exceptions import UnknownStackStatusError
-from sceptre.exceptions import UnknownStackChangeSetStatusError
-from sceptre.exceptions import StackDoesNotExistError
 from sceptre.exceptions import ProtectedStackError
+from sceptre.exceptions import StackDoesNotExistError
+from sceptre.exceptions import UnknownStackChangeSetStatusError
+from sceptre.exceptions import UnknownStackStatusError
+from sceptre.plan.actions import StackActions
+from sceptre.stack import Stack
+from sceptre.stack_status import StackChangeSetStatus
+from sceptre.stack_status import StackStatus
+from sceptre.template import Template
 
 
 class TestStackActions(object):
@@ -30,20 +29,31 @@ class TestStackActions(object):
         self.stack = Stack(
             name='prod/app/stack', project_code=sentinel.project_code,
             template_path=sentinel.template_path, region=sentinel.region,
-            profile=sentinel.profile, parameters={"key1": "val1"},
-            sceptre_user_data=sentinel.sceptre_user_data, hooks={},
-            s3_details=None, dependencies=sentinel.dependencies,
+            profile=sentinel.profile, parameters={"key1": "val1"}, sceptre_user_data=sentinel.sceptre_user_data,
+            hooks={}, s3_details=None, dependencies=sentinel.dependencies,
             role_arn=sentinel.role_arn, protected=False,
             tags={"tag1": "val1"}, external_name=sentinel.external_name,
             notifications=[sentinel.notification],
             on_failure=sentinel.on_failure,
-            stack_timeout=sentinel.stack_timeout
+            stack_timeout=sentinel.stack_timeout,
+
         )
         self.actions = StackActions(self.stack)
+        self.stack_group_config = {}
         self.template = Template(
-            "fixtures/templates", self.stack.sceptre_user_data,
+            "fixtures/templates", self.stack.template_handler_config,
+            self.stack.sceptre_user_data, self.stack_group_config,
             self.actions.connection_manager, self.stack.s3_details
         )
+        self.template._body = json.dumps({
+            'AWSTemplateFormatVersion': '2010-09-09',
+            'Resources': {
+                'Bucket': {
+                    'Type': 'AWS::S3::Bucket',
+                    'Properties': {}
+                }
+            }
+        })
         self.stack._template = self.template
 
     def teardown_method(self, test_method):
@@ -56,8 +66,13 @@ class TestStackActions(object):
         response = self.stack.template
 
         mock_Template.assert_called_once_with(
-            path=sentinel.template_path,
+            name='prod/app/stack',
+            handler_config={
+                "type": "file",
+                "path": sentinel.template_path
+            },
             sceptre_user_data=sentinel.sceptre_user_data,
+            stack_group_config={},
             connection_manager=self.stack.connection_manager,
             s3_details=None
         )
@@ -179,6 +194,26 @@ class TestStackActions(object):
             }
         )
         mock_wait_for_completion.assert_called_once_with()
+
+    @patch("sceptre.plan.actions.StackActions._wait_for_completion")
+    def test_create_stack_already_exists(
+            self, mock_wait_for_completion
+    ):
+        self.actions.stack._template = Mock(spec=Template)
+        self.actions.stack._template.get_boto_call_parameter.return_value = {
+            "Template": sentinel.template
+        }
+        mock_wait_for_completion.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": "AlreadyExistsException",
+                    "Message": "Stack already [{}] exists".format(self.actions.stack.name)
+                }
+            },
+            sentinel.operation
+        )
+        response = self.actions.create()
+        assert response == StackStatus.COMPLETE
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
     def test_update_sends_correct_request(self, mock_wait_for_completion):
@@ -673,6 +708,29 @@ class TestStackActions(object):
         )
         mock_wait_for_completion.assert_called_once_with()
 
+    def test_execute_change_set__change_set_is_failed_for_no_changes__returns_0(self):
+        def fake_describe(service, command, kwargs):
+            assert (service, command) == ('cloudformation', 'describe_change_set')
+            return {
+                'Status': 'FAILED',
+                'StatusReason': "The submitted information didn't contain changes",
+            }
+        self.actions.connection_manager.call.side_effect = fake_describe
+        result = self.actions.execute_change_set(sentinel.change_set_name)
+        assert result == 0
+
+    def test_execute_change_set__change_set_is_failed_for_no_updates__returns_0(self):
+        def fake_describe(service, command, kwargs):
+            assert (service, command) == ('cloudformation', 'describe_change_set')
+            return {
+                'Status': 'FAILED',
+                'StatusReason': "No updates are to be performed",
+            }
+
+        self.actions.connection_manager.call.side_effect = fake_describe
+        result = self.actions.execute_change_set(sentinel.change_set_name)
+        assert result == 0
+
     def test_list_change_sets_sends_correct_request(self):
         self.actions.list_change_sets()
         self.actions.connection_manager.call.assert_called_with(
@@ -680,6 +738,62 @@ class TestStackActions(object):
             command="list_change_sets",
             kwargs={"StackName": sentinel.external_name}
         )
+
+    @patch("sceptre.plan.actions.StackActions._list_change_sets")
+    def test_list_change_sets(
+        self, mock_list_change_sets
+    ):
+        mock_list_change_sets_return_value = {"Summaries": []}
+        expected_responses = []
+
+        for num in ["1", "2"]:
+            response = [{
+                "ChangeSetId": "mychangesetid{num}",
+                "StackId": "mystackid{num}"
+            }]
+            mock_list_change_sets_return_value["Summaries"].append(response)
+            expected_responses.append(response)
+
+        mock_list_change_sets.return_value = mock_list_change_sets_return_value
+
+        response = self.actions.list_change_sets(url=False)
+        assert response == {"prod/app/stack": expected_responses}
+
+    @patch("sceptre.plan.actions.urllib.parse.urlencode")
+    @patch("sceptre.plan.actions.StackActions._list_change_sets")
+    def test_list_change_sets_url_mode(
+        self, mock_list_change_sets, mock_urlencode
+    ):
+        mock_list_change_sets_return_value = {"Summaries": []}
+        mock_urlencode_side_effect = []
+        expected_urls = []
+
+        for num in ["1", "2"]:
+            mock_list_change_sets_return_value["Summaries"].append({
+                "ChangeSetId": "mychangesetid{num}",
+                "StackId": "mystackid{num}"
+            })
+            urlencoded = "stackId=mystackid{num}&changeSetId=mychangesetid{num}"
+            mock_urlencode_side_effect.append(urlencoded)
+            expected_urls.append(
+                "https://sentinel.region.console.aws.amazon.com/cloudformation/home?"
+                f"region=sentinel.region#/stacks/changesets/changes?{urlencoded}"
+            )
+
+        mock_list_change_sets.return_value = mock_list_change_sets_return_value
+        mock_urlencode.side_effect = mock_urlencode_side_effect
+
+        response = self.actions.list_change_sets(url=True)
+        assert response == {"prod/app/stack": expected_urls}
+
+    @pytest.mark.parametrize("url_mode", [True, False])
+    @patch("sceptre.plan.actions.StackActions._list_change_sets")
+    def test_list_change_sets_empty(
+        self, mock_list_change_sets, url_mode
+    ):
+        mock_list_change_sets.return_value = {"Summaries": []}
+        response = self.actions.list_change_sets(url=url_mode)
+        assert response == {"prod/app/stack": []}
 
     @patch("sceptre.plan.actions.StackActions.set_policy")
     @patch("os.path.join")
@@ -1012,3 +1126,132 @@ class TestStackActions(object):
         )
         with pytest.raises(ClientError):
             self.actions._get_cs_status(sentinel.change_set_name)
+
+    def test_fetch_remote_template__cloudformation_returns_validation_error__returns_none(self):
+        self.actions.connection_manager.call.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": "ValidationError",
+                    "Message": "An error occurred (ValidationError) "
+                               "when calling the GetTemplate operation: "
+                               "Stack with id foo does not exist"
+                }
+            },
+            sentinel.operation
+        )
+
+        result = self.actions.fetch_remote_template()
+        assert result is None
+
+    def test_fetch_remote_template__calls_cloudformation_get_template(self):
+        self.actions.connection_manager.call.return_value = {'TemplateBody': ''}
+        self.actions.fetch_remote_template()
+
+        self.actions.connection_manager.call.assert_called_with(
+            service='cloudformation',
+            command='get_template',
+            kwargs={
+                'StackName': self.stack.external_name,
+                'TemplateStage': 'Original'
+            }
+        )
+
+    def test_fetch_remote_template__dict_template__returns_json(self):
+        template_body = {
+            'AWSTemplateFormatVersion': '2010-09-09',
+            'Resources': {}
+        }
+        self.actions.connection_manager.call.return_value = {
+            'TemplateBody': template_body
+        }
+        expected = json.dumps(template_body, indent=4)
+
+        result = self.actions.fetch_remote_template()
+        assert result == expected
+
+    def test_fetch_remote_template__cloudformation_returns_string_template__returns_that_string(self):
+        template_body = "This is my template"
+        self.actions.connection_manager.call.return_value = {
+            'TemplateBody': template_body
+        }
+        result = self.actions.fetch_remote_template()
+        assert result == template_body
+
+    def test_fetch_remote_template_summary__calls_cloudformation_get_template_summary(self):
+        self.actions.fetch_remote_template_summary()
+
+        self.actions.connection_manager.call.assert_called_with(
+            service='cloudformation',
+            command='get_template_summary',
+            kwargs={
+                'StackName': self.stack.external_name,
+            }
+        )
+
+    def test_fetch_remote_template_summary__returns_response_from_cloudformation(self):
+        def get_template_summary(service, command, kwargs):
+            assert (service, command) == ('cloudformation', 'get_template_summary')
+            return {'template': 'summary'}
+
+        self.actions.connection_manager.call.side_effect = get_template_summary
+        result = self.actions.fetch_remote_template_summary()
+        assert result == {'template': 'summary'}
+
+    def test_fetch_local_template_summary__calls_cloudformation_get_template_summary(self):
+        self.actions.fetch_local_template_summary()
+
+        self.actions.connection_manager.call.assert_called_with(
+            service='cloudformation',
+            command='get_template_summary',
+            kwargs={
+                'TemplateBody': self.stack.template.body,
+            }
+        )
+
+    def test_fetch_local_template_summary__returns_response_from_cloudformation(self):
+        def get_template_summary(service, command, kwargs):
+            assert (service, command) == ('cloudformation', 'get_template_summary')
+            return {'template': 'summary'}
+
+        self.actions.connection_manager.call.side_effect = get_template_summary
+        result = self.actions.fetch_local_template_summary()
+        assert result == {'template': 'summary'}
+
+    def test_fetch_local_template_summary__cloudformation_returns_validation_error_invalid_stack__raises_it(self):
+        self.actions.connection_manager.call.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": "ValidationError",
+                    "Message": "Template format error: Resource name {Invalid::Resource} is "
+                               "non alphanumeric.'"
+                }
+            },
+            sentinel.operation
+        )
+        with pytest.raises(ClientError):
+            self.actions.fetch_local_template_summary()
+
+    def test_fetch_remote_template_summary__cloudformation_returns_validation_error_for_no_stack__returns_none(self):
+        self.actions.connection_manager.call.side_effect = ClientError(
+            {
+                "Error": {
+                    "Code": "ValidationError",
+                    "Message": "An error occurred (ValidationError) "
+                               "when calling the GetTemplate operation: "
+                               "Stack with id foo does not exist"
+                }
+            },
+            sentinel.operation
+        )
+        result = self.actions.fetch_remote_template_summary()
+        assert result is None
+
+    def test_diff__invokes_diff_method_on_injected_differ_with_self(self):
+        differ = Mock()
+        self.actions.diff(differ)
+        differ.diff.assert_called_with(self.actions)
+
+    def test_diff__returns_result_of_injected_differs_diff_method(self):
+        differ = Mock()
+        result = self.actions.diff(differ)
+        assert result == differ.diff.return_value

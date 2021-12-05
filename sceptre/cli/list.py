@@ -93,16 +93,21 @@ def list_outputs(ctx, path, export):
 
 
 @list_group.command(name="change-sets")
+@click.option(
+    "-U", "--url", is_flag=True, help="Instead write a URL."
+)
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
-def list_change_sets(ctx, path):
+def list_change_sets(ctx, path, url):
     """
     List change sets for stack.
     \f
 
     :param path: Path to execute the command on.
     :type path: str
+    :param url: Write out a console URL instead.
+    :type url: bool
     """
     context = SceptreContext(
         command_path=path,
@@ -114,9 +119,10 @@ def list_change_sets(ctx, path):
     )
 
     plan = SceptrePlan(context)
+
     responses = [
         response for response
-        in plan.list_change_sets().values() if response
+        in plan.list_change_sets(url).values() if response
     ]
 
     for response in responses:

@@ -91,7 +91,9 @@ specified:
 
 .. code-block:: yaml
 
-   template_path: templates/example.py
+   template:
+     path: templates/example.py
+     type: file
    parameters:
      ExampleParameter: example_value
    hooks:
@@ -154,9 +156,6 @@ custom_hook.py
             argument defined in the Sceptre config file (see below)
         stack: sceptre.stack.Stack
              The associated stack of the hook.
-        connection_manager: sceptre.connection_manager.ConnectionManager
-            Boto3 Connection Manager - can be used to call boto3 api.
-
         """
         def __init__(self, *args, **kwargs):
             super(CustomHook, self).__init__(*args, **kwargs)
@@ -199,7 +198,9 @@ This hook can be used in a Stack config file with the following syntax:
 
 .. code-block:: yaml
 
-   template_path: <...>
+   template:
+     path: <...>
+     type: <...>
    hooks:
      before_create:
        - !custom_hook_command_name <argument> # The argument is accessible via self.argument
@@ -211,7 +212,9 @@ Assume a Sceptre `copy` hook that calls the `cp command`_:
 
 .. code-block:: yaml
 
-   template_path: <...>
+   template:
+     path: <...>
+     type: <...>
    hooks:
      before_create:
        - !copy "-r from_dir to_dir"

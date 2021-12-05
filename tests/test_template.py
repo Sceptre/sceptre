@@ -11,11 +11,22 @@ from mock import patch, sentinel, Mock
 from freezegun import freeze_time
 from botocore.exceptions import ClientError
 
-import sceptre.template
 from sceptre.template import Template
 from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
-from sceptre.exceptions import TemplateSceptreHandlerError
+from sceptre.exceptions import TemplateSceptreHandlerError, TemplateNotFoundError
+from sceptre.template_handlers import TemplateHandler
+
+
+class MockTemplateHandler(TemplateHandler):
+    def __init__(self, *args, **kwargs):
+        super(MockTemplateHandler, self).__init__(*args, **kwargs)
+
+    def schema(self):
+        return {}
+
+    def handle(self):
+        return self.arguments["argument"]
 
 
 class TestTemplate(object):
@@ -30,21 +41,36 @@ class TestTemplate(object):
         connection_manager.create_bucket_lock = threading.Lock()
 
         self.template = Template(
-            path="/folder/template.py",
+            name="template_name",
+            handler_config={"type": "file", "path": "/folder/template.py"},
             sceptre_user_data={},
-            connection_manager=connection_manager
+            stack_group_config={
+                "project_path": "projects"
+            },
+            connection_manager=connection_manager,
         )
 
+    def test_initialise_template_default_handler_type(self):
+        template = Template(
+            name="template_name",
+            handler_config={"path": "/folder/template.py"},
+            sceptre_user_data={},
+            stack_group_config={},
+            connection_manager={},
+        )
+
+        assert template.handler_config == {"type": "file", "path": "/folder/template.py"}
+
     def test_initialise_template(self):
-        assert self.template.path == "/folder/template.py"
-        assert self.template.name == "template"
+        assert self.template.handler_config == {"type": "file", "path": "/folder/template.py"}
+        assert self.template.name == "template_name"
         assert self.template.sceptre_user_data == {}
         assert self.template._body is None
 
     def test_repr(self):
         representation = self.template.__repr__()
         assert representation == "sceptre.template.Template(" \
-            "name='template', path='/folder/template.py'"\
+            "name='template_name', handler_config={'type': 'file', 'path': '/folder/template.py'}" \
             ", sceptre_user_data={}, s3_details=None)"
 
     def test_body_with_cache(self):
@@ -59,13 +85,20 @@ class TestTemplate(object):
         mock_bucket_exists.return_value = True
         self.template.s3_details = {
             "bucket_name": "bucket-name",
-            "bucket_key": "bucket-key",
-            "bucket_region": "eu-west-1"
+            "bucket_key": "bucket-key"
         }
 
         self.template.upload_to_s3()
 
-        self.template.connection_manager.call.assert_called_once_with(
+        get_bucket_location_call, put_object_call = self.template.connection_manager.call.call_args_list
+        get_bucket_location_call.assert_called_once_with(
+            service="s3",
+            command="get_bucket_location",
+            kwargs={
+                "Bucket": "bucket-name"
+            }
+        )
+        put_object_call.assert_called_once_with(
             service="s3",
             command="put_object",
             kwargs={
@@ -76,13 +109,17 @@ class TestTemplate(object):
             }
         )
 
+    def test_domain_from_region(self):
+        assert self.template._domain_from_region("us-east-1") == "com"
+        assert self.template._domain_from_region("cn-north-1") == "com.cn"
+        assert self.template._domain_from_region("cn-northwest-1") == "com.cn"
+
     def test_bucket_exists_with_bucket_that_exists(self):
         # connection_manager.call doesn't raise an exception, mimicing the
         # behaviour when head_bucket successfully executes.
         self.template.s3_details = {
             "bucket_name": "bucket-name",
-            "bucket_key": "bucket-key",
-            "bucket_region": "eu-west-1"
+            "bucket_key": "bucket-key"
         }
 
         assert self.template._bucket_exists() is True
@@ -91,19 +128,18 @@ class TestTemplate(object):
         self.template.connection_manager.region = "eu-west-1"
         self.template.s3_details = {
             "bucket_name": "bucket-name",
-            "bucket_key": "bucket-key",
-            "bucket_region": "eu-west-1"
+            "bucket_key": "bucket-key"
         }
 
         self.template.connection_manager.call.side_effect = ClientError(
-                {
-                    "Error": {
-                        "Code": 500,
-                        "Message": "Bucket Unreadable"
-                    }
-                },
-                sentinel.operation
-            )
+            {
+                "Error": {
+                    "Code": 500,
+                    "Message": "Bucket Unreadable"
+                }
+            },
+            sentinel.operation
+        )
         with pytest.raises(ClientError) as e:
             self.template._create_bucket()
             assert e.value.response["Error"]["Code"] == 500
@@ -114,8 +150,7 @@ class TestTemplate(object):
         # Not Found ClientError only for the first call.
         self.template.s3_details = {
             "bucket_name": "bucket-name",
-            "bucket_key": "bucket-key",
-            "bucket_region": "eu-west-1"
+            "bucket_key": "bucket-key"
         }
 
         self.template.connection_manager.call.side_effect = [
@@ -141,8 +176,7 @@ class TestTemplate(object):
         self.template.connection_manager.region = "us-east-1"
         self.template.s3_details = {
             "bucket_name": "bucket-name",
-            "bucket_key": "bucket-key",
-            "bucket_region": "us-east-1"
+            "bucket_key": "bucket-key"
         }
 
         self.template._create_bucket()
@@ -159,8 +193,7 @@ class TestTemplate(object):
         mock_upload_to_s3.return_value = sentinel.template_url
         self.template.s3_details = {
             "bucket_name": sentinel.bucket_name,
-            "bucket_key": sentinel.bucket_key,
-            "bucket_region": sentinel.bucket_region
+            "bucket_key": sentinel.bucket_key
         }
 
         boto_parameter = self.template.get_boto_call_parameter()
@@ -176,19 +209,19 @@ class TestTemplate(object):
 
     def test_body_with_json_template(self):
         self.template.name = "vpc"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
-            "tests/fixtures/templates/vpc.json"
+            "tests/fixtures-vpc/templates/vpc.json"
         )
         output = self.template.body
-        output_dict = json.loads(output)
+        output_dict = yaml.safe_load(output)
         with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
             expected_output_dict = json.loads(f.read())
         assert output_dict == expected_output_dict
 
     def test_body_with_yaml_template(self):
         self.template.name = "vpc"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc.yaml"
         )
@@ -200,12 +233,12 @@ class TestTemplate(object):
 
     def test_body_with_generic_template(self):
         self.template.name = "vpc"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc.template"
         )
         output = self.template.body
-        output_dict = json.loads(output)
+        output_dict = yaml.safe_load(output)
         with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
             expected_output_dict = json.loads(f.read())
         assert output_dict == expected_output_dict
@@ -214,30 +247,30 @@ class TestTemplate(object):
         self.template.sceptre_user_data = None
         self.template.name = "chdir"
         current_dir = os.getcwd()
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/chdir.py"
         )
         try:
-            json.loads(self.template.body)
+            yaml.safe_load(self.template.body)
         except ValueError:
             assert False
         finally:
             os.chdir(current_dir)
 
     def test_body_with_missing_file(self):
-        self.template.path = "incorrect/template/path.py"
-        with pytest.raises(IOError):
+        self.template.handler_config["path"] = "incorrect/template/path.py"
+        with pytest.raises(TemplateNotFoundError):
             self.template.body
 
     def test_body_with_python_template(self):
         self.template.sceptre_user_data = None
         self.template.name = "vpc"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc.py"
         )
-        actual_output = json.loads(self.template.body)
+        actual_output = yaml.safe_load(self.template.body)
         with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
             expected_output = json.loads(f.read())
         assert actual_output == expected_output
@@ -245,26 +278,62 @@ class TestTemplate(object):
     def test_body_with_python_template_with_sgt(self):
         self.template.sceptre_user_data = None
         self.template.name = "vpc_sgt"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc_sgt.py"
         )
-        actual_output = json.loads(self.template.body)
+        actual_output = yaml.safe_load(self.template.body)
         with open("tests/fixtures/templates/compiled_vpc.json", "r") as f:
             expected_output = json.loads(f.read())
         assert actual_output == expected_output
+
+    def test_body_injects_yaml_start_marker(self):
+        self.template.name = "vpc"
+        self.template.handler_config["path"] = os.path.join(
+            os.getcwd(),
+            "tests/fixtures/templates/vpc.without_start_marker.yaml"
+        )
+        output = self.template.body
+        with open("tests/fixtures/templates/vpc.yaml", "r") as f:
+            expected_output = f.read()
+        assert output == expected_output
+
+    def test_body_with_existing_yaml_start_marker(self):
+        self.template.name = "vpc"
+        self.template.handler_config["path"] = os.path.join(
+            os.getcwd(),
+            "tests/fixtures/templates/vpc.yaml"
+        )
+        output = self.template.body
+        with open("tests/fixtures/templates/vpc.yaml", "r") as f:
+            expected_output = f.read()
+        assert output == expected_output
+
+    def test_body_with_existing_yaml_start_marker_j2(self):
+        self.template.name = "vpc"
+        self.template.handler_config["path"] = os.path.join(
+            os.getcwd(),
+            "tests/fixtures/templates/vpc.yaml.j2"
+        )
+        self.template.sceptre_user_data = {
+            "vpc_id": "10.0.0.0/16"
+        }
+        output = self.template.body
+        with open("tests/fixtures/templates/compiled_vpc.yaml", "r") as f:
+            expected_output = f.read()
+        assert output == expected_output.rstrip()
 
     def test_body_injects_sceptre_user_data(self):
         self.template.sceptre_user_data = {
             "cidr_block": "10.0.0.0/16"
         }
         self.template.name = "vpc_sud"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc_sud.py"
         )
 
-        actual_output = json.loads(self.template.body)
+        actual_output = yaml.safe_load(self.template.body)
         with open("tests/fixtures/templates/compiled_vpc_sud.json", "r") as f:
             expected_output = json.loads(f.read())
         assert actual_output == expected_output
@@ -274,7 +343,7 @@ class TestTemplate(object):
             "cidr_block": "10.0.0.0/16"
         }
         self.template.name = "vpc_sud_incorrect_function"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc_sud_incorrect_function.py"
         )
@@ -286,7 +355,7 @@ class TestTemplate(object):
             "cidr_block": "10.0.0.0/16"
         }
         self.template.name = "vpc_sud_incorrect_handler"
-        self.template.path = os.path.join(
+        self.template.handler_config["path"] = os.path.join(
             os.getcwd(),
             "tests/fixtures/templates/vpc_sud_incorrect_handler.py"
         )
@@ -294,68 +363,21 @@ class TestTemplate(object):
             self.template.body
 
     def test_body_with_incorrect_filetype(self):
-        self.template.path = (
+        self.template.handler_config["path"] = (
             "path/to/something.ext"
         )
         with pytest.raises(UnsupportedTemplateFileTypeError):
             self.template.body
 
+    def test_template_handler_is_called(self):
+        self.template.handler_config = {
+            "type": "test",
+            "argument": sentinel.template_handler_argument
+        }
 
-@pytest.mark.parametrize("filename,sceptre_user_data,expected", [
-    (
-        "vpc.j2",
-        {"vpc_id": "10.0.0.0/16"},
-        """Resources:
-  VPC:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: 10.0.0.0/16
-Outputs:
-  VpcId:
-    Value:
-      Ref: VPC"""
-    ),
-    (
-        "vpc.yaml.j2",
-        {"vpc_id": "10.0.0.0/16"},
-        """Resources:
-  VPC:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: 10.0.0.0/16
-Outputs:
-  VpcId:
-    Value:
-      Ref: VPC"""
-    ),
-    (
-        "sg.j2",
-        [
-            {"name": "sg_a", "inbound_ip": "10.0.0.0"},
-            {"name": "sg_b", "inbound_ip": "10.0.0.1"}
-        ],
-        """Resources:
-    sg_a:
-        Type: "AWS::EC2::SecurityGroup"
-        Properties:
-            InboundIp: 10.0.0.0
-    sg_b:
-        Type: "AWS::EC2::SecurityGroup"
-        Properties:
-            InboundIp: 10.0.0.1
-"""
-    )
-])
-def test_render_jinja_template(filename, sceptre_user_data, expected):
-    jinja_template_dir = os.path.join(
-        os.getcwd(),
-        "tests/fixtures/templates"
-    )
-    result = sceptre.template.Template._render_jinja_template(
-        template_dir=jinja_template_dir,
-        filename=filename,
-        jinja_vars={"sceptre_user_data": sceptre_user_data}
-    )
-    expected_yaml = yaml.safe_load(expected)
-    result_yaml = yaml.safe_load(result)
-    assert expected_yaml == result_yaml
+        self.template._registry = {
+            "test": MockTemplateHandler
+        }
+
+        result = self.template.body
+        assert result == "---\n" + str(sentinel.template_handler_argument)

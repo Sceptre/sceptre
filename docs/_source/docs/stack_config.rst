@@ -12,7 +12,7 @@ Structure
 A Stack config file is a ``yaml`` object of key-value pairs configuring a
 particular Stack. The available keys are listed below.
 
--  `template_path`_ *(required)*
+-  `template_path`_ or `template`_ *(required)*
 -  `dependencies`_ *(optional)*
 -  `hooks`_ *(optional)*
 -  `notifications`_ *(optional)*
@@ -20,12 +20,16 @@ particular Stack. The available keys are listed below.
 -  `parameters`_ *(optional)*
 -  `protected`_ *(optional)*
 -  `role_arn`_ *(optional)*
+-  `iam_role`_ *(optional)*
 -  `sceptre_user_data`_ *(optional)*
 -  `stack_name`_ *(optional)*
 -  `stack_tags`_ *(optional)*
 -  `stack_timeout`_ *(optional)*
 
-template_path - required
+It is not possible to define both `template_path`_ and `template`_. If you do so,
+you will receive an error when deploying the stack.
+
+template_path
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 The path to the CloudFormation, Jinja2 or Python template to build the Stack
@@ -33,6 +37,32 @@ from. The path can either be absolute or relative to the Sceptre Directory.
 Sceptre treats the template as CloudFormation, Jinja2 or Python depending on
 the template’s file extension. Note that the template filename may be different
 from the Stack config filename.
+
+.. warning::
+
+   This key is deprecated in favor of the `template`_ key.
+
+template
+~~~~~~~~
+
+Configuration for a template handler. Template handlers can take in parameters
+and resolve that to a CloudFormation template. This enables you to not only
+load templates from disk, but also from third-party storage or AWS services.
+
+Example for loading from S3 bucket:
+
+.. code-block:: yaml
+
+   template:
+     type: s3
+     path: infra-templates/s3/v1/bucket.yaml
+   parameters:
+     <parameter1_name>: "value"
+   sceptre_user_data:
+
+It is possible to write your own template handlers should you need to. You
+can find a list of currently supported template handlers and guidance for
+developing your own in the :doc:`template_handlers` section.
 
 dependencies
 ~~~~~~~~~~~~
@@ -131,7 +161,7 @@ Example:
        - "subnet-87654321"
      security_group_ids:
        - "sg-12345678"
-       - !stack_output security-groups::BaseSecurityGroupId
+       - !stack_output security-groups.yaml::BaseSecurityGroupId
        - !file_contents /file/with/security_group_id.txt
 
 protected
@@ -153,6 +183,28 @@ role_arn
 
 The ARN of a `CloudFormation Service Role`_ that is assumed by CloudFormation
 to create, update or delete resources.
+
+iam_role
+~~~~~~~~
+
+This is the IAM Role ARN that **Sceptre** should *assume* using AWS STS when executing any actions
+on the Stack.
+
+This is different from the ``role_arn`` option, which sets a CloudFormation service role for the
+stack. The ``iam_role`` configuration does not configure anything on the stack itself.
+
+This is also different from the ``profile`` StackGroup configuration, though there are similarities.
+``profile`` references the name of a locally-defined profile configured using the AWS CLI. This is
+the *"user"* that Sceptre is operating as. However, `iam_role` is a defined role ARN (typically one
+with elevated permissions the user doesn't otherwise have access to) that the user will assume in
+order to execute the actions on a specific stack group.
+
+Using ``iam_role`` can be useful if the user or system executing Sceptre needs an alternative
+permissions set to perform the required actions on that stack, such as might be the case with a
+CI/CD system like Jenkins.
+
+In order to use this argument, however, the role needs to have an AssumeRolePolicyDocument that
+permits the user to assume that role.
 
 sceptre_user_data
 ~~~~~~~~~~~~~~~~~
@@ -179,7 +231,7 @@ e.g:
 .. code-block:: yaml
 
    parameters:
-     VpcID: !stack_output_external <custom-named-vpc-stack>.yaml::VpcID
+     VpcID: !stack_output_external <custom-named-vpc-stack>::VpcID
    dependencies:
      - <environment>/<Stack>
 
@@ -190,7 +242,7 @@ referring to is in a different AWS account or region.
 .. code-block:: yaml
 
    parameters:
-     VpcID: !stack_output_external <custom-named-vpc-stack>.yaml::VpcID my-aws-prod-profile
+     VpcID: !stack_output_external <custom-named-vpc-stack>::VpcID my-aws-prod-profile
    dependencies:
      - <environment>/<Stack>
 
@@ -268,14 +320,18 @@ Examples
 
 .. code-block:: yaml
 
-   template_path: templates/example.py
+   template:
+     path: templates/example.py
+     type: file
    parameters:
      param_1: value_1
      param_2: value_2
 
 .. code-block:: yaml
 
-   template_path: example.yaml
+   template
+     path: templates/example.yaml
+     type: file
    dependencies:
        - dev/vpc.yaml
    hooks:
@@ -288,8 +344,8 @@ Examples
            - !cmd "mkdir example"
            - !cmd "touch example.txt"
    parameters:
-       param_1: !stack_output stack_name::output_name
-       param_2: !stack_output_external full_stack_name.yaml::output_name
+       param_1: !stack_output stack_name.yaml::output_name
+       param_2: !stack_output_external full_stack_name::output_name
        param_3: !environment_variable VALUE_3
        param_4:
            {{ var.value4 }}
@@ -305,6 +361,7 @@ Examples
        tag_2: value_2
 
 .. _template_path: #template_path
+.. _template: #template
 .. _dependencies: #dependencies
 .. _hooks: #hooks
 .. _notifications: #notifications
