@@ -1,5 +1,6 @@
 from uuid import uuid1
 
+import yaml
 import click
 
 from sceptre.context import SceptreContext
