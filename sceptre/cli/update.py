@@ -67,8 +67,11 @@ def update_command(ctx, path, change_set, verbose, yes):
             for description in list(descriptions.values()):
                 if not verbose:
                     description = simplify_change_set_description(description)
-                write(description, context.output_format)
 
+                write('-'*80,'text')
+                write(yaml.dump(description), 'text')
+                write('-'*80,'text')
+            
             # Execute change set if happy with changes
             if yes or click.confirm("Proceed with stack update?"):
                 plan.execute_change_set(change_set_name)
