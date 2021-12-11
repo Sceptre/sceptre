@@ -52,6 +52,14 @@ file_contents
 
 **deprecated**: Consider using the `file`_ resolver instead.
 
+no_value
+~~~~~~~~
+
+This resolver "resolves to nothing", functioning just as if it was not set at all. This works just
+like the "AWS::NoValue" special variable that you can reference on a CloudFormation template and
+can help simplify Stack and StackGroup Jinja logic in cases where, if a condition is met, a value
+is passed, otherwise no value is passed. 
+
 rcmd
 ~~~~
 
