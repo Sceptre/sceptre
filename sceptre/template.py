@@ -216,7 +216,7 @@ class Template(object):
         :rtype: dict
         """
         # If bucket_name is set to None, it should be ignored and not uploaded.
-        if self.s3_details and self.s3_details.get("bucket_name") is not None:
+        if self.s3_details and self.s3_details.get("bucket_name"):
             url = self.upload_to_s3()
             return {"TemplateURL": url}
         else:
