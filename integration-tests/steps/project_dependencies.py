@@ -8,6 +8,7 @@ from behave.runner import Context
 from helpers import get_cloudformation_stack_name, retry_boto_call
 from sceptre.context import SceptreContext
 from sceptre.plan.plan import SceptrePlan
+from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error
 
 
 @given('all files in template bucket for stack "{stack_name}" are deleted at cleanup')
@@ -20,6 +21,24 @@ def step_impl(context: Context, stack_name):
         context.sceptre_dir,
         stack_name
     )
+
+
+@given('placeholders are allowed')
+def step_impl(context: Context):
+    placeholder_context = use_resolver_placeholders_on_error()
+    placeholder_context.__enter__()
+    context.add_cleanup(exit_placeholder_context, placeholder_context)
+
+
+@when('the user validates stack_group "{group}"')
+def step_impl(context: Context, group):
+    sceptre_context = SceptreContext(
+        command_path=group,
+        project_path=context.sceptre_dir
+    )
+    plan = SceptrePlan(sceptre_context)
+    result = plan.validate()
+    context.response = result
 
 
 @then('the template for stack "{stack_name}" has been uploaded')
@@ -95,3 +114,7 @@ def describe_stack(context, stack_name):
         StackName=cf_stack_name
     )
     return response['Stacks'][0]
+
+
+def exit_placeholder_context(placeholder_context: ContextManager):
+    placeholder_context.__exit__(None, None, None)
