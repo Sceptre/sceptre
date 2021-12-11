@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import ContextManager
+from typing import ContextManager, Dict
 
 import boto3
 from behave import given, then, when
@@ -78,6 +78,19 @@ def step_impl(context, resource_stack_name, topic_stack_name):
     assert topic in notification_arns
 
 
+@then('the tag "{key}" for stack "{stack_name}" is "{value}"')
+def step_impl(context, key, stack_name, value):
+    stack_tags = get_stack_tags(context, stack_name)
+    result = stack_tags[key]
+    assert result == value
+
+
+@then('the tag "{key}" for stack "{stack_name}" does not exist')
+def step_impl(context, key, stack_name):
+    stack_tags = get_stack_tags(context, stack_name)
+    assert key not in stack_tags
+
+
 def cleanup_template_files_in_bucket(sceptre_dir, stack_name):
     sceptre_context = SceptreContext(
         command_path=stack_name + '.yaml',
@@ -107,7 +120,16 @@ def get_stack_resources(context, stack_name):
     return resources['StackResources']
 
 
-def describe_stack(context, stack_name):
+def get_stack_tags(context, stack_name) -> Dict[str, str]:
+    description = describe_stack(context, stack_name)
+    tags = {
+        tag['Key']: tag['Value']
+        for tag in description['Tags']
+    }
+    return tags
+
+
+def describe_stack(context, stack_name) -> dict:
     cf_stack_name = get_cloudformation_stack_name(context, stack_name)
     response = retry_boto_call(
         context.client.describe_stacks,

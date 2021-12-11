@@ -4,4 +4,5 @@ notifications:
 
 iam_role: !stack_output project-deps/dependencies/assumed-role.yaml::RoleArn
 stack_tags:
-  greeting: !rcmd echo "hello"
+  greeting: !rcmd "echo 'hello' | tr -d '\n'"
+  nonexistant: !no_value
