@@ -1,3 +1,2 @@
-is_project_dependency: True
 template:
   path: project-dependencies/topic.yaml
