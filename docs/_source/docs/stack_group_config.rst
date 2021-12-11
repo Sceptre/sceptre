@@ -70,8 +70,8 @@ supplied in this way have a lower maximum length, so using the
 
    If you resolve ``template_bucket_name`` using the ``!stack_output``
    resolver on a StackGroup, the stack that outputs that bucket name *cannot* be
-   defined in that StackGroup. Otherwise, a circular dependency will exist and Sceptre
-   will raise an error when attempting any Stack action.
+   defined in that StackGroup (or it must be set to ``!no_value``) Otherwise, a circular dependency
+   will exist and Sceptre will raise an error when attempting any Stack action.
 
 template_key_prefix
 ~~~~~~~~~~~~~~~~~~~
@@ -193,7 +193,9 @@ dependencies.
    You might have already considered that this might cause a circular dependency for those
    dependency stacks, the ones that output the template bucket name, role arn, iam_role, or topic arns.
    In order to avoid the circular dependency issue, it is important that you define these items in a
-   Stack that is *outside* the StackGroup you reference them in.
+   Stack that is *outside* the StackGroup you reference them in. Alternatively, you can set those
+   values to ``!no_value`` in order to effectively cancel out the values they would otherwise inherit
+   from their stack group.
 
 
 .. _stack_group_config_templating:
