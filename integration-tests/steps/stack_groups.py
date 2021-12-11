@@ -270,27 +270,6 @@ def step_impl(context, first_stack, second_stack):
     assert creation_times[stacks[0]] < creation_times[stacks[1]]
 
 
-@when('the user diffs stack group "{group_name}" with "{diff_type}"')
-def step_impl(context, group_name, diff_type):
-    sceptre_context = SceptreContext(
-        command_path=group_name,
-        project_path=context.sceptre_dir
-    )
-    sceptre_plan = SceptrePlan(sceptre_context)
-    differ_classes = {
-        'deepdiff': DeepDiffStackDiffer,
-        'difflib': DifflibStackDiffer
-    }
-    writer_class = {
-        'deepdiff': DeepDiffWriter,
-        'difflib': DeepDiffWriter
-    }
-
-    differ = differ_classes[diff_type]()
-    context.writer_class = writer_class[diff_type]
-    context.output = list(sceptre_plan.diff(differ).values())
-
-
 def get_stack_creation_times(context, stacks):
     creation_times = {}
     response = retry_boto_call(context.client.describe_stacks)
