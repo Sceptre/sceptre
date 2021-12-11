@@ -212,7 +212,7 @@ to create, update or delete resources.
 
 iam_role
 ~~~~~~~~
-* Resolvable: No
+* Resolvable: Yes
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
@@ -234,6 +234,13 @@ CI/CD system like Jenkins.
 
 In order to use this argument, however, the role needs to have an AssumeRolePolicyDocument that
 permits the user to assume that role.
+
+.. warning::
+
+   If you use set the value of ``iam_role`` with ``!stack_output``, that ``iam_role``
+   will not actually be used to obtain the stack_output, but it *WILL* be used for all subsequent stack
+   actions. Therefore, it is important that the user executing the stack action have permissions to get
+   stack outputs for the stack outputting the ``iam_role``.
 
 sceptre_user_data
 ~~~~~~~~~~~~~~~~~
