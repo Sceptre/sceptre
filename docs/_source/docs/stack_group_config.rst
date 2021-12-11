@@ -28,6 +28,8 @@ made available via ``stack_group_confg`` attribute on ``Stack()``.
 
 profile
 ~~~~~~~
+* Resolvable: No
+* Inheritance strategy: Overrides parent if set by child
 
 The name of the profile as defined in ``~/.aws/config`` and
 ``~/.aws/credentials``. Use the `aws configure --profile <profile_id>` command
@@ -37,17 +39,23 @@ Reference: `AWS_CLI_Configure`_
 
 project_code
 ~~~~~~~~~~~~
+* Resolvable: No
+* Inheritance strategy: Overrides parent if set by child
 
 A string which is prepended to the Stack names of all Stacks built by Sceptre.
 
 region
 ~~~~~~
+* Resolvable: No
+* Inheritance strategy: Overrides parent if set by child
 
 The AWS region to build Stacks in. Sceptre should work in any `region which
 supports CloudFormation`_.
 
 template_bucket_name
 ~~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Inheritance strategy: Overrides parent if set by child
 
 The name of an S3 bucket to upload CloudFormation Templates to. Note that S3
 bucket names must be globally unique. If the bucket does not exist, Sceptre
@@ -60,6 +68,8 @@ supplied in this way have a lower maximum length, so using the
 
 template_key_prefix
 ~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Inheritance strategy: Overrides parent if set by child
 
 A string which is prefixed onto the key used to store templates uploaded to S3.
 Templates are stored using the key:
@@ -77,7 +87,9 @@ Note that if ``template_bucket_name`` is not supplied, this parameter is
 ignored.
 
 j2_environment
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
+* Resolvable: No
+* Inheritance strategy: Child configs will be merged with parent configs
 
 A dictionary that is combined with the default jinja2 environment.
 It's converted to keyword arguments then passed to [jinja2.Environment](https://jinja.palletsprojects.com/en/2.11.x/api/#jinja2.Environment).
@@ -134,7 +146,8 @@ General configurations should be defined at a high level, and more specific
 configurations should be defined at a lower directory level.
 
 YAML files that define configuration settings with conflicting keys, the child
-configuration file will take precedence.
+configuration file will usually take precedence (see the specific config keys as documented
+for the inheritance strategy employed).
 
 In the above directory structure, ``config/config.yaml`` will be read in first,
 followed by ``config/account-1/config.yaml``, followed by
