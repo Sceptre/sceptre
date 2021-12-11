@@ -215,10 +215,9 @@ class ResolvableContainerProperty(ResolvableProperty):
                     self.logger.debug(f"Removing item {key} because resolver returned None.")
                     # We gather up resolvers (and their immediate containers) that resolve to None,
                     # since that really means the resolver resolves to nothing. This is not common,
-                    # but will be the case when a StackOutput resolver is on a project dependency
-                    # stack. We gather these rather than immediately remove them because this
-                    # function is called in the context of looping over that attr, so we cannot
-                    # alter its size until after the loop is complete.
+                    # but should be supported. We gather these rather than immediately remove them
+                    # because this function is called in the context of looping over that attr, so
+                    # we cannot alter its size until after the loop is complete.
                     keys_to_delete.append((attr, key))
                 else:
                     attr[key] = result
