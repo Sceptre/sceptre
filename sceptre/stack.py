@@ -120,7 +120,6 @@ class Stack(object):
 
     s3_details = ResolvableContainerProperty("s3_details")
     template_bucket_name = ResolvableValueProperty("template_bucket_name")
-    template_key_prefix = ResolvableValueProperty("template_key_prefix")
     role_arn = ResolvableValueProperty("role_arn")
 
     hooks = HookProperty("hooks")
@@ -154,6 +153,7 @@ class Stack(object):
         self.stack_group_config = stack_group_config or {}
         self.stack_timeout = stack_timeout
         self.profile = profile
+        self.template_key_prefix = template_key_prefix
 
         self._template = None
         self._connection_manager = None
@@ -163,7 +163,6 @@ class Stack(object):
         self.iam_role = iam_role
         self.tags = tags or {}
         self.role_arn = role_arn
-        self.template_key_prefix = template_key_prefix
         self.template_bucket_name = template_bucket_name
 
         self.s3_details = s3_details

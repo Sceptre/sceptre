@@ -75,7 +75,7 @@ supplied in this way have a lower maximum length, so using the
 
 template_key_prefix
 ~~~~~~~~~~~~~~~~~~~
-* Resolvable: Yes
+* Resolvable: No
 * Inheritance strategy: Overrides parent if set by child
 
 A string which is prefixed onto the key used to store templates uploaded to S3.
