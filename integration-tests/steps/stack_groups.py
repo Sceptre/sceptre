@@ -1,11 +1,15 @@
-from behave import *
 import os
 import time
-from sceptre.plan.plan import SceptrePlan
-from sceptre.context import SceptreContext
+
+from behave import *
 from botocore.exceptions import ClientError
+
 from helpers import read_template_file, get_cloudformation_stack_name
 from helpers import retry_boto_call
+from sceptre.context import SceptreContext
+from sceptre.diffing.diff_writer import DeepDiffWriter
+from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer
+from sceptre.plan.plan import SceptrePlan
 from stacks import wait_for_final_state
 from templates import set_template_path
 
