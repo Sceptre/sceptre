@@ -7,6 +7,7 @@ from typing import Any, TYPE_CHECKING, Type, Union, TypeVar
 
 from sceptre.helpers import _call_func_on_values
 
+
 if TYPE_CHECKING:
     from sceptre import stack
 
@@ -173,18 +174,31 @@ class ResolvableContainerProperty(ResolvableProperty):
         return container
 
     def get_resolved_value(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']) -> T_Container:
-        """Obtains the resolved value for this property.
+        """Obtains the resolved value for this property. Any resolvers that resolve to None will have
+        their key/index removed from their dict/list where they are. Other resolvers will have their
+        key/index's value replace with the resolved value to avoid redundant resolutions.
 
         :param stack: The Stack instance to obtain the value for
         :param stack_class: The class of the Stack instance.
         :return: The fully resolved container.
         """
+        keys_to_delete = []
 
         def resolve(attr: Union[dict, list], key: Union[int, str], value: Resolver):
             # Update the container key's value with the resolved value, if possible...
             try:
                 result = self.resolve_resolver_value(value)
-                attr[key] = result
+                if result is None:
+                    self.logger.debug(f"Removing item {key} because resolver returned None.")
+                    # We gather up resolvers (and their immediate containers) that resolve to None,
+                    # since that really means the resolver resolves to nothing. This is not common,
+                    # but will be the case when a StackOutput resolver is on a project dependency
+                    # stack. We gather these rather than immediately remove them because this
+                    # function is called in the context of looping over that attr, so we cannot
+                    # alter its size until after the loop is complete.
+                    keys_to_delete.append((attr, key))
+                else:
+                    attr[key] = result
             except RecursiveResolve:
                 # It's possible that resolving the resolver might attempt to access another
                 # resolvable property's value in this same container. In this case, we'll delay
@@ -201,6 +215,9 @@ class ResolvableContainerProperty(ResolvableProperty):
         _call_func_on_values(
             resolve, container, Resolver
         )
+        # Remove keys and indexes from their containers that had resolvers resolve to None.
+        for attr, key in keys_to_delete:
+            del attr[key]
 
         return container
 
@@ -283,7 +300,12 @@ class ResolvableContainerProperty(ResolvableProperty):
         def __call__(self):
             """Resolve the value."""
             attr = getattr(self._instance, self._name)
-            attr[self._key] = self._resolution_function()
+            result = self._resolution_function()
+            if result is None:
+                self.logger.debug(f"Removing item {self._key} because resolver returned None.")
+                del attr[self._key]
+            else:
+                attr[self._key] = result
 
 
 class ResolvableValueProperty(ResolvableProperty):
