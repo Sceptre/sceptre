@@ -15,6 +15,7 @@ setuptools>=40.6.2,<41.0.0
 Sphinx>=1.6.5,<4.3
 sphinx-click>=2.0.1,<4.0.0
 sphinx-rtd-theme==0.5.2
+sphinx-autodoc-typehints==1.12.0
 docutils<0.17 # temporary fix for sphinx-rtd-theme==0.5.2, it depends on docutils<0.17
 tox>=3.23.0,<4.0.0
 twine>=1.12.1,<2.0.0
