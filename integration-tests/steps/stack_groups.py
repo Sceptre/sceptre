@@ -1,12 +1,10 @@
-import os
 import time
 from pathlib import Path
 
 from behave import *
 from botocore.exceptions import ClientError
 
-from helpers import read_template_file, get_cloudformation_stack_name
-from helpers import retry_boto_call
+from helpers import read_template_file, get_cloudformation_stack_name, retry_boto_call
 from sceptre.context import SceptreContext
 from sceptre.diffing.diff_writer import DeepDiffWriter
 from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer
