@@ -1,8 +1,7 @@
 from itertools import chain
-from typing import ContextManager
 
 import boto3
-from behave import given, then, when
+from behave import given, then
 from behave.runner import Context
 
 from helpers import get_cloudformation_stack_name, retry_boto_call
