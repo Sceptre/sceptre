@@ -66,9 +66,16 @@ supplies the template to Boto3 via the ``TemplateBody`` argument. Templates
 supplied in this way have a lower maximum length, so using the
 ``template_bucket_name`` parameter is recommended.
 
+.. warning::
+
+   If you resolve ``template_bucket_name`` using the ``!stack_output``
+   resolver on a StackGroup, the stack that outputs that bucket name *cannot* be
+   defined in that StackGroup (or it must be set to ``!no_value``) Otherwise, a circular dependency
+   will exist and Sceptre will raise an error when attempting any Stack action.
+
 template_key_prefix
 ~~~~~~~~~~~~~~~~~~~
-* Resolvable: Yes
+* Resolvable: No
 * Inheritance strategy: Overrides parent if set by child
 
 A string which is prefixed onto the key used to store templates uploaded to S3.
@@ -161,33 +168,34 @@ and would only be applied to builds in the ``dev`` StackGroup.
 
 Setting Dependencies for StackGroups
 ------------------------------------
-There are a few types of AWS infrastructure that Sceptre and/or your CloudFormation stacks can
-utilise and can be a part of a normal sceptre project. These include:
+There are a few pieces of AWS infrastructure that Sceptre can (optionally) use to support the needs
+and concerns of the project. These include:
+
 * The S3 bucket where templates are uploaded to and then referenced from for stack actions (i.e. the
-`template_bucket_name`` config key).
+  ``template_bucket_name`` config key).
 * The CloudFormation service role added to the stack(s) that CloudFormation uses to execute stack
-actions (i.e. the ``role_arn`` config key).
+  actions (i.e. the ``role_arn`` config key).
 * The role that Sceptre will assume to execute stack actions (i.e. the ``iam_role`` config key).
 * SNS topics that cloudformation will notify with the results of stack actions (i.e. the
-``notifications`` config key).
+  ``notifications`` config key).
 
 These sorts of dependencies CAN be defined in Sceptre and added at the StackGroup level, referenced
-using ``!stack_output``. They can even can be set in the highest-level config.yaml, right next to
-``project_code`` and ``region``. Doing so will make it so that every stack in the StackGroup (or
-even in the entire project) will have those dependencies and get those values from Sceptre-managed
-stacks.
+using ``!stack_output``. Doing so will make it so that every stack in the StackGroup will have those
+dependencies and get those values from Sceptre-managed stacks.
 
 Beyond the above mentioned config keys, it is possible to set the ``dependencies`` config key in a
 StackGroup config to be inherited by all Stack configs in that group. All dependencies in child
 stacks will be added to their inherited StackGroup dependencies, so be careful how you structure
 dependencies.
 
-**Important**: You might have already considered that this might cause a circular dependency for those
-dependency stacks, the ones that output the template bucket name, role arn, or topic arns. In order
-to break the circular dependency, you can set ``is_project_dependency: True`` on those dependency
-stacks. As described in the documentation for :ref:`is_project_dependency <project_dependency_config>`,
-stacks marked with ``is_project_dependency: True`` will ignore dependencies and any !stack_output
-resolvers will resolve to nothing.
+.. warning::
+
+   You might have already considered that this might cause a circular dependency for those
+   dependency stacks, the ones that output the template bucket name, role arn, iam_role, or topic arns.
+   In order to break the circular dependency, you can set ``is_project_dependency: True`` on those dependency
+   stacks. As described in the documentation for :ref:`is_project_dependency <project_dependency_config>`,
+   stacks marked with ``is_project_dependency: True`` will ignore dependencies and any !stack_output
+   resolvers will resolve to nothing.
 
 
 .. _stack_group_config_templating:

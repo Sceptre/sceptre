@@ -52,6 +52,14 @@ file_contents
 
 **deprecated**: Consider using the `file`_ resolver instead.
 
+no_value
+~~~~~~~~
+
+This resolver "resolves to nothing", functioning just as if it was not set at all. This works just
+like the "AWS::NoValue" special variable that you can reference on a CloudFormation template and
+can help simplify Stack and StackGroup Jinja logic in cases where, if a condition is met, a value
+is passed, otherwise no value is passed.
+
 rcmd
 ~~~~
 
@@ -268,19 +276,34 @@ Resolver placeholders
 ^^^^^^^^^^^^^^^^^^^^^
 Resolvers (especially the !stack_output resolver) often express dependencies on other stacks and
 their outputs. However, there are times when those stacks or outputs will not exist yet because they
-have not yet been deployed. During normal deployment operations (using the `launch`, `create`,
-`update`, and `delete` commands), Sceptre knows the correct order to resolve dependencies in and will
+have not yet been deployed. During normal deployment operations (using the ``launch``, ``create``,
+``update``, and ``delete`` commands), Sceptre knows the correct order to resolve dependencies in and will
 ensure that order is followed, so everything works as expected.
 
 But there are other commands that will not actually deploy dependencies of a stack config before
-operating on that Stack Config. These commands include ``generate`` and ``validate``. If you have
-used resolvers on those stacks, it is possible that a resolver might not be able to be resolved when
-performing that command's operations and will trigger an error. This is not likely to happen when
-you have only used resolvers in a stack's ``parameters``, but it is much more likely if you have
-used them in ``sceptre_user_data`` with a Jinja or Python template. At those times (and only when a
-resolver cannot be resolved), a **best-attempt placeholder value** will be supplied in to allow the
-command to proceed. Depending on how your template or Stack Config is configured, the command may or
-may not actually succeed using that placeholder value.
+operating on that Stack Config. These commands include ``generate``, ``validate``, and ``diff``.
+If you have used resolvers to reverence other stacks, it is possible that a resolver might not be able
+to be resolved when performing that command's operations and will trigger an error. This is not likely
+to happen when you have only used resolvers in a stack's ``parameters``, but it is much more likely
+if you have used them in ``sceptre_user_data`` with a Jinja or Python template. At those times (and
+only when a resolver cannot be resolved), a **best-attempt placeholder value** will be supplied in to
+allow the command to proceed. Depending on how your template or Stack Config is configured, the
+command may or may not actually succeed using that placeholder value.
+
+A few examples...
+
+* If you have a stack parameter referencing ``!stack_output other_stack.yaml::OutputName``,
+  and you run the ``diff`` command before other_stack.yaml has been deployed, the diff output will
+  show the value of that parameter to be ``{ !StackOutput(other_stack.yaml::OutputName) }``.
+* If you have a ``sceptre_user_data`` value used in a Jinja template referencing
+  ``!stack_output other_stack.yaml::OutputName`` and you run the ``generate`` command, the generated
+  template will replace that value with ``StackOutputotherstackyamlOutputName``. This isn't as
+  "pretty" as the sort of placeholder used for stack parameters, but the use of sceptre_user_data is
+  broader, so it placeholder values can only be alphanumeric to reduce chances of it breaking the
+  template.
+* Resolvable properties that are *always* used when performing template operations (like ``iam_role``
+  and ``template_bucket_name``) will resolve to ``None`` and not be used for those operations if they
+  cannot be resolved.
 
 Any command that allows these placeholders can have them disabled with the ``--no-placeholders`` ClI
 option.

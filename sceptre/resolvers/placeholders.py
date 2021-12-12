@@ -25,7 +25,7 @@ _placeholder_lock = Lock()
 @contextmanager
 def use_resolver_placeholders_on_error():
     """A context manager that toggles on placeholders for resolvers that error out. This should NOT
-    be used while creating/launching stacks, but it is often required when validating or generating
+    be used while creating/launching stacks, but it is often required when validating or diffing
     stacks whose dependencies haven't yet been deployed and that reference those dependencies with
     resolvers, especially in the sceptre_user_data.
     """
@@ -40,7 +40,8 @@ def use_resolver_placeholders_on_error():
             _RESOLVE_PLACEHOLDER_ON_ERROR = False
 
 
-def are_placeholders_enabled():
+def are_placeholders_enabled() -> bool:
+    """Indicates whether placeholders have been globally enabled or not."""
     with _placeholder_lock:
         return _RESOLVE_PLACEHOLDER_ON_ERROR
 

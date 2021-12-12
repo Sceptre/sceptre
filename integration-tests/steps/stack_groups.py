@@ -1,5 +1,6 @@
 import os
 import time
+from pathlib import Path
 
 from behave import *
 from botocore.exceptions import ClientError
@@ -9,6 +10,7 @@ from helpers import retry_boto_call
 from sceptre.context import SceptreContext
 from sceptre.diffing.diff_writer import DeepDiffWriter
 from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer
+from sceptre.helpers import sceptreise_path
 from sceptre.plan.plan import SceptrePlan
 from stacks import wait_for_final_state
 from templates import set_template_path
@@ -301,13 +303,19 @@ def get_stack_creation_times(context, stacks):
 
 
 def get_stack_names(context, stack_group_name):
-    path = os.path.join(context.sceptre_dir, "config", stack_group_name)
+    config_dir = Path(context.sceptre_dir) / 'config'
+    path = config_dir / stack_group_name
+
     stack_names = []
-    for root, dirs, files in os.walk(path):
-        for filepath in files:
-            filename = os.path.splitext(filepath)[0]
-            if not filename == "config":
-                stack_names.append(os.path.join(stack_group_name, filename))
+
+    for child in path.rglob('*'):
+        if child.is_dir() or child.stem == 'config':
+            continue
+
+        relative_path = child.relative_to(config_dir)
+        stack_name = sceptreise_path(str(relative_path).replace(child.suffix, ''))
+        stack_names.append(stack_name)
+
     return stack_names
 
 
@@ -331,8 +339,10 @@ def create_stacks(context, stack_names):
                 TemplateBody=body
             )
         except ClientError as e:
-            if e.response['Error']['Code'] == 'AlreadyExistsException' \
-                    and e.response['Error']['Message'].endswith("already exists"):
+            if (
+                e.response['Error']['Code'] == 'AlreadyExistsException'
+                and e.response['Error']['Message'].endswith("already exists")
+            ):
                 pass
             else:
                 raise e

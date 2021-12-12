@@ -11,6 +11,7 @@ from sceptre.resolvers.placeholders import (
     are_placeholders_enabled, PlaceholderType
 )
 
+
 if TYPE_CHECKING:
     from sceptre import stack
 
@@ -163,7 +164,7 @@ class ResolvableProperty(abc.ABC):
             if are_placeholders_enabled():
                 placeholder_value = create_placeholder_value(resolver, self.placeholder_type)
 
-                logger.debug(
+                self.logger.debug(
                     "Error encountered while resolving resolver. This is allowed for current "
                     f"operation. Resolving it to placeholder value instead: {placeholder_value}"
                 )
@@ -212,13 +213,12 @@ class ResolvableContainerProperty(ResolvableProperty):
             try:
                 result = self.resolve_resolver_value(value)
                 if result is None:
-                    logger.debug(f"Removing item {key} because resolver returned None.")
+                    self.logger.debug(f"Removing item {key} because resolver returned None.")
                     # We gather up resolvers (and their immediate containers) that resolve to None,
                     # since that really means the resolver resolves to nothing. This is not common,
-                    # but will be the case when a StackOutput resolver is on a project dependency
-                    # stack. We gather these rather than immediately remove them because this
-                    # function is called in the context of looping over that attr, so we cannot
-                    # alter its size until after the loop is complete.
+                    # but should be supported. We gather these rather than immediately remove them
+                    # because this function is called in the context of looping over that attr, so
+                    # we cannot alter its size until after the loop is complete.
                     keys_to_delete.append((attr, key))
                 else:
                     attr[key] = result
@@ -315,6 +315,7 @@ class ResolvableContainerProperty(ResolvableProperty):
         """Represents a value that could not yet be resolved but can be resolved in the future."""
 
         def __init__(self, instance, name, key, resolution_function):
+            self._logger = logging.getLogger(__name__)
             self._instance = instance
             self._name = name
             self._key = key
@@ -325,7 +326,7 @@ class ResolvableContainerProperty(ResolvableProperty):
             attr = getattr(self._instance, self._name)
             result = self._resolution_function()
             if result is None:
-                logger.debug(f"Removing item {self._key} because resolver returned None.")
+                self._logger.debug(f"Removing item {self._key} because resolver returned None.")
                 del attr[self._key]
             else:
                 attr[self._key] = result

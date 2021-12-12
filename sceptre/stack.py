@@ -13,7 +13,12 @@ from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.helpers import get_external_stack_name, sceptreise_path
 from sceptre.hooks import HookProperty
-from sceptre.resolvers import ResolvableContainerProperty, ResolvableValueProperty, RecursiveResolve, PlaceholderType
+from sceptre.resolvers import (
+    ResolvableContainerProperty,
+    ResolvableValueProperty,
+    RecursiveResolve,
+    PlaceholderType
+)
 from sceptre.template import Template
 
 
@@ -136,10 +141,6 @@ class Stack(object):
         "template_bucket_name",
         PlaceholderType.none
     )
-    template_key_prefix = ResolvableValueProperty(
-        "template_key_prefix",
-        PlaceholderType.none
-    )
     # Similarly, the placeholder_override=None for iam_role means that actions that would otherwise
     # use the iam_role will act as if there was no iam role when the iam_role stack has not been
     # deployed for commands that allow placeholders (like validate).
@@ -174,28 +175,31 @@ class Stack(object):
         self.external_name = external_name or get_external_stack_name(self.project_code, self.name)
         self.template_path = template_path
         self.template_handler_config = template_handler_config
+        self.dependencies = dependencies or []
+        self.protected = protected
+        self.on_failure = on_failure
+        self.stack_group_config = stack_group_config or {}
+        self.stack_timeout = stack_timeout
+        self.profile = profile
         self.is_project_dependency = is_project_dependency
+        self.template_key_prefix = template_key_prefix
+
         self._template = None
         self._connection_manager = None
 
-        self.protected = protected
-        self.on_failure = on_failure
-        self.dependencies = dependencies or []
-        self.stack_timeout = stack_timeout
-        self.profile = profile
-
+        # Resolvers and hooks need to be assigned last
+        self.s3_details = s3_details
         self.iam_role = iam_role
         self.tags = tags or {}
-        self.hooks = hooks or {}
         self.role_arn = role_arn
-        self.s3_details = s3_details
-        self.template_key_prefix = template_key_prefix
         self.template_bucket_name = template_bucket_name
+
+        self.s3_details = s3_details
         self.parameters = parameters or {}
         self.sceptre_user_data = sceptre_user_data or {}
         self.notifications = notifications or []
 
-        self.stack_group_config = stack_group_config or {}
+        self.hooks = hooks or {}
 
     def __repr__(self):
         return (
