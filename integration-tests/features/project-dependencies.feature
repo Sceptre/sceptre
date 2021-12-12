@@ -16,7 +16,7 @@ Feature: Project Dependencies managed within Sceptre
   Scenario: notifications are managed in stack group
     Given all files in template bucket for stack "project-deps/main-project/resource" are deleted at cleanup
     When the user launches stack_group "project-deps"
-    Then the stack "project-deps/main-project/resource" has a notification defined by stack "project-deps/topic"
+    Then the stack "project-deps/main-project/resource" has a notification defined by stack "project-deps/dependencies/topic"
 
   Scenario: validate a project that isn't deployed yet
     Given placeholders are allowed
