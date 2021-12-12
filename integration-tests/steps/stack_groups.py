@@ -309,8 +309,10 @@ def create_stacks(context, stack_names):
                 TemplateBody=body
             )
         except ClientError as e:
-            if e.response['Error']['Code'] == 'AlreadyExistsException' \
-                and e.response['Error']['Message'].endswith("already exists"):
+            if (
+                e.response['Error']['Code'] == 'AlreadyExistsException'
+                and e.response['Error']['Message'].endswith("already exists")
+            ):
                 pass
             else:
                 raise e
