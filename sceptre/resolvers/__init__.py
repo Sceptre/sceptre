@@ -6,6 +6,10 @@ from threading import RLock
 from typing import Any, TYPE_CHECKING, Type, Union, TypeVar
 
 from sceptre.helpers import _call_func_on_values
+from sceptre.resolvers.placeholders import (
+    create_placeholder_value,
+    are_placeholders_enabled, PlaceholderType
+)
 
 
 if TYPE_CHECKING:
@@ -65,11 +69,14 @@ class ResolvableProperty(abc.ABC):
     associated with Resolver objects.
 
     :param name: Attribute suffix used to store the property in the instance.
+    :param placeholder_type: The type of placeholder that should be returned, when placeholders are
+        allowed, when a resolver can't be resolved.
     """
 
-    def __init__(self, name):
+    def __init__(self, name: str, placeholder_type=PlaceholderType.explicit):
         self.name = "_" + name
         self.logger = logging.getLogger(__name__)
+        self.placeholder_type = placeholder_type
 
         self._lock = RLock()
 
@@ -142,10 +149,27 @@ class ResolvableProperty(abc.ABC):
     def resolve_resolver_value(self, resolver: 'Resolver') -> Any:
         """Returns the resolved parameter value.
 
+        If the resolver happens to raise an error and placeholders are currently allowed for resolvers,
+        a placeholder will be returned instead of reraising the error.
+
         :param resolver: The resolver to resolve.
-        :return: The resolved value
+        :return: The resolved value (or placeholder, in certain circumstances)
         """
-        return resolver.resolve()
+        try:
+            return resolver.resolve()
+        except RecursiveResolve:
+            # Recursive resolve issues shouldn't be masked by a placeholder.
+            raise
+        except Exception:
+            if are_placeholders_enabled():
+                placeholder_value = create_placeholder_value(resolver, self.placeholder_type)
+
+                self.logger.debug(
+                    "Error encountered while resolving resolver. This is allowed for current "
+                    f"operation. Resolving it to placeholder value instead: {placeholder_value}"
+                )
+                return placeholder_value
+            raise
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__}({self.name[1:]})>'
@@ -192,10 +216,9 @@ class ResolvableContainerProperty(ResolvableProperty):
                     self.logger.debug(f"Removing item {key} because resolver returned None.")
                     # We gather up resolvers (and their immediate containers) that resolve to None,
                     # since that really means the resolver resolves to nothing. This is not common,
-                    # but will be the case when a StackOutput resolver is on a project dependency
-                    # stack. We gather these rather than immediately remove them because this
-                    # function is called in the context of looping over that attr, so we cannot
-                    # alter its size until after the loop is complete.
+                    # but should be supported. We gather these rather than immediately remove them
+                    # because this function is called in the context of looping over that attr, so
+                    # we cannot alter its size until after the loop is complete.
                     keys_to_delete.append((attr, key))
                 else:
                     attr[key] = result
@@ -292,6 +315,7 @@ class ResolvableContainerProperty(ResolvableProperty):
         """Represents a value that could not yet be resolved but can be resolved in the future."""
 
         def __init__(self, instance, name, key, resolution_function):
+            self._logger = logging.getLogger(__name__)
             self._instance = instance
             self._name = name
             self._key = key
@@ -302,7 +326,7 @@ class ResolvableContainerProperty(ResolvableProperty):
             attr = getattr(self._instance, self._name)
             result = self._resolution_function()
             if result is None:
-                self.logger.debug(f"Removing item {self._key} because resolver returned None.")
+                self._logger.debug(f"Removing item {self._key} because resolver returned None.")
                 del attr[self._key]
             else:
                 attr[self._key] = result

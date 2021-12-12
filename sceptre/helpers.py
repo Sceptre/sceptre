@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from contextlib import contextmanager
 from os import sep
 
 from sceptre.exceptions import PathConversionError
@@ -108,3 +109,11 @@ def sceptreise_path(path):
             "not have trailing slashes.".format(path)
         )
     return path
+
+
+@contextmanager
+def null_context():
+    """A context manager that does nothing. This is identical to the nullcontext in py3.7+, but isn't
+    available in py3.6, so providing it here instead.
+    """
+    yield

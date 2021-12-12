@@ -1,23 +1,31 @@
 import logging
-
-import click
 import webbrowser
 
-from sceptre.context import SceptreContext
+import click
+
 from sceptre.cli.helpers import (
     catch_exceptions,
     write
 )
+from sceptre.context import SceptreContext
+from sceptre.helpers import null_context
 from sceptre.plan.plan import SceptrePlan
+from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error
 
 logger = logging.getLogger(__name__)
 
 
 @click.command(name="validate", short_help="Validates the template.")
+@click.option(
+    '-n',
+    '--no-placeholders',
+    is_flag=True,
+    help="If True, no placeholder values will be supplied for resolvers that cannot be resolved."
+)
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
-def validate_command(ctx, path):
+def validate_command(ctx, no_placeholders, path):
     """
     Validates the template used for stack in PATH.
     \f
@@ -35,7 +43,10 @@ def validate_command(ctx, path):
     )
 
     plan = SceptrePlan(context)
-    responses = plan.validate()
+
+    execution_context = null_context() if no_placeholders else use_resolver_placeholders_on_error()
+    with execution_context:
+        responses = plan.validate()
 
     for stack, response in responses.items():
         if response['ResponseMetadata']['HTTPStatusCode'] == 200:
@@ -45,10 +56,16 @@ def validate_command(ctx, path):
 
 
 @click.command(name="generate", short_help="Prints the template.")
+@click.option(
+    '-n',
+    '--no-placeholders',
+    is_flag=True,
+    help="If True, no placeholder values will be supplied for resolvers that cannot be resolved."
+)
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
-def generate_command(ctx, path):
+def generate_command(ctx, no_placeholders, path):
     """
     Prints the template used for stack in PATH.
     \f
@@ -66,7 +83,11 @@ def generate_command(ctx, path):
     )
 
     plan = SceptrePlan(context)
-    responses = plan.generate()
+
+    execution_context = null_context() if no_placeholders else use_resolver_placeholders_on_error()
+    with execution_context:
+        responses = plan.generate()
+
     output = [template for template in responses.values()]
     write(output, context.output_format)
 
