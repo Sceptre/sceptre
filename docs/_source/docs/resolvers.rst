@@ -287,10 +287,10 @@ A few examples...
 
 * If you have a stack parameter referencing ``!stack_output other_stack.yaml::OutputName``,
   and you run the ``diff`` command before other_stack.yaml has been deployed, the diff output will
-  show the value of that parameter to be ``{ !StackOutput(other_stack.yaml::OutputName) }``.
+  show the value of that parameter to be ``"{ !StackOutput(other_stack.yaml::OutputName) }"``.
 * If you have a ``sceptre_user_data`` value used in a Jinja template referencing
   ``!stack_output other_stack.yaml::OutputName`` and you run the ``generate`` command, the generated
-  template will replace that value with ``StackOutputotherstackyamlOutputName``. This isn't as
+  template will replace that value with ``"StackOutputotherstackyamlOutputName"``. This isn't as
   "pretty" as the sort of placeholder used for stack parameters, but the use of sceptre_user_data is
   broader, so it placeholder values can only be alphanumeric to reduce chances of it breaking the
   template.
