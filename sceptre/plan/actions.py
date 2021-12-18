@@ -1008,6 +1008,13 @@ class StackActions(object):
 
         :returns: The stack drift.
         """
+        try:
+            status = self._get_status()
+        except StackDoesNotExistError:
+            self.logger.info(f"{self.stack.name} - Does not exist.")
+            status = StackStatus.COMPLETE
+            return status
+
         response = self._detect_stack_drift()
 
         detection_id = response["StackDriftDetectionId"]
