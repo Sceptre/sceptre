@@ -20,6 +20,7 @@ from sceptre.cli.update import update_command
 from sceptre.cli.delete import delete_command
 from sceptre.cli.launch import launch_command
 from sceptre.cli.diff import diff_command
+from sceptre.cli.drift import drift_group
 from sceptre.cli.execute import execute_command
 from sceptre.cli.describe import describe_group
 from sceptre.cli.list import list_group
@@ -30,8 +31,7 @@ from sceptre.cli.helpers import catch_exceptions, setup_vars
 from sceptre.cli.template import (validate_command,
                                   generate_command,
                                   estimate_cost_command,
-                                  fetch_remote_template_command,
-                                  detect_stack_drift_command)
+                                  fetch_remote_template_command)
 
 
 @click.group()
@@ -89,4 +89,4 @@ cli.add_command(list_group)
 cli.add_command(describe_group)
 cli.add_command(fetch_remote_template_command)
 cli.add_command(diff_command)
-cli.add_command(detect_stack_drift_command)
+cli.add_command(drift_group)

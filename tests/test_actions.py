@@ -1260,7 +1260,7 @@ class TestStackActions(object):
     @patch("sceptre.plan.actions.StackActions._describe_stack_resource_drifts")
     @patch("sceptre.plan.actions.StackActions._describe_stack_drift_detection_status")
     @patch("sceptre.plan.actions.StackActions._detect_stack_drift")
-    def test_detect_stack_drift(
+    def test_drift_show(
         self,
         mock_detect_stack_drift,
         mock_describe_stack_drift_detection_status,
@@ -1304,7 +1304,7 @@ class TestStackActions(object):
         mock_describe_stack_resource_drifts.return_value = expected_drifts
         expected_response = (sentinel.external_name, expected_drifts)
 
-        response = self.actions.detect_stack_drift()
+        response = self.actions.drift_show()
 
         assert response == expected_response
 
@@ -1312,7 +1312,7 @@ class TestStackActions(object):
     @patch("sceptre.plan.actions.StackActions._describe_stack_drift_detection_status")
     @patch("sceptre.plan.actions.StackActions._detect_stack_drift")
     @patch("time.sleep")
-    def test_detect_stack_drift_times_out(
+    def test_drift_show_times_out(
         self,
         mock_sleep,
         mock_detect_stack_drift,
@@ -1355,6 +1355,6 @@ class TestStackActions(object):
         mock_describe_stack_resource_drifts.return_value = expected_drifts
         expected_response = (sentinel.external_name, "TIMED_OUT")
 
-        response = self.actions.detect_stack_drift()
+        response = self.actions.drift_show()
 
         assert response == expected_response

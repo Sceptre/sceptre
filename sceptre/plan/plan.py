@@ -377,12 +377,12 @@ class SceptrePlan(object):
         self.resolve(command=self.diff.__name__)
         return self._execute(*args)
 
-    def detect_stack_drift(self, *args):
+    def drift_show(self, *args):
         """
-        Detects stack drift for a running stack.
+        Show stack drift for a running stack.
 
         :returns: A list of detected drift against running stacks.
         :rtype: List[str]
         """
-        self.resolve(command=self.detect_stack_drift.__name__)
+        self.resolve(command=self.drift_show.__name__)
         return self._execute(*args)

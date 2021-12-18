@@ -1002,9 +1002,9 @@ class StackActions(object):
         return stack_differ.diff(self)
 
     @add_stack_hooks
-    def detect_stack_drift(self) -> Tuple[str, Union[str, dict]]:
+    def drift_show(self) -> Tuple[str, Union[str, dict]]:
         """
-        Detects stack drift for a running stack.
+        Show stack drift for a running stack.
 
         :returns: The stack drift.
         """
