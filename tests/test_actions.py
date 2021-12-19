@@ -1359,7 +1359,7 @@ class TestStackActions(object):
         }
 
         mock_describe_stack_resource_drifts.return_value = expected_drifts
-        expected_response = (sentinel.external_name, "TIMED_OUT")
+        expected_response = ("TIMED_OUT", {})
 
         response = self.actions.drift_show()
 
