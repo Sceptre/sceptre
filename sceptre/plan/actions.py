@@ -1031,6 +1031,8 @@ class StackActions(object):
             response = self._describe_stack_resource_drifts()
         elif status == "TIMED_OUT":
             response = {}
+        else:
+            raise Exception("Not expected to be reachable")
 
         return (status, response)
 
