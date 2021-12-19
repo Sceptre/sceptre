@@ -382,7 +382,7 @@ class SceptrePlan(object):
         Show stack drift for a running stack.
 
         :returns: A list of detected drift against running stacks.
-        :rtype: List[str]
+        :rtype: Dict[sceptre.stack.Stack, dict]
         """
         self.resolve(command=self.drift_show.__name__)
         return self._execute(*args)
