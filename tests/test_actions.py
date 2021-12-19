@@ -1352,7 +1352,7 @@ class TestStackActions(object):
     def test_drift_show_with_stack_that_does_not_exist(self, mock_get_status):
         mock_get_status.side_effect = StackDoesNotExistError()
         response = self.actions.drift_show()
-        assert response == StackStatus.COMPLETE
+        assert response == (StackStatus.COMPLETE, {})
 
     @patch("sceptre.plan.actions.StackActions._describe_stack_resource_drifts")
     @patch("sceptre.plan.actions.StackActions._describe_stack_drift_detection_status")
@@ -1375,6 +1375,7 @@ class TestStackActions(object):
             "StackId": "fake-stack-id",
             "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
             "DetectionStatus": "DETECTION_IN_PROGRESS",
+            "StackDriftStatus": "FOO",
             "DetectionStatusReason": "User Initiated"
         }
 

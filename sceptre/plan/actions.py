@@ -1020,7 +1020,7 @@ class StackActions(object):
         except StackDoesNotExistError:
             self.logger.info(f"{self.stack.name} - Does not exist.")
             status = StackStatus.COMPLETE
-            return status
+            return (status, {})
 
         response = self._detect_stack_drift()
 
@@ -1041,7 +1041,7 @@ class StackActions(object):
         except StackDoesNotExistError:
             self.logger.info(f"{self.stack.name} - Does not exist.")
             status = StackStatus.COMPLETE
-            return status
+            return (status, {})
 
         response = self._detect_stack_drift()
 
@@ -1069,7 +1069,7 @@ class StackActions(object):
 
         while True:
             if elapsed >= timeout:
-                return "TIMED_OUT"
+                return ("TIMED_OUT", {})
 
             self.logger.debug(f"{self.stack.name} - Waiting for drift detection")
             response = self._describe_stack_drift_detection_status(detection_id)
