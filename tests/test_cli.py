@@ -1000,10 +1000,10 @@ class TestCli(object):
 
     def test_drift_show(self):
         self.mock_stack_actions.drift_show.return_value = [
-            "mock-stack", {"some": "json"}
+            "mock-stack", ("DETECTION_COMPLETE", {"some": "json"})
         ]
         result = self.runner.invoke(
             cli, ["drift", "show", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert result.output == '{\n  "mock-stack": {\n    "some": "json"\n  }\n}\n'
+        assert result.output == "{'mock-stack': {'some': 'json'}}\n"

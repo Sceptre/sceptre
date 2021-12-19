@@ -1302,7 +1302,7 @@ class TestStackActions(object):
         }
 
         mock_describe_stack_resource_drifts.return_value = expected_drifts
-        expected_response = (sentinel.external_name, expected_drifts)
+        expected_response = (detection_status, expected_drifts)
 
         response = self.actions.drift_show()
 

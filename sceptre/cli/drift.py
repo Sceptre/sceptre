@@ -1,4 +1,3 @@
-import json
 import click
 
 from sceptre.context import SceptreContext
@@ -40,8 +39,11 @@ def drift_show(ctx, path):
 
     plan = SceptrePlan(context)
     responses = plan.drift_show()
-    output = "\n".join([
-        json.dumps({stack_name: response}, sort_keys=True, indent=2, default=str)
-        for stack_name, response in responses.values()
-    ])
-    write(output, context.output_format)
+
+    exit_status = 0
+    for stack, (status, response) in responses.values():
+        if status in ["DETECTION_FAILED", "TIMED_OUT"]:
+            exit_status += 1
+        write({stack: response}, context.output_format)
+
+    exit(exit_status)

@@ -1002,11 +1002,18 @@ class StackActions(object):
         return stack_differ.diff(self)
 
     @add_stack_hooks
-    def drift_show(self) -> Tuple[str, Union[str, dict]]:
+    def drift_show(self) -> Tuple[str, dict]:
         """
         Show stack drift for a running stack.
 
-        :returns: The stack drift.
+        DETECTION_COMPLETE and DETECTION_FAILED
+        are 2 of the 3 DetectionStatuses from the
+        DescribeStackDriftDetectionStatus API. TIMED_OUT is
+        something we have defined in the event that the wait
+        continues to return DETECTION_IN_PROGRESS after our
+        timeout.
+
+        :returns: The status and resource drifts.
         """
         try:
             status = self._get_status()
@@ -1022,11 +1029,10 @@ class StackActions(object):
 
         if status in ["DETECTION_COMPLETE", "DETECTION_FAILED"]:
             response = self._describe_stack_resource_drifts()
-            return_value = (self.stack.external_name, response)
-        else:
-            return_value = (self.stack.external_name, status)
+        elif status == "TIMED_OUT":
+            response = {}
 
-        return return_value
+        return (status, response)
 
     def _wait_for_drift_status(self, detection_id: str) -> str:
         """
