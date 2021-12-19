@@ -1025,9 +1025,9 @@ class StackActions(object):
         response = self._detect_stack_drift()
 
         detection_id = response["StackDriftDetectionId"]
-        _, stack_drift_status = self._wait_for_drift_status(detection_id)
+        detection_status, stack_drift_status = self._wait_for_drift_status(detection_id)
 
-        return (status, stack_drift_status)
+        return (detection_status, stack_drift_status)
 
     @add_stack_hooks
     def drift_show(self) -> Tuple[str, dict]:

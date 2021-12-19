@@ -1256,6 +1256,41 @@ class TestStackActions(object):
         result = self.actions.diff(differ)
         assert result == differ.diff.return_value
 
+    @patch("sceptre.plan.actions.StackActions._describe_stack_drift_detection_status")
+    @patch("sceptre.plan.actions.StackActions._detect_stack_drift")
+    @patch("time.sleep")
+    def test_drift_detect(
+        self,
+        mock_sleep,
+        mock_detect_stack_drift,
+        mock_describe_stack_drift_detection_status
+    ):
+        mock_sleep.return_value = None
+
+        mock_detect_stack_drift.return_value = {
+            "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62"
+        }
+        mock_describe_stack_drift_detection_status.side_effect = [
+            {
+                "StackId": "fake-stack-id",
+                "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
+                "DetectionStatus": "DETECTION_IN_PROGRESS",
+                "StackDriftStatus": "NOT_CHECKED",
+                "DetectionStatusReason": "User Initiated"
+            },
+            {
+                "StackId": "fake-stack-id",
+                "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
+                "StackDriftStatus": "IN_SYNC",
+                "DetectionStatus": "DETECTION_COMPLETE",
+                "DriftedStackResourceCount": 0
+            }
+        ]
+
+        expected_response = ("DETECTION_COMPLETE", "IN_SYNC")
+        response = self.actions.drift_detect()
+        assert response == expected_response
+
     @pytest.mark.parametrize("detection_status", ["DETECTION_COMPLETE", "DETECTION_FAILED"])
     @patch("sceptre.plan.actions.StackActions._describe_stack_resource_drifts")
     @patch("sceptre.plan.actions.StackActions._describe_stack_drift_detection_status")
