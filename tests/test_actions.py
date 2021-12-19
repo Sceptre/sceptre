@@ -1260,13 +1260,17 @@ class TestStackActions(object):
     @patch("sceptre.plan.actions.StackActions._describe_stack_resource_drifts")
     @patch("sceptre.plan.actions.StackActions._describe_stack_drift_detection_status")
     @patch("sceptre.plan.actions.StackActions._detect_stack_drift")
+    @patch("time.sleep")
     def test_drift_show(
         self,
+        mock_sleep,
         mock_detect_stack_drift,
         mock_describe_stack_drift_detection_status,
         mock_describe_stack_resource_drifts,
         detection_status
     ):
+        mock_sleep.return_value = None
+
         mock_detect_stack_drift.return_value = {
             "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62"
         }
@@ -1275,6 +1279,7 @@ class TestStackActions(object):
                 "StackId": "fake-stack-id",
                 "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
                 "DetectionStatus": "DETECTION_IN_PROGRESS",
+                "StackDriftStatus": "FOO",
                 "DetectionStatusReason": "User Initiated"
             },
             {

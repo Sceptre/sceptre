@@ -1002,7 +1002,7 @@ class StackActions(object):
         return stack_differ.diff(self)
 
     @add_stack_hooks
-    def drift_show(self) -> Tuple[str, dict]:
+    def drift_detect(self) -> Tuple[str, dict]:
         """
         Show stack drift for a running stack.
 
@@ -1025,18 +1025,39 @@ class StackActions(object):
         response = self._detect_stack_drift()
 
         detection_id = response["StackDriftDetectionId"]
-        status = self._wait_for_drift_status(detection_id)
+        _, stack_drift_status = self._wait_for_drift_status(detection_id)
 
-        if status in ["DETECTION_COMPLETE", "DETECTION_FAILED"]:
+        return (status, stack_drift_status)
+
+    @add_stack_hooks
+    def drift_show(self) -> Tuple[str, dict]:
+        """
+        Detect drift status on stacks.
+
+        :returns: The status and resource drifts.
+        """
+        try:
+            status = self._get_status()
+        except StackDoesNotExistError:
+            self.logger.info(f"{self.stack.name} - Does not exist.")
+            status = StackStatus.COMPLETE
+            return status
+
+        response = self._detect_stack_drift()
+
+        detection_id = response["StackDriftDetectionId"]
+        detection_status, _ = self._wait_for_drift_status(detection_id)
+
+        if detection_status in ["DETECTION_COMPLETE", "DETECTION_FAILED"]:
             response = self._describe_stack_resource_drifts()
-        elif status == "TIMED_OUT":
+        elif detection_status == "TIMED_OUT":
             response = {}
         else:
             raise Exception("Not expected to be reachable")
 
-        return (status, response)
+        return (detection_status, response)
 
-    def _wait_for_drift_status(self, detection_id: str) -> str:
+    def _wait_for_drift_status(self, detection_id: str) -> Tuple[str, str]:
         """
         Waits for drift detection to complete.
 
@@ -1053,14 +1074,16 @@ class StackActions(object):
             self.logger.debug(f"{self.stack.name} - Waiting for drift detection")
             response = self._describe_stack_drift_detection_status(detection_id)
 
-            status = response["DetectionStatus"]
+            detection_status = response["DetectionStatus"]
+            stack_drift_status = response["StackDriftStatus"]
+
             self._log_drift_status(response)
 
-            if status == "DETECTION_IN_PROGRESS":
+            if detection_status == "DETECTION_IN_PROGRESS":
                 time.sleep(10)
                 elapsed += 10
             else:
-                return status
+                return (detection_status, stack_drift_status)
 
     def _log_drift_status(self, response):
         """

@@ -998,6 +998,16 @@ class TestCli(object):
         star_bars = [line for line in output_lines if bar in line]
         assert all(len(line) == max_line_length for line in star_bars)
 
+    def test_drift_detect(self):
+        self.mock_stack_actions.drift_detect.return_value = [
+            "mock-stack", ("DETECTION_COMPLETE", "IN_SYNC")
+        ]
+        result = self.runner.invoke(
+            cli, ["drift", "detect", "dev/vpc.yaml"]
+        )
+        assert result.exit_code == 0
+        assert result.output == "{'mock-stack': 'IN_SYNC'}\n"
+
     def test_drift_show(self):
         self.mock_stack_actions.drift_show.return_value = [
             "mock-stack", ("DETECTION_COMPLETE", {"some": "json"})
