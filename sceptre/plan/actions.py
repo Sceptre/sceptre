@@ -1069,7 +1069,7 @@ class StackActions(object):
 
         return (detection_status, response)
 
-    def _wait_for_drift_status(self, detection_id: str) -> Tuple[str, str]:
+    def _wait_for_drift_status(self, detection_id: str) -> dict:
         """
         Waits for drift detection to complete.
 
