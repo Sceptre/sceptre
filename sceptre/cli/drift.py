@@ -44,7 +44,7 @@ def drift_detect(ctx, path):
     for stack, (status, response) in responses.values():
         if status in ["DETECTION_FAILED", "TIMED_OUT"]:
             exit_status += 1
-        write({stack: response}, context.output_format)
+        write({stack.external_name: response}, context.output_format)
 
     exit(exit_status)
 
@@ -77,6 +77,6 @@ def drift_show(ctx, path):
     for stack, (status, response) in responses.values():
         if status in ["DETECTION_FAILED", "TIMED_OUT"]:
             exit_status += 1
-        write({stack: response}, context.output_format)
+        write({stack.external_name: response}, context.output_format)
 
     exit(exit_status)
