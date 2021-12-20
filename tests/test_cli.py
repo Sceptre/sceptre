@@ -41,7 +41,7 @@ class TestCli(object):
         self.mock_stack.name = 'mock-stack'
         self.mock_stack.region = None
         self.mock_stack.profile = None
-        self.mock_stack.external_name = None
+        self.mock_stack.external_name = 'fake_stack'
         self.mock_stack.dependencies = []
 
         self.mock_config_reader.construct_stacks.return_value = \
@@ -1000,20 +1000,20 @@ class TestCli(object):
 
     def test_drift_detect(self):
         self.mock_stack_actions.drift_detect.return_value = [
-            "mock-stack", ("DETECTION_COMPLETE", "IN_SYNC")
+            self.mock_stack, ("DETECTION_COMPLETE", "IN_SYNC")
         ]
         result = self.runner.invoke(
             cli, ["drift", "detect", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert result.output == "{'mock-stack': 'IN_SYNC'}\n"
+        assert result.output == "{'fake_stack': 'IN_SYNC'}\n"
 
     def test_drift_show(self):
         self.mock_stack_actions.drift_show.return_value = [
-            "mock-stack", ("DETECTION_COMPLETE", {"some": "json"})
+            self.mock_stack, ("DETECTION_COMPLETE", {"some": "json"})
         ]
         result = self.runner.invoke(
             cli, ["drift", "show", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert result.output == "{'mock-stack': {'some': 'json'}}\n"
+        assert result.output == "{'fake_stack': {'some': 'json'}}\n"
