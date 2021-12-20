@@ -1026,10 +1026,13 @@ class StackActions(object):
         detection_id = response["StackDriftDetectionId"]
 
         try:
-            detection_status, stack_drift_status = self._wait_for_drift_status(detection_id)
+            response = self._wait_for_drift_status(detection_id)
+            detection_status = response["DetectionStatus"]
+            stack_drift_status = response["StackDriftStatus"]
         except TimeoutError as exc:
             self.logger.info(f"{self.stack.name} - {exc}")
             detection_status = "TIMED_OUT"
+            stack_drift_status = {}
 
         return (detection_status, stack_drift_status)
 
@@ -1051,7 +1054,8 @@ class StackActions(object):
         detection_id = response["StackDriftDetectionId"]
 
         try:
-            detection_status, _ = self._wait_for_drift_status(detection_id)
+            response = self._wait_for_drift_status(detection_id)
+            detection_status = response["DetectionStatus"]
         except TimeoutError as exc:
             self.logger.info(f"{self.stack.name} - {exc}")
             detection_status = "TIMED_OUT"
@@ -1081,9 +1085,7 @@ class StackActions(object):
 
             self.logger.debug(f"{self.stack.name} - Waiting for drift detection")
             response = self._describe_stack_drift_detection_status(detection_id)
-
             detection_status = response["DetectionStatus"]
-            stack_drift_status = response["StackDriftStatus"]
 
             self._log_drift_status(response)
 
@@ -1091,7 +1093,7 @@ class StackActions(object):
                 time.sleep(10)
                 elapsed += 10
             else:
-                return (detection_status, stack_drift_status)
+                return response
 
     def _log_drift_status(self, response):
         """
