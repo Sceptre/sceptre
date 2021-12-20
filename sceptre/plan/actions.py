@@ -13,7 +13,7 @@ import time
 import urllib
 from datetime import datetime, timedelta
 from os import path
-from typing import Union, Optional, Tuple
+from typing import Union, Optional, Tuple, Dict
 
 import botocore
 from dateutil.tz import tzutc
@@ -1002,39 +1002,39 @@ class StackActions(object):
         return stack_differ.diff(self)
 
     @add_stack_hooks
-    def drift_detect(self) -> Tuple[str, dict]:
+    def drift_detect(self) -> Dict[str, str]:
         """
         Show stack drift for a running stack.
-
         DETECTION_COMPLETE and DETECTION_FAILED
         are 2 of the 3 DetectionStatuses from the
         DescribeStackDriftDetectionStatus API. TIMED_OUT is
         something we have defined in the event that the wait
         continues to return DETECTION_IN_PROGRESS after our
         timeout.
-
         :returns: The status and resource drifts.
         """
         try:
-            status = self._get_status()
+            self._get_status()
         except StackDoesNotExistError:
             self.logger.info(f"{self.stack.name} - Does not exist.")
-            status = StackStatus.COMPLETE
-            return (status, {})
+            return {
+                "DetectionStatus": "STACK_DOES_NOT_EXIST",
+                "StackDriftStatus": "STACK_DOES_NOT_EXIST"
+            }
 
         response = self._detect_stack_drift()
         detection_id = response["StackDriftDetectionId"]
 
         try:
             response = self._wait_for_drift_status(detection_id)
-            detection_status = response["DetectionStatus"]
-            stack_drift_status = response["StackDriftStatus"]
         except TimeoutError as exc:
             self.logger.info(f"{self.stack.name} - {exc}")
-            detection_status = "TIMED_OUT"
-            stack_drift_status = {}
+            response = {
+                "DetectionStatus": "TIMED_OUT",
+                "StackDriftStatus": "TIMED_OUT"
+            }
 
-        return (detection_status, stack_drift_status)
+        return response
 
     @add_stack_hooks
     def drift_show(self) -> Tuple[str, dict]:
@@ -1043,26 +1043,12 @@ class StackActions(object):
 
         :returns: The status and resource drifts.
         """
-        try:
-            status = self._get_status()
-        except StackDoesNotExistError:
-            self.logger.info(f"{self.stack.name} - Does not exist.")
-            status = StackStatus.COMPLETE
-            return (status, {})
-
-        response = self._detect_stack_drift()
-        detection_id = response["StackDriftDetectionId"]
-
-        try:
-            response = self._wait_for_drift_status(detection_id)
-            detection_status = response["DetectionStatus"]
-        except TimeoutError as exc:
-            self.logger.info(f"{self.stack.name} - {exc}")
-            detection_status = "TIMED_OUT"
+        response = self.drift_detect()
+        detection_status = response["DetectionStatus"]
 
         if detection_status in ["DETECTION_COMPLETE", "DETECTION_FAILED"]:
             response = self._describe_stack_resource_drifts()
-        elif detection_status == "TIMED_OUT":
+        elif detection_status in ["TIMED_OUT", "STACK_DOES_NOT_EXIST"]:
             response = {}
         else:
             raise Exception("Not expected to be reachable")

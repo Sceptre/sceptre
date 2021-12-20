@@ -1270,26 +1270,29 @@ class TestStackActions(object):
         mock_detect_stack_drift.return_value = {
             "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62"
         }
+
+        first_response = {
+            "StackId": "fake-stack-id",
+            "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
+            "DetectionStatus": "DETECTION_IN_PROGRESS",
+            "StackDriftStatus": "NOT_CHECKED",
+            "DetectionStatusReason": "User Initiated"
+        }
+
+        final_response = {
+            "StackId": "fake-stack-id",
+            "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
+            "StackDriftStatus": "IN_SYNC",
+            "DetectionStatus": "DETECTION_COMPLETE",
+            "DriftedStackResourceCount": 0
+        }
+
         mock_describe_stack_drift_detection_status.side_effect = [
-            {
-                "StackId": "fake-stack-id",
-                "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
-                "DetectionStatus": "DETECTION_IN_PROGRESS",
-                "StackDriftStatus": "NOT_CHECKED",
-                "DetectionStatusReason": "User Initiated"
-            },
-            {
-                "StackId": "fake-stack-id",
-                "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
-                "StackDriftStatus": "IN_SYNC",
-                "DetectionStatus": "DETECTION_COMPLETE",
-                "DriftedStackResourceCount": 0
-            }
+            first_response, final_response
         ]
 
-        expected_response = ("DETECTION_COMPLETE", "IN_SYNC")
         response = self.actions.drift_detect()
-        assert response == expected_response
+        assert response == final_response
 
     @pytest.mark.parametrize("detection_status", ["DETECTION_COMPLETE", "DETECTION_FAILED"])
     @patch("sceptre.plan.actions.StackActions._describe_stack_resource_drifts")
@@ -1352,7 +1355,7 @@ class TestStackActions(object):
     def test_drift_show_with_stack_that_does_not_exist(self, mock_get_status):
         mock_get_status.side_effect = StackDoesNotExistError()
         response = self.actions.drift_show()
-        assert response == (StackStatus.COMPLETE, {})
+        assert response == ("STACK_DOES_NOT_EXIST", {})
 
     @patch("sceptre.plan.actions.StackActions._describe_stack_resource_drifts")
     @patch("sceptre.plan.actions.StackActions._describe_stack_drift_detection_status")
