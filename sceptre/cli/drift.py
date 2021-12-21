@@ -8,6 +8,12 @@ from sceptre.cli.helpers import (
 from sceptre.plan.plan import SceptrePlan
 
 
+BAD_STATUSES = [
+    "DETECTION_FAILED",
+    "TIMED_OUT"
+]
+
+
 @click.group(name="drift")
 def drift_group():
     """
@@ -40,15 +46,10 @@ def drift_detect(ctx, path):
     plan = SceptrePlan(context)
     responses = plan.drift_detect()
 
-    bad_statuses = [
-        "DETECTION_FAILED",
-        "TIMED_OUT"
-    ]
-
     exit_status = 0
     for stack, response in responses.values():
         status = response["DetectionStatus"]
-        if status in bad_statuses:
+        if status in BAD_STATUSES:
             exit_status += 1
         write({stack.external_name: response}, context.output_format)
 
@@ -81,7 +82,7 @@ def drift_show(ctx, path):
 
     exit_status = 0
     for stack, (status, response) in responses.values():
-        if status in ["DETECTION_FAILED", "TIMED_OUT"]:
+        if status in BAD_STATUSES:
             exit_status += 1
         write({stack.external_name: response}, context.output_format)
 
