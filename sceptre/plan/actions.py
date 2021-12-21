@@ -1106,7 +1106,7 @@ class StackActions(object):
         """
         Run detect_stack_drift.
         """
-        self.logger.debug("%s - Detecting Stack Drift", self.stack.name)
+        self.logger.debug(f"{self.stack.name} - Detecting Stack Drift")
 
         return self.connection_manager.call(
             service="cloudformation",
@@ -1116,11 +1116,11 @@ class StackActions(object):
             }
         )
 
-    def _describe_stack_drift_detection_status(self, detection_id):
+    def _describe_stack_drift_detection_status(self, detection_id: str):
         """
         Run describe_stack_drift_detection_status.
         """
-        self.logger.debug("%s - Detecting Stack Drift Detection Status", self.stack.name)
+        self.logger.debug(f"{self.stack.name} - Describing Stack Drift Detection Status")
 
         return self.connection_manager.call(
             service="cloudformation",
@@ -1134,7 +1134,7 @@ class StackActions(object):
         """
         Detects stack resource_drifts for a running stack.
         """
-        self.logger.debug("%s - Detecting Stack Drift", self.stack.name)
+        self.logger.debug(f"{self.stack.name} - Describing Stack Resource Drifts")
 
         return self.connection_manager.call(
             service="cloudformation",
