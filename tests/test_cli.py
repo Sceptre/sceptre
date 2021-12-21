@@ -999,16 +999,13 @@ class TestCli(object):
         assert all(len(line) == max_line_length for line in star_bars)
 
     def test_drift_detect(self):
-        final_response = {
+        self.mock_stack_actions.drift_detect.return_value = {
             "StackId": "fake-stack-id",
             "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
             "StackDriftStatus": "IN_SYNC",
             "DetectionStatus": "DETECTION_COMPLETE",
             "DriftedStackResourceCount": 0
         }
-        self.mock_stack_actions.drift_detect.return_value = [
-            self.mock_stack, final_response
-        ]
         result = self.runner.invoke(
             cli, ["drift", "detect", "dev/vpc.yaml"]
         )
@@ -1022,9 +1019,9 @@ class TestCli(object):
         ])
 
     def test_drift_show(self):
-        self.mock_stack_actions.drift_show.return_value = [
-            self.mock_stack, ("DETECTION_COMPLETE", {"some": "json"})
-        ]
+        self.mock_stack_actions.drift_show.return_value = (
+            "DETECTION_COMPLETE", {"some": "json"}
+        )
         result = self.runner.invoke(
             cli, ["drift", "show", "dev/vpc.yaml"]
         )

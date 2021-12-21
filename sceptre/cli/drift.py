@@ -47,7 +47,7 @@ def drift_detect(ctx, path):
     responses = plan.drift_detect()
 
     exit_status = 0
-    for stack, response in responses.values():
+    for stack, response in responses.items():
         status = response["DetectionStatus"]
         if status in BAD_STATUSES:
             exit_status += 1
@@ -81,7 +81,7 @@ def drift_show(ctx, path):
     responses = plan.drift_show()
 
     exit_status = 0
-    for stack, (status, response) in responses.values():
+    for stack, (status, response) in responses.items():
         if status in BAD_STATUSES:
             exit_status += 1
         write({stack.external_name: response}, context.output_format)
