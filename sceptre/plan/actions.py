@@ -1034,9 +1034,6 @@ class StackActions(object):
                 "StackDriftStatus": "TIMED_OUT"
             }
 
-        response.pop("Timestamp", None)
-        response.pop("ResponseMetadata", None)
-
         return response
 
     @add_stack_hooks
