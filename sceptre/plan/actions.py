@@ -1005,13 +1005,12 @@ class StackActions(object):
     def drift_detect(self) -> Dict[str, str]:
         """
         Show stack drift for a running stack.
-        DETECTION_COMPLETE and DETECTION_FAILED
-        are 2 of the 3 DetectionStatuses from the
-        DescribeStackDriftDetectionStatus API. TIMED_OUT is
-        something we have defined in the event that the wait
-        continues to return DETECTION_IN_PROGRESS after our
-        timeout.
-        :returns: The status and resource drifts.
+
+        :returns: The stack drift detection status.
+        If the stack does not exist, we return a detection and
+        stack drift status of STACK_DOES_NOT_EXIST.
+        If drift detection times out after 5 minutes, we return
+        TIMED_OUT.
         """
         try:
             self._get_status()
@@ -1041,7 +1040,7 @@ class StackActions(object):
         """
         Detect drift status on stacks.
 
-        :returns: The status and resource drifts.
+        :returns: The detection status and resource drifts.
         """
         response = self.drift_detect()
         detection_status = response["DetectionStatus"]
@@ -1049,7 +1048,9 @@ class StackActions(object):
         if detection_status in ["DETECTION_COMPLETE", "DETECTION_FAILED"]:
             response = self._describe_stack_resource_drifts()
         elif detection_status in ["TIMED_OUT", "STACK_DOES_NOT_EXIST"]:
-            response = {}
+            response = {
+                "StackResourceDriftStatus": detection_status
+            }
         else:
             raise Exception("Not expected to be reachable")
 
@@ -1060,7 +1061,7 @@ class StackActions(object):
         Waits for drift detection to complete.
 
         :param detection_id: The drift detection ID.
-        :returns: The drift status.
+        :returns: The response from describe_stack_drift_detection_status.
         """
         timeout = 300
         elapsed = 0
@@ -1081,7 +1082,7 @@ class StackActions(object):
             else:
                 return response
 
-    def _log_drift_status(self, response):
+    def _log_drift_status(self, response: dict) -> None:
         """
         Log the drift status while waiting for
         drift detection to complete.
@@ -1099,7 +1100,7 @@ class StackActions(object):
                     f"{self.stack.name} - {key} - {response[key]}"
                 )
 
-    def _detect_stack_drift(self):
+    def _detect_stack_drift(self) -> dict:
         """
         Run detect_stack_drift.
         """
@@ -1113,7 +1114,7 @@ class StackActions(object):
             }
         )
 
-    def _describe_stack_drift_detection_status(self, detection_id: str):
+    def _describe_stack_drift_detection_status(self, detection_id: str) -> dict:
         """
         Run describe_stack_drift_detection_status.
         """
@@ -1127,7 +1128,7 @@ class StackActions(object):
             }
         )
 
-    def _describe_stack_resource_drifts(self):
+    def _describe_stack_resource_drifts(self) -> dict:
         """
         Detects stack resource_drifts for a running stack.
         """

@@ -1355,7 +1355,10 @@ class TestStackActions(object):
     def test_drift_show_with_stack_that_does_not_exist(self, mock_get_status):
         mock_get_status.side_effect = StackDoesNotExistError()
         response = self.actions.drift_show()
-        assert response == ("STACK_DOES_NOT_EXIST", {})
+        assert response == (
+            'STACK_DOES_NOT_EXIST', {
+                'StackResourceDriftStatus': 'STACK_DOES_NOT_EXIST'
+            })
 
     @patch("sceptre.plan.actions.StackActions._describe_stack_resource_drifts")
     @patch("sceptre.plan.actions.StackActions._describe_stack_drift_detection_status")
@@ -1403,7 +1406,7 @@ class TestStackActions(object):
         }
 
         mock_describe_stack_resource_drifts.return_value = expected_drifts
-        expected_response = ("TIMED_OUT", {})
+        expected_response = ("TIMED_OUT", {"StackResourceDriftStatus": "TIMED_OUT"})
 
         response = self.actions.drift_show()
 

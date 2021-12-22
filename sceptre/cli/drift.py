@@ -1,4 +1,5 @@
 import click
+from click import Context
 
 from sceptre.context import SceptreContext
 from sceptre.cli.helpers import (
@@ -26,10 +27,17 @@ def drift_group():
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
-def drift_detect(ctx, path):
+def drift_detect(ctx: Context, path: str):
     """
-    Detect stack drift and return if drift has occurred.
-    \f
+    Detect stack drift and return stack drift status.
+
+    In the event that the stack does not exist, we return
+    a DetectionStatus and StackDriftStatus of STACK_DOES_NOT_EXIST.
+
+    In the event that drift detection times out, we return
+    a DetectionStatus and StackDriftStatus of TIMED_OUT.
+
+    The timeout is set at 5 minutes, a value that cannot be configured.
 
     :param path: The path to execute the command on.
     :type path: str
@@ -65,7 +73,15 @@ def drift_detect(ctx, path):
 def drift_show(ctx, path):
     """
     Show stack drift on running stacks.
-    \f
+
+    In the event that the stack does not exist, we return
+    a StackResourceDriftStatus of STACK_DOES_NOT_EXIST.
+
+    In the event that drift detection times out, we return
+    a StackResourceDriftStatus of TIMED_OUT.
+
+    The timeout is set at 5 minutes, a value that cannot be configured.
+
 
     :param path: The path to execute the command on.
     :type path: str
