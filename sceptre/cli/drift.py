@@ -51,6 +51,8 @@ def drift_detect(ctx, path):
         status = response["DetectionStatus"]
         if status in BAD_STATUSES:
             exit_status += 1
+        for key in ["Timestamp", "ResponseMetadata"]:
+            response.pop(key, None)
         write({stack.external_name: response}, context.output_format)
 
     exit(exit_status)
@@ -84,6 +86,7 @@ def drift_show(ctx, path):
     for stack, (status, response) in responses.items():
         if status in BAD_STATUSES:
             exit_status += 1
+        response.pop("ResponseMetadata", None)
         write({stack.external_name: response}, context.output_format)
 
     exit(exit_status)
