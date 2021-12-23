@@ -145,6 +145,16 @@ def dump_stack_config(config_path: Path, config_dict: dict):
         yaml.safe_dump(config_dict, f)
 
 
+@given('a stack setting in stack "{stack_name}" has drifted')
+def step_impl(stack_name):
+    client = boto3.client('logs')
+    retry_boto_call(
+        client.put_retention_policy(
+            logGroupName='IntegrationTest',
+            retentionInDays=10
+        )
+    )
+
 @when('the user creates stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
@@ -339,6 +349,16 @@ def step_impl(context, stack_name, diff_type):
     context.output = list(sceptre_plan.diff(differ).values())
 
 
+@when('the user detects drift on stack "{stack_name}"')
+def step_impl(context, stack_name):
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir
+    )
+    sceptre_plan = SceptrePlan(sceptre_context)
+    context.output = list(sceptre_plan.drift_detect().values())
+
+
 @then(
     'stack "{stack_name}" in "{region_name}" '
     'exists in "{desired_status}" state'
@@ -440,6 +460,12 @@ def step_impl(context, a_or_no, kind):
         diff: StackDiff
         writer = writer_class(diff, StringIO(), 'yaml')
         assert getattr(writer, difference_property) is test_value
+
+
+@then('drift is detected')
+def step_impl(context):
+    import ipdb; ipdb.set_trace()
+    assert context.output == "some output"
 
 
 def get_stack_tags(context, stack_name, region_name=None):

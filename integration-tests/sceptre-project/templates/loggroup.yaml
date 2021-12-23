@@ -1,0 +1,6 @@
+Resources:
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: IntegrationTest
+      RetentionInDays: 1
