@@ -237,7 +237,7 @@ permits the user to assume that role.
 
 .. warning::
 
-   If you use set the value of ``iam_role`` with ``!stack_output``, that ``iam_role``
+   If you set the value of ``iam_role`` with ``!stack_output``, that ``iam_role``
    will not actually be used to obtain the stack_output, but it *WILL* be used for all subsequent stack
    actions. Therefore, it is important that the user executing the stack action have permissions to get
    stack outputs for the stack outputting the ``iam_role``.
