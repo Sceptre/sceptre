@@ -79,10 +79,16 @@ Example:
        VpcIdParameter: !stack_output shared/vpc.yaml::VpcIdOutput
 
 Sceptre infers that the Stack to fetch the output value from is a dependency,
-and builds that Stack before the current one.
+adding that stack to the current stack's list of dependencies. This instructs
+Sceptre to build that Stack before the current one.
 
-This resolver will add a dependency for the Stack in which needs the output
-from.
+.. warning::
+   Be careful when using the stack_output resolver that you do not create circular dependencies.
+   This is especially true when using this on StackGroup Configs to create configurations
+   to be inherited by all stacks in that group. Since the stack_output resolver creates dependencies
+   on all stacks in the group, this can lead to circular dependencies if the resolver points to a
+   stack inside the group. The correct way to work around this is to move that stack outside the
+   StackGroup.
 
 stack_output_external
 ~~~~~~~~~~~~~~~~~~~~~
