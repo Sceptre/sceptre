@@ -71,7 +71,22 @@ supplied in this way have a lower maximum length, so using the
    If you resolve ``template_bucket_name`` using the ``!stack_output``
    resolver on a StackGroup, the stack that outputs that bucket name *cannot* be
    defined in that StackGroup. Otherwise, a circular dependency will exist and Sceptre
-   will raise an error when attempting any Stack action.
+   will raise an error when attempting any Stack action. The proper way to do this would
+   be to define all your project stacks inside a StackGroup and then your template bucket
+   stack *outside* that StackGroup. Here's an example project structure for something like
+   this:
+
+   .. code-block:: yaml
+
+      config/
+          - config.yaml           # This is the StackGroup Config for your whole project.
+          - template-bucket.yaml  # The template for this stack outputs the bucket name
+          - project/              # You can put all your other stacks in this StackGroup
+              - config.yaml       # In this StackGroup Config is...
+                                  #  template_bucket_name: !stack_output template-bucket.yaml::BucketName
+              - vpc.yaml          # Put all your other project stacks inside project/
+              - other-stack.yaml
+
 
 template_key_prefix
 ~~~~~~~~~~~~~~~~~~~
