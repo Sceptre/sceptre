@@ -208,7 +208,19 @@ dependencies.
    You might have already considered that this might cause a circular dependency for those
    dependency stacks, the ones that output the template bucket name, role arn, iam_role, or topic arns.
    In order to avoid the circular dependency issue, it is important that you define these items in a
-   Stack that is *outside* the StackGroup you reference them in.
+   Stack that is *outside* the StackGroup you reference them in. Here's an example project structure
+   that would support doing this:
+
+   .. code-block:: yaml
+
+      config/
+          - config.yaml               # This is the StackGroup Config for your whole project.
+          - sceptre-dependencies.yaml # This stack defines your template bucket, iam role, topics, etc...
+          - project/                  # You can put all your other stacks in this StackGroup
+              - config.yaml           # In this StackGroup Config you can use !stack_output to
+                                      # reference outputs from sceptre-dependencies.yaml.
+              - vpc.yaml              # Put all your other project stacks inside project/
+              - other-stack.yaml
 
 
 .. _stack_group_config_templating:
