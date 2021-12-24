@@ -175,6 +175,6 @@ include:
 * s3:CreateBucket
 * s3:PutObject
 
-**If using ``role_arn``:**
+**If using a cloudformation service role:**
 
 * iam:PassRole
