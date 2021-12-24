@@ -24,6 +24,7 @@ provide more flexibility, control, and safety within an organization: **role_arn
 **profile**. These can be applied in a very targeted way, on a stack by stack basis or can be applied
 broadly to a whole StackGroup.
 
+.. _role_arn_permissions:
 
 role_arn
 ^^^^^^^^
@@ -56,6 +57,7 @@ As a resolvable property, Sceptre allows you to use a resolver to populate the `
 Stack or StackGroup Config. This means you could define that role within your project, output its
 ARN, and then reference it using `!stack_output`.
 
+.. _iam_role_permissions:
 
 iam_role
 ^^^^^^^^
@@ -83,6 +85,8 @@ deployment actions on the stack and all its resources.
 As a resolvable property, Sceptre allows you to use a resolver to populate the ``iam_role`` for a
 Stack or StackGroup Config. This means you could define that role within your project, output its
 ARN, and then reference it using `!stack_output`.
+
+.. _profile_permissions:
 
 profile
 ^^^^^^^
