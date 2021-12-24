@@ -85,10 +85,10 @@ Sceptre to build that Stack before the current one.
 .. warning::
    Be careful when using the stack_output resolver that you do not create circular dependencies.
    This is especially true when using this on StackGroup Configs to create configurations
-   to be inherited by all stacks in that group. Since the stack_output resolver creates dependencies
-   on all stacks in the group, this can lead to circular dependencies if the resolver points to a
-   stack inside the group. The correct way to work around this is to move that stack outside the
-   StackGroup.
+   to be inherited by all stacks in that group. If the `!stack_output` resolver would be "inherited"
+   from a StackGroup Config by the stack it references, this will lead to a circular dependency.
+   The correct way to work around this is to move that stack outside that StackGroup so that it
+   doesn't "inherit" that resolver.
 
 stack_output_external
 ~~~~~~~~~~~~~~~~~~~~~
