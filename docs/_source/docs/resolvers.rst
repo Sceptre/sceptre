@@ -60,6 +60,18 @@ like the "AWS::NoValue" special variable that you can reference on a CloudFormat
 can help simplify Stack and StackGroup config Jinja logic in cases where, if a condition is met, a
 value is passed, otherwise no value is passed.
 
+For example, you could use this resolver like this:
+
+.. code-block:: yaml
+
+   parameters:
+    my_parameter: {{ var.some_value_that_might_not_be_set | default('!no_value') }}
+
+In this example, if ``var.some_value_that_might_not_be_set`` is set, ``my_parameter`` will be set to
+that value. But if ``var.some_value_that_might_not_be_set`` is not actually set, ``my_parameter``
+won't even be passed to CloudFormation at all. This might be desired if there is a default value on
+the CloudFormation template for ``my_parameter`` and we'd want to fall back to that default.
+
 rcmd
 ~~~~
 
