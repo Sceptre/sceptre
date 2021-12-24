@@ -146,7 +146,7 @@ def dump_stack_config(config_path: Path, config_dict: dict):
 
 
 @given('a stack setting in stack "{stack_name}" has drifted')
-def step_impl(stack_name):
+def step_impl(context, stack_name):
     client = boto3.client('logs')
     retry_boto_call(
         client.put_retention_policy(
@@ -464,7 +464,6 @@ def step_impl(context, a_or_no, kind):
 
 @then('drift is detected')
 def step_impl(context):
-    import ipdb; ipdb.set_trace()
     assert context.output == "some output"
 
 
