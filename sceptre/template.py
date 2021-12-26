@@ -11,12 +11,7 @@ import logging
 import threading
 import botocore
 
-from jinja2 import Environment
-from jinja2 import FileSystemLoader
-from jinja2 import StrictUndefined
-from jinja2 import select_autoescape
 from sceptre.exceptions import TemplateHandlerNotFoundError
-from sceptre.config import strategies
 from pkg_resources import iter_entry_points
 
 
@@ -56,6 +51,8 @@ class Template(object):
 
         self.name = name
         self.handler_config = handler_config
+        if self.handler_config is not None and self.handler_config.get('type') is None:
+            self.handler_config['type'] = 'file'
         self.sceptre_user_data = sceptre_user_data
         self.stack_group_config = stack_group_config
         self.connection_manager = connection_manager
@@ -86,7 +83,8 @@ class Template(object):
                 name=self.name,
                 arguments={k: v for k, v in self.handler_config.items() if k != "type"},
                 sceptre_user_data=self.sceptre_user_data,
-                connection_manager=self.connection_manager
+                connection_manager=self.connection_manager,
+                stack_group_config=self.stack_group_config
             )
             handler.validate()
             body = handler.handle()
@@ -234,38 +232,6 @@ class Template(object):
     @staticmethod
     def _domain_from_region(region):
         return "com.cn" if region.startswith("cn-") else "com"
-
-    def _render_jinja_template(self, template_dir, filename, jinja_vars):
-        """
-        Renders a jinja template.
-        Sceptre supports passing sceptre_user_data to JSON and YAML
-        CloudFormation templates using Jinja2 templating.
-        :param template_dir: The directory containing the template.
-        :type template_dir: str
-        :param filename: The name of the template file.
-        :type filename: str
-        :param jinja_vars: Dict of variables to render into the template.
-        :type jinja_vars: dict
-        :returns: The body of the CloudFormation template.
-        :rtype: str
-        """
-        logger = logging.getLogger(__name__)
-        logger.debug("%s Rendering CloudFormation template", filename)
-        default_j2_environment_config = {
-                "autoescape": select_autoescape(
-                    disabled_extensions=('j2',),
-                    default=True,
-                ),
-                "loader": FileSystemLoader(template_dir),
-                "undefined": StrictUndefined,
-            }
-        j2_environment_config = strategies.dict_merge(
-            default_j2_environment_config,
-            self.stack_group_config.get("j2_environment", {}))
-        j2_environment = Environment(**j2_environment_config)
-        template = j2_environment.get_template(filename)
-        body = template.render(**jinja_vars)
-        return body
 
     def _get_handler_of_type(self, type):
         """

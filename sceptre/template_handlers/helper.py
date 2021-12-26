@@ -5,7 +5,9 @@ import traceback
 
 from importlib.machinery import SourceFileLoader
 from jinja2 import Environment, select_autoescape, FileSystemLoader, StrictUndefined
-from sceptre.exceptions import TemplateSceptreHandlerError
+from pathlib import Path
+from sceptre.exceptions import TemplateSceptreHandlerError, TemplateNotFoundError
+from sceptre.config import strategies
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +47,7 @@ def call_sceptre_handler(path, sceptre_user_data):
     )
 
     if not os.path.isfile(path):
-        raise IOError("No such file or directory: '%s'", path)
+        raise TemplateNotFoundError("No such template file: '%s'", path)
 
     module = SourceFileLoader(path, path).load_module()
 
@@ -103,31 +105,42 @@ def print_template_traceback(path):
         )
 
 
-def render_jinja_template(template_dir, filename, jinja_vars):
+def render_jinja_template(path, jinja_vars, j2_environment):
     """
     Renders a jinja template.
 
     Sceptre supports passing sceptre_user_data to JSON and YAML
     CloudFormation templates using Jinja2 templating.
 
-    :param template_dir: The directory containing the template.
-    :type template_dir: str
-    :param filename: The name of the template file.
-    :type filename: str
+    :param path: The path to the template file.
+    :type path: str
     :param jinja_vars: Dict of variables to render into the template.
     :type jinja_vars: dict
+    :param j2_environment: The jinja2 environment.
+    :type stack_group_config: dict
+
     :returns: The body of the CloudFormation template.
     :rtype: str
     """
-    logger.debug("%s Rendering CloudFormation template", filename)
-    env = Environment(
-        autoescape=select_autoescape(
+    path = Path(path)
+    if not path.exists():
+        raise TemplateNotFoundError("No such template file: '%s'", path)
+
+    logger.debug("%s Rendering CloudFormation template", path)
+    default_j2_environment_config = {
+        "autoescape": select_autoescape(
             disabled_extensions=('j2',),
             default=True,
         ),
-        loader=FileSystemLoader(template_dir),
-        undefined=StrictUndefined
+        "loader": FileSystemLoader(path.parent),
+        "undefined": StrictUndefined
+    }
+    j2_environment_config = strategies.dict_merge(
+        default_j2_environment_config, j2_environment
     )
-    template = env.get_template(filename)
+    j2_environment = Environment(**j2_environment_config)
+
+    template = j2_environment.get_template(path.name)
+
     body = template.render(**jinja_vars)
     return body

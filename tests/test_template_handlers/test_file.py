@@ -1,65 +1,57 @@
-import os
+# -*- coding: utf-8 -*-
+
 import pytest
-import yaml
 
-import sceptre.template_handlers.helper as helper
+from sceptre.template_handlers.file import File
+from unittest.mock import patch, mock_open
 
 
-@pytest.mark.parametrize("filename,sceptre_user_data,expected", [
-    (
-        "vpc.j2",
-        {"vpc_id": "10.0.0.0/16"},
-        """Resources:
-  VPC:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: 10.0.0.0/16
-Outputs:
-  VpcId:
-    Value:
-      Ref: VPC"""
-    ),
-    (
-        "vpc.yaml.j2",
-        {"vpc_id": "10.0.0.0/16"},
-        """Resources:
-  VPC:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: 10.0.0.0/16
-Outputs:
-  VpcId:
-    Value:
-      Ref: VPC"""
-    ),
-    (
-        "sg.j2",
-        [
-            {"name": "sg_a", "inbound_ip": "10.0.0.0"},
-            {"name": "sg_b", "inbound_ip": "10.0.0.1"}
-        ],
-        """Resources:
-    sg_a:
-        Type: "AWS::EC2::SecurityGroup"
-        Properties:
-            InboundIp: 10.0.0.0
-    sg_b:
-        Type: "AWS::EC2::SecurityGroup"
-        Properties:
-            InboundIp: 10.0.0.1
-"""
-    )
-])
-def test_render_jinja_template(filename, sceptre_user_data, expected):
-    jinja_template_dir = os.path.join(
-        os.getcwd(),
-        "tests/fixtures/templates"
-    )
-    result = helper.render_jinja_template(
-        template_dir=jinja_template_dir,
-        filename=filename,
-        jinja_vars={"sceptre_user_data": sceptre_user_data}
-    )
-    expected_yaml = yaml.safe_load(expected)
-    result_yaml = yaml.safe_load(result)
-    assert expected_yaml == result_yaml
+class TestFile(object):
+
+    @pytest.mark.parametrize("project_path,path,output_path", [
+        ("my_project_dir",      "my.template.yaml",                               "my_project_dir/templates/my.template.yaml"),        # NOQA
+        ("/src/my_project_dir", "my.template.yaml",                               "/src/my_project_dir/templates/my.template.yaml"),   # NOQA
+        ("my_project_dir",      "/src/my_project_dir/templates/my.template.yaml", "/src/my_project_dir/templates/my.template.yaml"),   # NOQA
+        ("/src/my_project_dir", "/src/my_project_dir/templates/my.template.yaml", "/src/my_project_dir/templates/my.template.yaml"),   # NOQA
+    ])
+    @patch("builtins.open", new_callable=mock_open, read_data="some_data")
+    def test_handler_open(self, mocked_open, project_path, path, output_path):
+        template_handler = File(
+            name="file_handler",
+            arguments={"path": path},
+            stack_group_config={"project_path": project_path}
+        )
+        template_handler.handle()
+        mocked_open.assert_called_with(output_path)
+
+    @pytest.mark.parametrize("project_path,path,output_path", [
+        ("my_project_dir",      "my.template.yaml.j2",                               "my_project_dir/templates/my.template.yaml.j2"),        # NOQA
+        ("/src/my_project_dir", "my.template.yaml.j2",                               "/src/my_project_dir/templates/my.template.yaml.j2"),   # NOQA
+        ("my_project_dir",      "/src/my_project_dir/templates/my.template.yaml.j2", "/src/my_project_dir/templates/my.template.yaml.j2"),   # NOQA
+        ("/src/my_project_dir", "/src/my_project_dir/templates/my.template.yaml.j2", "/src/my_project_dir/templates/my.template.yaml.j2"),   # NOQA
+    ])
+    @patch("sceptre.template_handlers.helper.render_jinja_template")
+    def test_handler_render(self, mocked_render, project_path, path, output_path):
+        template_handler = File(
+            name="file_handler",
+            arguments={"path": path},
+            stack_group_config={"project_path": project_path}
+        )
+        template_handler.handle()
+        mocked_render.assert_called_with(output_path, {"sceptre_user_data": None}, {})
+
+    @pytest.mark.parametrize("project_path,path,output_path", [
+        ("my_project_dir",      "my.template.yaml.py",                               "my_project_dir/templates/my.template.yaml.py"),        # NOQA
+        ("/src/my_project_dir", "my.template.yaml.py",                               "/src/my_project_dir/templates/my.template.yaml.py"),   # NOQA
+        ("my_project_dir",      "/src/my_project_dir/templates/my.template.yaml.py", "/src/my_project_dir/templates/my.template.yaml.py"),   # NOQA
+        ("/src/my_project_dir", "/src/my_project_dir/templates/my.template.yaml.py", "/src/my_project_dir/templates/my.template.yaml.py"),   # NOQA
+    ])
+    @patch("sceptre.template_handlers.helper.call_sceptre_handler")
+    def test_handler_handler(self, mocked_handler, project_path, path, output_path):
+        template_handler = File(
+            name="file_handler",
+            arguments={"path": path},
+            stack_group_config={"project_path": project_path}
+        )
+        template_handler.handle()
+        mocked_handler.assert_called_with(output_path, None)

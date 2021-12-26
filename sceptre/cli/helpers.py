@@ -27,16 +27,23 @@ def catch_exceptions(func):
         simplified.
     :returns: The decorated function.
     """
+    def logging_level():
+        logger = logging.getLogger(__name__)
+        return logger.getEffectiveLevel()
+
     @wraps(func)
     def decorated(*args, **kwargs):
         """
         Invokes ``func``, catches expected errors, prints the error message and
-        exits sceptre with a non-zero exit code.
+        exits sceptre with a non-zero exit code. In debug mode, the original
+        exception is re-raised to assist debugging.
         """
         try:
             return func(*args, **kwargs)
         except (SceptreException, BotoCoreError, ClientError, Boto3Error,
                 TemplateError) as error:
+            if logging_level() == logging.DEBUG:
+                raise
             write(error)
             sys.exit(1)
 

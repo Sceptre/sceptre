@@ -45,7 +45,9 @@ Stack:
 
 .. code-block:: yaml
 
-    template_path: dns-extras.j2
+    template
+      path: templates/dns-extras.j2
+      type: file
     dependencies:
     - prod/route53/domain-zone.yaml
     parameters:
@@ -226,7 +228,7 @@ This example generates a cloudformation template from `AWS CDK`_ code.
 
 Generate cloudformation:
 
-``sceptre generate dev/S3CdkStack.yaml``
+``sceptre generate dev/S3CdkStack.py``
 
 .. code-block:: yaml
 

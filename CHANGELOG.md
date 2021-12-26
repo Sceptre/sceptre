@@ -4,6 +4,53 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 2.7.1 (2021.12.06)
+
+### Fixed
+
+- [Resolve #1175] Adding commas for cfn-flip dependency (#1176)
+- [Partially resolves #1174] Fixing Docs deployment by pinning Sphinx to lesser version (#1171)
+
+### Nonfunctional
+
+- Fix typo in CDK doc (#1181)
+- Add release instructions (#1162)
+- Resolve #1163 update doc link to new domain (#1166)
+- Pointing SAM docs toward the sceptre-sam-handler (#1164)
+
+## 2.7.0 (2021.11.18)
+
+### Added
+
+- [Resolve #966] Add support for J2 Environment configuration
+- [Resolves #919] Add merge_keys option (#928)
+- [Resolves #1064] Add feature list change-set --url (#1065)
+- [Resolves #213] Add support for template handlers  (#1088)
+- [Resolves #1106] S3 template handler jinja and python support (#1110)
+- [Resolves #1124] http template handler (#1125)
+- Set file as the default template handler type (#1127)
+- Add retry and timeout to http template handler (#1145)
+- [Resolve # 683] Introducing the Diff Command (#1132)
+
+### Fixed
+
+- [Resolves #813] Fix recursive config render (#1083)
+- [Resolve #1096] Gracefully executing SAM Change sets (#1099)
+- [Resolves 556] fix incorrect stack_output_external examples (#1109)
+- [RESOLVE #946] Fixing bug preventing StackGroup dependencies (#1116)
+- [Resolve #1138] Bugfix for j2_environments (#1137)
+- [Resolve #1135] Fix path to templates (#1141)
+- [Resolve #1143] fix "create" cmd with existing stack (#1144)
+- [Resolves #1148] Correct path logic (#1149)
+
+### Nonfunctional
+
+- [Resolves #582] update imp to importlib (#1092)
+- [Resolves #1090] Install troposphere as an extra package (#1104)
+- [Resolves #1087] Add YAML document markers to template body (#1089)
+- Stop hiding critical debug info in helpers (#988) (#997)
+- [Resolves #1139] Provide useful info on invalid jinja file (#1142)
+
 ## 2.6.3 (2021.08.13)
 
 ### Fixed
