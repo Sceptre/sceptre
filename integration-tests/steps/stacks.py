@@ -480,7 +480,6 @@ def step_impl(context, desired_status):
 
 @then('stack resource drift status is "{desired_status}"')
 def step_impl(context, desired_status):
-    #import ipdb; ipdb.set_trace()
     assert context.output[0][1]["StackResourceDrifts"][0]["StackResourceDriftStatus"] == desired_status
 
 

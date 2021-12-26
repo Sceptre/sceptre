@@ -1421,7 +1421,6 @@ class TestStackActions(object):
 
         assert response == expected_response
 
-
     @patch("sceptre.plan.actions.StackActions._describe_stack_drift_detection_status")
     @patch("sceptre.plan.actions.StackActions._detect_stack_drift")
     @patch("time.sleep")
