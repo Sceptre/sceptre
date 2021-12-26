@@ -120,11 +120,10 @@ class Stack(object):
     hooks = HookProperty("hooks")
 
     def __init__(
-        self, name, rel_path, project_code, region, template_path=None,
-        template_handler_config=None, template_bucket_name=None,
-        template_key_prefix=None, required_version=None, parameters=None,
-        sceptre_user_data=None, hooks=None, s3_details=None, iam_role=None,
-        dependencies=None, role_arn=None, protected=False, tags=None,
+        self, name, project_code, region, template_path=None, template_handler_config=None,
+        template_bucket_name=None, template_key_prefix=None, required_version=None,
+        parameters=None, sceptre_user_data=None, hooks=None, s3_details=None,
+        iam_role=None, dependencies=None, role_arn=None, protected=False, tags=None,
         external_name=None, notifications=None, on_failure=None, profile=None,
         stack_timeout=0, stack_group_config={}
     ):
@@ -137,7 +136,6 @@ class Stack(object):
             raise InvalidConfigFileError("Neither 'template_path' nor 'template' is set")
 
         self.name = sceptreise_path(name)
-        self.rel_path = rel_path
         self.project_code = project_code
         self.region = region
         self.template_bucket_name = template_bucket_name
@@ -169,7 +167,6 @@ class Stack(object):
         return (
             "sceptre.stack.Stack("
             "name='{name}', "
-            "rel_path='{rel_path}', "
             "project_code={project_code}, "
             "template_path={template_path}, "
             "template_handler_config={template_handler_config}, "
@@ -194,7 +191,6 @@ class Stack(object):
             "stack_group_config={stack_group_config}"
             ")".format(
                 name=self.name,
-                rel_path=self.rel_path,
                 project_code=self.project_code,
                 template_path=self.template_path,
                 template_handler_config=self.template_handler_config,

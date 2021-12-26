@@ -530,7 +530,6 @@ class ConfigReader(object):
         )
         stack = Stack(
             name=stack_name,
-            rel_path=rel_path,
             project_code=config["project_code"],
             template_path=config.get("template_path"),
             template_handler_config=config.get("template"),

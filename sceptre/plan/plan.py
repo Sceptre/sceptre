@@ -376,13 +376,3 @@ class SceptrePlan(object):
         """
         self.resolve(command=self.diff.__name__)
         return self._execute(*args)
-
-    def stack_name(self, *args):
-        """
-        Returns the Stack name for a running stack.
-
-        :returns: A list of Stack Names.
-        :rtype: List[str]
-        """
-        self.resolve(command=self.stack_name.__name__)
-        return self._execute(*args)

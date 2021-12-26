@@ -39,7 +39,6 @@ class TestCli(object):
         self.mock_stack = MagicMock(spec=Stack)
 
         self.mock_stack.name = 'mock-stack'
-        self.mock_stack.rel_path = 'mock-stack.yaml'
         self.mock_stack.region = None
         self.mock_stack.profile = None
         self.mock_stack.external_name = None

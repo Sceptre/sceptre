@@ -27,8 +27,7 @@ class TestStackActions(object):
         )
         self.mock_ConnectionManager = self.patcher_connection_manager.start()
         self.stack = Stack(
-            name='prod/app/stack', rel_path='prod/app/stack.yaml',
-            project_code=sentinel.project_code,
+            name='prod/app/stack', project_code=sentinel.project_code,
             template_path=sentinel.template_path, region=sentinel.region,
             profile=sentinel.profile, parameters={"key1": "val1"}, sceptre_user_data=sentinel.sceptre_user_data,
             hooks={}, s3_details=None, dependencies=sentinel.dependencies,
@@ -86,8 +85,7 @@ class TestStackActions(object):
 
     def test_external_name_with_custom_stack_name(self):
         stack = Stack(
-            name="stack_name", rel_path="stack_name.yaml",
-            project_code="project_code",
+            name="stack_name", project_code="project_code",
             template_path="template_path", region="region",
             external_name="external_name"
         )
@@ -1257,7 +1255,3 @@ class TestStackActions(object):
         differ = Mock()
         result = self.actions.diff(differ)
         assert result == differ.diff.return_value
-
-    def test_stack_name(self):
-        response = self.actions.stack_name()
-        assert response == f"{self.stack.external_name} (from: {self.stack.rel_path})"

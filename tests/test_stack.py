@@ -14,7 +14,6 @@ from sceptre.template import Template
 def stack_factory(**kwargs):
     call_kwargs = {
         'name': 'dev/app/stack',
-        'rel_path': 'dev/app/stack.yaml',
         'project_code': sentinel.project_code,
         'template_bucket_name': sentinel.template_bucket_name,
         'template_key_prefix': sentinel.template_key_prefix,
@@ -44,8 +43,7 @@ class TestStack(object):
 
     def setup_method(self, test_method):
         self.stack = Stack(
-            name='dev/app/stack', rel_path='dev/app/stack.yaml',
-            project_code=sentinel.project_code,
+            name='dev/app/stack', project_code=sentinel.project_code,
             template_bucket_name=sentinel.template_bucket_name,
             template_key_prefix=sentinel.template_key_prefix,
             required_version=sentinel.required_version,
@@ -65,8 +63,7 @@ class TestStack(object):
 
     def test_initiate_stack_with_template_path(self):
         stack = Stack(
-            name='dev/stack/app', rel_path='dev/app/stack.yaml',
-            project_code=sentinel.project_code,
+            name='dev/stack/app', project_code=sentinel.project_code,
             template_path=sentinel.template_path,
             template_bucket_name=sentinel.template_bucket_name,
             template_key_prefix=sentinel.template_key_prefix,
@@ -74,7 +71,6 @@ class TestStack(object):
             region=sentinel.region, external_name=sentinel.external_name
         )
         assert stack.name == 'dev/stack/app'
-        assert stack.rel_path == 'dev/app/stack.yaml'
         assert stack.project_code == sentinel.project_code
         assert stack.template_bucket_name == sentinel.template_bucket_name
         assert stack.template_key_prefix == sentinel.template_key_prefix
@@ -98,8 +94,7 @@ class TestStack(object):
 
     def test_initiate_stack_with_template_handler(self):
         stack = Stack(
-            name='dev/stack/app', rel_path='dev/stack/app.yaml',
-            project_code=sentinel.project_code,
+            name='dev/stack/app', project_code=sentinel.project_code,
             template_handler_config=sentinel.template_handler_config,
             template_bucket_name=sentinel.template_bucket_name,
             template_key_prefix=sentinel.template_key_prefix,
@@ -107,7 +102,6 @@ class TestStack(object):
             region=sentinel.region, external_name=sentinel.external_name
         )
         assert stack.name == 'dev/stack/app'
-        assert stack.rel_path == 'dev/stack/app.yaml'
         assert stack.project_code == sentinel.project_code
         assert stack.template_bucket_name == sentinel.template_bucket_name
         assert stack.template_key_prefix == sentinel.template_key_prefix
@@ -132,16 +126,15 @@ class TestStack(object):
     def test_raises_exception_if_path_and_handler_configured(self):
         with pytest.raises(InvalidConfigFileError):
             Stack(
-                name="stack_name", rel_path="stack_name.yaml",
-                project_code="project_code", template_path="template_path",
-                template_handler_config={"type": "file"}, region="region"
+                name="stack_name", project_code="project_code",
+                template_path="template_path", template_handler_config={"type": "file"},
+                region="region"
             )
 
     def test_stack_repr(self):
         assert self.stack.__repr__() == \
             "sceptre.stack.Stack(" \
             "name='dev/app/stack', " \
-            "rel_path='dev/app/stack.yaml', " \
             "project_code=sentinel.project_code, " \
             "template_path=sentinel.template_path, " \
             "template_handler_config=None, " \

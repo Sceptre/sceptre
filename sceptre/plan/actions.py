@@ -41,7 +41,6 @@ class StackActions(object):
     def __init__(self, stack):
         self.stack = stack
         self.name = self.stack.name
-        self.rel_path = self.stack.rel_path
         self.logger = logging.getLogger(__name__)
         self.connection_manager = ConnectionManager(
             self.stack.region, self.stack.profile,
@@ -1001,13 +1000,3 @@ class StackActions(object):
         :rtype: sceptre.diffing.stack_differ.StackDiff
         """
         return stack_differ.diff(self)
-
-    @add_stack_hooks
-    def stack_name(self):
-        """
-        Returns the Stack's stack name.
-
-        :returns: The Stack's stack name (external_name).
-        :rtype: str
-        """
-        return f"{self.stack.external_name} (from: {self.rel_path})"
