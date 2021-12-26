@@ -1395,7 +1395,7 @@ class TestStackActions(object):
         }
 
         side_effect = []
-        for _ in range(0, 30):
+        for _ in range(0, 60):
             side_effect.append(response)
         mock_describe_stack_drift_detection_status.side_effect = side_effect
 
@@ -1446,7 +1446,7 @@ class TestStackActions(object):
         }
 
         side_effect = []
-        for _ in range(0, 30):
+        for _ in range(0, 60):
             side_effect.append(response)
         mock_describe_stack_drift_detection_status.side_effect = side_effect
 

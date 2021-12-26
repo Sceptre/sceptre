@@ -1062,6 +1062,7 @@ class StackActions(object):
         :returns: The response from describe_stack_drift_detection_status.
         """
         timeout = 300
+        sleep_interval = 5
         elapsed = 0
 
         while True:
@@ -1075,8 +1076,8 @@ class StackActions(object):
             self._log_drift_status(response)
 
             if detection_status == "DETECTION_IN_PROGRESS":
-                time.sleep(10)
-                elapsed += 10
+                time.sleep(sleep_interval)
+                elapsed += sleep_interval
             else:
                 return response
 
