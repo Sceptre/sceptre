@@ -1360,6 +1360,15 @@ class TestStackActions(object):
                 'StackResourceDriftStatus': 'STACK_DOES_NOT_EXIST'
             })
 
+    @patch("sceptre.plan.actions.StackActions._get_status")
+    def test_drift_detect_with_stack_that_does_not_exist(self, mock_get_status):
+        mock_get_status.side_effect = StackDoesNotExistError()
+        response = self.actions.drift_detect()
+        assert response == {
+            "DetectionStatus": "STACK_DOES_NOT_EXIST",
+            "StackDriftStatus": "STACK_DOES_NOT_EXIST"
+        }
+
     @patch("sceptre.plan.actions.StackActions._describe_stack_resource_drifts")
     @patch("sceptre.plan.actions.StackActions._describe_stack_drift_detection_status")
     @patch("sceptre.plan.actions.StackActions._detect_stack_drift")
@@ -1410,4 +1419,41 @@ class TestStackActions(object):
 
         response = self.actions.drift_show()
 
+        assert response == expected_response
+
+
+    @patch("sceptre.plan.actions.StackActions._describe_stack_drift_detection_status")
+    @patch("sceptre.plan.actions.StackActions._detect_stack_drift")
+    @patch("time.sleep")
+    def test_drift_detect_times_out(
+        self,
+        mock_sleep,
+        mock_detect_stack_drift,
+        mock_describe_stack_drift_detection_status
+    ):
+        mock_sleep.return_value = None
+
+        mock_detect_stack_drift.return_value = {
+            "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62"
+        }
+
+        response = {
+            "StackId": "fake-stack-id",
+            "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
+            "DetectionStatus": "DETECTION_IN_PROGRESS",
+            "StackDriftStatus": "FOO",
+            "DetectionStatusReason": "User Initiated"
+        }
+
+        side_effect = []
+        for _ in range(0, 30):
+            side_effect.append(response)
+        mock_describe_stack_drift_detection_status.side_effect = side_effect
+
+        expected_response = {
+            "DetectionStatus": "TIMED_OUT",
+            "StackDriftStatus": "TIMED_OUT"
+        }
+
+        response = self.actions.drift_detect()
         assert response == expected_response

@@ -1048,9 +1048,7 @@ class StackActions(object):
         if detection_status in ["DETECTION_COMPLETE", "DETECTION_FAILED"]:
             response = self._describe_stack_resource_drifts()
         elif detection_status in ["TIMED_OUT", "STACK_DOES_NOT_EXIST"]:
-            response = {
-                "StackResourceDriftStatus": detection_status
-            }
+            response = {"StackResourceDriftStatus": detection_status}
         else:
             raise Exception("Not expected to be reachable")
 
