@@ -163,6 +163,17 @@ def step_impl(context, stack_group_name):
     context.response = sceptre_plan.describe_resources().values()
 
 
+@when('the user detects drift on stack_group "{stack_group_name}"')
+def step_impl(context, stack_group_name):
+    sceptre_context = SceptreContext(
+        command_path=stack_group_name,
+        project_path=context.sceptre_dir
+    )
+    sceptre_plan = SceptrePlan(sceptre_context)
+    values = sceptre_plan.drift_detect().values()
+    context.output = list(values)
+
+
 @then('all the stacks in stack_group "{stack_group_name}" are in "{status}"')
 def step_impl(context, stack_group_name, status):
     full_stack_names = get_full_stack_names(context, stack_group_name).values()
@@ -264,6 +275,12 @@ def step_impl(context, first_stack, second_stack):
     creation_times = get_stack_creation_times(context, stacks)
 
     assert creation_times[stacks[0]] < creation_times[stacks[1]]
+
+
+@then('stack_group drift status is "{desired_status0}" and "{desired_status1}"')
+def step_impl(context, desired_status0, desired_status1):
+    assert context.output[0]["StackDriftStatus"] == desired_status0
+    assert context.output[1]["StackDriftStatus"] == desired_status1
 
 
 def get_stack_creation_times(context, stacks):

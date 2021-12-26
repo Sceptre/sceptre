@@ -145,15 +145,14 @@ def dump_stack_config(config_path: Path, config_dict: dict):
         yaml.safe_dump(config_dict, f)
 
 
-@given('a stack setting in stack "{stack_name}" has drifted')
-def step_impl(context, stack_name):
+@given('a stack setting in log group "{log_group_name}" has drifted')
+def step_impl(context, log_group_name):
     client = boto3.client('logs')
-    retry_boto_call(
-        client.put_retention_policy(
-            logGroupName='IntegrationTest',
-            retentionInDays=10
-        )
+    client.put_retention_policy(
+        logGroupName=log_group_name,
+        retentionInDays=7
     )
+
 
 @when('the user creates stack "{stack_name}"')
 def step_impl(context, stack_name):
@@ -356,7 +355,8 @@ def step_impl(context, stack_name):
         project_path=context.sceptre_dir
     )
     sceptre_plan = SceptrePlan(sceptre_context)
-    context.output = list(sceptre_plan.drift_detect().values())
+    values = sceptre_plan.drift_detect().values()
+    context.output = list(values)
 
 
 @then(
@@ -462,9 +462,9 @@ def step_impl(context, a_or_no, kind):
         assert getattr(writer, difference_property) is test_value
 
 
-@then('drift is detected')
-def step_impl(context):
-    assert context.output == "some output"
+@then('stack drift status is "{desired_status}"')
+def step_impl(context, desired_status):
+    assert context.output[0]["StackDriftStatus"] == desired_status
 
 
 def get_stack_tags(context, stack_name, region_name=None):
