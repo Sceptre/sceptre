@@ -41,7 +41,7 @@ class TestCli(object):
         self.mock_stack.name = 'mock-stack'
         self.mock_stack.region = None
         self.mock_stack.profile = None
-        self.mock_stack.external_name = None
+        self.mock_stack.external_name = 'mock-stack-external'
         self.mock_stack.dependencies = []
 
         self.mock_config_reader.construct_stacks.return_value = \
@@ -625,6 +625,13 @@ class TestCli(object):
         assert result.exit_code == 0
         assert result.output == "export SCEPTRE_Key='Value'\n"
 
+    def test_list_stack_name(self):
+        result = self.runner.invoke(
+            cli, ["list", "stack-name", "dev/vpc.yaml"]
+        )
+        assert result.exit_code == 0
+        assert result.stdout == "mock-stack-external\n"
+
     def test_status_with_group(self):
         self.mock_stack_actions.get_status.return_value = {
             "stack": "status"
@@ -997,9 +1004,3 @@ class TestCli(object):
         max_line_length = len(max(output_lines, key=len))
         star_bars = [line for line in output_lines if bar in line]
         assert all(len(line) == max_line_length for line in star_bars)
-
-    def test_stack_name(self):
-        self.mock_stack_actions.stack_name.return_value = "vpc (from: dev/vpc.yaml)"
-        result = self.runner.invoke(cli, ["stack-name", "dev/vpc.yaml"])
-        assert result.stdout == "vpc\n"
-        assert result.exit_code == 0

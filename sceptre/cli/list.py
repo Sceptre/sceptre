@@ -6,13 +6,13 @@ from sceptre.cli.helpers import (
     write
 )
 from sceptre.plan.plan import SceptrePlan
+from sceptre.helpers import normalise_path
 
 
 @click.group(name="list")
 def list_group():
     """
     Commands for listing attributes of stacks.
-
     """
     pass
 
@@ -64,7 +64,7 @@ def list_outputs(ctx, path, export):
     :type path: str
     :param export: Specify the export formatting.
     :type export: str
-   """
+    """
     context = SceptreContext(
         command_path=path,
         project_path=ctx.obj.get("project_path", None),
@@ -127,3 +127,39 @@ def list_change_sets(ctx, path, url):
 
     for response in responses:
         write(response, context.output_format)
+
+
+@list_group.command(name="stack-name")
+@click.argument("path")
+@click.pass_context
+@catch_exceptions
+def list_stack_name(ctx, path):
+    """
+    List stack name for stack.
+    \f
+
+    :param path: Path to execute the command on.
+    :type path: str
+    """
+    context = SceptreContext(
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        output_format=ctx.obj.get("output_format"),
+        options=ctx.obj.get("options"),
+        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+    )
+
+    plan = SceptrePlan(context)
+
+    chop_output = len(plan.command_stacks) == 1
+    stack_names = []
+
+    for stack in plan.command_stacks:
+        output = stack.external_name
+        if not chop_output:
+            relative_path = normalise_path(f"{stack.name}.yaml")
+            output += f" (from {relative_path})"
+        stack_names.append(output)
+
+    write(stack_names, context.output_format)
