@@ -1,0 +1,5 @@
+template_bucket_name: !stack_output project-deps/dependencies/bucket.yaml::BucketName
+notifications:
+  - !stack_output project-deps/dependencies/topic.yaml::TopicArn
+stack_tags:
+  greeting: !rcmd echo "hello"

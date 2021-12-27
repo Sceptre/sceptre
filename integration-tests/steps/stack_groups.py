@@ -1,11 +1,12 @@
-from behave import *
 import os
 import time
-from sceptre.plan.plan import SceptrePlan
-from sceptre.context import SceptreContext
+
+from behave import *
 from botocore.exceptions import ClientError
-from helpers import read_template_file, get_cloudformation_stack_name
-from helpers import retry_boto_call
+
+from helpers import read_template_file, get_cloudformation_stack_name, retry_boto_call
+from sceptre.context import SceptreContext
+from sceptre.plan.plan import SceptrePlan
 from stacks import wait_for_final_state
 from templates import set_template_path
 
@@ -201,10 +202,12 @@ def step_impl(context):
 
 @then('stack "{stack_name}" is described as "{status}"')
 def step_impl(context, stack_name, status):
-    response = next((
-        stack for stack in context.response
-        if stack_name in stack
-    ), {stack_name: 'PENDING'})
+    response = next(
+        (
+            stack for stack in context.response
+            if stack_name in stack
+        ), {stack_name: 'PENDING'}
+    )
 
     assert response[stack_name] == status
 
@@ -306,8 +309,10 @@ def create_stacks(context, stack_names):
                 TemplateBody=body
             )
         except ClientError as e:
-            if e.response['Error']['Code'] == 'AlreadyExistsException' \
-                    and e.response['Error']['Message'].endswith("already exists"):
+            if (
+                e.response['Error']['Code'] == 'AlreadyExistsException'
+                and e.response['Error']['Message'].endswith("already exists")
+            ):
                 pass
             else:
                 raise e

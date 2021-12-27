@@ -213,11 +213,11 @@ throw an error.
 
 role_arn
 ~~~~~~~~
-* Resolvable: No
+* Resolvable: Yes
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
-The ARN of a `CloudFormation Service Role`_ that is assumed by CloudFormation
+The ARN of a `CloudFormation Service Role`_ that is assumed by *CloudFormation* (not Sceptre)
 to create, update or delete resources.
 
 iam_role

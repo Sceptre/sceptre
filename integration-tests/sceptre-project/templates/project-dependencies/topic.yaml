@@ -1,0 +1,10 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+  Topic:
+    Type: AWS::SNS::Topic
+    Properties: {}
+
+Outputs:
+  TopicArn:
+    Value: !Ref Topic

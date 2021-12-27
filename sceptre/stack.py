@@ -13,7 +13,7 @@ from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.helpers import get_external_stack_name, sceptreise_path
 from sceptre.hooks import HookProperty
-from sceptre.resolvers import ResolvableContainerProperty
+from sceptre.resolvers import ResolvableContainerProperty, ResolvableValueProperty
 from sceptre.template import Template
 
 
@@ -116,7 +116,11 @@ class Stack(object):
     parameters = ResolvableContainerProperty("parameters")
     sceptre_user_data = ResolvableContainerProperty("sceptre_user_data")
     notifications = ResolvableContainerProperty("notifications")
-    tags = ResolvableContainerProperty('tags')
+    tags = ResolvableContainerProperty("tags")
+
+    s3_details = ResolvableContainerProperty("s3_details")
+    template_bucket_name = ResolvableValueProperty("template_bucket_name")
+    role_arn = ResolvableValueProperty("role_arn")
 
     hooks = HookProperty("hooks")
 
@@ -139,31 +143,34 @@ class Stack(object):
         self.name = sceptreise_path(name)
         self.project_code = project_code
         self.region = region
-        self.template_bucket_name = template_bucket_name
-        self.template_key_prefix = template_key_prefix
         self.required_version = required_version
         self.external_name = external_name or get_external_stack_name(self.project_code, self.name)
         self.template_path = template_path
         self.template_handler_config = template_handler_config
-        self.s3_details = s3_details
+        self.dependencies = dependencies or []
+        self.protected = protected
+        self.on_failure = on_failure
+        self.stack_group_config = stack_group_config or {}
+        self.stack_timeout = stack_timeout
+        self.profile = profile
+        self.template_key_prefix = template_key_prefix
+
         self._template = None
         self._connection_manager = None
 
-        self.protected = protected
-        self.role_arn = role_arn
-        self.on_failure = on_failure
-        self.dependencies = dependencies or []
-        self.stack_timeout = stack_timeout
-        self.profile = profile
-
+        # Resolvers and hooks need to be assigned last
+        self.s3_details = s3_details
         self.iam_role = iam_role
         self.tags = tags or {}
-        self.hooks = hooks or {}
+        self.role_arn = role_arn
+        self.template_bucket_name = template_bucket_name
+
+        self.s3_details = s3_details
         self.parameters = parameters or {}
         self.sceptre_user_data = sceptre_user_data or {}
         self.notifications = notifications or []
 
-        self.stack_group_config = stack_group_config or {}
+        self.hooks = hooks or {}
 
     def __repr__(self):
         return (
