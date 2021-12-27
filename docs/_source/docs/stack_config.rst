@@ -80,6 +80,16 @@ if a Stack fetches an output value from another Stack using the
 ``stack_output`` resolver, that Stack is automatically added as a dependency,
 and that Stack need not be added as an explicit dependency.
 
+.. warning::
+   Be careful about how you structure dependencies. It is possible to create circular
+   dependencies accidentally, where multiple stacks depend on each other. Sceptre
+   will detect this and raise an error, blocking this sort of setup. You must be especially careful
+   when specifying ``dependencies`` on a StackGroup config. These dependencies will then be
+   "inherited" by every stack within that StackGroup. If one of those dependencies *inherits* that
+   list of dependencies, it will cause a circular dependency. If this happens, you can resolve the
+   situation by either (a) setting those ``dependencies`` on individual Stack Configs rather than the
+   the StackGroup Config, or (b) moving those dependency stacks outside of the StackGroup.
+
 hooks
 ~~~~~
 * Resolvable: No
