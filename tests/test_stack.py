@@ -206,7 +206,7 @@ class TestStackSceptreUserData(object):
                 return self.stack.sceptre_user_data['primitive']
 
         stack = stack_factory()
-        stack._sceptre_user_data = {
+        stack.sceptre_user_data = {
             'primitive': sentinel.primitive_value,
             'resolved': TestResolver(stack=stack),
         }
