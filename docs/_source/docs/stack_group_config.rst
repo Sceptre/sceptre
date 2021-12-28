@@ -31,9 +31,11 @@ profile
 * Resolvable: No
 * Inheritance strategy: Overrides parent if set by child
 
-The name of the profile as defined in ``~/.aws/config`` and
-``~/.aws/credentials``. Use the `aws configure --profile <profile_id>` command
-form the AWS CLI to add profiles to these files.
+The name of the profile as defined in ``~/.aws/config`` and ``~/.aws/credentials``. Use the
+`aws configure --profile <profile_id>` command form the AWS CLI to add profiles to these files.
+
+For more information on this configuration, its implications, and its uses, see
+:ref:`Sceptre and IAM: profile <profile_permissions>`.
 
 Reference: `AWS_CLI_Configure`_
 

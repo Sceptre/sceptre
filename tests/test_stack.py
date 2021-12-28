@@ -172,6 +172,43 @@ class TestStack(object):
         assert isinstance(evaluated_stack, Stack)
         assert evaluated_stack.__eq__(self.stack)
 
+    def test_configuration_manager__iam_role_raises_recursive_resolve__returns_connection_manager_with_no_role(self):
+        class FakeResolver(Resolver):
+            def resolve(self):
+                return self.stack.iam_role
+
+        self.stack.iam_role = FakeResolver()
+
+        connection_manager = self.stack.connection_manager
+        assert connection_manager.iam_role is None
+
+    def test_configuration_manager__iam_role_returns_value_second_access__returns_value_on_second_access(self):
+
+        class FakeResolver(Resolver):
+            access_count = 0
+
+            def resolve(self):
+                if self.access_count == 0:
+                    self.access_count += 1
+                    return self.stack.iam_role
+                else:
+                    return 'role'
+
+        self.stack.iam_role = FakeResolver()
+
+        assert self.stack.connection_manager.iam_role is None
+        assert self.stack.connection_manager.iam_role == 'role'
+
+    def test_configuration_manager__iam_role_returns_value__returns_connection_manager_with_that_role(self):
+        class FakeResolver(Resolver):
+            def resolve(self):
+                return 'role'
+
+        self.stack.iam_role = FakeResolver()
+
+        connection_manager = self.stack.connection_manager
+        assert connection_manager.iam_role == 'role'
+
 
 class TestStackSceptreUserData(object):
     def test_user_data_is_accessible(self):

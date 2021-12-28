@@ -153,11 +153,11 @@ class ConnectionManager(object):
 
                 if iam_role:
                     sts_client = session.client("sts")
+                    # maximum session name length is 64 chars. 56 + "-session" = 64
+                    session_name = f'{iam_role.split("/")[-1][:56]}-session'
                     sts_response = sts_client.assume_role(
                         RoleArn=iam_role,
-                        RoleSessionName="{0}-session".format(
-                            iam_role.split("/")[-1]
-                        )
+                        RoleSessionName=session_name
                     )
 
                     credentials = sts_response["Credentials"]
