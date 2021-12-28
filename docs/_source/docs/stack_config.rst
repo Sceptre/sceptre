@@ -218,11 +218,12 @@ role_arn
 * Inheritance strategy: Overrides parent if set
 
 The ARN of a `CloudFormation Service Role`_ that is assumed by *CloudFormation* (not Sceptre)
-to create, update or delete resources.
+to create, update or delete resources. For more information on this configuration, its implications,
+and its uses see :ref:`Sceptre and IAM: role_arn <role_arn_permissions>`.
 
 iam_role
 ~~~~~~~~
-* Resolvable: No
+* Resolvable: Yes
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
@@ -232,18 +233,15 @@ on the Stack.
 This is different from the ``role_arn`` option, which sets a CloudFormation service role for the
 stack. The ``iam_role`` configuration does not configure anything on the stack itself.
 
-This is also different from the ``profile`` StackGroup configuration, though there are similarities.
-``profile`` references the name of a locally-defined profile configured using the AWS CLI. This is
-the *"user"* that Sceptre is operating as. However, `iam_role` is a defined role ARN (typically one
-with elevated permissions the user doesn't otherwise have access to) that the user will assume in
-order to execute the actions on a specific stack group.
+.. warning::
 
-Using ``iam_role`` can be useful if the user or system executing Sceptre needs an alternative
-permissions set to perform the required actions on that stack, such as might be the case with a
-CI/CD system like Jenkins.
+   If you set the value of ``iam_role`` with ``!stack_output``, that ``iam_role``
+   will not actually be used to obtain the stack_output, but it *WILL* be used for all subsequent stack
+   actions. Therefore, it is important that the user executing the stack action have permissions to get
+   stack outputs for the stack outputting the ``iam_role``.
 
-In order to use this argument, however, the role needs to have an AssumeRolePolicyDocument that
-permits the user to assume that role.
+For more information on this configuration, its implications, and its uses, see
+:ref:`Sceptre and IAM: iam_role <iam_role_permissions>`.
 
 sceptre_user_data
 ~~~~~~~~~~~~~~~~~
