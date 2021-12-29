@@ -6,6 +6,10 @@ from threading import RLock
 from typing import Any, TYPE_CHECKING, Type, Union, TypeVar
 
 from sceptre.helpers import _call_func_on_values
+from sceptre.resolvers.placeholders import (
+    create_placeholder_value,
+    are_placeholders_enabled, PlaceholderType
+)
 
 if TYPE_CHECKING:
     from sceptre import stack
@@ -64,11 +68,14 @@ class ResolvableProperty(abc.ABC):
     associated with Resolver objects.
 
     :param name: Attribute suffix used to store the property in the instance.
+    :param placeholder_type: The type of placeholder that should be returned, when placeholders are
+        allowed, when a resolver can't be resolved.
     """
 
-    def __init__(self, name):
+    def __init__(self, name: str, placeholder_type=PlaceholderType.explicit):
         self.name = "_" + name
         self.logger = logging.getLogger(__name__)
+        self.placeholder_type = placeholder_type
 
         self._lock = RLock()
 
@@ -141,10 +148,27 @@ class ResolvableProperty(abc.ABC):
     def resolve_resolver_value(self, resolver: 'Resolver') -> Any:
         """Returns the resolved parameter value.
 
+        If the resolver happens to raise an error and placeholders are currently allowed for resolvers,
+        a placeholder will be returned instead of reraising the error.
+
         :param resolver: The resolver to resolve.
-        :return: The resolved value
+        :return: The resolved value (or placeholder, in certain circumstances)
         """
-        return resolver.resolve()
+        try:
+            return resolver.resolve()
+        except RecursiveResolve:
+            # Recursive resolve issues shouldn't be masked by a placeholder.
+            raise
+        except Exception:
+            if are_placeholders_enabled():
+                placeholder_value = create_placeholder_value(resolver, self.placeholder_type)
+
+                self.logger.debug(
+                    "Error encountered while resolving the resolver. This is allowed for the current "
+                    f"operation. Resolving it to a placeholder value instead: {placeholder_value}"
+                )
+                return placeholder_value
+            raise
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__}({self.name[1:]})>'
@@ -173,18 +197,30 @@ class ResolvableContainerProperty(ResolvableProperty):
         return container
 
     def get_resolved_value(self, stack: 'stack.Stack', stack_class: Type['stack.Stack']) -> T_Container:
-        """Obtains the resolved value for this property.
+        """Obtains the resolved value for this property. Any resolvers that resolve to None will have
+        their key/index removed from their dict/list where they are. Other resolvers will have their
+        key/index's value replace with the resolved value to avoid redundant resolutions.
 
         :param stack: The Stack instance to obtain the value for
         :param stack_class: The class of the Stack instance.
         :return: The fully resolved container.
         """
+        keys_to_delete = []
 
         def resolve(attr: Union[dict, list], key: Union[int, str], value: Resolver):
             # Update the container key's value with the resolved value, if possible...
             try:
                 result = self.resolve_resolver_value(value)
-                attr[key] = result
+                if result is None:
+                    self.logger.debug(f"Removing item {key} because resolver returned None.")
+                    # We gather up resolvers (and their immediate containers) that resolve to None,
+                    # since that really means the resolver resolves to nothing. This is not common,
+                    # but should be supported. We gather these rather than immediately remove them
+                    # because this function is called in the context of looping over that attr, so
+                    # we cannot alter its size until after the loop is complete.
+                    keys_to_delete.append((attr, key))
+                else:
+                    attr[key] = result
             except RecursiveResolve:
                 # It's possible that resolving the resolver might attempt to access another
                 # resolvable property's value in this same container. In this case, we'll delay
@@ -201,6 +237,9 @@ class ResolvableContainerProperty(ResolvableProperty):
         _call_func_on_values(
             resolve, container, Resolver
         )
+        # Remove keys and indexes from their containers that had resolvers resolve to None.
+        for attr, key in keys_to_delete:
+            del attr[key]
 
         return container
 
@@ -283,7 +322,12 @@ class ResolvableContainerProperty(ResolvableProperty):
         def __call__(self):
             """Resolve the value."""
             attr = getattr(self._instance, self._name)
-            attr[self._key] = self._resolution_function()
+            result = self._resolution_function()
+            if result is None:
+                self.logger.debug(f"Removing item {self._key} because resolver returned None.")
+                del attr[self._key]
+            else:
+                attr[self._key] = result
 
 
 class ResolvableValueProperty(ResolvableProperty):

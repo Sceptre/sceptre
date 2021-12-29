@@ -73,21 +73,25 @@ supplied in this way have a lower maximum length, so using the
    If you resolve ``template_bucket_name`` using the ``!stack_output``
    resolver on a StackGroup, the stack that outputs that bucket name *cannot* be
    defined in that StackGroup. Otherwise, a circular dependency will exist and Sceptre
-   will raise an error when attempting any Stack action. The proper way to do this would
-   be to define all your project stacks inside a StackGroup and then your template bucket
-   stack *outside* that StackGroup. Here's an example project structure for something like
-   this:
+   will raise an error when attempting any Stack action. There are two ways to avoid this situation:
 
-   .. code-block:: yaml
+   1. Set the ``template_bucket_name`` to ``!no_value`` in on the StackConfig that creates your
+      template bucket. This will override the inherited value to prevent them from having
+      dependencies on themselves.
+   2. Define all your project stacks inside a StackGroup and then your template bucket
+      stack *outside* that StackGroup. Here's an example project structure for something like
+      this:
 
-      config/
-          - config.yaml           # This is the StackGroup Config for your whole project.
-          - template-bucket.yaml  # The template for this stack outputs the bucket name
-          - project/              # You can put all your other stacks in this StackGroup
-              - config.yaml       # In this StackGroup Config is...
-                                  #  template_bucket_name: !stack_output template-bucket.yaml::BucketName
-              - vpc.yaml          # Put all your other project stacks inside project/
-              - other-stack.yaml
+      .. code-block:: yaml
+
+         config/
+           - config.yaml           # This is the StackGroup Config for your whole project.
+           - template-bucket.yaml  # The template for this stack outputs the bucket name
+           - project/              # You can put all your other stacks in this StackGroup
+               - config.yaml       # In this StackGroup Config is...
+                                   #  template_bucket_name: !stack_output template-bucket.yaml::BucketName
+               - vpc.yaml          # Put all your other project stacks inside project/
+               - other-stack.yaml
 
 
 template_key_prefix
@@ -117,7 +121,7 @@ j2_environment
 
 A dictionary that is combined with the default jinja2 environment.
 It's converted to keyword arguments then passed to [jinja2.Environment](https://jinja.palletsprojects.com/en/2.11.x/api/#jinja2.Environment).
-This will impact :ref:`Templating` of stacks by modifying the behavior of jinja.
+This will impact the templating of stacks by modifying the behavior of jinja.
 
 .. code-block:: yaml
 
@@ -209,13 +213,16 @@ dependencies.
 
    You might have already considered that this might cause a circular dependency for those
    dependency stacks, the ones that output the template bucket name, role arn, iam_role, or topic arns.
-   In order to avoid the circular dependency issue, it is important that you define these items in a
-   Stack that is *outside* the StackGroup you reference them in. Here's an example project structure
-   that would support doing this:
+   In order to avoid the circular dependency issue, you can either:
 
-   .. code-block:: yaml
+   1. Set the value of those configurations to ``!no_value`` in the actual stacks that define those
+      items so they don't inherit a dependency on themselves.
+   2. Define those stacks *outside* the StackGroup you reference them in. Here's an example project
+      structure that would support doing this:
 
-      config/
+      .. code-block:: yaml
+
+        config/
           - config.yaml               # This is the StackGroup Config for your whole project.
           - sceptre-dependencies.yaml # This stack defines your template bucket, iam role, topics, etc...
           - project/                  # You can put all your other stacks in this StackGroup

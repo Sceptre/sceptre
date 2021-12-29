@@ -3,7 +3,7 @@ import json
 from collections import defaultdict
 from copy import deepcopy
 from typing import Union, Optional
-from unittest.mock import Mock, PropertyMock, ANY, DEFAULT
+from unittest.mock import Mock, PropertyMock
 
 import cfn_flip
 import pytest
@@ -16,30 +16,8 @@ from sceptre.diffing.stack_differ import (
     DeepDiffStackDiffer,
     DifflibStackDiffer
 )
-from sceptre.exceptions import StackDoesNotExistError
 from sceptre.plan.actions import StackActions
-from sceptre.resolvers import Resolver
 from sceptre.stack import Stack
-
-
-class ResolvableResolver(Resolver):
-    RESOLVED_VALUE = "I'm resolved!"
-
-    def __init__(self, argument=None, stack=None):
-        # we don't want to call super().__init__ since you can't deepcopy resolvers with locks in py36
-        self.argument = argument
-
-    def resolve(self):
-        return self.RESOLVED_VALUE
-
-
-class UnresolvableResolver(Resolver):
-    def __init__(self, argument=None, stack=None):
-        # we don't want to call super().__init__ since you can't deepcopy resolvers with locks in py36
-        self.argument = argument
-
-    def resolve(self):
-        raise StackDoesNotExistError()
 
 
 class ImplementedStackDiffer(StackDiffer):
@@ -243,85 +221,6 @@ class TestStackDiffer:
         diff = self.differ.diff(self.actions)
         assert diff.stack_name == self.external_name
 
-    def test_diff__resolver_in_parameters__can_be_resolved__uses_resolved_value(self):
-        self.parameters_on_stack_config.update(
-            resolvable=ResolvableResolver(),
-        )
-        self.differ.diff(self.actions)
-        expected_generated_config = self.expected_generated_config
-        expected_generated_config.parameters['resolvable'] = ResolvableResolver.RESOLVED_VALUE
-
-        self.command_capturer.compare_stack_configurations.assert_called_with(
-            ANY,
-            expected_generated_config
-        )
-
-    def test_diff__list_of_resolvers_in_parameters__resolves_each_of_them(self):
-        self.parameters_on_stack_config.update(
-            list_of_resolvers=[
-                ResolvableResolver(),
-                ResolvableResolver()
-            ]
-        )
-        self.differ.diff(self.actions)
-        expected_generated_config = self.expected_generated_config
-        expected_generated_config.parameters['list_of_resolvers'] = ','.join([
-            ResolvableResolver.RESOLVED_VALUE,
-            ResolvableResolver.RESOLVED_VALUE
-        ])
-
-        self.command_capturer.compare_stack_configurations.assert_called_with(
-            ANY,
-            expected_generated_config
-        )
-
-    @pytest.mark.parametrize(
-        'argument, resolved_value',
-        [
-            pytest.param('arg', '{ !UnresolvableResolver(arg) }', id='has argument'),
-            pytest.param(
-                {'test': 'this'},
-                '{ !UnresolvableResolver({\'test\': \'this\'}) }',
-                id='has dict argument'
-            ),
-            pytest.param(None, '{ !UnresolvableResolver }', id='no argument')
-        ]
-    )
-    def test_diff__resolver_in_parameters__resolver_raises_error__uses_replacement_value(
-        self,
-        argument,
-        resolved_value
-    ):
-        self.parameters_on_stack_config.update(
-            unresolvable=UnresolvableResolver(argument),
-        )
-        self.differ.diff(self.actions)
-        expected_generated_config = self.expected_generated_config
-        expected_generated_config.parameters['unresolvable'] = resolved_value
-        self.command_capturer.compare_stack_configurations.assert_called_with(
-            ANY,
-            expected_generated_config
-        )
-
-    def test_diff__list_of_resolvers_in_parameters__some_cannot_be_resolved__uses_replacement_value(self):
-        self.parameters_on_stack_config.update(
-            list_of_resolvers=[
-                ResolvableResolver(),
-                UnresolvableResolver()
-            ]
-        )
-        self.differ.diff(self.actions)
-        expected_generated_config = self.expected_generated_config
-        expected_generated_config.parameters['list_of_resolvers'] = ','.join([
-            ResolvableResolver.RESOLVED_VALUE,
-            '{ !UnresolvableResolver }'
-        ])
-
-        self.command_capturer.compare_stack_configurations.assert_called_with(
-            ANY,
-            expected_generated_config
-        )
-
     def test_diff__returns_generated_config(self):
         diff = self.differ.diff(self.actions)
         assert diff.generated_config == self.expected_generated_config
@@ -488,100 +387,6 @@ class TestStackDiffer:
             self.expected_deployed_config,
             self.expected_generated_config,
         )
-
-    def test_diff__local_generation_raises_an_error__replaces_unresolvable_sceptre_user_data(self):
-        has_raised = False
-
-        def generate():
-            nonlocal has_raised
-            if not has_raised:
-                has_raised = True
-                raise ValueError()
-            return DEFAULT
-
-        unresolvable_mock = Mock(**{
-            'spec': Resolver,
-            'argument': 'test',
-            'resolve.side_effect': RuntimeError()
-        })
-        self.sceptre_user_data.update(
-            unresolvable=unresolvable_mock
-        )
-        self.actions.generate.side_effect = generate
-
-        self.differ.diff(self.actions)
-
-        assert self.sceptre_user_data['unresolvable'] == 'Mocktest'
-
-    def test_diff__local_generation_raises_an_error__resolves_resolvable_sceptre_user_data(self):
-        has_raised = False
-
-        def generate():
-            nonlocal has_raised
-            if not has_raised:
-                has_raised = True
-                raise ValueError()
-            return DEFAULT
-
-        resolvable_mock = Mock(
-            **{
-                'spec': Resolver,
-                'argument': 'test',
-                'resolve.return_value': 'resolved'
-            }
-        )
-        self.sceptre_user_data.update(
-            resolvable=resolvable_mock
-        )
-        self.actions.generate.side_effect = generate
-
-        self.differ.diff(self.actions)
-
-        assert self.sceptre_user_data['resolvable'] == 'resolved'
-
-    def test_diff__local_generation_raises_an_error__reattempts_generation(self):
-        has_raised = False
-
-        def generate():
-            nonlocal has_raised
-            if not has_raised:
-                has_raised = True
-                raise ValueError()
-            return DEFAULT
-
-        resolvable_mock = Mock(
-            **{
-                'spec': Resolver,
-                'argument': 'test',
-                'resolve.return_value': 'resolved'
-            }
-        )
-        self.sceptre_user_data.update(
-            resolvable=resolvable_mock
-        )
-        self.actions.generate.side_effect = generate
-
-        self.differ.diff(self.actions)
-
-        assert self.actions.generate.call_count == 2
-
-    def test_diff__local_generation_raises_an_error_twice__raises_exception(self):
-        resolvable_mock = Mock(
-            **{
-                'spec': Resolver,
-                'argument': 'test',
-                'resolve.return_value': 'resolved'
-            }
-        )
-        self.sceptre_user_data.update(
-            resolvable=resolvable_mock
-        )
-        self.actions.generate.side_effect = ValueError()
-
-        with pytest.raises(ValueError):
-            self.differ.diff(self.actions)
-
-        assert self.actions.generate.call_count == 2
 
 
 class TestDeepDiffStackDiffer:

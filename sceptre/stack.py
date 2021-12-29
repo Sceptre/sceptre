@@ -13,7 +13,12 @@ from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.helpers import get_external_stack_name, sceptreise_path
 from sceptre.hooks import HookProperty
-from sceptre.resolvers import ResolvableContainerProperty, ResolvableValueProperty, RecursiveResolve
+from sceptre.resolvers import (
+    ResolvableContainerProperty,
+    ResolvableValueProperty,
+    RecursiveResolve,
+    PlaceholderType
+)
 from sceptre.template import Template
 
 
@@ -112,16 +117,33 @@ class Stack(object):
     :type stack_group_config: dict
 
     """
-
     parameters = ResolvableContainerProperty("parameters")
-    sceptre_user_data = ResolvableContainerProperty("sceptre_user_data")
+    sceptre_user_data = ResolvableContainerProperty(
+        "sceptre_user_data",
+        PlaceholderType.alphanum
+    )
     notifications = ResolvableContainerProperty("notifications")
-    tags = ResolvableContainerProperty("tags")
-
-    s3_details = ResolvableContainerProperty("s3_details")
-    template_bucket_name = ResolvableValueProperty("template_bucket_name")
-    role_arn = ResolvableValueProperty("role_arn")
-    iam_role = ResolvableValueProperty('iam_role')
+    tags = ResolvableContainerProperty('tags')
+    # placeholder_override=None here means that if the template_bucket_name is a resolver,
+    # placeholders have been enabled, and that stack hasn't been deployed yet, commands that would
+    # otherwise attempt to upload the template (like validate) won't actually use the template bucket
+    # and will act as if there was no template bucket set.
+    s3_details = ResolvableContainerProperty(
+        "s3_details",
+        PlaceholderType.none
+    )
+    template_bucket_name = ResolvableValueProperty(
+        "template_bucket_name",
+        PlaceholderType.none
+    )
+    # Similarly, the placeholder_override=None for iam_role means that actions that would otherwise
+    # use the iam_role will act as if there was no iam role when the iam_role stack has not been
+    # deployed for commands that allow placeholders (like validate).
+    iam_role = ResolvableValueProperty(
+        'iam_role',
+        PlaceholderType.none
+    )
+    role_arn = ResolvableValueProperty('role_arn')
 
     hooks = HookProperty("hooks")
 
