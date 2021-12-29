@@ -266,12 +266,6 @@ def step_impl(context, first_stack, second_stack):
     assert creation_times[stacks[0]] < creation_times[stacks[1]]
 
 
-@then('stack_group drift status is "{desired_status0}" and "{desired_status1}"')
-def step_impl(context, desired_status0, desired_status1):
-    assert context.output[0]["StackDriftStatus"] == desired_status0
-    assert context.output[1]["StackDriftStatus"] == desired_status1
-
-
 def get_stack_creation_times(context, stacks):
     creation_times = {}
     response = retry_boto_call(context.client.describe_stacks)
