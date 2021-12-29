@@ -13,7 +13,12 @@ from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.helpers import get_external_stack_name, sceptreise_path
 from sceptre.hooks import HookProperty
-from sceptre.resolvers import ResolvableContainerProperty, ResolvableValueProperty, RecursiveResolve, PlaceholderType
+from sceptre.resolvers import (
+    ResolvableContainerProperty,
+    ResolvableValueProperty,
+    RecursiveResolve,
+    PlaceholderType
+)
 from sceptre.template import Template
 
 
