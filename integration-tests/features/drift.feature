@@ -11,20 +11,20 @@ Feature: Drift Detection
 
   Scenario: Detects drift on a stack has has drifted
     Given stack "drift-single/A" exists using "loggroup.yaml"
-    And a stack setting in stack "drift-single/A" has drifted
+    And a log group configuration in stack "drift-single/A" has drifted
     When the user detects drift on stack "drift-single/A"
     Then stack drift status is "DRIFTED"
 
   Scenario: Shows drift on a stack has has drifted
     Given stack "drift-single/A" exists using "loggroup.yaml"
-    And a stack setting in stack "drift-single/A" has drifted
+    And a log group configuration in stack "drift-single/A" has drifted
     When the user shows drift on stack "drift-single/A"
     Then stack resource drift status is "MODIFIED"
 
   Scenario: Detects drift on a stack group that partially exists
     Given stack "drift-group/A" exists using "loggroup.yaml"
     And stack "drift-group/B" does not exist
-    And a stack setting in stack "drift-group/A" has drifted
+    And a log group configuration in stack "drift-group/A" has drifted
     When the user detects drift on stack_group "drift-group"
     Then stack_group drift statuses are each one of "DRIFTED,STACK_DOES_NOT_EXIST"
 
