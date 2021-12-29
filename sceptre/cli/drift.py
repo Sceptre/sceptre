@@ -38,9 +38,6 @@ def drift_detect(ctx: Context, path: str):
     a DetectionStatus and StackDriftStatus of TIMED_OUT.
 
     The timeout is set at 5 minutes, a value that cannot be configured.
-
-    :param path: The path to execute the command on.
-    :type path: str
     """
     context = SceptreContext(
         command_path=path,
@@ -81,10 +78,6 @@ def drift_show(ctx, path):
     a StackResourceDriftStatus of TIMED_OUT.
 
     The timeout is set at 5 minutes, a value that cannot be configured.
-
-
-    :param path: The path to execute the command on.
-    :type path: str
     """
     context = SceptreContext(
         command_path=path,
