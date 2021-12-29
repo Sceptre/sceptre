@@ -21,7 +21,6 @@ def step_impl(context, stack_name):
 def _get_output(output_name, stack_name):
     client = boto3.client("cloudformation")
     response = client.describe_stacks(StackName=stack_name)
-    key_name = stack_name + "-" + output_name
     for output in response["Stacks"][0]["Outputs"]:
         if output["OutputKey"] == output_name:
             return output["OutputValue"]
