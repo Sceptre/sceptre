@@ -7,7 +7,7 @@ from sceptre.plan.plan import SceptrePlan
 from sceptre.context import SceptreContext
 
 
-@given('a stack setting in stack "{stack_name}" has drifted')
+@given('a log group configuration in stack "{stack_name}" has drifted')
 def step_impl(context, stack_name):
     full_name = get_cloudformation_stack_name(context, stack_name)
     log_group_name = _get_output("LogGroup", full_name)
