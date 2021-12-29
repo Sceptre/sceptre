@@ -145,15 +145,6 @@ def dump_stack_config(config_path: Path, config_dict: dict):
         yaml.safe_dump(config_dict, f)
 
 
-@given('a stack setting in log group "{log_group_name}" has drifted')
-def step_impl(context, log_group_name):
-    client = boto3.client('logs')
-    client.put_retention_policy(
-        logGroupName=log_group_name,
-        retentionInDays=7
-    )
-
-
 @when('the user creates stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
@@ -348,28 +339,6 @@ def step_impl(context, stack_name, diff_type):
     context.output = list(sceptre_plan.diff(differ).values())
 
 
-@when('the user detects drift on stack "{stack_name}"')
-def step_impl(context, stack_name):
-    sceptre_context = SceptreContext(
-        command_path=stack_name + '.yaml',
-        project_path=context.sceptre_dir
-    )
-    sceptre_plan = SceptrePlan(sceptre_context)
-    values = sceptre_plan.drift_detect().values()
-    context.output = list(values)
-
-
-@when('the user shows drift on stack "{stack_name}"')
-def step_impl(context, stack_name):
-    sceptre_context = SceptreContext(
-        command_path=stack_name + '.yaml',
-        project_path=context.sceptre_dir
-    )
-    sceptre_plan = SceptrePlan(sceptre_context)
-    values = sceptre_plan.drift_show().values()
-    context.output = list(values)
-
-
 @then(
     'stack "{stack_name}" in "{region_name}" '
     'exists in "{desired_status}" state'
@@ -471,16 +440,6 @@ def step_impl(context, a_or_no, kind):
         diff: StackDiff
         writer = writer_class(diff, StringIO(), 'yaml')
         assert getattr(writer, difference_property) is test_value
-
-
-@then('stack drift status is "{desired_status}"')
-def step_impl(context, desired_status):
-    assert context.output[0]["StackDriftStatus"] == desired_status
-
-
-@then('stack resource drift status is "{desired_status}"')
-def step_impl(context, desired_status):
-    assert context.output[0][1]["StackResourceDrifts"][0]["StackResourceDriftStatus"] == desired_status
 
 
 def get_stack_tags(context, stack_name, region_name=None):

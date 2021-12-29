@@ -163,17 +163,6 @@ def step_impl(context, stack_group_name):
     context.response = sceptre_plan.describe_resources().values()
 
 
-@when('the user detects drift on stack_group "{stack_group_name}"')
-def step_impl(context, stack_group_name):
-    sceptre_context = SceptreContext(
-        command_path=stack_group_name,
-        project_path=context.sceptre_dir
-    )
-    sceptre_plan = SceptrePlan(sceptre_context)
-    values = sceptre_plan.drift_detect().values()
-    context.output = list(values)
-
-
 @then('all the stacks in stack_group "{stack_group_name}" are in "{status}"')
 def step_impl(context, stack_group_name, status):
     full_stack_names = get_full_stack_names(context, stack_group_name).values()
