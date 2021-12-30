@@ -152,10 +152,10 @@ def list_stack_name(ctx, path):
 
     plan = SceptrePlan(context)
 
-    chop_output = len(plan.command_stacks) == 1
+    chop_output = len(plan.all_stacks) == 1
     stack_names = []
 
-    for stack in plan.command_stacks:
+    for stack in plan.all_stacks:
         output = stack.external_name
         if not chop_output:
             relative_path = normalise_path(f"{stack.name}.yaml")
