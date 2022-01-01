@@ -83,7 +83,7 @@ stack_attr
 ~~~~~~~~~~
 
 This resolver lets you reference the values of other fields on the same Stack Config or those
-inherited from StackGroups in which the StackConfig exists. It is useful for avoiding unnecessary
+inherited from StackGroups in which the Stack Config exists. It is useful for avoiding unnecessary
 configuration duplication as well as referencing attributes inherited from the StackGroup Config.
 
 For example, if you need to reference the ``template_bucket_name`` set in the StackGroup Config,
