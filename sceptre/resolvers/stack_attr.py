@@ -14,17 +14,21 @@ class StackAttr(Resolver):
 
     def resolve(self):
         segments = self.argument.split('.')
+
         # Remap top-level attributes to match stack config
         first_segment = segments[0]
         segments[0] = self.STACK_ATTR_MAP.get(first_segment, first_segment)
 
-        if first_segment in self.stack.stack_group_config and not hasattr(self.stack, first_segment):
+        if self._key_is_from_stack_group_config(first_segment):
             obj = self.stack.stack_group_config
         else:
             obj = self.stack
 
         result = self._recursively_resolve_segments(obj, segments)
         return result
+
+    def _key_is_from_stack_group_config(self, key: str):
+        return key in self.stack.stack_group_config and not hasattr(self.stack, key)
 
     def _recursively_resolve_segments(self, obj, segments):
         if not segments:
