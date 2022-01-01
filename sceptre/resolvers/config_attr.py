@@ -1,7 +1,7 @@
 from sceptre.resolvers import Resolver
 
 
-class StackAttr(Resolver):
+class ConfigAttr(Resolver):
 
     # These are all the attributes on Stack Configs whose names are changed when they are assigned
     # to the Stack instance.
@@ -15,9 +15,15 @@ class StackAttr(Resolver):
     def resolve(self):
         segments = self.argument.split('.')
         # Remap top-level attributes to match stack config
-        segments[0] = self.STACK_ATTR_MAP.get(segments[0], segments[0])
+        first_segment = segments[0]
+        segments[0] = self.STACK_ATTR_MAP.get(first_segment, first_segment)
 
-        result = self._recursively_resolve_segments(self.stack, segments)
+        if first_segment in self.stack.stack_group_config and not hasattr(self.stack, first_segment):
+            obj = self.stack.stack_group_config
+        else:
+            obj = self.stack
+
+        result = self._recursively_resolve_segments(obj, segments)
         return result
 
     def _recursively_resolve_segments(self, obj, segments):

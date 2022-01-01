@@ -79,15 +79,15 @@ A resolver to execute any shell command.
 
 Refer to `sceptre-resolver-cmd <https://github.com/Sceptre/sceptre-resolver-cmd/>`_ for documentation.
 
-stack_attr
+config_attr
 ~~~~~~~~~~
 
-This resolver lets you reference the values of other fields on the same Stack Config. It is useful for
-avoiding unnecessary configuration duplication as well as referencing attributes inherited from the
-StackGroup Config.
+This resolver lets you reference the values of other fields on the same Stack Config or those
+inherited from StackGroups in which the StackConfig exists. It is useful for avoiding unnecessary
+configuration duplication as well as referencing attributes inherited from the StackGroup Config.
 
 For example, if you need to reference the ``template_bucket_name`` set in the StackGroup Config,
-you can do that with ``!stack_attr``:
+you can do that with ``!config_attr``:
 
 .. code-block:: yaml
 
@@ -95,7 +95,7 @@ you can do that with ``!stack_attr``:
        type: sam
        path: path/from/my/cwd/template.yaml
        # template_bucket_name could be set by a resolver in the StackGroup.
-       artifact_bucket_name: !stack_attr template_bucket_name
+       artifact_bucket_name: !config_attr template_bucket_name
 
 The argument to this resolver is the full attribute "path" from the Stack Config. You can access
 nested values in dicts and lists using "." to separate key/index segments. For example:
@@ -108,7 +108,7 @@ nested values in dicts and lists using "." to separate key/index segments. For e
            - "the value we want to select"
 
    parameters:
-       my_parameter: !stack_attr sceptre_user_data.key.1
+       my_parameter: !config_attr sceptre_user_data.key.1
 
 stack_output
 ~~~~~~~~~~~~
