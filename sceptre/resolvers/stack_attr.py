@@ -1,7 +1,7 @@
 from sceptre.resolvers import Resolver
 
 
-class ConfigAttr(Resolver):
+class StackAttr(Resolver):
 
     # These are all the attributes on Stack Configs whose names are changed when they are assigned
     # to the Stack instance.

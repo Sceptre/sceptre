@@ -79,7 +79,7 @@ A resolver to execute any shell command.
 
 Refer to `sceptre-resolver-cmd <https://github.com/Sceptre/sceptre-resolver-cmd/>`_ for documentation.
 
-config_attr
+stack_attr
 ~~~~~~~~~~
 
 This resolver lets you reference the values of other fields on the same Stack Config or those
@@ -87,7 +87,7 @@ inherited from StackGroups in which the StackConfig exists. It is useful for avo
 configuration duplication as well as referencing attributes inherited from the StackGroup Config.
 
 For example, if you need to reference the ``template_bucket_name`` set in the StackGroup Config,
-you can do that with ``!config_attr``:
+you can do that with ``!stack_attr``:
 
 .. code-block:: yaml
 
