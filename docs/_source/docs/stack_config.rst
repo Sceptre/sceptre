@@ -32,7 +32,7 @@ you will receive an error when deploying the stack.
 
 template_path
 ~~~~~~~~~~~~~~~~~~~~~~~~
-* Resolvable: Yes
+* Resolvable: No
 * Can be inherited from StackGroup: No
 
 The path to the CloudFormation, Jinja2 or Python template to build the Stack
@@ -47,7 +47,7 @@ from the Stack config filename.
 
 template
 ~~~~~~~~
-* Resolvable: No
+* Resolvable: Yes
 * Can be inherited from StackGroup: No
 
 Configuration for a template handler. Template handlers can take in parameters
