@@ -95,7 +95,7 @@ you can do that with ``!stack_attr``:
        type: sam
        path: path/from/my/cwd/template.yaml
        # template_bucket_name could be set by a resolver in the StackGroup.
-       artifact_bucket_name: !config_attr template_bucket_name
+       artifact_bucket_name: !stack_attr template_bucket_name
 
 The argument to this resolver is the full attribute "path" from the Stack Config. You can access
 nested values in dicts and lists using "." to separate key/index segments. For example:
@@ -108,7 +108,7 @@ nested values in dicts and lists using "." to separate key/index segments. For e
            - "the value we want to select"
 
    parameters:
-       my_parameter: !config_attr sceptre_user_data.key.1
+       my_parameter: !stack_attr sceptre_user_data.key.1
 
 stack_output
 ~~~~~~~~~~~~
