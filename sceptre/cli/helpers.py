@@ -134,6 +134,8 @@ def _generate_yaml(stream):
             [yaml.load(item, Loader=CfnYamlLoader) for item in items],
             default_flow_style=False, explicit_start=True
         )
+    elif isinstance(stream, dict):
+        return yaml.dump(stream, default_flow_style=False)
     else:
         try:
             return yaml.safe_loads(stream)
