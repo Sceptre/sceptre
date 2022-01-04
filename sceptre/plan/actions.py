@@ -1069,7 +1069,7 @@ class StackActions(object):
             if elapsed >= timeout:
                 raise TimeoutError(f"Timed out after {elapsed} seconds")
 
-            self.logger.debug(f"{self.stack.name} - Waiting for drift detection")
+            self.logger.info(f"{self.stack.name} - Waiting for drift detection")
             response = self._describe_stack_drift_detection_status(detection_id)
             detection_status = response["DetectionStatus"]
 
@@ -1095,7 +1095,7 @@ class StackActions(object):
 
         for key in keys:
             if key in response:
-                self.logger.debug(
+                self.logger.info(
                     f"{self.stack.name} - {key} - {response[key]}"
                 )
 
@@ -1103,7 +1103,7 @@ class StackActions(object):
         """
         Run detect_stack_drift.
         """
-        self.logger.debug(f"{self.stack.name} - Detecting Stack Drift")
+        self.logger.info(f"{self.stack.name} - Detecting Stack Drift")
 
         return self.connection_manager.call(
             service="cloudformation",
@@ -1117,7 +1117,7 @@ class StackActions(object):
         """
         Run describe_stack_drift_detection_status.
         """
-        self.logger.debug(f"{self.stack.name} - Describing Stack Drift Detection Status")
+        self.logger.info(f"{self.stack.name} - Describing Stack Drift Detection Status")
 
         return self.connection_manager.call(
             service="cloudformation",
@@ -1131,7 +1131,7 @@ class StackActions(object):
         """
         Detects stack resource_drifts for a running stack.
         """
-        self.logger.debug(f"{self.stack.name} - Describing Stack Resource Drifts")
+        self.logger.info(f"{self.stack.name} - Describing Stack Resource Drifts")
 
         return self.connection_manager.call(
             service="cloudformation",
