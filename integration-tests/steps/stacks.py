@@ -522,10 +522,16 @@ def wait_for_final_state(context, stack_name):
     delay = 2
     max_retries = 300
     attempts = 0
+    rollback_printed = False
     while attempts < max_retries:
         retry_boto_call(stack.load)
         if not stack.stack_status.endswith("IN_PROGRESS"):
             return
+        if stack.stack_status == "ROLLBACK_IN_PROGRESS" and not rollback_printed:
+            client = boto3.client("cloudformation")
+            response = client.describe_stack_events(StackName=stack_name)
+            print(response)
+            rollback_printed = True
         attempts += 1
         print("Stack in status", stack.stack_status)
         time.sleep(delay)
