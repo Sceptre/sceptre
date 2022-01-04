@@ -1010,13 +1010,7 @@ class TestCli(object):
             cli, ["drift", "detect", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert result.output == " ".join([
-            "{'fake_stack': {'StackId': 'fake-stack-id',",
-            "'StackDriftDetectionId': '3fb76910-f660-11eb-80ac-0246f7a6da62',",
-            "'StackDriftStatus': 'IN_SYNC',",
-            "'DetectionStatus': 'DETECTION_COMPLETE',",
-            "'DriftedStackResourceCount': 0}}\n"
-        ])
+        assert result.output == 'fake_stack:\n  DetectionStatus: DETECTION_COMPLETE\n  DriftedStackResourceCount: 0\n  StackDriftDetectionId: 3fb76910-f660-11eb-80ac-0246f7a6da62\n  StackDriftStatus: IN_SYNC\n  StackId: fake-stack-id\n\n'
 
     def test_drift_show(self):
         self.mock_stack_actions.drift_show.return_value = (
@@ -1026,4 +1020,4 @@ class TestCli(object):
             cli, ["drift", "show", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert result.output == "{'fake_stack': {'some': 'json'}}\n"
+        assert result.output == "fake_stack:\n  some: json\n\n"

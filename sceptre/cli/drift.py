@@ -51,6 +51,8 @@ def drift_detect(ctx: Context, path: str):
     plan = SceptrePlan(context)
     responses = plan.drift_detect()
 
+    output_format = "yaml" if context.output_format == "text" else context.output_format
+
     exit_status = 0
     for stack, response in responses.items():
         status = response["DetectionStatus"]
@@ -58,7 +60,7 @@ def drift_detect(ctx: Context, path: str):
             exit_status += 1
         for key in ["Timestamp", "ResponseMetadata"]:
             response.pop(key, None)
-        write({stack.external_name: response}, context.output_format)
+        write({stack.external_name: response}, output_format)
 
     exit(exit_status)
 
@@ -91,11 +93,13 @@ def drift_show(ctx, path):
     plan = SceptrePlan(context)
     responses = plan.drift_show()
 
+    output_format = "yaml" if context.output_format == "text" else context.output_format
+
     exit_status = 0
     for stack, (status, response) in responses.items():
         if status in BAD_STATUSES:
             exit_status += 1
         response.pop("ResponseMetadata", None)
-        write({stack.external_name: response}, context.output_format)
+        write({stack.external_name: response}, output_format)
 
     exit(exit_status)
