@@ -93,7 +93,7 @@ def drift_show(ctx, path):
     plan = SceptrePlan(context)
     responses = plan.drift_show()
 
-    output_format = "yaml" if context.output_format == "text" else context.output_format
+    output_format = "json" if context.output_format == "json" else "yaml"
 
     exit_status = 0
     for stack, (status, response) in responses.items():
