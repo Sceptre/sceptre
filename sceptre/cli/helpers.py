@@ -113,29 +113,34 @@ def _generate_json(stream):
 
 
 def _generate_yaml(stream):
+    kwargs = {
+        "default_flow_style": False,
+        "explicit_start": True
+    }
+
     if isinstance(stream, list):
         items = []
         for item in stream:
             try:
                 if isinstance(item, dict):
                     items.append(
-                        yaml.safe_dump(item, default_flow_style=False, explicit_start=True)
+                        yaml.safe_dump(item, **kwargs)
                     )
                 else:
                     items.append(
                         yaml.safe_dump(
-                            yaml.load(item, Loader=CfnYamlLoader),
-                            default_flow_style=False, explicit_start=True
+                            yaml.load(item, Loader=CfnYamlLoader), **kwargs
                         )
                     )
             except Exception:
                 print("An error occured whilst writing the YAML object.")
         return yaml.safe_dump(
-            [yaml.load(item, Loader=CfnYamlLoader) for item in items],
-            default_flow_style=False, explicit_start=True
+            [yaml.load(item, Loader=CfnYamlLoader) for item in items], **kwargs
         )
+
     elif isinstance(stream, dict):
-        return yaml.dump(stream, default_flow_style=False)
+        return yaml.dump(stream, **kwargs)
+
     else:
         try:
             return yaml.safe_loads(stream)

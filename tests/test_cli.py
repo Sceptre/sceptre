@@ -876,8 +876,8 @@ class TestCli(object):
         "output_format,no_colour,expected_output", [
             ("json", True, '{\n    "stack": "CREATE_COMPLETE"\n}'),
             ("json", False, '{\n    "stack": "\x1b[32mCREATE_COMPLETE\x1b[0m\"\n}'),
-            ("yaml", True, 'stack: CREATE_COMPLETE\n'),
-            ("yaml", False, 'stack: \x1b[32mCREATE_COMPLETE\x1b[0m\n')
+            ("yaml", True, '---\nstack: CREATE_COMPLETE\n'),
+            ("yaml", False, '---\nstack: \x1b[32mCREATE_COMPLETE\x1b[0m\n')
         ]
     )
     def test_write_formats(
@@ -1011,6 +1011,7 @@ class TestCli(object):
         )
         assert result.exit_code == 0
         assert result.output == (
+            '---\n'
             'fake_stack:\n'
             '  DetectionStatus: DETECTION_COMPLETE\n'
             '  DriftedStackResourceCount: 0\n'
@@ -1027,4 +1028,4 @@ class TestCli(object):
             cli, ["drift", "show", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert result.output == "fake_stack:\n  some: json\n\n"
+        assert result.output == "---\nfake_stack:\n  some: json\n\n"
