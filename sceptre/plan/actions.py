@@ -1062,7 +1062,7 @@ class StackActions(object):
         :returns: The response from describe_stack_drift_detection_status.
         """
         timeout = 300
-        sleep_interval = 5
+        sleep_interval = 10
         elapsed = 0
 
         while True:
@@ -1095,7 +1095,7 @@ class StackActions(object):
 
         for key in keys:
             if key in response:
-                self.logger.info(
+                self.logger.debug(
                     f"{self.stack.name} - {key} - {response[key]}"
                 )
 
