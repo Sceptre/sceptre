@@ -2,12 +2,13 @@ import click
 from click import Context
 
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import (
-    catch_exceptions,
-    write
-)
 from sceptre.plan.plan import SceptrePlan
 
+from sceptre.cli.helpers import (
+    catch_exceptions,
+    deserialize_json_properties,
+    write
+)
 
 BAD_STATUSES = [
     "DETECTION_FAILED",
@@ -60,7 +61,7 @@ def drift_detect(ctx: Context, path: str):
             exit_status += 1
         for key in ["Timestamp", "ResponseMetadata"]:
             response.pop(key, None)
-        write({stack.external_name: response}, output_format)
+        write({stack.external_name: deserialize_json_properties(response)}, output_format)
 
     exit(exit_status)
 
@@ -100,6 +101,6 @@ def drift_show(ctx, path):
         if status in BAD_STATUSES:
             exit_status += 1
         response.pop("ResponseMetadata", None)
-        write({stack.external_name: response}, output_format)
+        write({stack.external_name: deserialize_json_properties(response)}, output_format)
 
     exit(exit_status)
