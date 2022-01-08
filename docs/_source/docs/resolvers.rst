@@ -107,9 +107,14 @@ nested values in dicts and lists using "." to separate key/index segments. For e
            - "some random value"
            - "the value we want to select"
 
+   iam_role: !stack_output roles.yaml::RoleArn
+
    parameters:
        # This will pass the value of "the value we want to select" for my_parameter
        my_parameter: !stack_attr sceptre_user_data.key.1
+       # You can also access the value of another resolvable property like this:
+       use_role_arn: !stack_attr iam_role
+
 
 stack_output
 ~~~~~~~~~~~~
