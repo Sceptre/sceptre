@@ -108,6 +108,7 @@ nested values in dicts and lists using "." to separate key/index segments. For e
            - "the value we want to select"
 
    parameters:
+       # This will pass the value of "the value we want to select" for my_parameter
        my_parameter: !stack_attr sceptre_user_data.key.1
 
 stack_output
