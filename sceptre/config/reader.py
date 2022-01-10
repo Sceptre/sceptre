@@ -475,7 +475,9 @@ class ConfigReader(object):
         :rtype: dict
         """
         s3_details = None
-        if "template_bucket_name" in config:
+        # If the config explicitly sets the template_bucket_name to None, we don't want to enter
+        # this conditional block.
+        if config.get("template_bucket_name") is not None:
             template_key = "/".join([
                 sceptreise_path(stack_name), "{time_stamp}.json".format(
                     time_stamp=datetime.datetime.utcnow().strftime(

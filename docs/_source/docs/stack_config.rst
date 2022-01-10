@@ -1,8 +1,9 @@
 Stack Config
 ============
 
-Stack config stores config related to a particular Stack, such as the path to
-that Stack’s Template, and any parameters that Stack may require.
+A Stack config stores configurations related to a particular Stack, such as the path to
+that Stack’s Template, and any parameters that Stack may require. Many of these configuration keys
+support resolvers and can be inherited from parent StackGroup configs.
 
 .. _stack_config-structure:
 
@@ -31,6 +32,8 @@ you will receive an error when deploying the stack.
 
 template_path
 ~~~~~~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: No
 
 The path to the CloudFormation, Jinja2 or Python template to build the Stack
 from. The path can either be absolute or relative to the Sceptre Directory.
@@ -44,6 +47,8 @@ from the Stack config filename.
 
 template
 ~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: No
 
 Configuration for a template handler. Template handlers can take in parameters
 and resolve that to a CloudFormation template. This enables you to not only
@@ -66,20 +71,39 @@ developing your own in the :doc:`template_handlers` section.
 
 dependencies
 ~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Appended to parent's dependencies
 
 A list of other Stacks in the environment that this Stack depends on. Note that
 if a Stack fetches an output value from another Stack using the
 ``stack_output`` resolver, that Stack is automatically added as a dependency,
 and that Stack need not be added as an explicit dependency.
 
+.. warning::
+   Be careful about how you structure dependencies. It is possible to create circular
+   dependencies accidentally, where multiple stacks depend on each other. Sceptre
+   will detect this and raise an error, blocking this sort of setup. You must be especially careful
+   when specifying ``dependencies`` on a StackGroup config. These dependencies will then be
+   "inherited" by every stack within that StackGroup. If one of those dependencies *inherits* that
+   list of dependencies, it will cause a circular dependency. If this happens, you can resolve the
+   situation by either (a) setting those ``dependencies`` on individual Stack Configs rather than the
+   the StackGroup Config, or (b) moving those dependency stacks outside of the StackGroup.
+
 hooks
 ~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
 
 A list of arbitrary shell or Python commands or scripts to run. Find out more
 in the :doc:`hooks` section.
 
 notifications
 ~~~~~~~~~~~~~
+* Resolvable: Yes
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
 
 List of SNS topic ARNs to publish Stack related events to. A maximum of 5 ARNs
 can be specified per Stack. This configuration will be used by the ``create``,
@@ -89,6 +113,9 @@ documentation`_.
 
 on_failure
 ~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
 
 This parameter describes the action taken by CloudFormation when a Stack fails
 to create. For more information and valid values see the `AWS Documentation`_.
@@ -104,6 +131,9 @@ Examples include:
 
 parameters
 ~~~~~~~~~~
+* Resolvable: Yes
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
 
 .. warning::
 
@@ -166,6 +196,9 @@ Example:
 
 protected
 ~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
 
 Stack protection against execution of the following commands:
 
@@ -180,12 +213,19 @@ throw an error.
 
 role_arn
 ~~~~~~~~
+* Resolvable: Yes
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
 
-The ARN of a `CloudFormation Service Role`_ that is assumed by CloudFormation
-to create, update or delete resources.
+The ARN of a `CloudFormation Service Role`_ that is assumed by *CloudFormation* (not Sceptre)
+to create, update or delete resources. For more information on this configuration, its implications,
+and its uses see :ref:`Sceptre and IAM: role_arn <role_arn_permissions>`.
 
 iam_role
 ~~~~~~~~
+* Resolvable: Yes
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
 
 This is the IAM Role ARN that **Sceptre** should *assume* using AWS STS when executing any actions
 on the Stack.
@@ -193,21 +233,21 @@ on the Stack.
 This is different from the ``role_arn`` option, which sets a CloudFormation service role for the
 stack. The ``iam_role`` configuration does not configure anything on the stack itself.
 
-This is also different from the ``profile`` StackGroup configuration, though there are similarities.
-``profile`` references the name of a locally-defined profile configured using the AWS CLI. This is
-the *"user"* that Sceptre is operating as. However, `iam_role` is a defined role ARN (typically one
-with elevated permissions the user doesn't otherwise have access to) that the user will assume in
-order to execute the actions on a specific stack group.
+.. warning::
 
-Using ``iam_role`` can be useful if the user or system executing Sceptre needs an alternative
-permissions set to perform the required actions on that stack, such as might be the case with a
-CI/CD system like Jenkins.
+   If you set the value of ``iam_role`` with ``!stack_output``, that ``iam_role``
+   will not actually be used to obtain the stack_output, but it *WILL* be used for all subsequent stack
+   actions. Therefore, it is important that the user executing the stack action have permissions to get
+   stack outputs for the stack outputting the ``iam_role``.
 
-In order to use this argument, however, the role needs to have an AssumeRolePolicyDocument that
-permits the user to assume that role.
+For more information on this configuration, its implications, and its uses, see
+:ref:`Sceptre and IAM: iam_role <iam_role_permissions>`.
 
 sceptre_user_data
 ~~~~~~~~~~~~~~~~~
+* Resolvable: Yes
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
 
 Represents data to be passed to the ``sceptre_handler(sceptre_user_data)``
 function in Python templates or accessible under ``sceptre_user_data`` variable
@@ -215,6 +255,8 @@ key within Jinja2 templates.
 
 stack_name
 ~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: No
 
 A custom name to use instead of the Sceptre default.
 
@@ -248,11 +290,17 @@ referring to is in a different AWS account or region.
 
 stack_tags
 ~~~~~~~~~~
+* Resolvable: Yes
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
 
 A dictionary of `CloudFormation Tags`_ to be applied to the Stack.
 
 stack_timeout
 ~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
 
 A timeout in minutes before considering the Stack deployment as failed. After
 the specified timeout, the Stack will be rolled back. Specifiyng zero, as well
@@ -360,19 +408,19 @@ Examples
        tag_1: value_1
        tag_2: value_2
 
-.. _template_path: #template_path
+.. _template_path: #template-path
 .. _template: #template
 .. _dependencies: #dependencies
 .. _hooks: #hooks
 .. _notifications: #notifications
-.. _on_failure: #on_failure
+.. _on_failure: #on-failure
 .. _parameters: #parameters
 .. _protected: #protected
-.. _role_arn: #role_arn
-.. _sceptre_user_data: #sceptre_user_data
-.. _stack_name: #stack_name
-.. _stack_tags: #stack_tags
-.. _stack_timeout: #stack_timeout
+.. _role_arn: #role-arn
+.. _sceptre_user_data: #sceptre-user-data
+.. _stack_name: #stack-name
+.. _stack_tags: #stack-tags
+.. _stack_timeout: #stack-timeout
 .. _AWS CloudFormation API documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStack.html
 .. _AWS Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStack.html
 .. _CloudFormation Service Role: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-iam-servicerole.html

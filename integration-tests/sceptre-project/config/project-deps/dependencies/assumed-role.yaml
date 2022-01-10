@@ -1,0 +1,2 @@
+template:
+  path: "project-dependencies/assumed-role.yaml"
