@@ -7,14 +7,15 @@ from sceptre.plan.plan import SceptrePlan
 from sceptre.context import SceptreContext
 
 
-@given('a log group configuration in stack "{stack_name}" has drifted')
+@given('a topic configuration in stack "{stack_name}" has drifted')
 def step_impl(context, stack_name):
     full_name = get_cloudformation_stack_name(context, stack_name)
-    log_group_name = _get_output("LogGroup", full_name)
-    client = boto3.client("logs")
-    client.put_retention_policy(
-        logGroupName=log_group_name,
-        retentionInDays=7
+    topic_arn = _get_output("TopicName", full_name)
+    client = boto3.client("sns")
+    client.set_topic_attributes(
+        TopicArn=topic_arn,
+        AttributeName="DisplayName",
+        AttributeValue="WrongName"
     )
 
 
