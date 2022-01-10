@@ -366,20 +366,20 @@ When compiled, ``sceptre_user_data`` would be the dictionary
 Resolution order of values
 --------------------------
 
-Stack Configs allow the convergence of values from a variety of sources to configure a given
-CloudFormation stack. These values are applied in phases. Understanding these phases can be very
-helpful you when designing your Stack Configs.
+Stack Configs allow you to pull together values from a variety of sources to configure a
+CloudFormation stack. These values are retrieved and applied in phases. Understanding these phases can
+be very helpful when designing your Stack Configs.
 
 When launching a stack (or performing other stack actions), values are gathered and accessed in this
 order:
 
 1. User variables (from ``--var`` and ``--var-file`` arguments) are gathered when the CLI first runs.
-2. StackGroup Configs are rendered from the highest level downward with Jinja and then read into yaml.
-   The key/value pairs from those configs are layered on top of each other, with more nested configs
-   overriding higher-level ones. These key/value pairs will be "inherited" by the Stack Config, both
-   documented properties as well as any custom keys that have been set in the StackGroup Configs.
-3. With the layered StackGroup Config variables, the Stack Config will be rendered with Jinja
-   into a *string*. At this point, these values are available for access via Jinja syntax:
+2. StackGroup Configs are read from the highest level downward, rendered with Jinja and then loaded
+   into yaml. The key/value pairs from these configs are layered on top of each other, with more nested
+   configs overriding higher-level ones. These key/value pairs will be "inherited" by the Stack
+   Config.
+3. With the layered StackGroup Config variables, the Stack Config will be read and then rendered with
+   Jinja. Certain variables are made available when the Stack Config is being rendered with Jinja:
 
    * User variables (via ``{{ var }}``)
    * Environment variables (via ``{{ environment_variable }}``)
@@ -388,7 +388,7 @@ order:
    **Important:** If any StackGroup configuration values were set with resolvers, accessing them via
    Jinja will not resolve them, since resolvers require a Stack object, which has not yet been
    assembled yet. Resolvers will not be accessible until a later phase.
-4. Once rendered via Jinja into a string, the StackConfig will be read into yaml. This is when the
+4. Once rendered via Jinja into a string, the Stack Config will be loaded into yaml. This is when the
    resolver instances on the Stack config will be constructed. **Important**: This is only when the
    resolvers are *constructed*, not when they are resolved.
 5. The Stack instance will be constructed with the key/value pairs from the loaded yaml layered on
