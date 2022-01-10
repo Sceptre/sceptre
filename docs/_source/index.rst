@@ -20,6 +20,7 @@
    docs/hooks.rst
    docs/resolvers.rst
    docs/architecture.rst
+   docs/permissions.rst
 
 .. toctree::
    :maxdepth: 3

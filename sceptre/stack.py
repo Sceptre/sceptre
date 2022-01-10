@@ -8,13 +8,17 @@ This module implements a Stack class, which stores a Stack's data.
 """
 
 import logging
-from typing import Mapping, Sequence
 
 from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.helpers import get_external_stack_name, sceptreise_path
 from sceptre.hooks import HookProperty
-from sceptre.resolvers import ResolvableProperty
+from sceptre.resolvers import (
+    ResolvableContainerProperty,
+    ResolvableValueProperty,
+    RecursiveResolve,
+    PlaceholderType
+)
 from sceptre.template import Template
 
 
@@ -113,10 +117,34 @@ class Stack(object):
     :type stack_group_config: dict
 
     """
+    parameters = ResolvableContainerProperty("parameters")
+    sceptre_user_data = ResolvableContainerProperty(
+        "sceptre_user_data",
+        PlaceholderType.alphanum
+    )
+    notifications = ResolvableContainerProperty("notifications")
+    tags = ResolvableContainerProperty('tags')
+    # placeholder_override=None here means that if the template_bucket_name is a resolver,
+    # placeholders have been enabled, and that stack hasn't been deployed yet, commands that would
+    # otherwise attempt to upload the template (like validate) won't actually use the template bucket
+    # and will act as if there was no template bucket set.
+    s3_details = ResolvableContainerProperty(
+        "s3_details",
+        PlaceholderType.none
+    )
+    template_bucket_name = ResolvableValueProperty(
+        "template_bucket_name",
+        PlaceholderType.none
+    )
+    # Similarly, the placeholder_override=None for iam_role means that actions that would otherwise
+    # use the iam_role will act as if there was no iam role when the iam_role stack has not been
+    # deployed for commands that allow placeholders (like validate).
+    iam_role = ResolvableValueProperty(
+        'iam_role',
+        PlaceholderType.none
+    )
+    role_arn = ResolvableValueProperty('role_arn')
 
-    parameters = ResolvableProperty("parameters")
-    _sceptre_user_data = ResolvableProperty("_sceptre_user_data")
-    notifications = ResolvableProperty("notifications")
     hooks = HookProperty("hooks")
 
     def __init__(
@@ -138,30 +166,34 @@ class Stack(object):
         self.name = sceptreise_path(name)
         self.project_code = project_code
         self.region = region
-        self.template_bucket_name = template_bucket_name
-        self.template_key_prefix = template_key_prefix
         self.required_version = required_version
         self.external_name = external_name or get_external_stack_name(self.project_code, self.name)
         self.template_path = template_path
         self.template_handler_config = template_handler_config
-        self.s3_details = s3_details
+        self.dependencies = dependencies or []
+        self.protected = protected
+        self.on_failure = on_failure
+        self.stack_group_config = stack_group_config or {}
+        self.stack_timeout = stack_timeout
+        self.profile = profile
+        self.template_key_prefix = template_key_prefix
+
         self._template = None
         self._connection_manager = None
 
-        self.protected = protected
-        self.role_arn = role_arn
-        self.on_failure = on_failure
-        self.dependencies = dependencies or []
-        self.tags = tags or {}
-        self.stack_timeout = stack_timeout
+        # Resolvers and hooks need to be assigned last
+        self.s3_details = s3_details
         self.iam_role = iam_role
-        self.profile = profile
-        self.hooks = hooks or {}
+        self.tags = tags or {}
+        self.role_arn = role_arn
+        self.template_bucket_name = template_bucket_name
+
+        self.s3_details = s3_details
         self.parameters = parameters or {}
-        self._sceptre_user_data = sceptre_user_data or {}
-        self._sceptre_user_data_is_resolved = False
+        self.sceptre_user_data = sceptre_user_data or {}
         self.notifications = notifications or []
-        self.stack_group_config = stack_group_config or {}
+
+        self.hooks = hooks or {}
 
     def __repr__(self):
         return (
@@ -250,29 +282,39 @@ class Stack(object):
         return hash(str(self))
 
     @property
-    def connection_manager(self):
-        """
-        Returns ConnectionManager.
-         :returns: ConnectionManager.
-        :rtype: ConnectionManager
+    def connection_manager(self) -> ConnectionManager:
+        """Returns the ConnectionManager for the stack, creating it if it has not yet been created.
+
+        :returns: ConnectionManager.
         """
         if self._connection_manager is None:
-            self._connection_manager = ConnectionManager(
-                self.region, self.profile, self.external_name, self.iam_role
+            cache_connection_manager = True
+            try:
+                iam_role = self.iam_role
+            except RecursiveResolve:
+                # This would be the case when iam_role is set with a resolver (especially stack_output)
+                # that uses the stack's connection manager. This creates a temporary condition where
+                # you need the iam role to get the iam role. To get around this, it will temporarily
+                # use None as the iam_role but will re-attempt to resolve the value in future accesses.
+                # Since the Stack Output resolver (the most likely culprit) uses the target stack's
+                # iam_role rather than the current stack's one anyway, it actually doesn't matter,
+                # since the stack defining that iam_role won't actually be using that iam_role.
+                self.logger.debug(
+                    "Resolving iam_role requires the Stack connection manager. Temporarily setting "
+                    "the iam_role to None until it can be fully resolved."
+                )
+                iam_role = None
+                cache_connection_manager = False
+
+            connection_manager = ConnectionManager(
+                self.region, self.profile, self.external_name, iam_role
             )
+            if cache_connection_manager:
+                self._connection_manager = connection_manager
+            else:  # Return early without caching the connection manager.
+                return connection_manager
 
         return self._connection_manager
-
-    @property
-    def sceptre_user_data(self):
-        """Returns sceptre_user_data after ensuring that it is fully resolved.
-
-        :rtype: dict or list or None
-        """
-        if not self._sceptre_user_data_is_resolved:
-            self._sceptre_user_data_is_resolved = True
-            self._resolve_sceptre_user_data()
-        return self._sceptre_user_data
 
     @property
     def template(self):
@@ -300,15 +342,3 @@ class Stack(object):
                 connection_manager=self.connection_manager
             )
         return self._template
-
-    def _resolve_sceptre_user_data(self):
-        data = self._sceptre_user_data
-        if isinstance(data, Mapping):
-            iterator = data.values()
-        elif isinstance(data, Sequence):
-            iterator = data
-        else:
-            return
-        for value in iterator:
-            if isinstance(value, ResolvableProperty.ResolveLater):
-                value()
