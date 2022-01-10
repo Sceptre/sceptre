@@ -527,6 +527,5 @@ def wait_for_final_state(context, stack_name):
         if not stack.stack_status.endswith("IN_PROGRESS"):
             return
         attempts += 1
-        print("Stack in status", stack.stack_status)
         time.sleep(delay)
     raise Exception("Timeout waiting for stack to reach final state.")
