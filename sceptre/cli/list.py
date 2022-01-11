@@ -6,7 +6,6 @@ from sceptre.cli.helpers import (
     write
 )
 from sceptre.plan.plan import SceptrePlan
-from sceptre.helpers import normalise_path
 
 
 @click.group(name="list")
@@ -153,5 +152,4 @@ def list_stacks(ctx, path):
 
     plan = SceptrePlan(context)
     output = [f"{stack.name}.yaml: {stack.external_name}" for stack in plan.all_stacks]
-    #print(output)
     write(output, context.output_format)
