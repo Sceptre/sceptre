@@ -625,12 +625,17 @@ class TestCli(object):
         assert result.exit_code == 0
         assert result.output == "export SCEPTRE_Key='Value'\n"
 
-    def test_list_stack_name(self):
+    @pytest.mark.parametrize("output_format,expected_output", [
+        ("yaml", '---\n- mock-stack.yaml: mock-stack-external\n\n'),
+        ("text", 'mock-stack.yaml: mock-stack-external\n'),
+        ("json", '[\n    {\n        "mock-stack.yaml": "mock-stack-external"\n    }\n]\n')
+    ])
+    def test_list_stacks(self, output_format, expected_output):
         result = self.runner.invoke(
-            cli, ["list", "stack-name", "dev/vpc.yaml"]
+            cli, ["--output", output_format, "list", "stacks", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert result.stdout == "mock-stack-external\n"
+        assert result.stdout == expected_output
 
     def test_status_with_group(self):
         self.mock_stack_actions.get_status.return_value = {

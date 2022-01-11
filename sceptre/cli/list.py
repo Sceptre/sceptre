@@ -129,13 +129,14 @@ def list_change_sets(ctx, path, url):
         write(response, context.output_format)
 
 
-@list_group.command(name="stack-name")
+@list_group.command(name="stacks")
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
-def list_stack_name(ctx, path):
+def list_stacks(ctx, path):
     """
-    List stack names for stacks in a stack group.
+    List stack names and command paths for stacks in a
+    stack group.
     \f
 
     :param path: Path to execute the command on.
@@ -151,15 +152,6 @@ def list_stack_name(ctx, path):
     )
 
     plan = SceptrePlan(context)
-
-    show_paths = len(plan.all_stacks) > 1
-    stack_names = []
-
-    for stack in plan.all_stacks:
-        output = stack.external_name
-        if show_paths:
-            relative_path = normalise_path(f"{stack.name}.yaml")
-            output += f" (from {relative_path})"
-        stack_names.append(output)
-
-    write(stack_names, context.output_format)
+    output = [f"{stack.name}.yaml: {stack.external_name}" for stack in plan.all_stacks]
+    #print(output)
+    write(output, context.output_format)
