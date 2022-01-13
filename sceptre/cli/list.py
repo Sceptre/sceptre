@@ -129,22 +129,16 @@ def list_change_sets(ctx, path, url):
 
 
 @list_group.command(name="stacks")
-@click.option(
-    "--all", is_flag=True, help="List all stacks in stack groups."
-)
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
-def list_stacks(ctx, path, all):
+def list_stacks(ctx, path):
     """
     List stack names and command paths for stacks in a
     stack group.
     \f
 
     :param path: Path to execute the command on.
-    :type path: str
-    :param all: List all stacks in stack groups.
-    :type all: bool
     """
     context = SceptreContext(
         command_path=path,
@@ -155,13 +149,9 @@ def list_stacks(ctx, path, all):
         ignore_dependencies=ctx.obj.get("ignore_dependencies"),
         full_scan=True
     )
+
     plan = SceptrePlan(context)
 
-    output = {
-        f"{stack.name}.yaml": stack.external_name
-        for stack in plan.all_stacks
-        if all or stack in plan.command_stacks
-    }
-
+    output = {f"{stack.name}.yaml": stack.external_name for stack in plan.all_stacks}
     output_format = "json" if context.output_format == "json" else "yaml"
     write(output, output_format)
