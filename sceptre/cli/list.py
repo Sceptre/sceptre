@@ -157,7 +157,7 @@ def list_stacks(ctx, path, all):
     plan = SceptrePlan(context)
 
     output = {
-        f"{stack.name}.yaml: {stack.external_name}"
+        f"{stack.name}.yaml": stack.external_name
         for stack in plan.all_stacks
         if all or stack in plan.command_stacks
     }

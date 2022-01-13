@@ -626,9 +626,9 @@ class TestCli(object):
         assert result.output == "export SCEPTRE_Key='Value'\n"
 
     @pytest.mark.parametrize("output_format,expected_output", [
-        ("yaml", '---\n- mock-stack.yaml: mock-stack-external\n\n'),
-        ("text", '---\n- mock-stack.yaml: mock-stack-external\n\n'),
-        ("json", '"{\'mock-stack.yaml: mock-stack-external\'}"\n')
+        ("yaml", '---\nmock-stack.yaml: mock-stack-external\n\n'),
+        ("text", '---\nmock-stack.yaml: mock-stack-external\n\n'),
+        ("json", '{\n    "mock-stack.yaml": "mock-stack-external"\n}\n')
     ])
     def test_list_stacks(self, output_format, expected_output):
         result = self.runner.invoke(
