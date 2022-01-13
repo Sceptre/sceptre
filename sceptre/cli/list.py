@@ -152,6 +152,6 @@ def list_stacks(ctx, path):
 
     plan = SceptrePlan(context)
 
-    output = {f"{stack.name}.yaml": stack.external_name for stack in plan.all_stacks}
+    output = {f"{stack.name}.yaml": stack.external_name for stack in plan.graph}
     output_format = "json" if context.output_format == "json" else "yaml"
     write(output, output_format)
