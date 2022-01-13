@@ -627,7 +627,7 @@ class TestCli(object):
 
     @pytest.mark.parametrize("output_format,expected_output", [
         ("yaml", '---\n- mock-stack.yaml: mock-stack-external\n\n'),
-        ("text", 'mock-stack.yaml: mock-stack-external\n'),
+        ("text", '---\n- mock-stack.yaml: mock-stack-external\n\n'),
         ("json", '"{\'mock-stack.yaml: mock-stack-external\'}"\n')
     ])
     def test_list_stacks(self, output_format, expected_output):
@@ -888,8 +888,8 @@ class TestCli(object):
         "output_format,no_colour,expected_output", [
             ("json", True, '{\n    "stack": "CREATE_COMPLETE"\n}'),
             ("json", False, '{\n    "stack": "\x1b[32mCREATE_COMPLETE\x1b[0m\"\n}'),
-            ("yaml", True, {'stack': 'CREATE_COMPLETE'}),
-            ("yaml", False, '{\'stack\': \'\x1b[32mCREATE_COMPLETE\x1b[0m\'}')
+            ("yaml", True, '---\nstack: CREATE_COMPLETE\n'),
+            ("yaml", False, '---\nstack: \x1b[32mCREATE_COMPLETE\x1b[0m\n')
         ]
     )
     def test_write_formats(
