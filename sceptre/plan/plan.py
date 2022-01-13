@@ -34,8 +34,9 @@ class SceptrePlan(object):
         self.launch_order = None
 
         config_reader = ConfigReader(context)
-        self.all_stacks, self.command_stacks = config_reader.construct_stacks()
-        self.graph = StackGraph(self.all_stacks)
+        all_stacks, command_stacks = config_reader.construct_stacks()
+        self.graph = StackGraph(all_stacks)
+        self.command_stacks = command_stacks
 
     def _execute(self, *args):
         executor = SceptrePlanExecutor(self.command, self.launch_order)
