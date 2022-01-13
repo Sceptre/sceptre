@@ -118,7 +118,7 @@ def _generate_yaml(stream):
         "explicit_start": True
     }
 
-    if type(stream) in [list, set]:
+    if isinstance(stream, (list, set)):
         items = []
         for item in stream:
             try:
