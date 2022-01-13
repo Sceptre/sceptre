@@ -152,7 +152,8 @@ def list_stacks(ctx, path, all):
         user_variables=ctx.obj.get("user_variables"),
         output_format=ctx.obj.get("output_format"),
         options=ctx.obj.get("options"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
+        full_scan=True
     )
     plan = SceptrePlan(context)
 
