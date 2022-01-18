@@ -138,7 +138,7 @@ def list_stacks(ctx, path):
     stack group.
     \f
 
-    :param path: Path to execute the command on.
+    :param path: Path to execute the command on or path to stack group
     """
     context = SceptreContext(
         command_path=path,
