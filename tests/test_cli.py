@@ -627,9 +627,9 @@ class TestCli(object):
 
     @pytest.mark.parametrize("path,output_format,expected_output", [
         ("dev/vpc.yaml", "yaml", '---\nmock-stack.yaml: mock-stack-external\n\n'),
-        ("dev/",         "yaml", '---\nmock-stack.yaml: mock-stack-external\n\n'),
         ("dev/vpc.yaml", "text", '---\nmock-stack.yaml: mock-stack-external\n\n'),
-        ("dev/vpc.yaml", "json", '{\n    "mock-stack.yaml": "mock-stack-external"\n}\n')
+        ("dev/vpc.yaml", "json", '{\n    "mock-stack.yaml": "mock-stack-external"\n}\n'),
+        ("dev",          "yaml", '---\nmock-stack.yaml: mock-stack-external\n\n')
     ])
     def test_list_stacks(self, path, output_format, expected_output):
         result = self.runner.invoke(
