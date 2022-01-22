@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 
 from sceptre.resolvers import Resolver
 
@@ -47,7 +47,7 @@ class StackAttr(Resolver):
     def _key_is_from_stack_group_config(self, key: str):
         return key in self.stack.stack_group_config and not hasattr(self.stack, key)
 
-    def _recursively_resolve_segments(self, obj: Any, segments: list[str]):
+    def _recursively_resolve_segments(self, obj: Any, segments: List[str]):
         if not segments:
             return obj
 
