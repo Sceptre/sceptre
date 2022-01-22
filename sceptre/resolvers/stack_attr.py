@@ -1,7 +1,23 @@
+from typing import Any
+
 from sceptre.resolvers import Resolver
 
 
 class StackAttr(Resolver):
+    """Resolves to the value of another field on the Stack Config, including other resolvers.
+
+    The argument for this resolver should be the "key path" from the stack object, which can access
+    nested keys/indexes using a "." to separate segments.
+
+    For example, given this Stack Config structure...
+
+        sceptre_user_data:
+            nested_list:
+              - first
+              - second
+
+    Using "!stack_attr sceptre_user_data.nested_list.1" on your stack would resolve to "second".
+    """
 
     # These are all the attributes on Stack Configs whose names are changed when they are assigned
     # to the Stack instance.
@@ -12,7 +28,8 @@ class StackAttr(Resolver):
         'stack_tags': 'tags'
     }
 
-    def resolve(self):
+    def resolve(self) -> Any:
+        """Returns the resolved value of the field referenced by the resolver's argument."""
         segments = self.argument.split('.')
 
         # Remap top-level attributes to match stack config
@@ -30,7 +47,7 @@ class StackAttr(Resolver):
     def _key_is_from_stack_group_config(self, key: str):
         return key in self.stack.stack_group_config and not hasattr(self.stack, key)
 
-    def _recursively_resolve_segments(self, obj, segments):
+    def _recursively_resolve_segments(self, obj: Any, segments: list[str]):
         if not segments:
             return obj
 
