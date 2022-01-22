@@ -79,15 +79,25 @@ A resolver to execute any shell command.
 
 Refer to `sceptre-resolver-cmd <https://github.com/Sceptre/sceptre-resolver-cmd/>`_ for documentation.
 
+.. _stack_attr_resolver:
+
 stack_attr
 ~~~~~~~~~~
 
-This resolver lets you reference the values of other fields on the same Stack Config or those
-inherited from StackGroups in which the Stack Config exists. It is useful for avoiding unnecessary
-configuration duplication as well as referencing attributes inherited from the StackGroup Config.
+This resolver resolves to the values of other fields on the same Stack Config or those
+inherited from StackGroups in which the current Stack Config exists, even when those other fields are
+also resolvers.
 
-For example, if you need to reference the ``template_bucket_name`` set in the StackGroup Config,
-you can do that with ``!stack_attr``:
+To understand why this is useful, consider a stack's ``template_bucket_name``. This is usually set on
+the highest level StackGroup Config. Normally, you could reference the template_bucket_name that was
+set in an outer StackGroup Config with Jinja using ``{{template_bucket_name}}`` or, more explicitly, with
+``{{stack_group_config.template_bucket_name}}``.
+
+However, if the value of ``template_bucket_name`` is set with a resolver, using Jinja won't work.
+This is due to the :ref:`resolution_order` on a Stack Config. Jinja configs are rendered *before*
+resolvers are constructed or resolved, so you can't resolve a resolver from a StackGroup Config via
+Jinja. That's where !stack_attr is useful. It's a resolver that resolves to the value of another stack
+attribute (which could be another resolver).
 
 .. code-block:: yaml
 

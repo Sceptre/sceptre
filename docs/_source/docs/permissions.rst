@@ -125,10 +125,10 @@ Tips for working with Sceptre, IAM, and a CI/CD system
     permissions of the deployment role to only certain paths, preventing the deployment role from
     elevating its own permissions or modifying unrelated roles and policies.
   * Using ``aws:CalledVia`` and ``aws:CalledViaFirst`` conditions matching against
-    ``"cloudformation.amazonaws.com"`` on non-cloudformation actions to ensure that the deployment
-    role can only execute changes via CloudFormation and not on its own. Note: Some actions are
-    taken by Sceptre directly and not via cloudformation (see the section below on this). Those
-    actions should *not* have a CalledVia condition applied.
+    ``"cloudformation.amazonaws.com"`` to ensure that the deployment role can only execute changes
+    via CloudFormation and not on its own. Note: Some actions are taken by Sceptre directly and not
+    via cloudformation (see the section below on this). Those actions should *not* have a CalledVia
+    condition applied.
 
 * If you define your deployment role (and any other related resources) using Sceptre and then
   reference it on all *other* stacks using ``iam_role: !stack_output ...``, this means that your
