@@ -520,7 +520,7 @@ def region(region_name):
 def wait_for_final_state(context, stack_name):
     stack = retry_boto_call(context.cloudformation.Stack, stack_name)
     delay = 2
-    max_retries = 300
+    max_retries = 150
     attempts = 0
     while attempts < max_retries:
         retry_boto_call(stack.load)
