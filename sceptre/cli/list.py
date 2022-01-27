@@ -128,7 +128,15 @@ def list_change_sets(ctx, path, url):
         write(response, context.output_format)
 
 
-@list_group.command(name="stacks")
+@list_group.group(name="local")
+def local_group():
+    """
+    Commands for listing attributes of local stacks.
+    """
+    pass
+
+
+@local_group.command(name="stacks")
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
