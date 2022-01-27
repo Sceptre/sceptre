@@ -1,5 +1,5 @@
 Feature: Drift Detection
-  Scenario: Detects no drift on a stack that with no drift
+  Scenario: Detects no drift on a stack with no drift
     Given stack "drift-single/A" exists using "topic.yaml"
     When the user detects drift on stack "drift-single/A"
     Then stack drift status is "IN_SYNC"
@@ -9,13 +9,13 @@ Feature: Drift Detection
     When the user shows drift on stack "drift-single/A"
     Then stack resource drift status is "IN_SYNC"
 
-  Scenario: Detects drift on a stack has has drifted
+  Scenario: Detects drift on a stack that has drifted
     Given stack "drift-single/A" exists using "topic.yaml"
     And a topic configuration in stack "drift-single/A" has drifted
     When the user detects drift on stack "drift-single/A"
     Then stack drift status is "DRIFTED"
 
-  Scenario: Shows drift on a stack has has drifted
+  Scenario: Shows drift on a stack that has drifted
     Given stack "drift-single/A" exists using "topic.yaml"
     And a topic configuration in stack "drift-single/A" has drifted
     When the user shows drift on stack "drift-single/A"

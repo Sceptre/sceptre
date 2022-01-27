@@ -72,7 +72,7 @@ def drift_detect(ctx: Context, path: str):
 @catch_exceptions
 def drift_show(ctx, path):
     """
-    Show stack drift on running stacks.
+    Show stack drift on deployed stacks.
 
     In the event that the stack does not exist, we return
     a StackResourceDriftStatus of STACK_DOES_NOT_EXIST.
