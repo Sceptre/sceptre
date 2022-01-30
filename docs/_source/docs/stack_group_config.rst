@@ -71,14 +71,20 @@ supplied in this way have a lower maximum length, so using the
 .. warning::
 
    If you resolve ``template_bucket_name`` using the ``!stack_output``
-   resolver on a StackGroup, the stack that outputs that bucket name *cannot* be
-   defined in that StackGroup. Otherwise, a circular dependency will exist and Sceptre
-   will raise an error when attempting any Stack action. There are two ways to avoid this situation:
+   resolver on a StackGroup and the stack that outputs that bucket name is
+   defined in that StackGroup, a circular dependency will exist and Sceptre
+   will raise an error when attempting any Stack action. There are a few ways to avoid this situation:
 
-   1. Set the ``template_bucket_name`` to ``!no_value`` in on the StackConfig that creates your
+   1. Establish the stack that outputs the bucket name as a project dependency using
+      `is_project_dependency: True``. As described in the documentation for
+      :ref:`is_project_dependency <project_dependency_config>`, stacks marked with
+      ``is_project_dependency: True`` will ignore dependencies and any !stack_output resolvers will
+      resolve to nothing. Thus, if that stack inherits the template_bucket_name from its StackGroup
+      config that references itself, it will effectively ignore it.
+   2. Set the ``template_bucket_name`` to ``!no_value`` in on the StackConfig that creates your
       template bucket. This will override the inherited value to prevent them from having
       dependencies on themselves.
-   2. Define all your project stacks inside a StackGroup and then your template bucket
+   3. Define all your project stacks inside a StackGroup and then your template bucket
       stack *outside* that StackGroup. Here's an example project structure for something like
       this:
 
@@ -213,23 +219,11 @@ dependencies.
 
    You might have already considered that this might cause a circular dependency for those
    dependency stacks, the ones that output the template bucket name, role arn, iam_role, or topic arns.
-   In order to avoid the circular dependency issue, you can either:
-
-   1. Set the value of those configurations to ``!no_value`` in the actual stacks that define those
-      items so they don't inherit a dependency on themselves.
-   2. Define those stacks *outside* the StackGroup you reference them in. Here's an example project
-      structure that would support doing this:
-
-      .. code-block:: yaml
-
-        config/
-          - config.yaml               # This is the StackGroup Config for your whole project.
-          - sceptre-dependencies.yaml # This stack defines your template bucket, iam role, topics, etc...
-          - project/                  # You can put all your other stacks in this StackGroup
-              - config.yaml           # In this StackGroup Config you can use !stack_output to
-                                      # reference outputs from sceptre-dependencies.yaml.
-              - vpc.yaml              # Put all your other project stacks inside project/
-              - other-stack.yaml
+   In order to break the circular dependency, you can set ``is_project_dependency: True`` on those
+   dependency stacks. As described in the documentation for
+   :ref:`is_project_dependency <project_dependency_config>`, stacks marked with
+   ``is_project_dependency: True`` will ignore dependencies and any !stack_output resolvers will
+   resolve to nothing.
 
 
 .. _stack_group_config_templating:

@@ -1,0 +1,4 @@
+template_bucket_name: !stack_output project-deps/bucket.yaml::BucketName
+iam_role: !stack_output project-deps/assumed-role.yaml::RoleArn
+notifications:
+  - !stack_output project-deps/topic.yaml::TopicArn

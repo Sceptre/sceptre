@@ -26,6 +26,7 @@ particular Stack. The available keys are listed below.
 -  `stack_name`_ *(optional)*
 -  `stack_tags`_ *(optional)*
 -  `stack_timeout`_ *(optional)*
+-  `is_project_dependency`_ *(optional)*
 
 It is not possible to define both `template_path`_ and `template`_. If you do so,
 you will receive an error when deploying the stack.
@@ -307,6 +308,39 @@ the specified timeout, the Stack will be rolled back. Specifiyng zero, as well
 as ommiting the field, will result in no timeout. Supports only positive
 integer value.
 
+.. _project_dependency_config:
+
+is_project_dependency
+~~~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+A project dependency stack is intended to be a stack that is utilized by other stacks in the project,
+or even all stacks. This is useful for defining stacks to support the project, such as a template bucket,
+SNS notification topics, and/or an IAM service role.
+
+The biggest difference between a "normal" stack config and a stack marked as a project dependency is
+that stacks marked with ``is_project_dependency: True`` will ignore all dependencies of their own.
+Project dependencies are not allowed to have dependencies. Furthermore, the
+**the stack_output resolver will always resolve to nothing on project dependency stacks.**
+
+For example, this allows you to safely set the ``template_bucket_name`` on the top-level StackGroup
+config as the output from a project_dependency stack. This means that every **other** stack not marked
+as a project dependency will use that template_bucket_name, while the template bucket stack will
+have NO template bucket name (i.e. its template will not be uploaded anywhere).
+
+Another example would be defining the role_arn on the top-level stack config with the ``!stack_output``
+of a project dependency stack that outputs the role arn. Every **other** stack will use this stack
+as a CloudFormation service role, but project dependency stacks will have no service role.
+
+It is recommended that you only have one project dependency stack. More than one is possible, but
+it is best to define all project dependencies in a single stack and output the values needed by the
+rest of the project from that stack.
+
+For more information on how to configure a project's dependencies, see
+:ref:`Setting dependencies stack groups <setting_dependencies_for_stack_groups>`.
+
 Cascading Config
 ----------------
 
@@ -491,6 +525,7 @@ Examples
 .. _stack_name: #stack-name
 .. _stack_tags: #stack-tags
 .. _stack_timeout: #stack-timeout
+.. _is_project_dependency: #is-project-dependency
 .. _AWS CloudFormation API documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStack.html
 .. _AWS Documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/APIReference/API_CreateStack.html
 .. _CloudFormation Service Role: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-iam-servicerole.html
