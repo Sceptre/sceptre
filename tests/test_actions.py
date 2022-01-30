@@ -1255,3 +1255,159 @@ class TestStackActions(object):
         differ = Mock()
         result = self.actions.diff(differ)
         assert result == differ.diff.return_value
+
+    @patch("sceptre.plan.actions.StackActions._describe_stack_drift_detection_status")
+    @patch("sceptre.plan.actions.StackActions._detect_stack_drift")
+    @patch("time.sleep")
+    def test_drift_detect(
+        self,
+        mock_sleep,
+        mock_detect_stack_drift,
+        mock_describe_stack_drift_detection_status
+    ):
+        mock_sleep.return_value = None
+
+        mock_detect_stack_drift.return_value = {
+            "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62"
+        }
+
+        first_response = {
+            "StackId": "fake-stack-id",
+            "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
+            "DetectionStatus": "DETECTION_IN_PROGRESS",
+            "StackDriftStatus": "NOT_CHECKED",
+            "DetectionStatusReason": "User Initiated"
+        }
+
+        final_response = {
+            "StackId": "fake-stack-id",
+            "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
+            "StackDriftStatus": "IN_SYNC",
+            "DetectionStatus": "DETECTION_COMPLETE",
+            "DriftedStackResourceCount": 0
+        }
+
+        mock_describe_stack_drift_detection_status.side_effect = [
+            first_response, final_response
+        ]
+
+        response = self.actions.drift_detect()
+        assert response == final_response
+
+    @pytest.mark.parametrize("detection_status", ["DETECTION_COMPLETE", "DETECTION_FAILED"])
+    @patch("sceptre.plan.actions.StackActions._describe_stack_resource_drifts")
+    @patch("sceptre.plan.actions.StackActions._describe_stack_drift_detection_status")
+    @patch("sceptre.plan.actions.StackActions._detect_stack_drift")
+    @patch("time.sleep")
+    def test_drift_show(
+        self,
+        mock_sleep,
+        mock_detect_stack_drift,
+        mock_describe_stack_drift_detection_status,
+        mock_describe_stack_resource_drifts,
+        detection_status
+    ):
+        mock_sleep.return_value = None
+
+        mock_detect_stack_drift.return_value = {
+            "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62"
+        }
+        mock_describe_stack_drift_detection_status.side_effect = [
+            {
+                "StackId": "fake-stack-id",
+                "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
+                "DetectionStatus": "DETECTION_IN_PROGRESS",
+                "StackDriftStatus": "FOO",
+                "DetectionStatusReason": "User Initiated"
+            },
+            {
+                "StackId": "fake-stack-id",
+                "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
+                "StackDriftStatus": "FOO",
+                "DetectionStatus": detection_status,
+                "DriftedStackResourceCount": 0
+            }
+        ]
+
+        expected_drifts = {
+            "StackResourceDrifts": [
+                {
+                    "StackId": "fake-stack-id",
+                    "LogicalResourceId": "VPC",
+                    "PhysicalResourceId": "vpc-028c655dea7c65227",
+                    "ResourceType": "AWS::EC2::VPC",
+                    "ExpectedProperties": '{"foo":"bar"}',
+                    "ActualProperties": '{"foo":"bar"}',
+                    "PropertyDifferences": [],
+                    "StackResourceDriftStatus": detection_status
+                }
+            ]
+        }
+
+        mock_describe_stack_resource_drifts.return_value = expected_drifts
+        expected_response = (detection_status, expected_drifts)
+
+        response = self.actions.drift_show()
+
+        assert response == expected_response
+
+    @patch("sceptre.plan.actions.StackActions._get_status")
+    def test_drift_show_with_stack_that_does_not_exist(self, mock_get_status):
+        mock_get_status.side_effect = StackDoesNotExistError()
+        response = self.actions.drift_show()
+        assert response == (
+            'STACK_DOES_NOT_EXIST', {
+                'StackResourceDriftStatus': 'STACK_DOES_NOT_EXIST'
+            })
+
+    @patch("sceptre.plan.actions.StackActions._describe_stack_resource_drifts")
+    @patch("sceptre.plan.actions.StackActions._describe_stack_drift_detection_status")
+    @patch("sceptre.plan.actions.StackActions._detect_stack_drift")
+    @patch("time.sleep")
+    def test_drift_show_times_out(
+        self,
+        mock_sleep,
+        mock_detect_stack_drift,
+        mock_describe_stack_drift_detection_status,
+        mock_describe_stack_resource_drifts,
+    ):
+        mock_sleep.return_value = None
+
+        mock_detect_stack_drift.return_value = {
+            "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62"
+        }
+
+        response = {
+            "StackId": "fake-stack-id",
+            "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
+            "DetectionStatus": "DETECTION_IN_PROGRESS",
+            "StackDriftStatus": "FOO",
+            "DetectionStatusReason": "User Initiated"
+        }
+
+        side_effect = []
+        for _ in range(0, 60):
+            side_effect.append(response)
+        mock_describe_stack_drift_detection_status.side_effect = side_effect
+
+        expected_drifts = {
+            "StackResourceDrifts": [
+                {
+                    "StackId": "fake-stack-id",
+                    "LogicalResourceId": "VPC",
+                    "PhysicalResourceId": "vpc-028c655dea7c65227",
+                    "ResourceType": "AWS::EC2::VPC",
+                    "ExpectedProperties": '{"foo":"bar"}',
+                    "ActualProperties": '{"foo":"bar"}',
+                    "PropertyDifferences": [],
+                    "StackResourceDriftStatus": "DETECTION_IN_PROGRESS"
+                }
+            ]
+        }
+
+        mock_describe_stack_resource_drifts.return_value = expected_drifts
+        expected_response = ("TIMED_OUT", {"StackResourceDriftStatus": "TIMED_OUT"})
+
+        response = self.actions.drift_show()
+
+        assert response == expected_response
