@@ -209,7 +209,9 @@ nitpick_ignore = [
     ('py:class', 'TextIO'),
     ('py:class', '_io.StringIO'),
     ('py:class', 'yaml.loader.SafeLoader'),
-    ('py:class', 'yaml.dumper.Dumper')
+    ('py:class', 'yaml.dumper.Dumper'),
+    ('py:class',  'cfn_tools.odict.ODict'),
+    ('py:class',  'T_Container')
 ]
 
 set_type_checking_flag = True

@@ -47,7 +47,7 @@ from the Stack config filename.
 
 template
 ~~~~~~~~
-* Resolvable: No
+* Resolvable: Yes
 * Can be inherited from StackGroup: No
 
 Configuration for a template handler. Template handlers can take in parameters
@@ -363,6 +363,76 @@ Syntax:
 When compiled, ``sceptre_user_data`` would be the dictionary
 ``{"iam_policy_file": "/path/to/policy.json"}``.
 
+.. _resolution_order:
+
+Resolution order of values
+--------------------------
+
+Stack Configs allow you to pull together values from a variety of sources to configure a
+CloudFormation stack. These values are retrieved and applied in phases. Understanding these phases can
+be very helpful when designing your Stack Configs.
+
+When launching a stack (or performing other stack actions), values are gathered and accessed in this
+order:
+
+1. User variables (from ``--var`` and ``--var-file`` arguments) are gathered when the CLI first runs.
+2. StackGroup Configs are read from the highest level downward, rendered with Jinja and then loaded
+   into yaml. The key/value pairs from these configs are layered on top of each other, with more nested
+   configs overriding higher-level ones. These key/value pairs will be "inherited" by the Stack
+   Config. These variables are made available when rendering a StackGroup Config:
+
+   * User variables (via ``{{ var }}``)
+   * Environment variables (via ``{{ environment_variable }}``)
+   * StackGroup configurations from *higher* level StackGroup Configs are available by name. Note:
+     more nested configuration values will overshadow higher-level ones by the same key.
+
+3. With the layered StackGroup Config variables, the Stack Config file will be read and then rendered
+   with Jinja. These variables are made available when the Stack Config is being rendered with Jinja:
+
+   * User variables (via ``{{ var }}``)
+   * Environment variables (via ``{{ environment_variable }}``)
+   * All StackGroup configurations are available by name directly as well as via ``{{ stack_group_config }}``
+
+   **Important:** If any StackGroup configuration values were set with resolvers, accessing them via
+   Jinja will not resolve them, since resolvers require a Stack object, which has not yet been
+   assembled yet. **Resolvers will not be accessible until a later phase.**
+4. Once rendered via Jinja into a string, the Stack Config will be loaded into yaml. This is when the
+   resolver instances on the Stack config will be **constructed** (*not* resolved).
+5. The Stack instance will be constructed with the key/value pairs from the loaded yaml layered on
+   top of the key/value pairs from the StackGroup configurations. This is when all resolver instances,
+   both those inherited from StackGroup Configs and those from the present Stack Config, will be
+   connected to the Stack instance and thus *ready* to be resolved.
+6. The first time a resolvable configuration is *accessed* is when the resolver(s) at that
+   configuration will be resolved and replaced with their resolved value. This is normally done at
+   the very last moment, right when it is needed (and not before).
+
+"Render Time" vs. "Resolve Time"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A common point of confusion tends to be around the distinction between **"render time"** (phase 3, when
+Jinja logic is applied) and **"resolve time"** (phase 6, when resolvers are resolved). You cannot use
+a resolver via Jinja during "render time", since the resolver won't exist or be ready to use yet. You can,
+however, use Jinja logic to indicate *whether*, *which*, or *how* a resolver is configured.
+
+For example, you **can** do something like this:
+
+.. code-block:: yaml
+
+   parameters:
+     {% if var.use_my_parameter %}
+       my_parameter: !stack_output {{ var.stack_name }}::{{ var.output_name }}
+     {% endif %}
+
+Accessing resolved values in other fields
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Sometimes you might want to reference the resolved value of one field in another field. Since you cannot
+use Jinja to access resolved values, there is another way to this. The :ref:`stack_attr_resolver`
+resolver is meant for addressing just this need. It's a resolver that will resolve to the value of
+another Stack Config field value. See the linked documentation for more details on that resolver and
+its use.
+
+
 Examples
 --------
 
@@ -377,7 +447,7 @@ Examples
 
 .. code-block:: yaml
 
-   template
+   template:
      path: templates/example.yaml
      type: file
    dependencies:
