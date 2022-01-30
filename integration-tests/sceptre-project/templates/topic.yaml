@@ -1,0 +1,11 @@
+Resources:
+  Topic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: MyTopic
+
+Outputs:
+  TopicName:
+    Value: !Ref Topic
+    Export:
+      Name: !Sub "${AWS::StackName}-TopicName"

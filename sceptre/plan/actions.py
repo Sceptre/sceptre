@@ -13,7 +13,7 @@ import time
 import urllib
 from datetime import datetime, timedelta
 from os import path
-from typing import Union, Optional
+from typing import Union, Optional, Tuple, Dict
 
 import botocore
 from dateutil.tz import tzutc
@@ -1000,3 +1000,143 @@ class StackActions(object):
         :rtype: sceptre.diffing.stack_differ.StackDiff
         """
         return stack_differ.diff(self)
+
+    @add_stack_hooks
+    def drift_detect(self) -> Dict[str, str]:
+        """
+        Show stack drift for a running stack.
+
+        :returns: The stack drift detection status.
+        If the stack does not exist, we return a detection and
+        stack drift status of STACK_DOES_NOT_EXIST.
+        If drift detection times out after 5 minutes, we return
+        TIMED_OUT.
+        """
+        try:
+            self._get_status()
+        except StackDoesNotExistError:
+            self.logger.info(f"{self.stack.name} - Does not exist.")
+            return {
+                "DetectionStatus": "STACK_DOES_NOT_EXIST",
+                "StackDriftStatus": "STACK_DOES_NOT_EXIST"
+            }
+
+        response = self._detect_stack_drift()
+        detection_id = response["StackDriftDetectionId"]
+
+        try:
+            response = self._wait_for_drift_status(detection_id)
+        except TimeoutError as exc:
+            self.logger.info(f"{self.stack.name} - {exc}")
+            response = {
+                "DetectionStatus": "TIMED_OUT",
+                "StackDriftStatus": "TIMED_OUT"
+            }
+
+        return response
+
+    @add_stack_hooks
+    def drift_show(self) -> Tuple[str, dict]:
+        """
+        Detect drift status on stacks.
+
+        :returns: The detection status and resource drifts.
+        """
+        response = self.drift_detect()
+        detection_status = response["DetectionStatus"]
+
+        if detection_status in ["DETECTION_COMPLETE", "DETECTION_FAILED"]:
+            response = self._describe_stack_resource_drifts()
+        elif detection_status in ["TIMED_OUT", "STACK_DOES_NOT_EXIST"]:
+            response = {"StackResourceDriftStatus": detection_status}
+        else:
+            raise Exception("Not expected to be reachable")
+
+        return (detection_status, response)
+
+    def _wait_for_drift_status(self, detection_id: str) -> dict:
+        """
+        Waits for drift detection to complete.
+
+        :param detection_id: The drift detection ID.
+        :returns: The response from describe_stack_drift_detection_status.
+        """
+        timeout = 300
+        sleep_interval = 10
+        elapsed = 0
+
+        while True:
+            if elapsed >= timeout:
+                raise TimeoutError(f"Timed out after {elapsed} seconds")
+
+            self.logger.info(f"{self.stack.name} - Waiting for drift detection")
+            response = self._describe_stack_drift_detection_status(detection_id)
+            detection_status = response["DetectionStatus"]
+
+            self._log_drift_status(response)
+
+            if detection_status == "DETECTION_IN_PROGRESS":
+                time.sleep(sleep_interval)
+                elapsed += sleep_interval
+            else:
+                return response
+
+    def _log_drift_status(self, response: dict) -> None:
+        """
+        Log the drift status while waiting for
+        drift detection to complete.
+        """
+        keys = [
+            "StackDriftDetectionId",
+            "DetectionStatus",
+            "DetectionStatusReason",
+            "StackDriftStatus"
+        ]
+
+        for key in keys:
+            if key in response:
+                self.logger.debug(
+                    f"{self.stack.name} - {key} - {response[key]}"
+                )
+
+    def _detect_stack_drift(self) -> dict:
+        """
+        Run detect_stack_drift.
+        """
+        self.logger.info(f"{self.stack.name} - Detecting Stack Drift")
+
+        return self.connection_manager.call(
+            service="cloudformation",
+            command="detect_stack_drift",
+            kwargs={
+                "StackName": self.stack.external_name
+            }
+        )
+
+    def _describe_stack_drift_detection_status(self, detection_id: str) -> dict:
+        """
+        Run describe_stack_drift_detection_status.
+        """
+        self.logger.info(f"{self.stack.name} - Describing Stack Drift Detection Status")
+
+        return self.connection_manager.call(
+            service="cloudformation",
+            command="describe_stack_drift_detection_status",
+            kwargs={
+                "StackDriftDetectionId": detection_id
+            }
+        )
+
+    def _describe_stack_resource_drifts(self) -> dict:
+        """
+        Detects stack resource_drifts for a running stack.
+        """
+        self.logger.info(f"{self.stack.name} - Describing Stack Resource Drifts")
+
+        return self.connection_manager.call(
+            service="cloudformation",
+            command="describe_stack_resource_drifts",
+            kwargs={
+                "StackName": self.stack.external_name
+            }
+        )

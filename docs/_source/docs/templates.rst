@@ -74,7 +74,7 @@ Stack:
 
 Template `dns-extras.j2`:
 
-.. code-block:: yaml
+.. code-block:: jinja
 
     AWSTemplateFormatVersion: '2010-09-09'
     Description: 'Add Route53 - CNAME and ALIAS records'

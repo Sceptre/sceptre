@@ -56,9 +56,21 @@ no_value
 ~~~~~~~~
 
 This resolver "resolves to nothing", functioning just as if it was not set at all. This works just
-like the "AWS::NoValue" special variable that you can reference on a CloudFormation template and
-can help simplify Stack and StackGroup Jinja logic in cases where, if a condition is met, a value
-is passed, otherwise no value is passed.
+like the "AWS::NoValue" special variable that you can reference on a CloudFormation template. It
+can help simplify Stack and StackGroup config Jinja logic in cases where, if a condition is met, a
+value is passed, otherwise no value is passed.
+
+For example, you could use this resolver like this:
+
+.. code-block:: yaml
+
+   parameters:
+    my_parameter: {{ var.some_value_that_might_not_be_set | default('!no_value') }}
+
+In this example, if ``var.some_value_that_might_not_be_set`` is set, ``my_parameter`` will be set to
+that value. But if ``var.some_value_that_might_not_be_set`` is not actually set, ``my_parameter``
+won't even be passed to CloudFormation at all. This might be desired if there is a default value on
+the CloudFormation template for ``my_parameter`` and we'd want to fall back to that default.
 
 rcmd
 ~~~~
@@ -66,6 +78,53 @@ rcmd
 A resolver to execute any shell command.
 
 Refer to `sceptre-resolver-cmd <https://github.com/Sceptre/sceptre-resolver-cmd/>`_ for documentation.
+
+.. _stack_attr_resolver:
+
+stack_attr
+~~~~~~~~~~
+
+This resolver resolves to the values of other fields on the same Stack Config or those
+inherited from StackGroups in which the current Stack Config exists, even when those other fields are
+also resolvers.
+
+To understand why this is useful, consider a stack's ``template_bucket_name``. This is usually set on
+the highest level StackGroup Config. Normally, you could reference the template_bucket_name that was
+set in an outer StackGroup Config with Jinja using ``{{template_bucket_name}}`` or, more explicitly, with
+``{{stack_group_config.template_bucket_name}}``.
+
+However, if the value of ``template_bucket_name`` is set with a resolver, using Jinja won't work.
+This is due to the :ref:`resolution_order` on a Stack Config. Jinja configs are rendered *before*
+resolvers are constructed or resolved, so you can't resolve a resolver from a StackGroup Config via
+Jinja. That's where !stack_attr is useful. It's a resolver that resolves to the value of another stack
+attribute (which could be another resolver).
+
+.. code-block:: yaml
+
+   template:
+       type: sam
+       path: path/from/my/cwd/template.yaml
+       # template_bucket_name could be set by a resolver in the StackGroup.
+       artifact_bucket_name: !stack_attr template_bucket_name
+
+The argument to this resolver is the full attribute "path" from the Stack Config. You can access
+nested values in dicts and lists using "." to separate key/index segments. For example:
+
+.. code-block:: yaml
+
+   sceptre_user_data:
+       key:
+           - "some random value"
+           - "the value we want to select"
+
+   iam_role: !stack_output roles.yaml::RoleArn
+
+   parameters:
+       # This will pass the value of "the value we want to select" for my_parameter
+       my_parameter: !stack_attr sceptre_user_data.key.1
+       # You can also access the value of another resolvable property like this:
+       use_role_arn: !stack_attr iam_role
+
 
 stack_output
 ~~~~~~~~~~~~
@@ -87,10 +146,16 @@ Example:
        VpcIdParameter: !stack_output shared/vpc.yaml::VpcIdOutput
 
 Sceptre infers that the Stack to fetch the output value from is a dependency,
-and builds that Stack before the current one.
+adding that stack to the current stack's list of dependencies. This instructs
+Sceptre to build that Stack before the current one.
 
-This resolver will add a dependency for the Stack in which needs the output
-from.
+.. warning::
+   Be careful when using the stack_output resolver that you do not create circular dependencies.
+   This is especially true when using this on StackGroup Configs to create configurations
+   to be inherited by all stacks in that group. If the `!stack_output` resolver would be "inherited"
+   from a StackGroup Config by the stack it references, this will lead to a circular dependency.
+   The correct way to work around this is to move that stack outside that StackGroup so that it
+   doesn't "inherit" that resolver.
 
 stack_output_external
 ~~~~~~~~~~~~~~~~~~~~~
@@ -287,10 +352,10 @@ A few examples...
 
 * If you have a stack parameter referencing ``!stack_output other_stack.yaml::OutputName``,
   and you run the ``diff`` command before other_stack.yaml has been deployed, the diff output will
-  show the value of that parameter to be ``{ !StackOutput(other_stack.yaml::OutputName) }``.
+  show the value of that parameter to be ``"{ !StackOutput(other_stack.yaml::OutputName) }"``.
 * If you have a ``sceptre_user_data`` value used in a Jinja template referencing
   ``!stack_output other_stack.yaml::OutputName`` and you run the ``generate`` command, the generated
-  template will replace that value with ``StackOutputotherstackyamlOutputName``. This isn't as
+  template will replace that value with ``"StackOutputotherstackyamlOutputName"``. This isn't as
   "pretty" as the sort of placeholder used for stack parameters, but the use of sceptre_user_data is
   broader, so it placeholder values can only be alphanumeric to reduce chances of it breaking the
   template.

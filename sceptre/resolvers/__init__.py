@@ -8,12 +8,14 @@ from typing import Any, TYPE_CHECKING, Type, Union, TypeVar
 from sceptre.helpers import _call_func_on_values
 from sceptre.resolvers.placeholders import (
     create_placeholder_value,
-    are_placeholders_enabled, PlaceholderType
+    are_placeholders_enabled,
+    PlaceholderType,
 )
-
 
 if TYPE_CHECKING:
     from sceptre import stack
+
+
 
 T_Container = TypeVar('T_Container', bound=Union[dict, list])
 
@@ -165,8 +167,8 @@ class ResolvableProperty(abc.ABC):
                 placeholder_value = create_placeholder_value(resolver, self.placeholder_type)
 
                 self.logger.debug(
-                    "Error encountered while resolving resolver. This is allowed for current "
-                    f"operation. Resolving it to placeholder value instead: {placeholder_value}"
+                    "Error encountered while resolving the resolver. This is allowed for the current "
+                    f"operation. Resolving it to a placeholder value instead: {placeholder_value}"
                 )
                 return placeholder_value
             raise

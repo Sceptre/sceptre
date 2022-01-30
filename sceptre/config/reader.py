@@ -13,6 +13,8 @@ import datetime
 import fnmatch
 import logging
 from os import environ, path, walk
+from typing import Set
+
 from pkg_resources import iter_entry_points
 from pathlib import Path
 import yaml
@@ -187,7 +189,7 @@ class ConfigReader(object):
         node.tag = loader.resolve(type(node), node.value, (True, False))
         return node
 
-    def construct_stacks(self):
+    def construct_stacks(self) -> Set[Stack]:
         """
         Traverses the files under the command path.
         For each file encountered, a Stack is constructed
@@ -195,7 +197,6 @@ class ConfigReader(object):
         and a final set of Stacks is returned.
 
         :returns: A set of Stacks.
-        :rtype: set
         """
         stack_map = {}
         command_stacks = set()
@@ -340,7 +341,7 @@ class ConfigReader(object):
         self.logger.debug("Config: %s", config)
         return config
 
-    def _recursive_read(self, directory_path, filename, stack_group_config):
+    def _recursive_read(self, directory_path: str, filename: str, stack_group_config: dict) -> dict:
         """
         Traverses the directory_path, from top to bottom, reading in all
         relevant config files. If config attributes are encountered further
@@ -348,13 +349,9 @@ class ConfigReader(object):
         `CONFIG_MERGE_STRATEGIES` dict.
 
         :param directory_path: Relative directory path to config to read.
-        :type directory_path: str
         :param filename: File name for the config to read.
-        :type filename: dict
         :param stack_group_config: The loaded config file for the StackGroup
-        :type stack_group_config: dict
         :returns: Representation of inherited config.
-        :rtype: dict
         """
 
         parent_directory = path.split(directory_path)[0]
