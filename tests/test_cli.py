@@ -8,16 +8,22 @@ from copy import deepcopy
 import click
 import pytest
 import yaml
+
 from botocore.exceptions import ClientError
 from click.testing import CliRunner
 from deepdiff import DeepDiff
 from mock import MagicMock, patch, sentinel
 
 from sceptre.cli import cli
-from sceptre.cli.helpers import CustomJsonEncoder, catch_exceptions
-from sceptre.cli.helpers import setup_logging, write, ColouredFormatter
+from sceptre.cli.helpers import CustomJsonEncoder, \
+    catch_exceptions, setup_logging, write, \
+    ColouredFormatter, deserialize_json_properties
+
 from sceptre.config.reader import ConfigReader
-from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff
+
+from sceptre.diffing.stack_differ import \
+    DeepDiffStackDiffer, DifflibStackDiffer, StackDiff
+
 from sceptre.exceptions import SceptreException
 from sceptre.plan.actions import StackActions
 from sceptre.stack import Stack
@@ -1010,3 +1016,49 @@ class TestCli(object):
         max_line_length = len(max(output_lines, key=len))
         star_bars = [line for line in output_lines if bar in line]
         assert all(len(line) == max_line_length for line in star_bars)
+
+    @pytest.mark.parametrize("input,expected_output", [
+        (
+            {"a_dict": '{"with_embedded":"json"}'},
+            {"a_dict": {"with_embedded": "json"}}
+        ),
+        (
+            {"a_dict": ['{"with_embedded":"json"}']},
+            {"a_dict": [{"with_embedded": "json"}]}
+        ),
+    ])
+    def test_deserialize_json_properties(self, input, expected_output):
+        output = deserialize_json_properties(input)
+        assert output == expected_output
+
+    def test_drift_detect(self):
+        self.mock_stack_actions.drift_detect.return_value = {
+            "StackId": "fake-stack-id",
+            "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
+            "StackDriftStatus": "IN_SYNC",
+            "DetectionStatus": "DETECTION_COMPLETE",
+            "DriftedStackResourceCount": 0
+        }
+        result = self.runner.invoke(
+            cli, ["drift", "detect", "dev/vpc.yaml"]
+        )
+        assert result.exit_code == 0
+        assert result.output == (
+            '---\n'
+            'fake_stack:\n'
+            '  DetectionStatus: DETECTION_COMPLETE\n'
+            '  DriftedStackResourceCount: 0\n'
+            '  StackDriftDetectionId: 3fb76910-f660-11eb-80ac-0246f7a6da62\n'
+            '  StackDriftStatus: IN_SYNC\n'
+            '  StackId: fake-stack-id\n\n'
+        )
+
+    def test_drift_show(self):
+        self.mock_stack_actions.drift_show.return_value = (
+            "DETECTION_COMPLETE", {"some": "json"}
+        )
+        result = self.runner.invoke(
+            cli, ["drift", "show", "dev/vpc.yaml"]
+        )
+        assert result.exit_code == 0
+        assert result.output == "---\nfake_stack:\n  some: json\n\n"

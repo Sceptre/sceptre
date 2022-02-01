@@ -79,6 +79,53 @@ A resolver to execute any shell command.
 
 Refer to `sceptre-resolver-cmd <https://github.com/Sceptre/sceptre-resolver-cmd/>`_ for documentation.
 
+.. _stack_attr_resolver:
+
+stack_attr
+~~~~~~~~~~
+
+This resolver resolves to the values of other fields on the same Stack Config or those
+inherited from StackGroups in which the current Stack Config exists, even when those other fields are
+also resolvers.
+
+To understand why this is useful, consider a stack's ``template_bucket_name``. This is usually set on
+the highest level StackGroup Config. Normally, you could reference the template_bucket_name that was
+set in an outer StackGroup Config with Jinja using ``{{template_bucket_name}}`` or, more explicitly, with
+``{{stack_group_config.template_bucket_name}}``.
+
+However, if the value of ``template_bucket_name`` is set with a resolver, using Jinja won't work.
+This is due to the :ref:`resolution_order` on a Stack Config. Jinja configs are rendered *before*
+resolvers are constructed or resolved, so you can't resolve a resolver from a StackGroup Config via
+Jinja. That's where !stack_attr is useful. It's a resolver that resolves to the value of another stack
+attribute (which could be another resolver).
+
+.. code-block:: yaml
+
+   template:
+       type: sam
+       path: path/from/my/cwd/template.yaml
+       # template_bucket_name could be set by a resolver in the StackGroup.
+       artifact_bucket_name: !stack_attr template_bucket_name
+
+The argument to this resolver is the full attribute "path" from the Stack Config. You can access
+nested values in dicts and lists using "." to separate key/index segments. For example:
+
+.. code-block:: yaml
+
+   sceptre_user_data:
+       key:
+           - "some random value"
+           - "the value we want to select"
+
+   iam_role: !stack_output roles.yaml::RoleArn
+
+   parameters:
+       # This will pass the value of "the value we want to select" for my_parameter
+       my_parameter: !stack_attr sceptre_user_data.key.1
+       # You can also access the value of another resolvable property like this:
+       use_role_arn: !stack_attr iam_role
+
+
 stack_output
 ~~~~~~~~~~~~
 

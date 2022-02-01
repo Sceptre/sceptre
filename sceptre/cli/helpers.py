@@ -361,6 +361,29 @@ def simplify_change_set_description(response):
     return formatted_response
 
 
+def deserialize_json_properties(value):
+    if isinstance(value, str):
+        is_json = (
+            (value.startswith("{") and value.endswith("}"))
+            or
+            (value.startswith("[") and value.endswith("]"))
+        )
+        if is_json:
+            return json.loads(value)
+        return value
+    if isinstance(value, dict):
+        return {
+            key: deserialize_json_properties(val)
+            for key, val in value.items()
+        }
+    if isinstance(value, list):
+        return [
+            deserialize_json_properties(item)
+            for item in value
+        ]
+    return value
+
+
 class ColouredFormatter(logging.Formatter):
     """
     ColouredFormatter add colours to all stack statuses that appear in log

@@ -132,6 +132,11 @@ class Stack(object):
         "s3_details",
         PlaceholderType.none
     )
+    template_handler_config = ResolvableContainerProperty(
+        'template_handler_config',
+        PlaceholderType.alphanum
+    )
+
     template_bucket_name = ResolvableValueProperty(
         "template_bucket_name",
         PlaceholderType.none
@@ -169,7 +174,6 @@ class Stack(object):
         self.required_version = required_version
         self.external_name = external_name or get_external_stack_name(self.project_code, self.name)
         self.template_path = template_path
-        self.template_handler_config = template_handler_config
         self.dependencies = dependencies or []
         self.protected = protected
         self.on_failure = on_failure
@@ -187,6 +191,7 @@ class Stack(object):
         self.tags = tags or {}
         self.role_arn = role_arn
         self.template_bucket_name = template_bucket_name
+        self.template_handler_config = template_handler_config
 
         self.s3_details = s3_details
         self.parameters = parameters or {}
