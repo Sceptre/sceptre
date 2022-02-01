@@ -1045,7 +1045,7 @@ class TestCli(object):
         assert result.exit_code == 0
         assert result.output == (
             '---\n'
-            'fake_stack:\n'
+            'mock-stack-external:\n'
             '  DetectionStatus: DETECTION_COMPLETE\n'
             '  DriftedStackResourceCount: 0\n'
             '  StackDriftDetectionId: 3fb76910-f660-11eb-80ac-0246f7a6da62\n'
@@ -1061,4 +1061,4 @@ class TestCli(object):
             cli, ["drift", "show", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert result.output == "---\nfake_stack:\n  some: json\n\n"
+        assert result.output == "---\nmock-stack-external:\n  some: json\n\n"
