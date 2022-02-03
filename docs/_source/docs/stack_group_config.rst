@@ -24,7 +24,7 @@ Sceptre. The available keys are listed below.
 
 Sceptre will only check for and uses the above keys in StackGroup config files
 and are directly accessible from Stack(). Any other keys added by the user are
-made available via ``stack_group_confg`` attribute on ``Stack()``.
+made available via ``stack_group_config`` attribute on ``Stack()``.
 
 profile
 ~~~~~~~
