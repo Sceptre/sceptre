@@ -134,8 +134,7 @@ def list_change_sets(ctx, path, url):
 @catch_exceptions
 def list_stacks(ctx, path):
     """
-    List stack names and command paths for local stacks in a
-    stack group.
+    List sceptre stack config attributes,
     \f
 
     :param path: Path to execute the command on or path to stack group
