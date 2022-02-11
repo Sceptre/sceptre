@@ -639,7 +639,7 @@ class TestCli(object):
     ])
     def test_list_stacks(self, path, output_format, expected_output):
         result = self.runner.invoke(
-            cli, ["--output", output_format, "list", "local", "stacks", path]
+            cli, ["--output", output_format, "list", "stacks", path]
         )
         assert result.exit_code == 0
         assert result.stdout == expected_output
