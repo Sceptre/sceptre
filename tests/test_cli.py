@@ -47,7 +47,7 @@ class TestCli(object):
         self.mock_stack.name = 'mock-stack'
         self.mock_stack.region = None
         self.mock_stack.profile = None
-        self.mock_stack.external_name = 'fake_stack'
+        self.mock_stack.external_name = 'mock-stack-external'
         self.mock_stack.dependencies = []
 
         self.mock_config_reader.construct_stacks.return_value = \
@@ -631,6 +631,19 @@ class TestCli(object):
         assert result.exit_code == 0
         assert result.output == "export SCEPTRE_Key='Value'\n"
 
+    @pytest.mark.parametrize("path,output_format,expected_output", [
+        ("dev/vpc.yaml", "yaml", '---\nmock-stack.yaml: mock-stack-external\n\n'),
+        ("dev/vpc.yaml", "text", '---\nmock-stack.yaml: mock-stack-external\n\n'),
+        ("dev/vpc.yaml", "json", '{\n    "mock-stack.yaml": "mock-stack-external"\n}\n'),
+        ("dev",          "yaml", '---\nmock-stack.yaml: mock-stack-external\n\n')
+    ])
+    def test_list_stacks(self, path, output_format, expected_output):
+        result = self.runner.invoke(
+            cli, ["--output", output_format, "list", "stacks", path]
+        )
+        assert result.exit_code == 0
+        assert result.stdout == expected_output
+
     def test_status_with_group(self):
         self.mock_stack_actions.get_status.return_value = {
             "stack": "status"
@@ -1032,7 +1045,7 @@ class TestCli(object):
         assert result.exit_code == 0
         assert result.output == (
             '---\n'
-            'fake_stack:\n'
+            'mock-stack-external:\n'
             '  DetectionStatus: DETECTION_COMPLETE\n'
             '  DriftedStackResourceCount: 0\n'
             '  StackDriftDetectionId: 3fb76910-f660-11eb-80ac-0246f7a6da62\n'
@@ -1048,4 +1061,4 @@ class TestCli(object):
             cli, ["drift", "show", "dev/vpc.yaml"]
         )
         assert result.exit_code == 0
-        assert result.output == "---\nfake_stack:\n  some: json\n\n"
+        assert result.output == "---\nmock-stack-external:\n  some: json\n\n"
