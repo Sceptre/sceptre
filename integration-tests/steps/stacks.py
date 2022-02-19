@@ -1,3 +1,4 @@
+import re
 from ast import literal_eval
 from copy import deepcopy
 from io import StringIO
@@ -367,6 +368,11 @@ def step_impl(context, stack_name, desired_status):
 
 @then('stack "{stack_name}" has "{tag_name}" tag with "{desired_tag_value}" value')
 def step_impl(context, stack_name, tag_name, desired_tag_value):
+    # If you can reference context attributes like ${context.attribute_name}
+    match = re.match(r'\$\{context\.([a-z_]{1,})}', desired_tag_value)
+    if match:
+        desired_tag_value = str(getattr(context, match.group(1)))
+
     full_name = get_cloudformation_stack_name(context, stack_name)
 
     tags = get_stack_tags(context, full_name)
