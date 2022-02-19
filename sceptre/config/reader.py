@@ -13,7 +13,7 @@ import datetime
 import fnmatch
 import logging
 from os import environ, path, walk
-from typing import Set
+from typing import Set, Tuple, Dict
 
 from pkg_resources import iter_entry_points
 from pathlib import Path
@@ -188,7 +188,7 @@ class ConfigReader(object):
         node.tag = loader.resolve(type(node), node.value, (True, False))
         return node
 
-    def construct_stacks(self) -> Set[Stack]:
+    def construct_stacks(self) -> Tuple[Set[Stack], Set[Stack]]:
         """
         Traverses the files under the command path.
         For each file encountered, a Stack is constructed
@@ -524,9 +524,8 @@ class ConfigReader(object):
                     )
                 )
 
-        s3_details = self._collect_s3_details(
-            stack_name, config
-        )
+        s3_details = self._collect_s3_details(stack_name, config)
+        stack_tags = self._collect_stack_tags(stack_name, config)
         stack = Stack(
             name=stack_name,
             project_code=config["project_code"],
@@ -545,7 +544,7 @@ class ConfigReader(object):
             dependencies=config.get("dependencies", []),
             role_arn=config.get("role_arn"),
             protected=config.get("protect", False),
-            tags=config.get("stack_tags", {}),
+            tags=stack_tags,
             external_name=config.get("stack_name"),
             notifications=config.get("notifications"),
             on_failure=config.get("on_failure"),
@@ -569,3 +568,18 @@ class ConfigReader(object):
         }
         parsed_config.pop("stack_group_path")
         return parsed_config
+
+    def _collect_stack_tags(self, stack_name: str, config: dict) -> Dict[str, str]:
+        """
+        Assembles the stack tags dictionary, including default stack tags.
+
+        :param stack_name:
+        :param config:
+        :return:
+        """
+        stack_tags = {
+            'sceptre_name': stack_name,
+            'sceptre_project_code': config['project_code'],
+            **config.get('stack_tags', {})
+        }
+        return stack_tags
