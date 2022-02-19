@@ -315,7 +315,10 @@ class TestConfigReader(object):
             iam_role=None,
             role_arn=None,
             protected=False,
-            tags={},
+            tags={
+                'sceptre_name': 'account/stack-group/region/vpc',
+                'sceptre_project_code': 'account_project_code'
+            },
             external_name=None,
             notifications=None,
             on_failure=None,
