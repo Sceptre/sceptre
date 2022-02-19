@@ -24,30 +24,40 @@ Sceptre. The available keys are listed below.
 
 Sceptre will only check for and uses the above keys in StackGroup config files
 and are directly accessible from Stack(). Any other keys added by the user are
-made available via ``stack_group_confg`` attribute on ``Stack()``.
+made available via ``stack_group_config`` attribute on ``Stack()``.
 
 profile
 ~~~~~~~
+* Resolvable: No
+* Inheritance strategy: Overrides parent if set by child
 
-The name of the profile as defined in ``~/.aws/config`` and
-``~/.aws/credentials``. Use the `aws configure --profile <profile_id>` command
-form the AWS CLI to add profiles to these files.
+The name of the profile as defined in ``~/.aws/config`` and ``~/.aws/credentials``. Use the
+`aws configure --profile <profile_id>` command form the AWS CLI to add profiles to these files.
+
+For more information on this configuration, its implications, and its uses, see
+:ref:`Sceptre and IAM: profile <profile_permissions>`.
 
 Reference: `AWS_CLI_Configure`_
 
 project_code
 ~~~~~~~~~~~~
+* Resolvable: No
+* Inheritance strategy: Overrides parent if set by child
 
 A string which is prepended to the Stack names of all Stacks built by Sceptre.
 
 region
 ~~~~~~
+* Resolvable: No
+* Inheritance strategy: Overrides parent if set by child
 
 The AWS region to build Stacks in. Sceptre should work in any `region which
 supports CloudFormation`_.
 
 template_bucket_name
 ~~~~~~~~~~~~~~~~~~~~
+* Resolvable: Yes
+* Inheritance strategy: Overrides parent if set by child
 
 The name of an S3 bucket to upload CloudFormation Templates to. Note that S3
 bucket names must be globally unique. If the bucket does not exist, Sceptre
@@ -58,8 +68,36 @@ supplies the template to Boto3 via the ``TemplateBody`` argument. Templates
 supplied in this way have a lower maximum length, so using the
 ``template_bucket_name`` parameter is recommended.
 
+.. warning::
+
+   If you resolve ``template_bucket_name`` using the ``!stack_output``
+   resolver on a StackGroup, the stack that outputs that bucket name *cannot* be
+   defined in that StackGroup. Otherwise, a circular dependency will exist and Sceptre
+   will raise an error when attempting any Stack action. There are two ways to avoid this situation:
+
+   1. Set the ``template_bucket_name`` to ``!no_value`` in on the StackConfig that creates your
+      template bucket. This will override the inherited value to prevent them from having
+      dependencies on themselves.
+   2. Define all your project stacks inside a StackGroup and then your template bucket
+      stack *outside* that StackGroup. Here's an example project structure for something like
+      this:
+
+      .. code-block:: yaml
+
+         config/
+           - config.yaml           # This is the StackGroup Config for your whole project.
+           - template-bucket.yaml  # The template for this stack outputs the bucket name
+           - project/              # You can put all your other stacks in this StackGroup
+               - config.yaml       # In this StackGroup Config is...
+                                   #  template_bucket_name: !stack_output template-bucket.yaml::BucketName
+               - vpc.yaml          # Put all your other project stacks inside project/
+               - other-stack.yaml
+
+
 template_key_prefix
 ~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Inheritance strategy: Overrides parent if set by child
 
 A string which is prefixed onto the key used to store templates uploaded to S3.
 Templates are stored using the key:
@@ -77,11 +115,13 @@ Note that if ``template_bucket_name`` is not supplied, this parameter is
 ignored.
 
 j2_environment
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
+* Resolvable: No
+* Inheritance strategy: Child configs will be merged with parent configs
 
 A dictionary that is combined with the default jinja2 environment.
 It's converted to keyword arguments then passed to [jinja2.Environment](https://jinja.palletsprojects.com/en/2.11.x/api/#jinja2.Environment).
-This will impact :ref:`Templating` of stacks by modifying the behavior of jinja.
+This will impact the templating of stacks by modifying the behavior of jinja.
 
 .. code-block:: yaml
 
@@ -134,7 +174,8 @@ General configurations should be defined at a high level, and more specific
 configurations should be defined at a lower directory level.
 
 YAML files that define configuration settings with conflicting keys, the child
-configuration file will take precedence.
+configuration file will usually take precedence (see the specific config keys as documented
+for the inheritance strategy employed).
 
 In the above directory structure, ``config/config.yaml`` will be read in first,
 followed by ``config/account-1/config.yaml``, followed by
@@ -143,6 +184,53 @@ followed by ``config/account-1/config.yaml``, followed by
 For example, if you wanted the ``dev`` StackGroup to build to a different
 region, this setting could be specified in the ``config/dev/config.yaml`` file,
 and would only be applied to builds in the ``dev`` StackGroup.
+
+.. _setting_dependencies_for_stack_groups:
+
+Setting Dependencies for StackGroups
+------------------------------------
+There are a few pieces of AWS infrastructure that Sceptre can (optionally) use to support the needs
+and concerns of the project. These include:
+
+* The S3 bucket where templates are uploaded to and then referenced from for stack actions (i.e. the
+  ``template_bucket_name`` config key).
+* The CloudFormation service role added to the stack(s) that CloudFormation uses to execute stack
+  actions (i.e. the ``role_arn`` config key).
+* The role that Sceptre will assume to execute stack actions (i.e. the ``iam_role`` config key).
+* SNS topics that cloudformation will notify with the results of stack actions (i.e. the
+  ``notifications`` config key).
+
+These sorts of dependencies CAN be defined in Sceptre and added at the StackGroup level, referenced
+using ``!stack_output``. Doing so will make it so that every stack in the StackGroup will have those
+dependencies and get those values from Sceptre-managed stacks.
+
+Beyond the above mentioned config keys, it is possible to set the ``dependencies`` config key in a
+StackGroup config to be inherited by all Stack configs in that group. All dependencies in child
+stacks will be added to their inherited StackGroup dependencies, so be careful how you structure
+dependencies.
+
+.. warning::
+
+   You might have already considered that this might cause a circular dependency for those
+   dependency stacks, the ones that output the template bucket name, role arn, iam_role, or topic arns.
+   In order to avoid the circular dependency issue, you can either:
+
+   1. Set the value of those configurations to ``!no_value`` in the actual stacks that define those
+      items so they don't inherit a dependency on themselves.
+   2. Define those stacks *outside* the StackGroup you reference them in. Here's an example project
+      structure that would support doing this:
+
+      .. code-block:: yaml
+
+        config/
+          - config.yaml               # This is the StackGroup Config for your whole project.
+          - sceptre-dependencies.yaml # This stack defines your template bucket, iam role, topics, etc...
+          - project/                  # You can put all your other stacks in this StackGroup
+              - config.yaml           # In this StackGroup Config you can use !stack_output to
+                                      # reference outputs from sceptre-dependencies.yaml.
+              - vpc.yaml              # Put all your other project stacks inside project/
+              - other-stack.yaml
+
 
 .. _stack_group_config_templating:
 

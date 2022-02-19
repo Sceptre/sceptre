@@ -73,7 +73,7 @@ def get_cloudformation_stack_name(context, stack_name):
 
 
 def retry_boto_call(func, *args, **kwargs):
-    delay = 2
+    delay = 5
     max_retries = 150
     attempts = 0
     while attempts < max_retries:

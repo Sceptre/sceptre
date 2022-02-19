@@ -74,7 +74,7 @@ Stack:
 
 Template `dns-extras.j2`:
 
-.. code-block:: yaml
+.. code-block:: jinja
 
     AWSTemplateFormatVersion: '2010-09-09'
     Description: 'Add Route53 - CNAME and ALIAS records'
@@ -228,7 +228,7 @@ This example generates a cloudformation template from `AWS CDK`_ code.
 
 Generate cloudformation:
 
-``sceptre generate dev/S3CdkStack.yaml``
+``sceptre generate dev/S3CdkStack.py``
 
 .. code-block:: yaml
 

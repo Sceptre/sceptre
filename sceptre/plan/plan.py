@@ -17,10 +17,8 @@ from sceptre.plan.executor import SceptrePlanExecutor
 from sceptre.helpers import sceptreise_path
 from sceptre.stack import Stack
 
-from sceptre.plan.plan_custom import SceptrePlanCustom
 
-
-class SceptrePlan(SceptrePlanCustom):
+class SceptrePlan(object):
 
     def __init__(self, context):
         """
@@ -377,4 +375,22 @@ class SceptrePlan(SceptrePlanCustom):
         :returns: A dict where the keys are Stack objects and the values are StackDiffs.
         """
         self.resolve(command=self.diff.__name__)
+        return self._execute(*args)
+
+    def drift_detect(self, *args) -> Dict[Stack, str]:
+        """
+        Show drift detection status of a stack.
+
+        :returns: A list of detected drift against running stacks.
+        """
+        self.resolve(command=self.drift_detect.__name__)
+        return self._execute(*args)
+
+    def drift_show(self, *args) -> Dict[Stack, str]:
+        """
+        Show stack drift for a running stack.
+
+        :returns: A list of detected drift against running stacks.
+        """
+        self.resolve(command=self.drift_show.__name__)
         return self._execute(*args)

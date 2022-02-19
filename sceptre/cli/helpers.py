@@ -113,27 +113,34 @@ def _generate_json(stream):
 
 
 def _generate_yaml(stream):
-    if isinstance(stream, list):
+    kwargs = {
+        "default_flow_style": False,
+        "explicit_start": True
+    }
+
+    if isinstance(stream, (list, set)):
         items = []
         for item in stream:
             try:
                 if isinstance(item, dict):
                     items.append(
-                        yaml.safe_dump(item, default_flow_style=False, explicit_start=True)
+                        yaml.safe_dump(item, **kwargs)
                     )
                 else:
                     items.append(
                         yaml.safe_dump(
-                            yaml.load(item, Loader=CfnYamlLoader),
-                            default_flow_style=False, explicit_start=True
+                            yaml.load(item, Loader=CfnYamlLoader), **kwargs
                         )
                     )
             except Exception:
                 print("An error occured whilst writing the YAML object.")
         return yaml.safe_dump(
-            [yaml.load(item, Loader=CfnYamlLoader) for item in items],
-            default_flow_style=False, explicit_start=True
+            [yaml.load(item, Loader=CfnYamlLoader) for item in items], **kwargs
         )
+
+    elif isinstance(stream, dict):
+        return yaml.dump(stream, **kwargs)
+
     else:
         try:
             return yaml.safe_loads(stream)
@@ -352,6 +359,29 @@ def simplify_change_set_description(response):
         for change in response["Changes"]
     ]
     return formatted_response
+
+
+def deserialize_json_properties(value):
+    if isinstance(value, str):
+        is_json = (
+            (value.startswith("{") and value.endswith("}"))
+            or
+            (value.startswith("[") and value.endswith("]"))
+        )
+        if is_json:
+            return json.loads(value)
+        return value
+    if isinstance(value, dict):
+        return {
+            key: deserialize_json_properties(val)
+            for key, val in value.items()
+        }
+    if isinstance(value, list):
+        return [
+            deserialize_json_properties(item)
+            for item in value
+        ]
+    return value
 
 
 class ColouredFormatter(logging.Formatter):
