@@ -6,7 +6,7 @@ import os
 import threading
 
 import pytest
-from mock import patch, sentinel, Mock
+from unittest.mock import patch, sentinel, Mock
 
 from freezegun import freeze_time
 from botocore.exceptions import ClientError

@@ -2,7 +2,7 @@
 
 import os
 import pytest
-from mock import Mock, MagicMock, patch, sentinel, ANY
+from unittest.mock import Mock, MagicMock, patch, sentinel, ANY
 from moto import mock_s3
 
 from boto3.session import Session

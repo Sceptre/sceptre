@@ -5,7 +5,7 @@ import json
 import pytest
 from botocore.exceptions import ClientError
 from dateutil.tz import tzutc
-from mock import patch, sentinel, Mock, call
+from unittest.mock import patch, sentinel, Mock, call
 
 from sceptre.exceptions import CannotUpdateFailedStackError
 from sceptre.exceptions import ProtectedStackError

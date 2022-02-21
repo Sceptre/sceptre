@@ -12,7 +12,7 @@ import yaml
 from botocore.exceptions import ClientError
 from click.testing import CliRunner
 from deepdiff import DeepDiff
-from mock import MagicMock, patch, sentinel
+from unittest.mock import MagicMock, patch, sentinel
 
 from sceptre.cli import cli
 from sceptre.cli.helpers import CustomJsonEncoder, \

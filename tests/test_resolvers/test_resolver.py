@@ -2,7 +2,7 @@
 from unittest.mock import call, Mock
 
 import pytest
-from mock import sentinel, MagicMock
+from unittest.mock import sentinel, MagicMock
 
 from sceptre.resolvers import (
     Resolver,
