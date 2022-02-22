@@ -4,6 +4,29 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 3.0.0 (2022.02.22)
+
+### Added
+ - [Resolve #1114,#426] Resolvable stack_tags (#1184)
+ - [Resolve #1114,#886,#491] Resolvable role_arn and template_bucket_name (#1153)
+ - [Resolve #1114] Resolvable iam_role (#1188)
+ - [Resolve #1114] Resolvable Template Handler configs and the !stack_attr resolver
+ - [Resolve #1167] Add list stacks command (#1168) 
+
+### Removed
+ - [Resolves #1201] Fix dependency conflicts (Jinja2, moto); Remove Py3.6 support (#1206)
+
+### Changed
+ - [Resolve #1114,#1000] Placeholders for non-deployed stacks in non-deployment commands (#1185)
+
+### Fixed
+
+### Nonfunctional
+- [Resolves #1194] Docs: "know"->"knows" (#1195)
+- docs: fix template path in getting-started (#1198) 
+- Fix spelling of stack_group_config (#1199)
+
+
 ## 2.7.1 (2021.12.06)
 
 ### Fixed
