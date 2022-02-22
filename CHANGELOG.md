@@ -14,7 +14,7 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
  - [Resolve #1114,#886,#491] Resolvable role_arn and template_bucket_name (#1153)
  - [Resolve #1114] Resolvable iam_role (#1188)
  - [Resolve #1114] Resolvable Template Handler configs and the !stack_attr resolver
- - [Resolve #1167] Add list stacks command (#1168) 
+ - [Resolve #1167] Add list stacks command (#1168)
 
 ### Removed
  - [Resolves #1201] Remove Py3.6 support (#1206)
@@ -27,7 +27,7 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ### Nonfunctional
 - [Resolves #1194] Docs: "know"->"knows" (#1195)
-- docs: fix template path in getting-started (#1198) 
+- docs: fix template path in getting-started (#1198)
 - Fix spelling of stack_group_config (#1199)
 
 
