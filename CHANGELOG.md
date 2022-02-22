@@ -24,6 +24,7 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ### Fixed
  - [Resolves #1201] Fix dependency conflicts (Jinja2, moto) (#1206)
+
 ### Nonfunctional
 - [Resolves #1194] Docs: "know"->"knows" (#1195)
 - docs: fix template path in getting-started (#1198) 
