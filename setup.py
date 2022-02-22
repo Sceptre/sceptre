@@ -23,12 +23,12 @@ def get_version(rel_path):
 
 install_requirements = [
     "boto3>=1.3,<2.0",
-    "click>=7.0,<9.0",
+    "click>=8.0,<9",
     "cfn-flip>=1.2.3,<2.0",
     "deepdiff>=5.5.0,<6.0",
-    "PyYaml>=5.1,<6.0",
+    "PyYaml>=6.0,<7.0",
     "Jinja2>=3.0,<4",
-    "jsonschema>=3.2,<3.3",
+    "jsonschema>=4.0,<5",
     "colorama>=0.3.9",
     "packaging>=16.8,<17.0",
     "sceptre-cmd-resolver>=1.1.3,<2",
@@ -38,7 +38,7 @@ install_requirements = [
 ]
 
 extra_requirements = {
-    "troposphere": ["troposphere>=2.7,<3"],
+    "troposphere": ["troposphere>=3.0,<4"],
 }
 
 
@@ -99,6 +99,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
     test_suite="tests",
     install_requires=install_requirements,
