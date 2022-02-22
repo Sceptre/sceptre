@@ -10,4 +10,4 @@
    `git log --no-merges --format='%<(20)%an' v1.0.0..HEAD | sort | uniq`, where
    the tag is the last deployed version.
 8. Announce release to the #sceptre channel on og-aws Slack with a link to
-   the latest changelog and list o
+   the latest changelog and list of contributors
