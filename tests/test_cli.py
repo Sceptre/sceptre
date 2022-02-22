@@ -12,7 +12,7 @@ import yaml
 from botocore.exceptions import ClientError
 from click.testing import CliRunner
 from deepdiff import DeepDiff
-from mock import MagicMock, patch, sentinel
+from unittest.mock import MagicMock, patch, sentinel
 
 from sceptre.cli import cli
 from sceptre.cli.helpers import CustomJsonEncoder, \
@@ -937,12 +937,12 @@ class TestCli(object):
 
     def test_diff_command__diff_type_is_deepdiff__passes_deepdiff_stack_differ_to_actions(self):
         self.runner.invoke(cli, 'diff -t deepdiff dev/vpc.yaml')
-        differ_used = self.mock_stack_actions.diff.call_args.args[0]
+        differ_used = self.mock_stack_actions.diff.call_args[0][0]
         assert isinstance(differ_used, DeepDiffStackDiffer)
 
     def test_diff_command__diff_type_is_difflib__passes_difflib_stack_differ_to_actions(self):
         self.runner.invoke(cli, 'diff -t difflib dev/vpc.yaml')
-        differ_used = self.mock_stack_actions.diff.call_args.args[0]
+        differ_used = self.mock_stack_actions.diff.call_args[0][0]
         assert isinstance(differ_used, DifflibStackDiffer)
 
         self.runner.invoke(cli, 'diff stacks', catch_exceptions=False)

@@ -1,5 +1,5 @@
 import pytest
-from mock import MagicMock, patch, sentinel
+from unittest.mock import MagicMock, patch, sentinel
 
 from sceptre.context import SceptreContext
 from sceptre.stack import Stack

@@ -3,7 +3,7 @@ import json
 import io
 import pytest
 
-from mock import MagicMock
+from unittest.mock import MagicMock
 from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import SceptreException, UnsupportedTemplateFileTypeError
 from sceptre.template_handlers.s3 import S3

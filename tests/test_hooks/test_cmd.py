@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from mock import patch
+from unittest.mock import patch
 import subprocess
 
 from sceptre.hooks.cmd import Cmd

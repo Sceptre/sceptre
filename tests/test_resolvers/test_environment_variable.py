@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from mock import patch
+from unittest.mock import patch
 
 from sceptre.resolvers.environment_variable import EnvironmentVariable
 

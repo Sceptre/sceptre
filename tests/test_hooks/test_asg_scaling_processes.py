@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import pytest
-from mock import patch, MagicMock
+from unittest.mock import patch, MagicMock
 
 from sceptre.exceptions import InvalidHookArgumentValueError
 from sceptre.exceptions import InvalidHookArgumentSyntaxError

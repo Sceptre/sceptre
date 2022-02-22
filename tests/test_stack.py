@@ -3,7 +3,7 @@
 import importlib
 
 import pytest
-from mock import MagicMock, sentinel
+from unittest.mock import MagicMock, sentinel
 
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.resolvers import Resolver
@@ -161,12 +161,11 @@ class TestStack(object):
 
     def test_repr_can_eval_correctly(self):
         sceptre = importlib.import_module('sceptre')
-        mock = importlib.import_module('mock')
         evaluated_stack = eval(
             repr(self.stack),
             {
                 'sceptre': sceptre,
-                'sentinel': mock.mock.sentinel
+                'sentinel': sentinel
             }
         )
         assert isinstance(evaluated_stack, Stack)
