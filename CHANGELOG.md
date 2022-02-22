@@ -5,7 +5,7 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 ## Unreleased
 
 ## 3.0.0 (2022.02.22)
-## Breaking Changes
+### Breaking Changes
 * Python 3.6 support has been removed due to that version reaching end-of-life status
 * Jinja2 has been upgraded to v3.0
 
