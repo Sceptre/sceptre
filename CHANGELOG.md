@@ -5,9 +5,10 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 ## Unreleased
 
 ## 3.0.0 (2022.02.22)
+
 ### Breaking Changes
-* Python 3.6 support has been removed due to that version reaching end-of-life status
-* Jinja2 has been upgraded to v3.0
+ - Python 3.6 support has been removed due to that version reaching end-of-life status
+ - Jinja2 has been upgraded to v3.0
 
 ### Added
  - [Resolve #1114,#426] Resolvable stack_tags (#1184)
@@ -15,6 +16,7 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
  - [Resolve #1114] Resolvable iam_role (#1188)
  - [Resolve #1114] Resolvable Template Handler configs and the !stack_attr resolver
  - [Resolve #1167] Add list stacks command (#1168)
+ - [Resolve #1169] Add drift detect and drift show commands (#1170)
 
 ### Removed
  - [Resolves #1201] Remove Py3.6 support (#1206)
@@ -29,7 +31,6 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 - [Resolves #1194] Docs: "know"->"knows" (#1195)
 - docs: fix template path in getting-started (#1198)
 - Fix spelling of stack_group_config (#1199)
-
 
 ## 2.7.1 (2021.12.06)
 
