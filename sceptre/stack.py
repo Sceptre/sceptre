@@ -116,6 +116,10 @@ class Stack(object):
     :param stack_group_config: The StackGroup config for the Stack
     :type stack_group_config: dict
 
+    :param duration_seconds: The session duration when Scetre assumes a role.\
+           If not supplied, Sceptre uses default value (3600 seconds)
+    :type duration_seconds: int
+
     """
     parameters = ResolvableContainerProperty("parameters")
     sceptre_user_data = ResolvableContainerProperty(
@@ -158,7 +162,7 @@ class Stack(object):
         parameters=None, sceptre_user_data=None, hooks=None, s3_details=None,
         iam_role=None, dependencies=None, role_arn=None, protected=False, tags=None,
         external_name=None, notifications=None, on_failure=None, profile=None,
-        stack_timeout=0, stack_group_config={}
+        stack_timeout=0, duration_seconds=3600, stack_group_config={}
     ):
         self.logger = logging.getLogger(__name__)
 
@@ -188,6 +192,7 @@ class Stack(object):
         # Resolvers and hooks need to be assigned last
         self.s3_details = s3_details
         self.iam_role = iam_role
+        self.duration_seconds = duration_seconds
         self.tags = tags or {}
         self.role_arn = role_arn
         self.template_bucket_name = template_bucket_name
@@ -212,6 +217,7 @@ class Stack(object):
             "template_key_prefix={template_key_prefix}, "
             "required_version={required_version}, "
             "iam_role={iam_role}, "
+            "duration_seconds={duration_seconds}, "
             "profile={profile}, "
             "sceptre_user_data={sceptre_user_data}, "
             "parameters={parameters}, "
@@ -236,6 +242,7 @@ class Stack(object):
                 template_key_prefix=self.template_key_prefix,
                 required_version=self.required_version,
                 iam_role=self.iam_role,
+                duration_seconds=self.duration_seconds,
                 profile=self.profile,
                 sceptre_user_data=self.sceptre_user_data,
                 parameters=self.parameters,
@@ -267,6 +274,7 @@ class Stack(object):
             self.template_key_prefix == stack.template_key_prefix and
             self.required_version == stack.required_version and
             self.iam_role == stack.iam_role and
+            self.duration_seconds == stack.duration_seconds and
             self.profile == stack.profile and
             self.sceptre_user_data == stack.sceptre_user_data and
             self.parameters == stack.parameters and
@@ -296,6 +304,7 @@ class Stack(object):
             cache_connection_manager = True
             try:
                 iam_role = self.iam_role
+                duration_seconds = self.duration_seconds
             except RecursiveResolve:
                 # This would be the case when iam_role is set with a resolver (especially stack_output)
                 # that uses the stack's connection manager. This creates a temporary condition where
@@ -312,7 +321,7 @@ class Stack(object):
                 cache_connection_manager = False
 
             connection_manager = ConnectionManager(
-                self.region, self.profile, self.external_name, iam_role
+                self.region, self.profile, self.external_name, iam_role, duration_seconds
             )
             if cache_connection_manager:
                 self._connection_manager = connection_manager
