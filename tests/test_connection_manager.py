@@ -18,6 +18,7 @@ class TestConnectionManager(object):
         self.stack_name = None
         self.profile = None
         self.iam_role = None
+        self.duration_seconds = 3600
         self.region = "eu-west-1"
 
         ConnectionManager._boto_sessions = {}
@@ -50,17 +51,19 @@ class TestConnectionManager(object):
             region=self.region,
             stack_name="stack",
             profile="profile",
-            iam_role="iam_role"
+            iam_role="iam_role",
+            duration_seconds=21600
         )
 
         assert connection_manager.stack_name == "stack"
         assert connection_manager.profile == "profile"
         assert connection_manager.iam_role == "iam_role"
+        assert connection_manager.duration_seconds == 21600
         assert connection_manager.region == self.region
         assert connection_manager._boto_sessions == {}
         assert connection_manager._clients == {}
         assert connection_manager._stack_keys == {
-            "stack": (self.region, "profile", "iam_role")
+            "stack": (self.region, "profile", "iam_role", 21600)
         }
 
     def test_repr(self):
@@ -71,7 +74,18 @@ class TestConnectionManager(object):
         response = self.connection_manager.__repr__()
         assert response == "sceptre.connection_manager.ConnectionManager(" \
             "region='region', profile='profile', stack_name='stack', "\
-            "iam_role='iam_role')"
+            "iam_role='iam_role', duration_seconds='3600')"
+
+    def test_repr_with_duration_seconds(self):
+        self.connection_manager.stack_name = "stack"
+        self.connection_manager.profile = "profile"
+        self.connection_manager.region = "region"
+        self.connection_manager.iam_role = "iam_role"
+        self.connection_manager.duration_seconds = 21600
+        response = self.connection_manager.__repr__()
+        assert response == "sceptre.connection_manager.ConnectionManager(" \
+            "region='region', profile='profile', stack_name='stack', "\
+            "iam_role='iam_role', duration_seconds='21600')"
 
     def test_boto_session_with_cache(self):
         self.connection_manager._boto_sessions["test"] = sentinel.boto_session
@@ -87,7 +101,7 @@ class TestConnectionManager(object):
         self.connection_manager.profile = None
 
         boto_session = self.connection_manager._get_session(
-            self.connection_manager.profile, self.region, self.iam_role
+            self.connection_manager.profile, self.region, self.iam_role, self.duration_seconds
         )
 
         assert boto_session.isinstance(mock_Session)
@@ -105,7 +119,7 @@ class TestConnectionManager(object):
         self.connection_manager.profile = "profile"
 
         boto_session = self.connection_manager._get_session(
-            self.connection_manager.profile, self.region, self.iam_role
+            self.connection_manager.profile, self.region, self.iam_role, self.duration_seconds
         )
 
         assert boto_session.isinstance(mock_Session)
@@ -125,7 +139,7 @@ class TestConnectionManager(object):
         self.connection_manager.iam_role = None
 
         boto_session = self.connection_manager._get_session(
-            self.profile, self.region, self.connection_manager.iam_role
+            self.profile, self.region, self.connection_manager.iam_role, self.duration_seconds
         )
 
         assert boto_session.isinstance(mock_Session)
@@ -145,7 +159,7 @@ class TestConnectionManager(object):
         self.connection_manager.iam_role = "iam_role"
 
         boto_session = self.connection_manager._get_session(
-            self.profile, self.region, self.connection_manager.iam_role
+            self.profile, self.region, self.connection_manager.iam_role, self.duration_seconds
         )
 
         assert boto_session.isinstance(mock_Session)
@@ -161,7 +175,8 @@ class TestConnectionManager(object):
             RoleArn=self.connection_manager.iam_role,
             RoleSessionName="{0}-session".format(
                 self.connection_manager.iam_role.split("/")[-1]
-            )
+            ),
+            DurationSeconds=3600
         )
 
         credentials = boto_session.client().assume_role()["Credentials"]
@@ -184,7 +199,7 @@ class TestConnectionManager(object):
 
         with pytest.raises(InvalidAWSCredentialsError):
             self.connection_manager._get_session(
-                self.profile, self.region, self.connection_manager.iam_role
+                self.profile, self.region, self.connection_manager.iam_role, self.duration_seconds
             )
 
     @patch("sceptre.connection_manager.boto3.session.Session")
@@ -206,10 +221,11 @@ class TestConnectionManager(object):
         region = "eu-west-1"
         profile = None
         iam_role = None
+        duration_seconds = 3600
         stack = self.stack_name
 
         client = self.connection_manager._get_client(
-            service, region, profile, stack, iam_role
+            service, region, profile, stack, iam_role, duration_seconds
         )
         expected_client = Session().client(service)
         assert str(type(client)) == str(type(expected_client))
@@ -219,12 +235,13 @@ class TestConnectionManager(object):
         service = "invalid_type"
         region = "eu-west-1"
         iam_role = None
+        duration_seconds = 3600
         profile = None
         stack = self.stack_name
 
         with pytest.raises(UnknownServiceError):
             self.connection_manager._get_client(
-                service, region, profile, stack, iam_role
+                service, region, profile, stack, iam_role, duration_seconds
             )
 
     @patch("sceptre.connection_manager.boto3.session.Session.get_credentials")
@@ -232,14 +249,15 @@ class TestConnectionManager(object):
         service = "cloudformation"
         region = "eu-west-1"
         iam_role = None
+        duration_seconds = 3600
         profile = None
         stack = self.stack_name
 
         client_1 = self.connection_manager._get_client(
-            service, region, profile, stack, iam_role
+            service, region, profile, stack, iam_role, duration_seconds
         )
         client_2 = self.connection_manager._get_client(
-            service, region, profile, stack, iam_role
+            service, region, profile, stack, iam_role, duration_seconds
         )
         assert client_1 == client_2
 
@@ -250,15 +268,16 @@ class TestConnectionManager(object):
         service = "cloudformation"
         region = "eu-west-1"
         iam_role = None
+        duration_seconds = 3600
         profile = None
         stack = self.stack_name
 
         self.connection_manager.profile = None
         client_1 = self.connection_manager._get_client(
-            service, region, profile, stack, iam_role
+            service, region, profile, stack, iam_role, duration_seconds
         )
         client_2 = self.connection_manager._get_client(
-            service, region, profile, stack, iam_role
+            service, region, profile, stack, iam_role, duration_seconds
         )
         assert client_1 == client_2
 

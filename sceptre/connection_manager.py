@@ -107,12 +107,12 @@ class ConnectionManager(object):
     def __repr__(self):
         return (
             "sceptre.connection_manager.ConnectionManager(region='{0}', "
-+            "profile='{1}', stack_name='{2}', iam_role='{3}', duration_seconds='{4}')".format(
-+                self.region, self.profile, self.stack_name, self.iam_role, self.duration_seconds
+            "profile='{1}', stack_name='{2}', iam_role='{3}', duration_seconds='{4}')".format(
+                self.region, self.profile, self.stack_name, self.iam_role, self.duration_seconds
              )
         )
 
-    def _get_session(self, profile, region, iam_role):
+    def _get_session(self, profile, region, iam_role, duration_seconds):
         """
         Returns a boto session in the target account.
 
@@ -178,7 +178,8 @@ class ConnectionManager(object):
                         )
 
                     self._boto_sessions[key] = session
-                    self.logger.info("session will expire at " + credentials['Expiration'].strftime("%Y-%m-%d %H:%M:%S"))
+                    self.logger.info("session will expire at " +
+                                     credentials['Expiration'].strftime("%Y-%m-%d %H:%M:%S"))
 
                 self.logger.debug(
                     "Using credential set from %s: %s",

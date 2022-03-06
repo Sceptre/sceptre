@@ -304,7 +304,6 @@ class Stack(object):
             cache_connection_manager = True
             try:
                 iam_role = self.iam_role
-                duration_seconds = self.duration_seconds
             except RecursiveResolve:
                 # This would be the case when iam_role is set with a resolver (especially stack_output)
                 # that uses the stack's connection manager. This creates a temporary condition where
@@ -321,7 +320,7 @@ class Stack(object):
                 cache_connection_manager = False
 
             connection_manager = ConnectionManager(
-                self.region, self.profile, self.external_name, iam_role, duration_seconds
+                self.region, self.profile, self.external_name, iam_role, self.duration_seconds
             )
             if cache_connection_manager:
                 self._connection_manager = connection_manager

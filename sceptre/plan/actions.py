@@ -44,7 +44,7 @@ class StackActions(object):
         self.logger = logging.getLogger(__name__)
         self.connection_manager = ConnectionManager(
             self.stack.region, self.stack.profile,
-            self.stack.external_name, self.stack.iam_role, 
+            self.stack.external_name, self.stack.iam_role,
             self.stack.duration_seconds
         )
 
