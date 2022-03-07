@@ -99,7 +99,7 @@ class ConnectionManager(object):
         self.profile = profile
         self.stack_name = stack_name
         self.iam_role = iam_role
-        self.duration_seconds = duration_seconds
+        self.duration_seconds = duration_seconds if duration_seconds else 3600
 
         if stack_name:
             self._stack_keys[stack_name] = (region, profile, iam_role, duration_seconds)
