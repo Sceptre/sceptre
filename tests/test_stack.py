@@ -56,7 +56,7 @@ class TestStack(object):
             tags={"tag1": "val1"}, external_name=sentinel.external_name,
             notifications=[sentinel.notification],
             on_failure=sentinel.on_failure, iam_role=sentinel.iam_role,
-            duration_seconds=sentinel.duration_seconds,
+            iam_role_session_duration=sentinel.iam_role_session_duration,
             stack_timeout=sentinel.stack_timeout,
             stack_group_config={}
         )
@@ -144,7 +144,7 @@ class TestStack(object):
             "template_key_prefix=sentinel.template_key_prefix, "\
             "required_version=sentinel.required_version, "\
             "iam_role=sentinel.iam_role, "\
-            "duration_seconds=sentinel.duration_seconds, "\
+            "iam_role_session_duration=sentinel.iam_role_session_duration, "\
             "profile=sentinel.profile, " \
             "sceptre_user_data=sentinel.sceptre_user_data, " \
             "parameters={'key1': 'val1'}, "\

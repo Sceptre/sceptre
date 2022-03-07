@@ -313,7 +313,7 @@ class TestConfigReader(object):
             s3_details=sentinel.s3_details,
             dependencies=["child/level", "top/level"],
             iam_role=None,
-            duration_seconds=None,
+            iam_role_session_duration=None,
             role_arn=None,
             protected=False,
             tags={},

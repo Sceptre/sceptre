@@ -92,27 +92,27 @@ class ConnectionManager(object):
     _clients = {}
     _stack_keys = {}
 
-    def __init__(self, region, profile=None, stack_name=None, iam_role=None, duration_seconds=3600):
+    def __init__(self, region, profile=None, stack_name=None, iam_role=None, iam_role_session_duration=3600):
         self.logger = logging.getLogger(__name__)
 
         self.region = region
         self.profile = profile
         self.stack_name = stack_name
         self.iam_role = iam_role
-        self.duration_seconds = duration_seconds if duration_seconds else 3600
+        self.iam_role_session_duration = iam_role_session_duration if iam_role_session_duration else 3600
 
         if stack_name:
-            self._stack_keys[stack_name] = (region, profile, iam_role, duration_seconds)
+            self._stack_keys[stack_name] = (region, profile, iam_role)
 
     def __repr__(self):
         return (
             "sceptre.connection_manager.ConnectionManager(region='{0}', "
-            "profile='{1}', stack_name='{2}', iam_role='{3}', duration_seconds='{4}')".format(
-                self.region, self.profile, self.stack_name, self.iam_role, self.duration_seconds
-             )
+            "profile='{1}', stack_name='{2}', iam_role='{3}', iam_role_session_duration='{4}')".format(
+                self.region, self.profile, self.stack_name, self.iam_role, self.iam_role_session_duration
+            )
         )
 
-    def _get_session(self, profile, region, iam_role, duration_seconds):
+    def _get_session(self, profile, region, iam_role):
         """
         Returns a boto session in the target account.
 
@@ -159,7 +159,7 @@ class ConnectionManager(object):
                     sts_response = sts_client.assume_role(
                         RoleArn=iam_role,
                         RoleSessionName=session_name,
-                        DurationSeconds=duration_seconds
+                        DurationSeconds=self.iam_role_session_duration
                     )
 
                     credentials = sts_response["Credentials"]
@@ -178,8 +178,6 @@ class ConnectionManager(object):
                         )
 
                     self._boto_sessions[key] = session
-                    self.logger.info("session will expire at " +
-                                     credentials['Expiration'].strftime("%Y-%m-%d %H:%M:%S"))
 
                 self.logger.debug(
                     "Using credential set from %s: %s",
@@ -199,7 +197,7 @@ class ConnectionManager(object):
 
             return self._boto_sessions[key]
 
-    def _get_client(self, service, region, profile, stack_name, iam_role, duration_seconds):
+    def _get_client(self, service, region, profile, stack_name, iam_role):
         """
         Returns the Boto3 client associated with <service>.
 
@@ -218,7 +216,7 @@ class ConnectionManager(object):
                     "No %s client found, creating one...", service
                 )
                 self._clients[key] = self._get_session(
-                    profile, region, iam_role, duration_seconds
+                    profile, region, iam_role
                 ).client(service)
 
             return self._clients[key]
@@ -226,7 +224,7 @@ class ConnectionManager(object):
     @_retry_boto_call
     def call(
         self, service, command, kwargs=None, profile=None, region=None,
-        stack_name=None, iam_role=None, duration_seconds=3600
+        stack_name=None, iam_role=None
     ):
         """
         Makes a thread-safe Boto3 client call.
@@ -244,15 +242,14 @@ class ConnectionManager(object):
         """
         if region is None and profile is None and iam_role is None:
             if stack_name and stack_name in self._stack_keys:
-                region, profile, iam_role, duration_seconds = self._stack_keys[stack_name]
+                region, profile, iam_role = self._stack_keys[stack_name]
             else:
                 region = self.region
                 profile = self.profile
                 iam_role = self.iam_role
-                duration_seconds = self.duration_seconds
 
         if kwargs is None:  # pragma: no cover
             kwargs = {}
 
-        client = self._get_client(service, region, profile, stack_name, iam_role, duration_seconds)
+        client = self._get_client(service, region, profile, stack_name, iam_role)
         return getattr(client, command)(**kwargs)

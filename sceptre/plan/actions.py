@@ -45,7 +45,7 @@ class StackActions(object):
         self.connection_manager = ConnectionManager(
             self.stack.region, self.stack.profile,
             self.stack.external_name, self.stack.iam_role,
-            self.stack.duration_seconds
+            self.stack.iam_role_session_duration
         )
 
     @add_stack_hooks
