@@ -86,18 +86,6 @@ As a resolvable property, Sceptre allows you to use a resolver to populate the `
 Stack or StackGroup Config. This means you could define that role within your project, output its
 ARN, and then reference it using `!stack_output`.
 
-iam_role_session_duration
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-This is the session duration when Sceptre assumes the given ``iam_role``. This may become useful to handle
-a large stack group or time-consuming actions. (e.g. Updating the node instances type for a large cluster.)
-The default value is 3600 (1 hour, in seconds).
-
-In order to use ``iam_role_session_duration`` to config ``iam_role`` assuming session. Please make sure that
-the ``iam_role`` has a configuration of ``MaxSessionDuration`` in the CloudFormation template, and its value is larger than ``iam_role_session_duration``. Otherwise, Sceptre will report an error if
-``iam_role_session_duration`` is set to a number that greater than 3600 since the default value of
-``MaxSessionDuration`` is 3600 (1 hour, in seconds).
-
 .. _profile_permissions:
 
 profile

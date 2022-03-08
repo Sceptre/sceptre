@@ -20,6 +20,8 @@ from botocore.exceptions import ClientError
 from sceptre.helpers import mask_key
 from sceptre.exceptions import InvalidAWSCredentialsError, RetryLimitExceededError
 
+DEFAULT_IAM_SESSION_DURATION = 3600
+
 
 def _retry_boto_call(func):
     """
@@ -92,14 +94,18 @@ class ConnectionManager(object):
     _clients = {}
     _stack_keys = {}
 
-    def __init__(self, region, profile=None, stack_name=None, iam_role=None, iam_role_session_duration=3600):
+    def __init__(
+        self, region, profile=None, stack_name=None,
+        iam_role=None, iam_role_session_duration=DEFAULT_IAM_SESSION_DURATION
+    ):
+
         self.logger = logging.getLogger(__name__)
 
         self.region = region
         self.profile = profile
         self.stack_name = stack_name
         self.iam_role = iam_role
-        self.iam_role_session_duration = iam_role_session_duration if iam_role_session_duration else 3600
+        self.iam_role_session_duration = iam_role_session_duration
 
         if stack_name:
             self._stack_keys[stack_name] = (region, profile, iam_role)

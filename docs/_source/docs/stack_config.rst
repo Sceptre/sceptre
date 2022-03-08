@@ -255,8 +255,9 @@ executing any actions on the Stack.
 
 .. warning::
 
-   If you set the value of ``iam_role_session_duration`` to a number that *GREATER* than 3600, you will need
-   to make sure that the ``iam_role`` has a configuration of ``MaxSessionDuration``, and its value is *GREATER* than the value of ``iam_role_session_duration``.
+   If you set the value of ``iam_role_session_duration`` to a number that *GREATER* than 3600, you
+   will need to make sure that the ``iam_role`` has a configuration of ``MaxSessionDuration``, and
+   its value is *GREATER* than or equal to the value of ``iam_role_session_duration``.
 
 For more information on this configuration, its implications, and its uses, see
 :ref:`Sceptre and IAM: iam_role_session_duration <iam_role_permissions>`.
