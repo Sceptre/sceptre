@@ -20,8 +20,6 @@ from botocore.exceptions import ClientError
 from sceptre.helpers import mask_key
 from sceptre.exceptions import InvalidAWSCredentialsError, RetryLimitExceededError
 
-DEFAULT_IAM_SESSION_DURATION = 3600
-
 
 def _retry_boto_call(func):
     """
@@ -96,7 +94,7 @@ class ConnectionManager(object):
 
     def __init__(
         self, region, profile=None, stack_name=None,
-        iam_role=None, iam_role_session_duration=DEFAULT_IAM_SESSION_DURATION
+        iam_role=None, iam_role_session_duration=None
     ):
 
         self.logger = logging.getLogger(__name__)
@@ -162,11 +160,13 @@ class ConnectionManager(object):
                     sts_client = session.client("sts")
                     # maximum session name length is 64 chars. 56 + "-session" = 64
                     session_name = f'{iam_role.split("/")[-1][:56]}-session'
-                    sts_response = sts_client.assume_role(
-                        RoleArn=iam_role,
-                        RoleSessionName=session_name,
-                        DurationSeconds=self.iam_role_session_duration
-                    )
+                    assume_role_kwargs = {
+                        'RoleArn': iam_role,
+                        'RoleSessionName': session_name,
+                    }
+                    if self.iam_role_session_duration:
+                        assume_role_kwargs['DurationSeconds'] = self.iam_role_session_duration
+                    sts_response = sts_client.assume_role(**assume_role_kwargs)
 
                     credentials = sts_response["Credentials"]
                     session = boto3.session.Session(
