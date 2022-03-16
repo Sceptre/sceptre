@@ -92,13 +92,18 @@ class ConnectionManager(object):
     _clients = {}
     _stack_keys = {}
 
-    def __init__(self, region, profile=None, stack_name=None, iam_role=None):
+    def __init__(
+        self, region, profile=None, stack_name=None,
+        iam_role=None, iam_role_session_duration=None
+    ):
+
         self.logger = logging.getLogger(__name__)
 
         self.region = region
         self.profile = profile
         self.stack_name = stack_name
         self.iam_role = iam_role
+        self.iam_role_session_duration = iam_role_session_duration
 
         if stack_name:
             self._stack_keys[stack_name] = (region, profile, iam_role)
@@ -106,8 +111,8 @@ class ConnectionManager(object):
     def __repr__(self):
         return (
             "sceptre.connection_manager.ConnectionManager(region='{0}', "
-            "profile='{1}', stack_name='{2}', iam_role='{3}')".format(
-                self.region, self.profile, self.stack_name, self.iam_role
+            "profile='{1}', stack_name='{2}', iam_role='{3}', iam_role_session_duration='{4}')".format(
+                self.region, self.profile, self.stack_name, self.iam_role, self.iam_role_session_duration
             )
         )
 
@@ -155,10 +160,13 @@ class ConnectionManager(object):
                     sts_client = session.client("sts")
                     # maximum session name length is 64 chars. 56 + "-session" = 64
                     session_name = f'{iam_role.split("/")[-1][:56]}-session'
-                    sts_response = sts_client.assume_role(
-                        RoleArn=iam_role,
-                        RoleSessionName=session_name
-                    )
+                    assume_role_kwargs = {
+                        'RoleArn': iam_role,
+                        'RoleSessionName': session_name,
+                    }
+                    if self.iam_role_session_duration:
+                        assume_role_kwargs['DurationSeconds'] = self.iam_role_session_duration
+                    sts_response = sts_client.assume_role(**assume_role_kwargs)
 
                     credentials = sts_response["Credentials"]
                     session = boto3.session.Session(

@@ -22,6 +22,7 @@ particular Stack. The available keys are listed below.
 -  `protected`_ *(optional)*
 -  `role_arn`_ *(optional)*
 -  `iam_role`_ *(optional)*
+-  `iam_role_session_duration`_ *(optional)*
 -  `sceptre_user_data`_ *(optional)*
 -  `stack_name`_ *(optional)*
 -  `stack_tags`_ *(optional)*
@@ -242,6 +243,24 @@ stack. The ``iam_role`` configuration does not configure anything on the stack i
 
 For more information on this configuration, its implications, and its uses, see
 :ref:`Sceptre and IAM: iam_role <iam_role_permissions>`.
+
+iam_role_session_duration
+~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This is the session duration when **Sceptre** *assumes* the **iam_role** IAM Role using AWS STS when
+executing any actions on the Stack.
+
+.. warning::
+
+   If you set the value of ``iam_role_session_duration`` to a number that *GREATER* than 3600, you
+   will need to make sure that the ``iam_role`` has a configuration of ``MaxSessionDuration``, and
+   its value is *GREATER* than or equal to the value of ``iam_role_session_duration``.
+
+For more information on this configuration, its implications, and its uses, see
+:ref:`Sceptre and IAM: iam_role_session_duration <iam_role_permissions>`.
 
 sceptre_user_data
 ~~~~~~~~~~~~~~~~~

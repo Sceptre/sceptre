@@ -18,6 +18,7 @@ class TestConnectionManager(object):
         self.stack_name = None
         self.profile = None
         self.iam_role = None
+        self.iam_role_session_duration = 3600
         self.region = "eu-west-1"
 
         ConnectionManager._boto_sessions = {}
@@ -50,12 +51,14 @@ class TestConnectionManager(object):
             region=self.region,
             stack_name="stack",
             profile="profile",
-            iam_role="iam_role"
+            iam_role="iam_role",
+            iam_role_session_duration=21600
         )
 
         assert connection_manager.stack_name == "stack"
         assert connection_manager.profile == "profile"
         assert connection_manager.iam_role == "iam_role"
+        assert connection_manager.iam_role_session_duration == 21600
         assert connection_manager.region == self.region
         assert connection_manager._boto_sessions == {}
         assert connection_manager._clients == {}
@@ -71,7 +74,18 @@ class TestConnectionManager(object):
         response = self.connection_manager.__repr__()
         assert response == "sceptre.connection_manager.ConnectionManager(" \
             "region='region', profile='profile', stack_name='stack', "\
-            "iam_role='iam_role')"
+            "iam_role='iam_role', iam_role_session_duration='None')"
+
+    def test_repr_with_iam_role_session_duration(self):
+        self.connection_manager.stack_name = "stack"
+        self.connection_manager.profile = "profile"
+        self.connection_manager.region = "region"
+        self.connection_manager.iam_role = "iam_role"
+        self.connection_manager.iam_role_session_duration = 21600
+        response = self.connection_manager.__repr__()
+        assert response == "sceptre.connection_manager.ConnectionManager(" \
+            "region='region', profile='profile', stack_name='stack', "\
+            "iam_role='iam_role', iam_role_session_duration='21600')"
 
     def test_boto_session_with_cache(self):
         self.connection_manager._boto_sessions["test"] = sentinel.boto_session
@@ -171,6 +185,24 @@ class TestConnectionManager(object):
             aws_access_key_id=credentials["AccessKeyId"],
             aws_secret_access_key=credentials["SecretAccessKey"],
             aws_session_token=credentials["SessionToken"]
+        )
+
+    @patch("sceptre.connection_manager.boto3.session.Session")
+    def test_boto_session_with_iam_role_session_duration(self, mock_Session):
+        self.connection_manager._boto_sessions = {}
+        self.connection_manager.iam_role = "iam_role"
+        self.connection_manager.iam_role_session_duration = 21600
+
+        boto_session = self.connection_manager._get_session(
+            self.profile, self.region, self.connection_manager.iam_role
+        )
+
+        boto_session.client().assume_role.assert_called_once_with(
+            RoleArn=self.connection_manager.iam_role,
+            RoleSessionName="{0}-session".format(
+                self.connection_manager.iam_role.split("/")[-1]
+            ),
+            DurationSeconds=21600
         )
 
     @patch("sceptre.connection_manager.boto3.session.Session")

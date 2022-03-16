@@ -3,6 +3,7 @@ notifications:
   - !stack_output project-deps/dependencies/topic.yaml::TopicArn
 
 iam_role: !stack_output project-deps/dependencies/assumed-role.yaml::RoleArn
+iam_role_session_duration: 1800
 stack_tags:
   greeting: !rcmd "echo 'hello' | tr -d '\n'"
   nonexistant: !no_value

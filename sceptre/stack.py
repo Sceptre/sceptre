@@ -12,7 +12,7 @@ import logging
 from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.helpers import get_external_stack_name, sceptreise_path
-from sceptre.hooks import HookProperty
+from sceptre.hooks import Hook, HookProperty
 from sceptre.resolvers import (
     ResolvableContainerProperty,
     ResolvableValueProperty,
@@ -116,6 +116,10 @@ class Stack(object):
     :param stack_group_config: The StackGroup config for the Stack
     :type stack_group_config: dict
 
+    :param iam_role_session_duration: The session duration when Scetre assumes a role.\
+           If not supplied, Sceptre uses default value (3600 seconds)
+    :type iam_role_session_duration: int
+
     """
     parameters = ResolvableContainerProperty("parameters")
     sceptre_user_data = ResolvableContainerProperty(
@@ -153,12 +157,12 @@ class Stack(object):
     hooks = HookProperty("hooks")
 
     def __init__(
-        self, name, project_code, region, template_path=None, template_handler_config=None,
-        template_bucket_name=None, template_key_prefix=None, required_version=None,
-        parameters=None, sceptre_user_data=None, hooks=None, s3_details=None,
-        iam_role=None, dependencies=None, role_arn=None, protected=False, tags=None,
-        external_name=None, notifications=None, on_failure=None, profile=None,
-        stack_timeout=0, stack_group_config={}
+        self, name: str, project_code: str, region: str, template_path: str = None,
+        template_handler_config: dict = None, template_bucket_name: str = None, template_key_prefix: str = None,
+        required_version: str = None, parameters: dict = None, sceptre_user_data: dict = None, hooks: Hook = None,
+        s3_details: dict = None, iam_role: str = None, dependencies=None, role_arn: str = None, protected: bool = False,
+        tags: dict = None, external_name: str = None, notifications=None, on_failure: str = None, profile: str = None,
+        stack_timeout: int = 0, iam_role_session_duration: int = 0, stack_group_config: dict = {}
     ):
         self.logger = logging.getLogger(__name__)
 
@@ -181,6 +185,7 @@ class Stack(object):
         self.stack_timeout = stack_timeout
         self.profile = profile
         self.template_key_prefix = template_key_prefix
+        self.iam_role_session_duration = iam_role_session_duration
 
         self._template = None
         self._connection_manager = None
@@ -212,6 +217,7 @@ class Stack(object):
             "template_key_prefix={template_key_prefix}, "
             "required_version={required_version}, "
             "iam_role={iam_role}, "
+            "iam_role_session_duration={iam_role_session_duration}, "
             "profile={profile}, "
             "sceptre_user_data={sceptre_user_data}, "
             "parameters={parameters}, "
@@ -236,6 +242,7 @@ class Stack(object):
                 template_key_prefix=self.template_key_prefix,
                 required_version=self.required_version,
                 iam_role=self.iam_role,
+                iam_role_session_duration=self.iam_role_session_duration,
                 profile=self.profile,
                 sceptre_user_data=self.sceptre_user_data,
                 parameters=self.parameters,
@@ -267,6 +274,7 @@ class Stack(object):
             self.template_key_prefix == stack.template_key_prefix and
             self.required_version == stack.required_version and
             self.iam_role == stack.iam_role and
+            self.iam_role_session_duration == stack.iam_role_session_duration and
             self.profile == stack.profile and
             self.sceptre_user_data == stack.sceptre_user_data and
             self.parameters == stack.parameters and
@@ -312,7 +320,7 @@ class Stack(object):
                 cache_connection_manager = False
 
             connection_manager = ConnectionManager(
-                self.region, self.profile, self.external_name, iam_role
+                self.region, self.profile, self.external_name, iam_role, self.iam_role_session_duration
             )
             if cache_connection_manager:
                 self._connection_manager = connection_manager

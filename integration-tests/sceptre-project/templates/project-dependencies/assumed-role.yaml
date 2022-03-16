@@ -24,6 +24,7 @@ Resources:
               - Action: "iam:PassRole"
                 Effect: Allow
                 Resource: "*"
+      MaxSessionDuration: 43200
 
 Outputs:
   RoleArn:
