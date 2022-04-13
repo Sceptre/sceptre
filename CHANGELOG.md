@@ -4,7 +4,7 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
-## 3.0.1 (2022.04.13)
+## 3.1.0 (2022.04.13)
 
 ### Added
  - [Resolve #1080] Added duration_seconds parameter to adopt DurationSeconds in boto (#1210)
