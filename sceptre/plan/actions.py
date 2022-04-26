@@ -988,6 +988,15 @@ class StackActions(object):
                 return None
             raise
 
+    def fetch_sceptre_user_data(self) -> Optional[str]:
+        """
+        Returns the sceptre_user_data
+
+        :returns: the template body.
+        """
+        self.logger.debug(f"{self.stack.name} - Fetching sceptre_user_data")
+        return self.stack.sceptre_user_data
+
     @add_stack_hooks
     def diff(self, stack_differ):
         """

@@ -1,4 +1,5 @@
 import click
+import yaml
 
 from sceptre.context import SceptreContext
 from sceptre.cli.helpers import (
@@ -153,3 +154,35 @@ def list_stacks(ctx, path):
     output = {f"{stack.name}.yaml": stack.external_name for stack in plan.graph}
     output_format = "json" if context.output_format == "json" else "yaml"
     write(output, output_format)
+
+
+@list_group.command(name="sceptre_user_data")
+@click.argument("path")
+@click.pass_context
+@catch_exceptions
+def list_stacks(ctx, path):
+    """
+    List sceptre_user_data.
+    \f
+
+    :param path: Path to execute the command on or path to stack group
+    """
+    context = SceptreContext(
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        output_format=ctx.obj.get("output_format"),
+        options=ctx.obj.get("options"),
+        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+    )
+
+    plan = SceptrePlan(context)
+    responses = plan.fetch_sceptre_user_data()
+    output = []
+    for stack, template in responses.items():
+        if template is None:
+            print(f"{stack.external_name} does not exist")
+        else:
+            print(yaml.dump(template))
+
+    write(output, context.output_format)

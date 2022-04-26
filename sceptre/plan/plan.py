@@ -368,6 +368,16 @@ class SceptrePlan(object):
         self.resolve(command=self.fetch_remote_template.__name__)
         return self._execute(*args)
 
+    def fetch_sceptre_user_data(self, *args):
+        """
+        Returns a generated Template for a given Stack
+
+        :returns: A list of Stacks and their template body.
+        :rtype: List[str]
+        """
+        self.resolve(command=self.fetch_sceptre_user_data.__name__)
+        return self._execute(*args)
+
     def diff(self, *args) -> Dict[Stack, StackDiff]:
         """
         Show diffs between the running and generated stack.
