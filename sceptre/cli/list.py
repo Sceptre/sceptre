@@ -153,3 +153,30 @@ def list_stacks(ctx, path):
     output = {f"{stack.name}.yaml": stack.external_name for stack in plan.graph}
     output_format = "json" if context.output_format == "json" else "yaml"
     write(output, output_format)
+
+
+@list_group.command(name="config")
+@click.argument("path")
+@click.pass_context
+@catch_exceptions
+def list_config(ctx, path):
+    """
+    List config.
+    \f
+
+    :param path: Path to execute the command on or path to stack group
+    """
+    context = SceptreContext(
+        command_path=path,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        output_format=ctx.obj.get("output_format"),
+        options=ctx.obj.get("options"),
+        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+    )
+
+    plan = SceptrePlan(context)
+
+    output = plan.read
+    output_format = "json" if context.output_format == "json" else "yaml"
+    write(output, output_format)
