@@ -194,7 +194,8 @@ class StackDiffer(Generic[DiffType]):
 
         if deployed_config is not None:
             # Trailing linebreaks sometimes get removed by CloudFormation in certain circumstances
-            # and can sometimes be added to files, but ultimately they shouldn't affect the diff.
+            # and can sometimes come from using the !file_contents resolver, but ultimately they
+            # shouldn't affect the diff. We'll ignore all trailing linebreaks.
             self._remove_terminating_linebreaks_from_deployed_parameters(
                 deployed_template_summary,
                 deployed_config
