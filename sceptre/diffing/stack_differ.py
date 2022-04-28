@@ -153,8 +153,8 @@ class StackDiffer(Generic[DiffType]):
         formatted_parameters = {}
         for key, value in stack.parameters.items():
             if isinstance(value, list):
-                value = ','.join(value)
-            formatted_parameters[key] = value.rstrip('\n')
+                value = ','.join(item.rstrip('\n') for item in value)
+            formatted_parameters[key] = value
 
         return formatted_parameters
 
