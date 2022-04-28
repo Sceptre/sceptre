@@ -1,7 +1,7 @@
 import difflib
 import logging
 from abc import abstractmethod
-from typing import NamedTuple, Dict, List, Optional, Callable, Tuple, Generic, TypeVar
+from typing import NamedTuple, Dict, List, Optional, Callable, Tuple, Generic, TypeVar, Union
 
 import cfn_flip
 import deepdiff
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class StackConfiguration(NamedTuple):
     """A data container to represent the comparable parts of a Stack."""
     stack_name: str
-    parameters: Dict[str, str]
+    parameters: Dict[str, Union[str, List[str]]]
     stack_tags: Dict[str, str]
     notifications: List[str]
     role_arn: Optional[str]
@@ -170,7 +170,7 @@ class StackDiffer(Generic[DiffType]):
                 return None
             return StackConfiguration(
                 parameters={
-                    param['ParameterKey']: param['ParameterValue'].rstrip('\n')
+                    param['ParameterKey']: param['ParameterValue']
                     for param
                     in stack.get('Parameters', [])
                 },
@@ -193,6 +193,13 @@ class StackDiffer(Generic[DiffType]):
         generated_template_summary = stack_actions.fetch_local_template_summary()
 
         if deployed_config is not None:
+            # Trailing linebreaks sometimes get removed by CloudFormation in certain circumstances
+            # and can sometimes be added to files, but ultimately they shouldn't affect the diff.
+            self._remove_terminating_linebreaks_from_deployed_parameters(
+                deployed_template_summary,
+                deployed_config
+            )
+
             # If the parameter is not passed by Sceptre and the value on the deployed parameter is
             # the default value, we'll actually remove it from the deployed parameters list so it
             # doesn't show up as a false positive.
@@ -206,6 +213,27 @@ class StackDiffer(Generic[DiffType]):
             # marks as NoEcho parameters (unless show_no_echo is set to true). Therefore those
             # parameter values will be masked.
             self._mask_no_echo_parameters(generated_template_summary, generated_config)
+
+    def _remove_terminating_linebreaks_from_deployed_parameters(
+        self,
+        template_summary: Optional[dict],
+        deployed_config: StackConfiguration
+    ):
+        if template_summary is None:
+            return
+
+        parameter_types = {
+            parameter['ParameterKey']: parameter['ParameterType']
+            for parameter in template_summary['Parameters']
+        }
+
+        for key, value in deployed_config.parameters.items():
+            parameter_type = parameter_types[key]
+            if parameter_type == 'CommaDelimitedList':
+                # If it's a list of strings, remove trailing linebreaks for each item
+                value = ','.join([item.rstrip('\n') for item in value.split(',')])
+
+            deployed_config.parameters[key] = value.rstrip('\n')
 
     def _remove_deployed_default_parameters_that_arent_passed(
         self,
