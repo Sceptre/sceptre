@@ -35,6 +35,7 @@ class SceptrePlan(object):
 
         config_reader = ConfigReader(context)
         all_stacks, command_stacks = config_reader.construct_stacks()
+        self.read = config_reader.read(self.context.command_path)
         self.graph = StackGraph(all_stacks)
         self.command_stacks = command_stacks
 

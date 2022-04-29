@@ -156,11 +156,11 @@ def list_stacks(ctx, path):
     write(output, output_format)
 
 
-@list_group.command(name="sceptre_user_data")
+@list_group.command(name="config")
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
-def list_stacks(ctx, path):
+def list_config(ctx, path):
     """
     List sceptre_user_data.
     \f
@@ -177,12 +177,7 @@ def list_stacks(ctx, path):
     )
 
     plan = SceptrePlan(context)
-    responses = plan.fetch_sceptre_user_data()
-    output = []
-    for stack, template in responses.items():
-        if template is None:
-            print(f"{stack.external_name} does not exist")
-        else:
-            print(yaml.dump(template))
 
-    write(output, context.output_format)
+    output = plan.read
+    output_format = "json" if context.output_format == "json" else "yaml"
+    write(output, output_format)
