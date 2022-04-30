@@ -1141,3 +1141,10 @@ class StackActions(object):
                 "StackName": self.stack.external_name
             }
         )
+
+    @add_stack_hooks
+    def list_config(self, config_reader, command_path):
+        """
+        Returns the Template for the Stack
+        """
+        return config_reader.read(command_path)

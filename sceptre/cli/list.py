@@ -174,9 +174,20 @@ def list_config(ctx, path):
         options=ctx.obj.get("options"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies")
     )
-
     plan = SceptrePlan(context)
+    responses = plan.list_config()
 
-    output = plan.read
+    output = []
+    for stack, config in responses.items():
+        if config is None:
+            logger.warning(f"{stack.external_name} does not exist")
+        else:
+            output.append({stack.external_name: config})
+
     output_format = "json" if context.output_format == "json" else "yaml"
-    write(output, output_format)
+
+    if len(output) == 1:
+        write(output[0][stack.external_name], output_format)
+    else:
+        for config in output:
+            write(config, output_format)
