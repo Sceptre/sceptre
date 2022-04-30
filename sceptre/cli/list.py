@@ -7,6 +7,8 @@ from sceptre.cli.helpers import (
 )
 from sceptre.plan.plan import SceptrePlan
 
+logger = logging.getLogger(__name__)
+
 
 @click.group(name="list")
 def list_group():
