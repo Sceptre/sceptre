@@ -217,4 +217,3 @@ This document took inspiration from the CONTRIBUTING files of the
 and
 [Boto3](https://github.com/boto/boto3/blob/e85febf46a819d901956f349afef0b0eaa4d906d/CONTRIBUTING.rst)
 projects.
-
