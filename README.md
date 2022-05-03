@@ -273,3 +273,12 @@ account and join the #sceptre channel.
 ## Contributing
 
 See our [Contributing Guide](CONTRIBUTING.md)
+
+
+## Sponsors
+
+[![Sage Bionetworks](sponsors/sage_bionetworks_logo.png "Sage Bionetworks")](https://sagebionetworks.org)
+
+[![Go Daddy](sponsors/godaddy_logo.png "Go Daddy")](https://www.godaddy.com)
+
+[![Cloudreach](sponsors/cloudreach_logo.png "Cloudreach")](https://www.cloudreach.com)
