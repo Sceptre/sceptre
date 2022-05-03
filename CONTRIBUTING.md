@@ -207,7 +207,8 @@ $ behave integration-tests -n "<scenario-name>"
 
 * [Sage Bionetworks](https://sagebionetworks.org/) donated the AWS account for running Sceptre integration
   tests.  Please contact it@sagebase.org for support.
-* [Go Daddy](https://www.godaddy.com/) donated [the domain](https://docs.sceptre-project.org) for hosting the Sceptre project.  Please contact oss@godaddy.com for support.
+* [GoDaddy](https://www.godaddy.com/) donated [the domain](https://docs.sceptre-project.org) for hosting
+  the Sceptre project.  Please contact oss@godaddy.com for support.
 
 # Credits
 
