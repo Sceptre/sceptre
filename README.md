@@ -277,8 +277,8 @@ See our [Contributing Guide](CONTRIBUTING.md)
 
 ## Sponsors
 
-[![SageBionetworks](sponsors/sage_bionetworks_logo.png "Sage Bionetworks")](https://sagebionetworks.org)
-
 [![GoDaddy](sponsors/godaddy_logo.png "GoDaddy")](https://www.godaddy.com)
 
 [![Cloudreach](sponsors/cloudreach_logo.png "Cloudreach")](https://www.cloudreach.com)
+
+[![Sage Bionetworks](sponsors/sage_bionetworks_logo.png "Sage Bionetworks")](https://sagebionetworks.org)
