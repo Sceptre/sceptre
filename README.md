@@ -266,9 +266,10 @@ Full API reference documentation can be found in the
 
 ## Communication
 
-The Sceptre community uses a Slack channel #sceptre on the og-aws Slack for
-discussion. To join use this link <http://slackhatesthe.cloud/> to create an
-account and join the #sceptre channel.
+Sceptre community discussions happen in the #sceptre chanel in the
+[og-aws Slack](https://github.com/open-guides/og-aws).  To join click
+on <http://slackhatesthe.cloud/> to create an account and join the
+#sceptre channel.
 
 ## Contributing
 
