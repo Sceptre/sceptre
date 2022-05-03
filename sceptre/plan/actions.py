@@ -1143,8 +1143,8 @@ class StackActions(object):
         )
 
     @add_stack_hooks
-    def list_config(self, config_reader, command_path):
+    def list_config(self, config_reader):
         """
         Returns the Template for the Stack
         """
-        return config_reader.read(command_path)
+        return config_reader.read(self.stack.name + ".yaml")

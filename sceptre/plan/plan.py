@@ -397,4 +397,4 @@ class SceptrePlan(object):
 
     def list_config(self, *args):
         self.resolve(command=self.list_config.__name__)
-        return self._execute(self.config_reader, self.context.command_path, *args)
+        return self._execute(self.config_reader, *args)
