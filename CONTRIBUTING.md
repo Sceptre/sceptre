@@ -203,6 +203,16 @@ $ behave integration-tests --include <feature-file>
 $ behave integration-tests -n "<scenario-name>"
 ```
 
+# Sponsors
+
+* [Sage Bionetworks](https://sagebionetworks.org/) donated the AWS account for running Sceptre integration
+  tests.  Please contact it@sagebase.org for support.
+* [GoDaddy](https://www.godaddy.com/) donated [the domain](https://docs.sceptre-project.org) for hosting
+  the Sceptre project.  Please contact oss@godaddy.com for support.
+* [Cloudreach](https://www.cloudreach.com/) started the Sceptre project and continuted to maintain it
+  until the ver 2.4 release.  It has since been extricated from Cloudreach and has been maintained
+  by members of the Sceptre open source community.
+
 # Credits
 
 This document took inspiration from the CONTRIBUTING files of the
