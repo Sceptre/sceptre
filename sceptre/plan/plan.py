@@ -395,6 +395,9 @@ class SceptrePlan(object):
         self.resolve(command=self.drift_show.__name__)
         return self._execute(*args)
 
-    def list_config(self, *args):
-        self.resolve(command=self.list_config.__name__)
+    def dump_config(self, *args):
+        """
+        Dump the config for a stack.
+        """
+        self.resolve(command=self.dump_config.__name__)
         return self._execute(self.config_reader, *args)

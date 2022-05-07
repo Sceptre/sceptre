@@ -27,6 +27,7 @@ from sceptre.exceptions import UnknownStackStatusError
 from sceptre.hooks import add_stack_hooks
 from sceptre.stack_status import StackChangeSetStatus
 from sceptre.stack_status import StackStatus
+from sceptre.config.reader import ConfigReader
 
 
 class StackActions(object):
@@ -1143,8 +1144,8 @@ class StackActions(object):
         )
 
     @add_stack_hooks
-    def list_config(self, config_reader):
+    def dump_config(self, config_reader: ConfigReader):
         """
-        Returns the Template for the Stack
+        Dump the config for a stack.
         """
         return config_reader.read(self.stack.name + ".yaml")
