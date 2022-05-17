@@ -341,6 +341,42 @@ class TestResolvableContainerPropertyDescriptor:
             'resolver': 'stack1'
         }
 
+    def test_get__resolver_resolves_to_none__value_is_dict__deletes_those_items_from_dict(self):
+        class MyResolver(Resolver):
+            def resolve(self):
+                return None
+
+        resolver = MyResolver()
+        self.mock_object.resolvable_container_property = {
+            'a': 4,
+            'b': resolver,
+            'c': 3,
+            'd': resolver,
+            'e': resolver,
+            'f': 5,
+        }
+        expected = {'a': 4, 'c': 3, 'f': 5}
+        assert self.mock_object.resolvable_container_property == expected
+
+    def test_get__resolver_resolves_to_none__value_is_dict__deletes_those_items_from_complex_structure(self):
+        class MyResolver(Resolver):
+            def resolve(self):
+                return None
+
+        resolver = MyResolver()
+        self.mock_object.resolvable_container_property = {
+            'a': 4,
+            'b': [
+                resolver,
+            ],
+            'c': [{
+                'v': resolver
+            }],
+            'd': 3
+        }
+        expected = {'a': 4, 'b': [], 'c': [{}], 'd': 3}
+        assert self.mock_object.resolvable_container_property == expected
+
     def test_get__resolver_resolves_to_none__value_is_list__deletes_that_item_from_list(self):
         class MyResolver(Resolver):
             def resolve(self):
@@ -366,6 +402,39 @@ class TestResolvableContainerPropertyDescriptor:
             'resolver': resolver
         }
         expected = {'some key': 'some value'}
+        assert self.mock_object.resolvable_container_property == expected
+
+    def test_get__resolvers_resolves_to_none__value_is_list__deletes_those_items_from_list(self):
+        class MyResolver(Resolver):
+            def resolve(self):
+                return None
+
+        resolver = MyResolver()
+
+        self.mock_object.resolvable_container_property = [
+            1,
+            resolver,
+            3,
+            resolver,
+            resolver,
+            6
+        ]
+        expected = [1, 3, 6]
+        assert self.mock_object.resolvable_container_property == expected
+
+    def test_get__resolvers_resolves_to_none__value_is_list__deletes_all_items_from_list(self):
+        class MyResolver(Resolver):
+            def resolve(self):
+                return None
+
+        resolver = MyResolver()
+
+        self.mock_object.resolvable_container_property = [
+            resolver,
+            resolver,
+            resolver
+        ]
+        expected = []
         assert self.mock_object.resolvable_container_property == expected
 
     def test_get__value_in_list_is_none__returns_list_with_none(self):
