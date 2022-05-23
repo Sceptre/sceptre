@@ -128,7 +128,7 @@ class StackDiffer(Generic[DiffType]):
         )
 
     def _create_generated_config(self, stack: Stack) -> StackConfiguration:
-        parameters = self._extract_parameters_dict(stack)
+        parameters = self._extract_parameters_from_generated_stack(stack)
         stack_configuration = StackConfiguration(
             stack_name=stack.external_name,
             parameters=parameters,
@@ -139,13 +139,9 @@ class StackDiffer(Generic[DiffType]):
 
         return stack_configuration
 
-    def _extract_parameters_dict(self, stack: Stack) -> dict:
-        """Extracts a USABLE dict of parameters from the stack.
-
-        Because stack parameters often contain resolvers referencing stacks that might not exist yet
-        (such as when producing a diff on a yet-to-be-deployed stack), we cannot always resolve the
-        stack parameters. Therefore, we need to resolve them (if possible) and fall back to a
-        different representation of that resolver, if necessary.
+    def _extract_parameters_from_generated_stack(self, stack: Stack) -> dict:
+        """Extracts a usable dict of parameters from the stack, performing some minor transformations
+        to match the what CloudFormation does on its end.
 
         :param stack: The stack to extract the parameters from
         :return: A dictionary of stack parameters to be compared.
