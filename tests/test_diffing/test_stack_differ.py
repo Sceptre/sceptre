@@ -353,6 +353,49 @@ class TestStackDiffer:
             self.expected_generated_config
         )
 
+    def test_diff__parameter_has_identical_string_linebreak__compares_identical_configs(self):
+        self.deployed_parameters['param'] = self.deployed_parameters['param'] + '\n'
+        self.parameters_on_stack_config['param'] = self.parameters_on_stack_config['param'] + '\n'
+
+        self.differ.diff(self.actions)
+        generated_config = deepcopy(self.expected_generated_config._asdict())
+        generated_parameters = generated_config.pop('parameters')
+        expected_config = StackConfiguration(
+            parameters={
+                key: value.rstrip('\n')
+                for key, value in generated_parameters.items()
+            },
+            **generated_config,
+        )
+
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            expected_config,
+            expected_config
+        )
+
+    def test_diff__parameter_has_identical_list_linebreaks__compares_identical_configs(self):
+        self.deployed_parameter_types['param'] = 'CommaDelimitedList'
+        self.deployed_parameters['param'] = 'testing\n,this\n,out\n'
+        self.parameters_on_stack_config['param'] = [
+            'testing\n',
+            'this\n',
+            'out\n'
+        ]
+
+        self.differ.diff(self.actions)
+        generated_config = deepcopy(self.expected_generated_config._asdict())
+        generated_parameters = generated_config.pop('parameters')
+        generated_parameters['param'] = 'testing,this,out'
+        expected_config = StackConfiguration(
+            parameters=generated_parameters,
+            **generated_config,
+        )
+
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            expected_config,
+            expected_config
+        )
+
     def test_diff__no_echo_default_parameter__generated_stack_doesnt_pass_parameter__compares_identical_configs(self):
         self.deployed_parameters['new'] = '****'
         self.deployed_parameter_defaults['new'] = 'default value'
