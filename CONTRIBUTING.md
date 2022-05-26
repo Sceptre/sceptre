@@ -137,7 +137,7 @@ installed on your system.
 Run unit tests and coverage using tox for multiple Python versions:
 
 ```bash
-$ tox -e py36 -e py37
+$ tox -e py38 -e py39
 ```
 
 If you use pyenv to manage Python versions, try `pip install tox-pyenv` to make
