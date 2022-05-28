@@ -25,6 +25,7 @@ from sceptre.exceptions import StackDoesNotExistError
 from sceptre.exceptions import UnknownStackChangeSetStatusError
 from sceptre.exceptions import UnknownStackStatusError
 from sceptre.hooks import add_stack_hooks
+from sceptre.stack import LaunchAction
 from sceptre.stack_status import StackChangeSetStatus
 from sceptre.stack_status import StackStatus
 
@@ -175,7 +176,7 @@ class StackActions(object):
         return self._wait_for_completion()
 
     @add_stack_hooks
-    def launch(self):
+    def launch(self) -> StackStatus:
         """
         Launches the Stack.
 
@@ -185,10 +186,15 @@ class StackActions(object):
         performed, launch exits gracefully.
 
         :returns: The Stack's status.
-        :rtype: sceptre.stack_status.StackStatus
         """
         self._protect_execution()
-        self.logger.info("%s - Launching Stack", self.stack.name)
+
+        if self.stack.launch_action == LaunchAction.exclude:
+            self.logger.info(f'{self.stack.name} is excluded - Deleting Stack (if it exists)')
+            return self.delete()
+
+        self.logger.info("f{self.stack.name} - Launching Stack")
+
         try:
             existing_status = self._get_status()
         except StackDoesNotExistError:

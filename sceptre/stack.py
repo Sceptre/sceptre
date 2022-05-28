@@ -8,6 +8,7 @@ This module implements a Stack class, which stores a Stack's data.
 """
 
 import logging
+from enum import Enum
 
 from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import InvalidConfigFileError
@@ -20,6 +21,11 @@ from sceptre.resolvers import (
     PlaceholderType
 )
 from sceptre.template import Template
+
+
+class LaunchAction(Enum):
+    include = 1
+    exclude = 2
 
 
 class Stack(object):
@@ -113,12 +119,17 @@ class Stack(object):
             will result in no timeout. Supports only positive integer value.
     :type stack_timeout: int
 
-    :param stack_group_config: The StackGroup config for the Stack
-    :type stack_group_config: dict
+    :param launch_action: If LaunchAction.include, will create/update the stack when the\
+            launch command is invoked. If LaunchAction.exclude, will delete the stack\
+            (if it exists) when the launch command is invoked.
+    :type launch_action: LaunchAction
 
     :param iam_role_session_duration: The session duration when Scetre assumes a role.\
            If not supplied, Sceptre uses default value (3600 seconds)
     :type iam_role_session_duration: int
+
+    :param stack_group_config: The StackGroup config for the Stack
+    :type stack_group_config: dict
 
     """
     parameters = ResolvableContainerProperty("parameters")
@@ -162,14 +173,16 @@ class Stack(object):
         required_version: str = None, parameters: dict = None, sceptre_user_data: dict = None, hooks: Hook = None,
         s3_details: dict = None, iam_role: str = None, dependencies=None, role_arn: str = None, protected: bool = False,
         tags: dict = None, external_name: str = None, notifications=None, on_failure: str = None, profile: str = None,
-        stack_timeout: int = 0, iam_role_session_duration: int = 0, stack_group_config: dict = {}
+        stack_timeout: int = 0, iam_role_session_duration: int = 0, launch_action: LaunchAction = LaunchAction.include,
+        stack_group_config: dict = {}
     ):
         self.logger = logging.getLogger(__name__)
 
-        if template_path and template_handler_config:
+        # If excluded from launch, we don't care about template configurations
+        if launch_action == LaunchAction.include and template_path and template_handler_config:
             raise InvalidConfigFileError("Both 'template_path' and 'template' are set, specify one or the other")
 
-        if not template_path and not template_handler_config:
+        if launch_action == LaunchAction.include and not template_path and not template_handler_config:
             raise InvalidConfigFileError("Neither 'template_path' nor 'template' is set")
 
         self.name = sceptreise_path(name)
@@ -186,6 +199,7 @@ class Stack(object):
         self.profile = profile
         self.template_key_prefix = template_key_prefix
         self.iam_role_session_duration = iam_role_session_duration
+        self.launch_action = launch_action
 
         self._template = None
         self._connection_manager = None
