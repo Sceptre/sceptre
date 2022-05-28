@@ -1,0 +1,4 @@
+# This stack shouldn't ever be launched
+launch_action: exclude
+
+# Since the launch type is exclude, we don't need any other attributes

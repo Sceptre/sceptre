@@ -29,6 +29,7 @@ def set_template_path(context, stack_name, template_name):
     if "template_path" in stack_config:
         stack_config["template_path"] = template_path
     if "template" in stack_config:
+        stack_config["template"]["type"] = stack_config["template"].get("type", "file")
         template_handler_type = stack_config["template"]["type"]
         if template_handler_type.lower() == 's3':
             segments = stack_config["template"]["path"].split('/')

@@ -1,0 +1,5 @@
+# This is the default so it isn't required, but for testing let's explicitly set it.
+launch_action: include
+
+template:
+  path: valid_template.yaml
