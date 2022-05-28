@@ -132,6 +132,9 @@ class TestStack(object):
                 region="region"
             )
 
+    def test__stack_has_excluded_launch_type__no_template_parameters__does_not_raise_error(self):
+        assert False
+
     def test_stack_repr(self):
         assert self.stack.__repr__() == \
             "sceptre.stack.Stack(" \

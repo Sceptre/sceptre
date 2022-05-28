@@ -153,10 +153,11 @@ class Stack(object):
     ):
         self.logger = logging.getLogger(__name__)
 
-        # If excluded from launch, we don't care about template configurations
-        if launch_action == LaunchAction.include and template_path and template_handler_config:
+        if template_path and template_handler_config:
             raise InvalidConfigFileError("Both 'template_path' and 'template' are set, specify one or the other")
 
+        # If excluded from launch, we don't care about template configurations. The config could be
+        # entirely empty apart from launch_action: exclude.
         if launch_action == LaunchAction.include and not template_path and not template_handler_config:
             raise InvalidConfigFileError("Neither 'template_path' nor 'template' is set")
 
