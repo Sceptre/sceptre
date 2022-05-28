@@ -24,8 +24,8 @@ from sceptre.template import Template
 
 
 class LaunchAction(Enum):
-    include = 1
-    exclude = 2
+    include = 1  # This is the default value for all stacks. It means launch runs create/update.
+    exclude = 2  # This means launch won't create and will delete it if it exists.
 
 
 class Stack(object):
@@ -33,103 +33,78 @@ class Stack(object):
     Stack stores information about a particular CloudFormation Stack.
 
     :param name: The name of the Stack.
-    :type project: str
 
     :param project_code: A code which is prepended to the Stack names\
             of all Stacks built by Sceptre.
-    :type project_code: str
 
     :param template_path: The relative path to the CloudFormation, Jinja2\
             or Python template to build the Stack from. If this is filled,
             `template_handler_config` should not be filled.
-    :type template_path: str
 
     :param template_handler_config: Configuration for a Template Handler that can resolve
             its arguments to a template string. Should contain the `type` property to specify
             the type of template handler to load. Conflicts with `template_path`.
-    :type template_handler_config: dict
 
     :param region: The AWS region to build Stacks in.
-    :type region: str
 
     :param template_bucket_name: The name of the S3 bucket the Template is uploaded to.
-    :type template_bucket_name: str
 
     :param template_key_prefix: A prefix to the key used to store templates uploaded to S3
-    :type template_key_prefix: str
 
     :param required_version: A PEP 440 compatible version specifier. If the Sceptre version does\
             not fall within the given version requirement it will abort.
-    :type required_version: str
 
     :param parameters: The keys must match up with the name of the parameter.\
             The value must be of the type as defined in the template.
-    :type parameters: dict
 
     :param sceptre_user_data: Data passed into\
             `sceptre_handler(sceptre_user_data)` function in Python templates\
             or accessible under `sceptre_user_data` variable within Jinja2\
             templates.
-    :type sceptre_user_data: dict
 
     :param hooks: A list of arbitrary shell or python commands or scripts to\
             run.
-    :type hooks: sceptre.hooks.Hook
 
     :param s3_details:
-    :type s3_details: dict
 
     :param dependencies: The relative path to the Stack, including the file\
             extension of the Stack.
-    :type dependencies: list
 
     :param role_arn: The ARN of a CloudFormation Service Role that is assumed\
             by CloudFormation to create, update or delete resources.
-    :type role_arn: str
 
     :param protected: Stack protection against execution.
-    :type protected: bool
 
     :param tags: CloudFormation Tags to be applied to the Stack.
-    :type tags: dict
 
     :param external_name:
-    :type external_name: str
 
     :param notifications: SNS topic ARNs to publish Stack related events to.\
             A maximum of 5 ARNs can be specified per Stack.
-    :type notifications: list
 
     :param on_failure: This parameter describes the action taken by\
             CloudFormation when a Stack fails to create.
-    :type on_failure: str
 
     :param iam_role: The ARN of a role for Sceptre to assume before interacting\
             with the environment. If not supplied, Sceptre uses the user's AWS CLI\
             credentials.
-    :type iam_role: str
 
     :param profile: The name of the profile as defined in ~/.aws/config and\
             ~/.aws/credentials.
-    :type profile: str
 
     :param stack_timeout: A timeout in minutes before considering the Stack\
             deployment as failed. After the specified timeout, the Stack will\
-            be rolled back. Specifiyng zero, as well as ommiting the field,\
+            be rolled back. Specifying zero, as well as omitting the field,\
             will result in no timeout. Supports only positive integer value.
-    :type stack_timeout: int
 
     :param launch_action: If LaunchAction.include, will create/update the stack when the\
             launch command is invoked. If LaunchAction.exclude, will delete the stack\
             (if it exists) when the launch command is invoked.
-    :type launch_action: LaunchAction
 
     :param iam_role_session_duration: The session duration when Scetre assumes a role.\
            If not supplied, Sceptre uses default value (3600 seconds)
-    :type iam_role_session_duration: int
 
     :param stack_group_config: The StackGroup config for the Stack
-    :type stack_group_config: dict
 
     """
     parameters = ResolvableContainerProperty("parameters")
