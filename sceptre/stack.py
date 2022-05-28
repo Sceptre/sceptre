@@ -270,6 +270,7 @@ class Stack(object):
                 notifications=self.notifications,
                 on_failure=self.on_failure,
                 stack_timeout=self.stack_timeout,
+                launch_type=self.launch_action.name,
                 stack_group_config=self.stack_group_config
             )
         )
@@ -302,6 +303,7 @@ class Stack(object):
             self.notifications == stack.notifications and
             self.on_failure == stack.on_failure and
             self.stack_timeout == stack.stack_timeout and
+            self.launch_action == stack.launch_action and
             self.stack_group_config == stack.stack_group_config
         )
 
