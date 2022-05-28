@@ -26,7 +26,7 @@ from sceptre.diffing.stack_differ import \
 
 from sceptre.exceptions import SceptreException
 from sceptre.plan.actions import StackActions
-from sceptre.stack import Stack
+from sceptre.stack import Stack, LaunchAction
 from sceptre.stack_status import StackStatus
 
 
@@ -49,6 +49,7 @@ class TestCli(object):
         self.mock_stack.profile = None
         self.mock_stack.external_name = 'mock-stack-external'
         self.mock_stack.dependencies = []
+        self.mock_stack.launch_action = LaunchAction.include
 
         self.mock_config_reader.construct_stacks.return_value = \
             set([self.mock_stack]), set([self.mock_stack])

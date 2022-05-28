@@ -16,6 +16,7 @@ from sceptre.exceptions import InvalidConfigFileError
 from freezegun import freeze_time
 from click.testing import CliRunner
 from sceptre.config.reader import ConfigReader
+from sceptre.stack import LaunchAction
 
 
 class TestConfigReader(object):
@@ -324,6 +325,7 @@ class TestConfigReader(object):
             required_version='>1.0',
             template_bucket_name='stack_group_template_bucket_name',
             template_key_prefix=None,
+            launch_action=LaunchAction.include,
             stack_group_config={
                 "project_path": self.context.project_path,
                 "custom_key": "custom_value"

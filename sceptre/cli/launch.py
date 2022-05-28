@@ -35,6 +35,7 @@ def launch_command(ctx, path, yes):
     )
 
     plan = SceptrePlan(context)
+    plan.resolve(plan.launch.__name__)
 
     stacks_to_exclude = []
     for stacks in plan.launch_order:
