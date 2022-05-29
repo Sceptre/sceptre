@@ -68,6 +68,7 @@ jobs:
             - project
 
   lint-and-unit-tests:
+    parallelism: 4
     docker:
       - image: cloudreach/sceptre-circleci:0.8.0
     steps:
