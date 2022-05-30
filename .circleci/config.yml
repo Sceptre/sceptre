@@ -38,11 +38,6 @@ jobs:
       - run:
           name: 'Creating Virtualenv'
           command: virtualenv --python=/home/circleci/.pyenv/versions/3.8.9/bin/python venv
-      - restore_cache:
-          key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
-            checksum "requirements/prod.txt" }}-{{ checksum
-            "requirements/dev.txt" }}
       - run:
           name: 'Installing Requirements'
           command: |
