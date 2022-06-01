@@ -53,7 +53,7 @@ jobs:
             checksum "requirements/prod.txt" }}-{{ checksum
             "requirements/dev.txt" }}
           paths:
-            - venv
+            - .pyenv/versions/3.9.4/envs/venv
       - run:
           name: 'Installing Sceptre'
           command: |
@@ -72,9 +72,9 @@ jobs:
           at: /home/circleci
       - restore_cache:
           key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-tox-requirements-{{ arch
-            }}-{{ checksum "requirements/prod.txt" }}-{{ checksum
-            "requirements/dev.txt" }} -{{ checksum "tox.ini" }}
+            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
+            checksum "requirements/prod.txt" }}-{{ checksum
+            "requirements/dev.txt" }}
       - run:
           name: 'Linting'
           command: |
@@ -112,6 +112,11 @@ jobs:
     steps:
       - attach_workspace:
           at: /home/circleci
+      - restore_cache:
+          key:
+            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
+            checksum "requirements/prod.txt" }}-{{ checksum
+            "requirements/dev.txt" }}
       - run:
           name: 'Integration Testing'
           command: |
