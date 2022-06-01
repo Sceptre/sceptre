@@ -37,7 +37,9 @@ jobs:
       - checkout
       - run:
           name: 'Creating Virtualenv'
-          command: pyenv virtualenv 3.9.4 venv
+          command: |
+            pyenv virtualenv 3.9.4 venv
+            pyenv versions
       - run:
           name: 'Installing Requirements'
           command: |
