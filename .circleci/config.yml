@@ -25,7 +25,7 @@ aliases:
           command: |
             chmod +x .circleci/add-known-hosts.sh
             ./.circleci/add-known-hosts.sh
-            pyenv activate venv
+            pyenv global venv
             chmod +x .circleci/github-pages.sh
             ./.circleci/github-pages.sh
 
@@ -37,7 +37,7 @@ jobs:
       - checkout
       - run:
           name: 'Creating Virtualenv'
-          command: virtualenv venv
+          command: pyenv virtualenv 3.9.4 venv && pyenv versions && ls -al ~/.pyenv/versions
       - restore_cache:
           key:
             sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
@@ -46,7 +46,7 @@ jobs:
       - run:
           name: 'Installing Requirements'
           command: |
-            pyenv virtualenv 3.9.4 venv
+            pyenv global venv
             pip install -r requirements/prod.txt
             pip install -r requirements/dev.txt
       - save_cache:
@@ -59,7 +59,7 @@ jobs:
       - run:
           name: 'Installing Sceptre'
           command: |
-            pyenv activate venv
+            pyenv global venv
             pip install .
       - persist_to_workspace:
           root: /home/circleci
@@ -80,7 +80,7 @@ jobs:
       - run:
           name: 'Linting'
           command: |
-            pyenv activate venv
+            pyenv global venv
             make lint
 
       - run:
@@ -117,7 +117,7 @@ jobs:
       - run:
           name: 'Integration Testing'
           command: |
-            pyenv activate venv
+            pyenv global venv
             mkdir -p ~/.aws
             echo -e "[default]\nregion=eu-west-1\nsource_profile=default\nrole_arn=arn:aws:iam::743644221192:role/sceptre-integration-test-ServiceRole-1SHK9LY0T6P3F" > ~/.aws/config
             echo -e "[default]\nregion=eu-west-1\naws_access_key_id=$CI_SERVICE_AWS_ACCESS_KEY_ID\naws_secret_access_key=$CI_SERVICE_AWS_SECRET_ACCESS_KEY" > ~/.aws/credentials
@@ -161,12 +161,12 @@ jobs:
       - run:
           name: 'Create Distributions'
           command: |
-            pyenv activate venv
+            pyenv global venv
             make dist
       - run:
           name: 'Upload Distributions'
           command: |
-            pyenv activate venv
+            pyenv global venv
             twine upload -u $PYPI_USERNAME -p $PYPI_PASSWORD dist/*
 
   deploy-latest-dockerhub:
