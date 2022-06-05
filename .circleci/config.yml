@@ -39,7 +39,6 @@ jobs:
           name: 'Creating Virtualenv'
           command: |
             pyenv virtualenv 3.9.4 venv
-            pyenv versions
       - run:
           name: 'Installing Requirements'
           command: |
@@ -62,7 +61,7 @@ jobs:
       - persist_to_workspace:
           root: /home/circleci
           paths:
-            - project
+            - .
 
   lint-and-unit-tests:
     docker:
@@ -93,7 +92,7 @@ jobs:
       - persist_to_workspace:
           root: /home/circleci
           paths:
-            - project
+            - .
 
       - save_cache:
           key:
