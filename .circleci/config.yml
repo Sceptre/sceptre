@@ -10,7 +10,7 @@ executors:
 aliases:
   - &docs-job
     docker:
-      - image: cloudreach/sceptre-circleci:0.8.0
+      - image: cloudreach/sceptre-circleci:1.0.0
         environment:
           REPOSITORY_PATH: '/home/circleci/docs'
           DEPLOYMENT_GIT_SSH: 'git@github.com:Sceptre/sceptre.github.io.git'
@@ -25,14 +25,14 @@ aliases:
           command: |
             chmod +x .circleci/add-known-hosts.sh
             ./.circleci/add-known-hosts.sh
-            . ./venv/bin/activate
+            pyenv activate venv
             chmod +x .circleci/github-pages.sh
             ./.circleci/github-pages.sh
 
 jobs:
   build:
     docker:
-      - image: cloudreach/sceptre-circleci:0.8.0
+      - image: cloudreach/sceptre-circleci:1.0.0
     steps:
       - checkout
       - run:
@@ -46,7 +46,7 @@ jobs:
       - run:
           name: 'Installing Requirements'
           command: |
-            . ./venv/bin/activate
+            pyenv virtualenv 3.9.4 venv
             pip install -r requirements/prod.txt
             pip install -r requirements/dev.txt
       - save_cache:
@@ -55,11 +55,11 @@ jobs:
             checksum "requirements/prod.txt" }}-{{ checksum
             "requirements/dev.txt" }}
           paths:
-            - venv
+            - /home/circleci/.pyenv/versions/venv
       - run:
           name: 'Installing Sceptre'
           command: |
-            . ./venv/bin/activate
+            pyenv activate venv
             pip install .
       - persist_to_workspace:
           root: /home/circleci
@@ -68,7 +68,7 @@ jobs:
 
   lint-and-unit-tests:
     docker:
-      - image: cloudreach/sceptre-circleci:0.8.0
+      - image: cloudreach/sceptre-circleci:1.0.0
     steps:
       - attach_workspace:
           at: /home/circleci
@@ -80,7 +80,7 @@ jobs:
       - run:
           name: 'Linting'
           command: |
-            . ./venv/bin/activate
+            pyenv activate venv
             make lint
 
       - run:
@@ -108,7 +108,7 @@ jobs:
   integration-tests:
     parallelism: 2
     docker:
-      - image: cloudreach/sceptre-circleci:0.8.0
+      - image: cloudreach/sceptre-circleci:1.0.0
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
@@ -117,7 +117,7 @@ jobs:
       - run:
           name: 'Integration Testing'
           command: |
-            . ./venv/bin/activate
+            pyenv activate venv
             mkdir -p ~/.aws
             echo -e "[default]\nregion=eu-west-1\nsource_profile=default\nrole_arn=arn:aws:iam::743644221192:role/sceptre-integration-test-ServiceRole-1SHK9LY0T6P3F" > ~/.aws/config
             echo -e "[default]\nregion=eu-west-1\naws_access_key_id=$CI_SERVICE_AWS_ACCESS_KEY_ID\naws_secret_access_key=$CI_SERVICE_AWS_SECRET_ACCESS_KEY" > ~/.aws/credentials
@@ -154,19 +154,19 @@ jobs:
 
   deploy-pypi:
     docker:
-      - image: cloudreach/sceptre-circleci:0.8.0
+      - image: cloudreach/sceptre-circleci:1.0.0
     steps:
       - attach_workspace:
           at: /home/circleci
       - run:
           name: 'Create Distributions'
           command: |
-            . ./venv/bin/activate
+            pyenv activate venv
             make dist
       - run:
           name: 'Upload Distributions'
           command: |
-            . ./venv/bin/activate
+            pyenv activate venv
             twine upload -u $PYPI_USERNAME -p $PYPI_PASSWORD dist/*
 
   deploy-latest-dockerhub:
