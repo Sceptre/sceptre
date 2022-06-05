@@ -45,7 +45,6 @@ jobs:
             pyenv global venv
             pip install -r requirements/prod.txt
             pip install -r requirements/dev.txt
-            pip install awscli
       - save_cache:
           key:
             sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
