@@ -61,17 +61,21 @@ jobs:
           command: |
             pyenv global venv
             pip install .
-#      - persist_to_workspace:
-#          root: /home/circleci
-#          paths:
-#            - project
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - .
 
   lint-and-unit-tests:
     docker:
       - image: cloudreach/sceptre-circleci:1.0.0
     steps:
-#      - attach_workspace:
-#          at: /home/circleci
+      - attach_workspace:
+          at: /home/circleci
+      - run:
+          name: 'Debug'
+          command: |
+            ls -l -a && pyenv versions && ls -al ~/.pyenv/versions
       - restore_cache:
           key:
             sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
@@ -94,10 +98,10 @@ jobs:
           path: coverage.xml
           destination: coverage-reports
 
-#      - persist_to_workspace:
-#          root: /home/circleci
-#          paths:
-#            - project
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - project
 #
 #      - save_cache:
 #          key:
@@ -114,8 +118,8 @@ jobs:
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
-#      - attach_workspace:
-#          at: /home/circleci
+      - attach_workspace:
+          at: /home/circleci
       - run:
           name: 'Integration Testing'
           command: |
