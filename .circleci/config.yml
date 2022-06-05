@@ -38,11 +38,11 @@ jobs:
       - run:
           name: 'Creating Virtualenv'
           command: pyenv virtualenv 3.9.4 venv && pyenv versions && ls -al ~/.pyenv/versions
-      - restore_cache:
-          key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
-            checksum "requirements/prod.txt" }}-{{ checksum
-            "requirements/dev.txt" }}
+#      - restore_cache:
+#          key:
+#            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
+#            checksum "requirements/prod.txt" }}-{{ checksum
+#            "requirements/dev.txt" }}
       - run:
           name: 'Installing Requirements'
           command: |
@@ -55,7 +55,7 @@ jobs:
             checksum "requirements/prod.txt" }}-{{ checksum
             "requirements/dev.txt" }}
           paths:
-            - /home/circleci/.pyenv/versions/venv
+            - ~/.pyenv/versions/venv
       - run:
           name: 'Installing Sceptre'
           command: |
@@ -80,6 +80,8 @@ jobs:
       - run:
           name: 'Linting'
           command: |
+            ls -al ~/.pyenv/versions
+            pyenv versions
             pyenv global venv
             make lint
 
