@@ -14,7 +14,7 @@ import botocore
 from sceptre.exceptions import TemplateHandlerNotFoundError
 try:
     from importlib.metadata import entry_points as iter_entry_points
-except:
+except ImportError:
     from pkg_resources import iter_entry_points
 
 

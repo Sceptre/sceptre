@@ -17,7 +17,7 @@ from typing import Set
 
 try:
     from importlib.metadata import entry_points as iter_entry_points
-except:
+except ImportError:
     from pkg_resources import iter_entry_points
 
 from pathlib import Path
