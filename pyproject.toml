@@ -77,6 +77,9 @@ pytest-cov = "^3.0.0"
 pytest-sugar = "^0.9.4"
 tox = "^3.25.0"
 Sphinx = "<5.0"
+sphinx-click = "^4.1.0"
+sphinx-rtd-theme = "^1.0.0"
+sphinx-autodoc-typehints = "<1.18"
 
 [tool.poetry.scripts]
 sceptre = "sceptre.cli:cli"
