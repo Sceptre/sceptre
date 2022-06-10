@@ -10,11 +10,13 @@ and implements methods for uploading it to S3.
 import logging
 import threading
 import botocore
+import sys
 
 from sceptre.exceptions import TemplateHandlerNotFoundError
-try:
+
+if sys.version_info > (3, 9):
     from importlib.metadata import entry_points as iter_entry_points
-except ImportError:
+else:
     from pkg_resources import iter_entry_points
 
 
@@ -249,7 +251,12 @@ class Template(object):
         if not self._registry:
             self._registry = {}
 
-            for entry_point in iter_entry_points(group="sceptre.template_handlers", name=type):
+            if sys.version_info > (3,9):
+                entry_points = iter_entry_points(group="sceptre.template_handlers", name=type)
+            else:
+                entry_points = iter_entry_points("sceptre.template_handlers", type)
+
+            for entry_point in entry_points:
                 self._registry[entry_point.name] = entry_point.load()
 
         if type not in self._registry:
