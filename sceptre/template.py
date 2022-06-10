@@ -12,7 +12,10 @@ import threading
 import botocore
 
 from sceptre.exceptions import TemplateHandlerNotFoundError
-from pkg_resources import iter_entry_points
+try:
+    from importlib.metadata import entry_points as iter_entry_points
+except:
+    from pkg_resources import iter_entry_points
 
 
 class Template(object):
@@ -246,7 +249,7 @@ class Template(object):
         if not self._registry:
             self._registry = {}
 
-            for entry_point in iter_entry_points("sceptre.template_handlers", type):
+            for entry_point in iter_entry_points(group="sceptre.template_handlers", name=type):
                 self._registry[entry_point.name] = entry_point.load()
 
         if type not in self._registry:

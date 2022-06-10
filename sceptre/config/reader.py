@@ -15,7 +15,11 @@ import logging
 from os import environ, path, walk
 from typing import Set
 
-from pkg_resources import iter_entry_points
+try:
+    from importlib.metadata import entry_points as iter_entry_points
+except:
+    from pkg_resources import iter_entry_points
+
 from pathlib import Path
 import yaml
 
@@ -171,7 +175,7 @@ class ConfigReader(object):
             return class_constructor
 
         for group in entry_point_groups:
-            for entry_point in iter_entry_points(group):
+            for entry_point in iter_entry_points(group=group):
                 # Retrieve name and class from entry point
                 node_tag = u'!' + entry_point.name
                 node_class = entry_point.load()
