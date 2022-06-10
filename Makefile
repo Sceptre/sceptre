@@ -57,7 +57,7 @@ test:
 	pytest
 
 test-all:
-	tox
+	tox --parallel=auto
 
 test-integration: install
 	behave integration-tests/
