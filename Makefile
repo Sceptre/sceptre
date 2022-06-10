@@ -51,66 +51,60 @@ clean-test:
 	rm -f test-results.xml
 
 lint:
-	pre-commit run --all-files --show-diff-on-failure
+	poetry run pre-commit run --all-files --show-diff-on-failure
 
 test:
-	pytest
+	poetry run pytest
 
 test-all:
-	tox --parallel=auto
+	poetry run tox --parallel=auto
 
 test-integration: install
-	behave integration-tests/
+	poetry run behave integration-tests/
 
 docs:
 	rm -f docs/sceptre.rst
 	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ sceptre
-	$(MAKE) -C docs clean
-	$(MAKE) -C docs html
+	poetry run sphinx-apidoc -o docs/ sceptre
+	poetry run $(MAKE) -C docs clean
+	poetry run $(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
 
 docs-latest:
-	$(MAKE) -C docs build-latest
+	poetry run $(MAKE) -C docs build-latest
 
 docs-build-tag:
-	$(MAKE) -C docs build-tag
+	poetry run $(MAKE) -C docs build-tag
 
 docs-build-dev:
-	$(MAKE) -C docs build-dev
+	poetry run $(MAKE) -C docs build-dev
 
 docs-build-commit:
-	$(MAKE) -C docs build-commit
+	poetry run $(MAKE) -C docs build-commit
 
 docs-serve-latest:
-	$(MAKE) -C docs serve-latest
+	poetry run $(MAKE) -C docs serve-latest
 
 docs-serve-tag:
-	$(MAKE) -C docs serve-tag
+	poetry run $(MAKE) -C docs serve-tag
 
 docs-serve-dev:
-	$(MAKE) -C docs serve-dev
+	poetry run $(MAKE) -C docs serve-dev
 
 docs-serve-commit: docs-commit
-	$(MAKE) -C docs serve-commit
+	poetry run $(MAKE) -C docs serve-commit
 
 docs-install:
-	$(MAKE) -C docs install
+	poetry run $(MAKE) -C docs install
 
 docs-clean:
-	$(MAKE) -C docs clean
+	poetry run $(MAKE) -C docs clean
 
 dist: clean
-	python setup.py sdist
-	python setup.py bdist_wheel
-	twine check dist/*
-	ls -l dist
+	poetry build
 
 install: clean
-	pip install .
+	poetry install --no-dev --remove-untracked
 
 install-dev: clean
-	pip install -r requirements/prod.txt
-	pip install -r requirements/dev.txt
-	pip install -e .
-	@echo "To install the documentation dependencies, run:\ncd docs\nmake install"
+	poetry install --remove-untracked
