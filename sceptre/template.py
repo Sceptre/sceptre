@@ -251,7 +251,7 @@ class Template(object):
         if not self._registry:
             self._registry = {}
 
-            if sys.version_info > (3,9):
+            if sys.version_info > (3, 9):
                 entry_points = iter_entry_points(group="sceptre.template_handlers", name=type)
             else:
                 entry_points = iter_entry_points("sceptre.template_handlers", type)

@@ -176,7 +176,7 @@ class ConfigReader(object):
             return class_constructor
 
         for group in entry_point_groups:
-            if sys.version_info > (3,9):
+            if sys.version_info > (3, 9):
                 entry_points = iter_entry_points(group=group)
             else:
                 entry_points = iter_entry_points(group)
