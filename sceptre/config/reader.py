@@ -16,10 +16,10 @@ import sys
 from os import environ, path, walk
 from typing import Set
 
-if sys.version_info > (3, 9):
-    from importlib.metadata import entry_points as iter_entry_points
-else:
+if sys.version_info < (3, 10):
     from pkg_resources import iter_entry_points
+else:
+    from importlib.metadata import entry_points as iter_entry_points
 
 from pathlib import Path
 import yaml
@@ -176,10 +176,10 @@ class ConfigReader(object):
             return class_constructor
 
         for group in entry_point_groups:
-            if sys.version_info > (3, 9):
-                entry_points = iter_entry_points(group=group)
+            if sys.version_info < (3, 10):
+                entry_points = iter_entry_points("sceptre.template_handlers", type)
             else:
-                entry_points = iter_entry_points(group)
+                entry_points = iter_entry_points(group="sceptre.template_handlers", name=type)
 
             for entry_point in entry_points:
                 # Retrieve name and class from entry point

@@ -14,10 +14,10 @@ import sys
 
 from sceptre.exceptions import TemplateHandlerNotFoundError
 
-if sys.version_info > (3, 9):
-    from importlib.metadata import entry_points as iter_entry_points
-else:
+if sys.version_info < (3, 10):
     from pkg_resources import iter_entry_points
+else:
+    from importlib.metadata import entry_points as iter_entry_points
 
 
 class Template(object):
@@ -251,10 +251,10 @@ class Template(object):
         if not self._registry:
             self._registry = {}
 
-            if sys.version_info > (3, 9):
-                entry_points = iter_entry_points(group="sceptre.template_handlers", name=type)
-            else:
+            if sys.version_info < (3, 10):
                 entry_points = iter_entry_points("sceptre.template_handlers", type)
+            else:
+                entry_points = iter_entry_points(group="sceptre.template_handlers", name=type)
 
             for entry_point in entry_points:
                 self._registry[entry_point.name] = entry_point.load()
