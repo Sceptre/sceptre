@@ -177,9 +177,9 @@ class ConfigReader(object):
 
         for group in entry_point_groups:
             if sys.version_info < (3, 10):
-                entry_points = iter_entry_points("sceptre.template_handlers", type)
+                entry_points = iter_entry_points(group)
             else:
-                entry_points = iter_entry_points(group="sceptre.template_handlers", name=type)
+                entry_points = iter_entry_points(group=group)
 
             for entry_point in entry_points:
                 # Retrieve name and class from entry point
