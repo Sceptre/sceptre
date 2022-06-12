@@ -39,6 +39,11 @@ jobs:
           name: 'Creating Virtualenv'
           command: |
             pyenv virtualenv 3.9.4 venv
+      - restore_cache:
+          key:
+            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
+            checksum "requirements/prod.txt" }}-{{ checksum
+            "requirements/dev.txt" }}
       - run:
           name: 'Installing Dependencies'
           command: |
