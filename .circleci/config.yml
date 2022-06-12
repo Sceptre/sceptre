@@ -55,7 +55,7 @@ jobs:
             checksum "requirements/prod.txt" }}-{{ checksum
             "requirements/dev.txt" }}
           paths:
-            - .pyenv/versions/3.9.4/envs/venv
+            - ../.pyenv/versions/3.9.4/envs/venv
       - run:
           name: 'Installing Sceptre'
           command: |
