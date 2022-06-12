@@ -40,11 +40,10 @@ jobs:
           command: |
             pyenv virtualenv 3.9.4 venv
       - run:
-          name: 'Installing Requirements'
+          name: 'Installing Dependencies'
           command: |
             pyenv global venv
-            pip install -r requirements/prod.txt
-            pip install -r requirements/dev.txt
+            make install-dev
       - save_cache:
           key:
             sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
@@ -70,36 +69,32 @@ jobs:
           at: /home/circleci
       - restore_cache:
           key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
-            checksum "requirements/prod.txt" }}-{{ checksum
-            "requirements/dev.txt" }}
+            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch
+            }}-{{ checksum "requirements/prod.txt" }}-{{ checksum
+            "requirements/dev.txt" }}-{{ checksum "tox.ini" }}
       - run:
           name: 'Linting'
           command: |
             pyenv global venv
             make lint
-
       - run:
           name: 'Unit Test'
           command: |
             make test-all
-
-      - store_test_results:
-          path: coverage.xml
-          destination: coverage-reports
-
-      - persist_to_workspace:
-          root: /home/circleci
-          paths:
-            - .
-
       - save_cache:
           key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-tox-requirements-{{ arch
+            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch
             }}-{{ checksum "requirements/prod.txt" }}-{{ checksum
             "requirements/dev.txt" }}-{{ checksum "tox.ini" }}
           paths:
             - .tox
+      - store_test_results:
+          path: coverage.xml
+          destination: coverage-reports
+      - persist_to_workspace:
+          root: /home/circleci
+          paths:
+            - .
 
   integration-tests:
     parallelism: 2
