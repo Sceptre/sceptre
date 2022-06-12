@@ -35,6 +35,11 @@ jobs:
       - image: cloudreach/sceptre-circleci:1.0.0
     steps:
       - checkout
+      - restore_cache:
+          key:
+            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
+            checksum "requirements/prod.txt" }}-{{ checksum
+            "requirements/dev.txt" }}
       - run:
           name: 'Creating Virtualenv'
           command: |
