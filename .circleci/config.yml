@@ -65,6 +65,7 @@ jobs:
           root: /home/circleci
           paths:
             - project
+            - .pyenv
 
   lint-and-unit-tests:
     docker:
@@ -80,11 +81,6 @@ jobs:
               checksum "requirements/prod.txt" }}-{{ checksum
               "requirements/dev.txt" }}-{{ checksum "tox.ini" }}
       - run:
-          name: 'Installing Dependencies'
-          command: |
-            pyenv global venv
-            make install-dev
-      - run:
           name: 'Linting'
           command: |
             pyenv global venv
@@ -92,6 +88,7 @@ jobs:
       - run:
           name: 'Unit Test'
           command: |
+            pyenv global venv
             make test-all
       - save_cache:
           key:
@@ -103,10 +100,6 @@ jobs:
       - store_test_results:
           path: coverage.xml
           destination: coverage-reports
-      - persist_to_workspace:
-          root: /home/circleci
-          paths:
-            - project
 
   integration-tests:
     parallelism: 2
@@ -122,11 +115,6 @@ jobs:
             sceptre-{{ .Environment.CACHE_VERSION }}-dependencies-{{ arch }}-{{
             checksum "requirements/prod.txt" }}-{{ checksum
             "requirements/dev.txt" }}
-      - run:
-          name: 'Installing Dependencies'
-          command: |
-            pyenv global venv
-            make install-dev
       - run:
           name: 'Integration Testing'
           command: |
