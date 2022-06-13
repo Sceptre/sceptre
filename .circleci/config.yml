@@ -80,6 +80,11 @@ jobs:
               checksum "requirements/prod.txt" }}-{{ checksum
               "requirements/dev.txt" }}-{{ checksum "tox.ini" }}
       - run:
+          name: 'Installing Dependencies'
+          command: |
+            pyenv global venv
+            make install-dev
+      - run:
           name: 'Linting'
           command: |
             pyenv global venv
@@ -117,6 +122,11 @@ jobs:
             sceptre-{{ .Environment.CACHE_VERSION }}-dependencies-{{ arch }}-{{
             checksum "requirements/prod.txt" }}-{{ checksum
             "requirements/dev.txt" }}
+      - run:
+          name: 'Installing Dependencies'
+          command: |
+            pyenv global venv
+            make install-dev
       - run:
           name: 'Integration Testing'
           command: |
@@ -161,6 +171,16 @@ jobs:
     steps:
       - attach_workspace:
           at: /home/circleci
+      - restore_cache:
+          key:
+            sceptre-{{ .Environment.CACHE_VERSION }}-dependencies-{{ arch }}-{{
+            checksum "requirements/prod.txt" }}-{{ checksum
+            "requirements/dev.txt" }}
+      - run:
+          name: 'Installing Dependencies'
+          command: |
+            pyenv global venv
+            make install-dev
       - run:
           name: 'Create Distributions'
           command: |
