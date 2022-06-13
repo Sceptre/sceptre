@@ -64,7 +64,7 @@ jobs:
       - persist_to_workspace:
           root: /home/circleci
           paths:
-            - .
+            - project
 
   lint-and-unit-tests:
     docker:
@@ -101,7 +101,7 @@ jobs:
       - persist_to_workspace:
           root: /home/circleci
           paths:
-            - .
+            - project
 
   integration-tests:
     parallelism: 2
