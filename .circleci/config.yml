@@ -41,7 +41,7 @@ jobs:
             pyenv virtualenv 3.9.4 venv
       - restore_cache:
           key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
+            sceptre-{{ .Environment.CACHE_VERSION }}-dependencies-{{ arch }}-{{
             checksum "requirements/prod.txt" }}-{{ checksum
             "requirements/dev.txt" }}
       - run:
@@ -51,7 +51,7 @@ jobs:
             make install-dev
       - save_cache:
           key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
+            sceptre-{{ .Environment.CACHE_VERSION }}-dependencies-{{ arch }}-{{
             checksum "requirements/prod.txt" }}-{{ checksum
             "requirements/dev.txt" }}
           paths:
@@ -73,10 +73,12 @@ jobs:
       - attach_workspace:
           at: /home/circleci
       - restore_cache:
-          key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch
-            }}-{{ checksum "requirements/prod.txt" }}-{{ checksum
-            "requirements/dev.txt" }}-{{ checksum "tox.ini" }}
+          keys:
+            - sceptre-{{ .Environment.CACHE_VERSION }}-dependencies-{{ arch }}-{{
+              checksum "requirements/prod.txt" }}-{{ checksum "requirements/dev.txt" }}
+            - sceptre-{{ .Environment.CACHE_VERSION }}-dependencies-{{ arch }}-{{
+              checksum "requirements/prod.txt" }}-{{ checksum
+              "requirements/dev.txt" }}-{{ checksum "tox.ini" }}
       - run:
           name: 'Linting'
           command: |
@@ -88,7 +90,7 @@ jobs:
             make test-all
       - save_cache:
           key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch
+            sceptre-{{ .Environment.CACHE_VERSION }}-{{ arch
             }}-{{ checksum "requirements/prod.txt" }}-{{ checksum
             "requirements/dev.txt" }}-{{ checksum "tox.ini" }}
           paths:
@@ -112,7 +114,7 @@ jobs:
           at: /home/circleci
       - restore_cache:
           key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-requirements-{{ arch }}-{{
+            sceptre-{{ .Environment.CACHE_VERSION }}-dependencies-{{ arch }}-{{
             checksum "requirements/prod.txt" }}-{{ checksum
             "requirements/dev.txt" }}
       - run:
