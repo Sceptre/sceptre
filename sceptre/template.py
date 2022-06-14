@@ -234,7 +234,7 @@ class Template(object):
     def _domain_from_region(region):
         return "com.cn" if region.startswith("cn-") else "com"
 
-    def iterate_entry_points(group, name):
+    def _iterate_entry_points(group, name):
         """
         Helper to determine whether to use pkg_resources or importlib.metadata.
         https://docs.python.org/3/library/importlib.metadata.html
@@ -258,7 +258,7 @@ class Template(object):
         if not self._registry:
             self._registry = {}
 
-            for entry_point in iterate_entry_points("sceptre.template_handlers", type):
+            for entry_point in self._iterate_entry_points("sceptre.template_handlers", type):
                 self._registry[entry_point.name] = entry_point.load()
 
         if type not in self._registry:

@@ -136,7 +136,7 @@ class ConfigReader(object):
 
         self.templating_vars = {"var": self.context.user_variables}
 
-    def iterate_entry_points(group):
+    def _iterate_entry_points(group):
         """
         Helper to determine whether to use pkg_resources or importlib.metadata.
         https://docs.python.org/3/library/importlib.metadata.html
@@ -183,7 +183,7 @@ class ConfigReader(object):
 
         for group in entry_point_groups:
 
-            for entry_point in iterate_entry_points(group):
+            for entry_point in self._iterate_entry_points(group):
                 # Retrieve name and class from entry point
                 node_tag = u'!' + entry_point.name
                 node_class = entry_point.load()
