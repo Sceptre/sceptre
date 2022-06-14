@@ -138,8 +138,8 @@ class ConfigReader(object):
 
     def iterate_entry_points(group):
         """
-        Helper to determine whether to use pkg_resources or
-        importlib.metadata.
+        Helper to determine whether to use pkg_resources or importlib.metadata.
+        https://docs.python.org/3/library/importlib.metadata.html
         """
         if sys.version_info < (3, 10):
             from pkg_resources import iter_entry_points

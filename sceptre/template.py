@@ -14,11 +14,6 @@ import sys
 
 from sceptre.exceptions import TemplateHandlerNotFoundError
 
-if sys.version_info < (3, 10):
-    from pkg_resources import iter_entry_points
-else:
-    from importlib.metadata import entry_points as iter_entry_points
-
 
 class Template(object):
     """
@@ -241,8 +236,8 @@ class Template(object):
 
     def iterate_entry_points(group, name):
         """
-        Helper to determine whether to use pkg_resources or
-        importlib.metadata.
+        Helper to determine whether to use pkg_resources or importlib.metadata.
+        https://docs.python.org/3/library/importlib.metadata.html
         """
         if sys.version_info < (3, 10):
             from pkg_resources import iter_entry_points
