@@ -136,6 +136,7 @@ class ConfigReader(object):
 
         self.templating_vars = {"var": self.context.user_variables}
 
+    @staticmethod
     def _iterate_entry_points(group):
         """
         Helper to determine whether to use pkg_resources or importlib.metadata.

@@ -234,6 +234,7 @@ class Template(object):
     def _domain_from_region(region):
         return "com.cn" if region.startswith("cn-") else "com"
 
+    @staticmethod
     def _iterate_entry_points(group, name):
         """
         Helper to determine whether to use pkg_resources or importlib.metadata.
