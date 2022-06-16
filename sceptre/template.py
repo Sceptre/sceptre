@@ -10,9 +10,9 @@ and implements methods for uploading it to S3.
 import logging
 import threading
 import botocore
+import sys
 
 from sceptre.exceptions import TemplateHandlerNotFoundError
-from pkg_resources import iter_entry_points
 
 
 class Template(object):
@@ -234,6 +234,19 @@ class Template(object):
     def _domain_from_region(region):
         return "com.cn" if region.startswith("cn-") else "com"
 
+    @staticmethod
+    def _iterate_entry_points(group, name):
+        """
+        Helper to determine whether to use pkg_resources or importlib.metadata.
+        https://docs.python.org/3/library/importlib.metadata.html
+        """
+        if sys.version_info < (3, 10):
+            from pkg_resources import iter_entry_points
+            return iter_entry_points(group, name)
+        else:
+            from importlib.metadata import entry_points
+            return entry_points(group=group, name=name)
+
     def _get_handler_of_type(self, type):
         """
         Gets a TemplateHandler type from the registry that can be used to get a string
@@ -246,7 +259,7 @@ class Template(object):
         if not self._registry:
             self._registry = {}
 
-            for entry_point in iter_entry_points("sceptre.template_handlers", type):
+            for entry_point in self._iterate_entry_points("sceptre.template_handlers", type):
                 self._registry[entry_point.name] = entry_point.load()
 
         if type not in self._registry:

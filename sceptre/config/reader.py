@@ -12,13 +12,12 @@ import copy
 import datetime
 import fnmatch
 import logging
-from os import environ, path, walk
-from typing import Set
-
-from pkg_resources import iter_entry_points
-from pathlib import Path
+import sys
 import yaml
 
+from os import environ, path, walk
+from typing import Set
+from pathlib import Path
 from jinja2 import Environment
 from jinja2 import StrictUndefined
 from jinja2 import FileSystemLoader
@@ -137,6 +136,19 @@ class ConfigReader(object):
 
         self.templating_vars = {"var": self.context.user_variables}
 
+    @staticmethod
+    def _iterate_entry_points(group):
+        """
+        Helper to determine whether to use pkg_resources or importlib.metadata.
+        https://docs.python.org/3/library/importlib.metadata.html
+        """
+        if sys.version_info < (3, 10):
+            from pkg_resources import iter_entry_points
+            return iter_entry_points(group)
+        else:
+            from importlib.metadata import entry_points
+            return entry_points(group=group)
+
     def _add_yaml_constructors(self, entry_point_groups):
         """
         Adds PyYAML constructor functions for all classes found registered at
@@ -171,7 +183,8 @@ class ConfigReader(object):
             return class_constructor
 
         for group in entry_point_groups:
-            for entry_point in iter_entry_points(group):
+
+            for entry_point in self._iterate_entry_points(group):
                 # Retrieve name and class from entry point
                 node_tag = u'!' + entry_point.name
                 node_class = entry_point.load()
