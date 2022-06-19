@@ -25,7 +25,7 @@ def dump_group():
 @catch_exceptions
 def dump_config(ctx, path):
     """
-    Dump config.
+    Dump the rendered (post-Jinja) Stack Configs as yaml.
     \f
 
     :param path: Path to execute the command on or path to stack group
