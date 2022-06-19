@@ -5,7 +5,7 @@ import json
 import pytest
 from botocore.exceptions import ClientError
 from dateutil.tz import tzutc
-from unittest.mock import patch, sentinel, Mock, call
+from unittest.mock import patch, sentinel, Mock, call, DEFAULT
 
 from sceptre.exceptions import CannotUpdateFailedStackError
 from sceptre.exceptions import ProtectedStackError
@@ -13,7 +13,7 @@ from sceptre.exceptions import StackDoesNotExistError
 from sceptre.exceptions import UnknownStackChangeSetStatusError
 from sceptre.exceptions import UnknownStackStatusError
 from sceptre.plan.actions import StackActions
-from sceptre.stack import Stack
+from sceptre.stack import Stack, LaunchAction
 from sceptre.stack_status import StackChangeSetStatus
 from sceptre.stack_status import StackStatus
 from sceptre.template import Template
@@ -364,8 +364,17 @@ class TestStackActions(object):
         mock_create.assert_called_once_with()
         assert response == sentinel.launch_response
 
-    def test_launch__excluded_stack_that_does_not_exist__returns_complete_status_without_create(self):
-        assert False
+    @patch("sceptre.plan.actions.StackActions.create")
+    @patch("sceptre.plan.actions.StackActions._get_status")
+    def test_launch__excluded_stack_that_does_not_exist__returns_complete_status_without_create(
+        self, mock_get_status, mock_create
+    ):
+        self.stack.launch_action = LaunchAction.exclude
+        mock_get_status.side_effect = StackDoesNotExistError()
+        result = self.actions.launch()
+
+        mock_create.assert_not_called()
+        assert result == StackStatus.COMPLETE
 
     @pytest.mark.parametrize('current_status', [
         'CREATE_COMPLETE',
@@ -377,7 +386,22 @@ class TestStackActions(object):
         'UPDATE_FAILED',
     ])
     def test_launch__excluded_stack_exists__deletes_stack(self, current_status):
-        assert False
+        get_status = Mock()
+        self.stack.launch_action = LaunchAction.exclude
+
+        with patch.multiple(
+            'sceptre.plan.actions.StackActions',
+            _get_status=get_status,
+            _wait_for_completion=DEFAULT
+        ):
+            get_status.return_value = current_status
+            self.actions.launch()
+
+        self.mock_ConnectionManager.return_value.call.assert_any_call(
+            service='cloudformation',
+            command='delete_stack',
+            kwargs={'StackName': self.stack.external_name, 'RoleARN': self.stack.role_arn}
+        )
 
     @patch("sceptre.plan.actions.StackActions.create")
     @patch("sceptre.plan.actions.StackActions.delete")
