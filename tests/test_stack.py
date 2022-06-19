@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import importlib
+from unittest.mock import MagicMock, sentinel
 
 import pytest
-from unittest.mock import MagicMock, sentinel
 
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.resolvers import Resolver
