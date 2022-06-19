@@ -33,8 +33,8 @@ class SceptrePlan(object):
         self.reverse = None
         self.launch_order = None
 
-        config_reader = ConfigReader(context)
-        all_stacks, command_stacks = config_reader.construct_stacks()
+        self.config_reader = ConfigReader(context)
+        all_stacks, command_stacks = self.config_reader.construct_stacks()
         self.graph = StackGraph(all_stacks)
         self.command_stacks = command_stacks
 
@@ -394,3 +394,10 @@ class SceptrePlan(object):
         """
         self.resolve(command=self.drift_show.__name__)
         return self._execute(*args)
+
+    def dump_config(self, *args):
+        """
+        Dump the config for a stack.
+        """
+        self.resolve(command=self.dump_config.__name__)
+        return self._execute(self.config_reader, *args)

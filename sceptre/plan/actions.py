@@ -27,6 +27,8 @@ from sceptre.exceptions import UnknownStackStatusError
 from sceptre.hooks import add_stack_hooks
 from sceptre.stack_status import StackChangeSetStatus
 from sceptre.stack_status import StackStatus
+from sceptre.config.reader import ConfigReader
+from sceptre.helpers import normalise_path
 
 
 class StackActions(object):
@@ -1141,3 +1143,11 @@ class StackActions(object):
                 "StackName": self.stack.external_name
             }
         )
+
+    @add_stack_hooks
+    def dump_config(self, config_reader: ConfigReader):
+        """
+        Dump the config for a stack.
+        """
+        stack_path = normalise_path(self.stack.name + ".yaml")
+        return config_reader.read(stack_path)
