@@ -247,7 +247,7 @@ class Stack(object):
                 notifications=self.notifications,
                 on_failure=self.on_failure,
                 stack_timeout=self.stack_timeout,
-                launch_action=self.launch_action,
+                launch_action=self.launch_action.name,
                 stack_group_config=self.stack_group_config
             )
         )
