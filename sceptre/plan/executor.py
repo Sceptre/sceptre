@@ -38,10 +38,10 @@ class SceptrePlanExecutor(object):
 
     def execute(self, *args):
         """
-        Execute is responsible executing the sets of Stacks in `launch_order`
+        Execute is responsible executing the sets of Stacks in ``launch_order``
         concurrently, in the correct order.
 
-        :param *args: Any arguments that should be passed through to the\
+        :param args: Any arguments that should be passed through to the
                 StackAction being called.
         """
         responses = {}

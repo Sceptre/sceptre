@@ -16,6 +16,7 @@ particular Stack. The available keys are listed below.
 -  `template_path`_ or `template`_ *(required)*
 -  `dependencies`_ *(optional)*
 -  `hooks`_ *(optional)*
+-  `launch_action`_ *(optional)*
 -  `notifications`_ *(optional)*
 -  `on_failure`_ *(optional)*
 -  `parameters`_ *(optional)*
@@ -99,6 +100,48 @@ hooks
 
 A list of arbitrary shell or Python commands or scripts to run. Find out more
 in the :doc:`hooks` section.
+
+
+.. _launch_action:
+
+launch_action
+~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This setting determines whether or not the stack should be included or excluded when running
+``sceptre launch``. This must be one of two values: "include" or "exclude". The default value for
+this (which doesn't need to be specified) is "include". This **only** applies to the ``launch``
+command.
+
+If the ``launch_action`` is set to ``"exclude"``, it means that:
+ * If the stack does NOT exist, the Stack will not be created and will be skipped over
+ * If the stack *does* currently exist, it will be deleted.
+
+This setting is especially useful in two situations:
+
+1. You can use it to make conditional stacks that may or may not be included in a Stack Group based
+   upon some Jinja2 logic.
+2. If your CI/CD deployment process runs ``sceptre launch``, you can use this to have stacks deleted
+   when it runs. Once the stack(s) have been deleted, you can then delete the StackConfig file.
+
+For Example:
+
+.. code-block:: yaml
+
+   template:
+       path: "my/test/resources.yaml"
+
+   {% if not var.use_test_resources %}
+   launch_action: "exclude"
+   {% endif %}
+
+.. note::
+
+   The ``launch_action`` configuration only applies to the **launch** command. You can still run
+   ``create``, ``update``, or ``delete`` commands on a stack marked with ``launch_action: "exclude"``.
+   If you do, the command will operate just like it normally does.
 
 notifications
 ~~~~~~~~~~~~~
@@ -245,7 +288,7 @@ For more information on this configuration, its implications, and its uses, see
 :ref:`Sceptre and IAM: iam_role <iam_role_permissions>`.
 
 iam_role_session_duration
-~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 * Resolvable: No
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set

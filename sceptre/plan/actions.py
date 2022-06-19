@@ -1014,10 +1014,10 @@ class StackActions(object):
         Show stack drift for a running stack.
 
         :returns: The stack drift detection status.
-        If the stack does not exist, we return a detection and
-        stack drift status of STACK_DOES_NOT_EXIST.
-        If drift detection times out after 5 minutes, we return
-        TIMED_OUT.
+            If the stack does not exist, we return a detection and
+            stack drift status of STACK_DOES_NOT_EXIST.
+            If drift detection times out after 5 minutes, we return
+            TIMED_OUT.
         """
         try:
             self._get_status()
