@@ -1,4 +1,5 @@
 import click
+from click import Context
 from colorama import Fore, Style
 
 from sceptre.context import SceptreContext
@@ -16,15 +17,21 @@ from sceptre.stack import LaunchAction
 )
 @click.pass_context
 @catch_exceptions
-def launch_command(ctx, path, yes):
+def launch_command(ctx: Context, path: str, yes: bool):
     """
-    Launch a Stack or StackGroup for a given config PATH.
+    Launch a Stack or StackGroup for a given config PATH. This command is intended as a catch-all
+    command that will apply any changes from Stack Configs indicated via the path.
+
+    \b
+    * Any Stacks that do not exist will be created
+    * Any stacks that already exist will be updated (if there are any changes)
+    * If any stacks are marked with launch_type: exclude, they will NOT be created and, if they exist,
+    will be deleted.
+
     \f
 
     :param path: The path to launch. Can be a Stack or StackGroup.
-    :type path: str
     :param yes: A flag to answer 'yes' to all CLI questions.
-    :type yes: bool
     """
     context = SceptreContext(
         command_path=path,
