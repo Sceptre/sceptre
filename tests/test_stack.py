@@ -167,20 +167,9 @@ class TestStack(object):
             "notifications=[sentinel.notification], " \
             "on_failure=sentinel.on_failure, " \
             "stack_timeout=sentinel.stack_timeout, " \
-            "stack_group_config={}" \
+            "stack_group_config={}, " \
+            "launch_action=include" \
             ")"
-
-    def test_repr_can_eval_correctly(self):
-        sceptre = importlib.import_module('sceptre')
-        evaluated_stack = eval(
-            repr(self.stack),
-            {
-                'sceptre': sceptre,
-                'sentinel': sentinel
-            }
-        )
-        assert isinstance(evaluated_stack, Stack)
-        assert evaluated_stack.__eq__(self.stack)
 
     def test_configuration_manager__iam_role_raises_recursive_resolve__returns_connection_manager_with_no_role(self):
         class FakeResolver(Resolver):
