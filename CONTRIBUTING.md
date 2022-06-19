@@ -131,17 +131,18 @@ $ make coverage
 ```
 
 Note: Sceptre aims to be compatible with Python 3, please run unit test
-against both versions. You will need the corresponding versions of Python
-installed on your system.
+against all supported versions. You will need the corresponding versions
+of Python installed on your system.
 
-Run unit tests and coverage using tox for multiple Python versions:
+Run unit tests and coverage on all supported python versions:
 
 ```bash
-$ tox -e py36 -e py37
+$ make test-all
 ```
 
-If you use pyenv to manage Python versions, try `pip install tox-pyenv` to make
-tox and pyenv play nicely.
+Tox is used to manage python vresions for running unit tests.  If you use pyenv
+to manage Python versions, try `pip install tox-pyenv` to make tox and pyenv play
+nicely.
 
 ## Integration Tests
 
