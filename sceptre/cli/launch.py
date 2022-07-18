@@ -1,3 +1,5 @@
+import logging
+
 import click
 from click import Context
 from colorama import Fore, Style
@@ -6,8 +8,11 @@ from sceptre.context import SceptreContext
 from sceptre.cli.helpers import catch_exceptions
 from sceptre.cli.helpers import confirmation
 from sceptre.cli.helpers import stack_status_exit_code
+from sceptre.exceptions import StackDependencyIsExcludedError
 from sceptre.plan.plan import SceptrePlan
-from sceptre.stack import LaunchAction
+from sceptre.stack import LaunchAction, Stack
+
+logger = logging.getLogger(__name__)
 
 
 @click.command(name="launch", short_help="Launch a Stack or StackGroup.")
@@ -49,6 +54,8 @@ def launch_command(ctx: Context, path: str, yes: bool):
         for stack in stacks:
             if stack.launch_action == LaunchAction.exclude:
                 stacks_to_exclude.append(stack)
+            elif is_any_stack_dependency_excluded_from_launch(stack):
+                raise StackDependencyIsExcludedError()
 
     if stacks_to_exclude:
         delete_message = "The following stacks are excluded from the launch. They will be deleted, if they exist:\n"
@@ -60,3 +67,18 @@ def launch_command(ctx: Context, path: str, yes: bool):
     confirmation(plan.launch.__name__, yes, command_path=path)
     responses = plan.launch()
     exit(stack_status_exit_code(responses.values()))
+
+
+def is_any_stack_dependency_excluded_from_launch(stack: Stack) -> bool:
+    for dependency in stack.dependencies:
+        dependency: Stack
+        if dependency.launch_action == LaunchAction.exclude:
+            logger.error(
+                f"Stack {stack.name} depends on stack {dependency.name}, which has a launch "
+                f"action of exclude. Cannot launch stack {stack.name}"
+            )
+            return True
+        if is_any_stack_dependency_excluded_from_launch(dependency):
+            return True
+
+    return False

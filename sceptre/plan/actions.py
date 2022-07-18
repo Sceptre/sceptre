@@ -192,8 +192,6 @@ class StackActions(object):
         if self.stack.launch_action == LaunchAction.exclude:
             self.logger.info(f'{self.stack.name} is excluded - Deleting Stack (if it exists)')
             return self.delete()
-        elif self.is_any_stack_dependency_excluded_from_launch(self.stack):
-            raise StackDependencyIsExcludedError("")
 
         self.logger.info("f{self.stack.name} - Launching Stack")
 
@@ -230,19 +228,6 @@ class StackActions(object):
                 "{0} is unknown".format(existing_status)
             )
         return status
-
-    def is_any_stack_dependency_excluded_from_launch(self, stack: Stack) -> bool:
-        for dependency in stack.dependencies:
-            dependency: Stack
-            if dependency.launch_action == LaunchAction.exclude:
-                self.logger.error(
-                    f"Stack {stack.name} depends on stack {dependency.name}, which has a launch "
-                    f"action of exclude. Cannot launch {stack.name}"
-                )
-                return True
-            if self.is_any_stack_dependency_excluded_from_launch(dependency):
-                return True
-        return False
 
     @add_stack_hooks
     def delete(self):
