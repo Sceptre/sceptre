@@ -19,15 +19,16 @@ import botocore
 from dateutil.tz import tzutc
 
 from sceptre.connection_manager import ConnectionManager
-from sceptre.exceptions import CannotUpdateFailedStackError, StackDependencyIsExcludedError
-from sceptre.exceptions import ProtectedStackError
-from sceptre.exceptions import StackDoesNotExistError
-from sceptre.exceptions import UnknownStackChangeSetStatusError
-from sceptre.exceptions import UnknownStackStatusError
+from sceptre.exceptions import (
+    CannotUpdateFailedStackError,
+    ProtectedStackError,
+    StackDoesNotExistError,
+    UnknownStackChangeSetStatusError,
+    UnknownStackStatusError
+)
 from sceptre.hooks import add_stack_hooks
 from sceptre.stack import LaunchAction, Stack
-from sceptre.stack_status import StackChangeSetStatus
-from sceptre.stack_status import StackStatus
+from sceptre.stack_status import StackChangeSetStatus, StackStatus
 
 
 class StackActions(object):
