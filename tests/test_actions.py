@@ -1347,14 +1347,66 @@ class TestStackActions(object):
         mock_describe_stack_resource_drifts.return_value = expected_drifts
         expected_response = (detection_status, expected_drifts)
 
-        response = self.actions.drift_show()
+        response = self.actions.drift_show(drifted=False)
+
+        assert response == expected_response
+
+    @patch("sceptre.plan.actions.StackActions._describe_stack_resource_drifts")
+    @patch("sceptre.plan.actions.StackActions._describe_stack_drift_detection_status")
+    @patch("sceptre.plan.actions.StackActions._detect_stack_drift")
+    @patch("time.sleep")
+    def test_drift_show_drift_only(
+        self,
+        mock_sleep,
+        mock_detect_stack_drift,
+        mock_describe_stack_drift_detection_status,
+        mock_describe_stack_resource_drifts
+    ):
+        mock_sleep.return_value = None
+
+        mock_detect_stack_drift.return_value = {
+            "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62"
+        }
+        mock_describe_stack_drift_detection_status.return_value = {
+            "StackId": "fake-stack-id",
+            "StackDriftDetectionId": "3fb76910-f660-11eb-80ac-0246f7a6da62",
+            "StackDriftStatus": "DRIFTED",
+            "DetectionStatus": "DETECTION_COMPLETE",
+            "DriftedStackResourceCount": 0
+        }
+
+        input_drifts = {
+            "StackResourceDrifts": [
+                {
+                    "LogicalResourceId": "ServerLoadBalancer",
+                    "PhysicalResourceId": "bi-tablea-ServerLo-1E133TWLWYLON",
+                    "ResourceType": "AWS::ElasticLoadBalancing::LoadBalancer",
+                    "StackId": "fake-stack-id",
+                    "StackResourceDriftStatus": "IN_SYNC",
+                },
+                {
+                    "LogicalResourceId": "TableauServer",
+                    "PhysicalResourceId": "i-08c16bc1c5e2cd185",
+                    "ResourceType": "AWS::EC2::Instance",
+                    "StackId": "fake-stack-id",
+                    "StackResourceDriftStatus": "DELETED",
+                }
+            ]
+        }
+        mock_describe_stack_resource_drifts.return_value = input_drifts
+
+        expected_response = ("DETECTION_COMPLETE", {
+            "StackResourceDrifts": [input_drifts["StackResourceDrifts"][1]]
+        })
+
+        response = self.actions.drift_show(drifted=True)
 
         assert response == expected_response
 
     @patch("sceptre.plan.actions.StackActions._get_status")
     def test_drift_show_with_stack_that_does_not_exist(self, mock_get_status):
         mock_get_status.side_effect = StackDoesNotExistError()
-        response = self.actions.drift_show()
+        response = self.actions.drift_show(drifted=False)
         assert response == (
             'STACK_DOES_NOT_EXIST', {
                 'StackResourceDriftStatus': 'STACK_DOES_NOT_EXIST'
@@ -1408,6 +1460,6 @@ class TestStackActions(object):
         mock_describe_stack_resource_drifts.return_value = expected_drifts
         expected_response = ("TIMED_OUT", {"StackResourceDriftStatus": "TIMED_OUT"})
 
-        response = self.actions.drift_show()
+        response = self.actions.drift_show(drifted=False)
 
         assert response == expected_response
