@@ -187,3 +187,9 @@ class TemplateNotFoundError(SceptreException):
     Error raised when a Template file is not found
     """
     pass
+
+
+class StackDependencyIsExcludedError(SceptreException):
+    """
+    Error raised when launching a stack dependent upon a stack that is excluded
+    """

@@ -19,13 +19,13 @@ import botocore
 from dateutil.tz import tzutc
 
 from sceptre.connection_manager import ConnectionManager
-from sceptre.exceptions import CannotUpdateFailedStackError
+from sceptre.exceptions import CannotUpdateFailedStackError, StackDependencyIsExcludedError
 from sceptre.exceptions import ProtectedStackError
 from sceptre.exceptions import StackDoesNotExistError
 from sceptre.exceptions import UnknownStackChangeSetStatusError
 from sceptre.exceptions import UnknownStackStatusError
 from sceptre.hooks import add_stack_hooks
-from sceptre.stack import LaunchAction
+from sceptre.stack import LaunchAction, Stack
 from sceptre.stack_status import StackChangeSetStatus
 from sceptre.stack_status import StackStatus
 
@@ -39,7 +39,7 @@ class StackActions(object):
     :type stack: sceptre.stack.Stack
     """
 
-    def __init__(self, stack):
+    def __init__(self, stack: Stack):
         self.stack = stack
         self.name = self.stack.name
         self.logger = logging.getLogger(__name__)
@@ -192,6 +192,8 @@ class StackActions(object):
         if self.stack.launch_action == LaunchAction.exclude:
             self.logger.info(f'{self.stack.name} is excluded - Deleting Stack (if it exists)')
             return self.delete()
+        elif self.is_any_stack_dependency_excluded_from_launch(self.stack):
+            raise StackDependencyIsExcludedError("")
 
         self.logger.info("f{self.stack.name} - Launching Stack")
 
@@ -218,7 +220,6 @@ class StackActions(object):
             )
             status = StackStatus.IN_PROGRESS
         elif existing_status.endswith("FAILED"):
-            status = StackStatus.FAILED
             raise CannotUpdateFailedStackError(
                 "'{0}' is in a the state '{1}' and cannot be updated".format(
                     self.stack.name, existing_status
@@ -229,6 +230,19 @@ class StackActions(object):
                 "{0} is unknown".format(existing_status)
             )
         return status
+
+    def is_any_stack_dependency_excluded_from_launch(self, stack: Stack) -> bool:
+        for dependency in stack.dependencies:
+            dependency: Stack
+            if dependency.launch_action == LaunchAction.exclude:
+                self.logger.error(
+                    f"Stack {stack.name} depends on stack {dependency.name}, which has a launch "
+                    f"action of exclude. Cannot launch {stack.name}"
+                )
+                return True
+            if self.is_any_stack_dependency_excluded_from_launch(dependency):
+                return True
+        return False
 
     @add_stack_hooks
     def delete(self):
