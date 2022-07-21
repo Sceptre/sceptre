@@ -1039,7 +1039,7 @@ class StackActions(object):
         return response
 
     @add_stack_hooks
-    def drift_show(self, drifted: bool = True) -> Tuple[str, dict]:
+    def drift_show(self, drifted: bool = False) -> Tuple[str, dict]:
         """
         Detect drift status on stacks.
 
