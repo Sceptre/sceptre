@@ -216,7 +216,7 @@ def setup_vars(var_file, var, merge_vars, debug, no_colour):
 
     if var_file:
         for fh in var_file:
-            parsed = yaml.safe_load(fh.read())
+            parsed = yaml.safe_load(fh.read()) or {}
 
             if merge_vars:
                 return_value = _deep_merge(parsed, return_value)
