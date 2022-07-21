@@ -68,9 +68,12 @@ def drift_detect(ctx: Context, path: str):
 
 @drift_group.command(name="show", short_help="Shows stack drift on running stacks.")
 @click.argument("path")
+@click.option(
+    "-D", "--drifted", is_flag=True, default=False, help="Filter out in sync resources."
+)
 @click.pass_context
 @catch_exceptions
-def drift_show(ctx, path):
+def drift_show(ctx, path, drifted):
     """
     Show stack drift on deployed stacks.
 
@@ -92,7 +95,7 @@ def drift_show(ctx, path):
     )
 
     plan = SceptrePlan(context)
-    responses = plan.drift_show()
+    responses = plan.drift_show(drifted)
 
     output_format = "json" if context.output_format == "json" else "yaml"
 
@@ -100,7 +103,6 @@ def drift_show(ctx, path):
     for stack, (status, response) in responses.items():
         if status in BAD_STATUSES:
             exit_status += 1
-        response.pop("ResponseMetadata", None)
         write({stack.external_name: deserialize_json_properties(response)}, output_format)
 
     exit(exit_status)
