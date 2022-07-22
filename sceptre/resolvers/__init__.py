@@ -238,8 +238,19 @@ class ResolvableContainerProperty(ResolvableProperty):
             resolve, container, Resolver
         )
         # Remove keys and indexes from their containers that had resolvers resolve to None.
+        list_items_to_delete = []
         for attr, key in keys_to_delete:
-            del attr[key]
+            if isinstance(attr, list):
+                # If it's a list, we want to gather up the items to remove from the list.
+                # We don't want to modify the list length yet.
+                # Since removals will change all the other list indexes,
+                # we don't wan't to modify lists yet.
+                list_items_to_delete.append((attr, attr[key]))
+            else:
+                del attr[key]
+
+        for containing_list, item in list_items_to_delete:
+            containing_list.remove(item)
 
         return container
 
