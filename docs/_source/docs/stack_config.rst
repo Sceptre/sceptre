@@ -110,14 +110,14 @@ launch_action
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
-This setting determines whether or not the stack should be included or excluded when running
-``sceptre launch``. This must be one of two values: "include" or "exclude". The default value for
-this (which doesn't need to be specified) is "include". This **only** applies to the ``launch``
-command.
+This setting determines how the stack should be handled when running ``sceptre launch``. This must
+be one of three values:
 
-If the ``launch_action`` is set to ``"exclude"``, it means that:
- * If the stack does NOT exist, the Stack will not be created and will be skipped over
- * If the stack *does* currently exist, it will be deleted.
+* "include" - The stack will be created/updated as "normal". **This is the default value on all stacks**
+* "remove" - If the stack does NOT exist, it won't be created; It will be excluded from the launch.
+   If the stack *DOES* exist, it will be deleted.
+* "skip" - The stack will be completely ignored by the launch command. If the stack does NOT exist,
+   it won't be created. If it *DOES* exist, it will neither be updated nor deleted.
 
 This setting is especially useful in two situations:
 
@@ -134,13 +134,13 @@ For Example:
        path: "my/test/resources.yaml"
 
    {% if not var.use_test_resources %}
-   launch_action: "exclude"
+   launch_action: "remove"
    {% endif %}
 
 .. note::
 
    The ``launch_action`` configuration only applies to the **launch** command. You can still run
-   ``create``, ``update``, or ``delete`` commands on a stack marked with ``launch_action: "exclude"``;
+   ``create``, ``update``, or ``delete`` commands on a stack marked with ``launch_action: "remove"``;
    these commands will ignore the launch_action setting.
 
 notifications
