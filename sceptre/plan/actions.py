@@ -1039,10 +1039,11 @@ class StackActions(object):
         return response
 
     @add_stack_hooks
-    def drift_show(self) -> Tuple[str, dict]:
+    def drift_show(self, drifted: bool = False) -> Tuple[str, dict]:
         """
         Detect drift status on stacks.
 
+        :param drifted: Filter out IN_SYNC resources.
         :returns: The detection status and resource drifts.
         """
         response = self.drift_detect()
@@ -1055,6 +1056,7 @@ class StackActions(object):
         else:
             raise Exception("Not expected to be reachable")
 
+        response = self._filter_drifts(response, drifted)
         return (detection_status, response)
 
     def _wait_for_drift_status(self, detection_id: str) -> dict:
@@ -1143,6 +1145,24 @@ class StackActions(object):
                 "StackName": self.stack.external_name
             }
         )
+
+    def _filter_drifts(self, response: dict, drifted: bool) -> dict:
+        """
+        The filtered response after filtering out StackResourceDriftStatus.
+        :param drifted: Filter out IN_SYNC resources from CLI --drifted.
+        """
+        if "StackResourceDrifts" not in response:
+            return response
+
+        result = {"StackResourceDrifts": []}
+        include_all_drift_statuses = not drifted
+
+        for drift in response["StackResourceDrifts"]:
+            is_drifted = drift["StackResourceDriftStatus"] != "IN_SYNC"
+            if include_all_drift_statuses or is_drifted:
+                result["StackResourceDrifts"].append(drift)
+
+        return result
 
     @add_stack_hooks
     def dump_config(self, config_reader: ConfigReader):
