@@ -369,7 +369,7 @@ class TestStackActions(object):
     def test_launch__excluded_stack_that_does_not_exist__returns_complete_status_without_create(
         self, mock_get_status, mock_create
     ):
-        self.stack.launch_action = LaunchAction.exclude
+        self.stack.launch_action = LaunchAction.remove
         mock_get_status.side_effect = StackDoesNotExistError()
         result = self.actions.launch()
 
@@ -387,7 +387,7 @@ class TestStackActions(object):
     ])
     def test_launch__excluded_stack_exists__deletes_stack(self, current_status):
         get_status = Mock()
-        self.stack.launch_action = LaunchAction.exclude
+        self.stack.launch_action = LaunchAction.remove
 
         with patch.multiple(
             'sceptre.plan.actions.StackActions',

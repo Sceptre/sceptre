@@ -16,6 +16,7 @@ class StackStatus(object):
     FAILED = "failed"
     IN_PROGRESS = "in progress"
     PENDING = "pending"
+    SKIPPED = "skipped"
 
 
 class StackChangeSetStatus(object):

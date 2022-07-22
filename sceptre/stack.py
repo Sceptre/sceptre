@@ -25,7 +25,8 @@ from sceptre.template import Template
 
 class LaunchAction(Enum):
     include = 1  # This is the default value for all stacks. It means launch runs create/update.
-    exclude = 2  # This means launch won't create and will delete it if it exists.
+    remove = 2  # This means launch won't create and will delete it if it exists.
+    skip = 3  # This means launch will ignore it and perform no actions at all on it.
 
 
 class Stack(object):

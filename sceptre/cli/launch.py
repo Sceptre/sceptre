@@ -52,7 +52,7 @@ def launch_command(ctx: Context, path: str, yes: bool):
     stacks_to_exclude = []
     for stacks in plan.launch_order:
         for stack in stacks:
-            if stack.launch_action == LaunchAction.exclude:
+            if stack.launch_action == LaunchAction.remove:
                 stacks_to_exclude.append(stack)
             elif is_any_stack_dependency_excluded_from_launch(stack):
                 raise StackDependencyIsExcludedError()
@@ -72,7 +72,7 @@ def launch_command(ctx: Context, path: str, yes: bool):
 def is_any_stack_dependency_excluded_from_launch(stack: Stack) -> bool:
     for dependency in stack.dependencies:
         dependency: Stack
-        if dependency.launch_action == LaunchAction.exclude:
+        if dependency.launch_action == LaunchAction.remove:
             logger.error(
                 f"Stack {stack.name} depends on stack {dependency.name}, which has a launch "
                 f"action of exclude. Cannot launch stack {stack.name}"

@@ -190,10 +190,14 @@ class StackActions(object):
 
         :returns: The Stack's status.
         """
+        if self.stack.launch_action == LaunchAction.skip:
+            self.logger.info("f'{self.stack.name} has launch_action:skip - Performing no action")
+            return StackStatus.SKIPPED
+
         self._protect_execution()
 
-        if self.stack.launch_action == LaunchAction.exclude:
-            self.logger.info(f'{self.stack.name} is excluded - Deleting Stack (if it exists)')
+        if self.stack.launch_action == LaunchAction.remove:
+            self.logger.info(f'{self.stack.name} has launch_action:remove - Deleting Stack (if it exists)')
             return self.delete()
 
         self.logger.info(f"{self.stack.name} - Launching Stack")
