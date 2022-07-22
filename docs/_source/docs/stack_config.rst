@@ -140,8 +140,8 @@ For Example:
 .. note::
 
    The ``launch_action`` configuration only applies to the **launch** command. You can still run
-   ``create``, ``update``, or ``delete`` commands on a stack marked with ``launch_action: "exclude"``.
-   If you do, the command will operate just like it normally does.
+   ``create``, ``update``, or ``delete`` commands on a stack marked with ``launch_action: "exclude"``;
+   these commands will ignore the launch_action setting.
 
 notifications
 ~~~~~~~~~~~~~
