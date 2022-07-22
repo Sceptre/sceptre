@@ -196,7 +196,7 @@ class StackActions(object):
             self.logger.info(f'{self.stack.name} is excluded - Deleting Stack (if it exists)')
             return self.delete()
 
-        self.logger.info("f{self.stack.name} - Launching Stack")
+        self.logger.info(f"{self.stack.name} - Launching Stack")
 
         try:
             existing_status = self._get_status()
