@@ -1,3 +1,4 @@
+import logging
 import click
 
 from sceptre.context import SceptreContext
@@ -6,6 +7,8 @@ from sceptre.cli.helpers import (
     write
 )
 from sceptre.plan.plan import SceptrePlan
+
+logger = logging.getLogger(__name__)
 
 
 @click.group(name="list")
