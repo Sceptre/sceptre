@@ -25,3 +25,4 @@ class StackChangeSetStatus(object):
     PENDING = "pending"
     READY = "ready"
     DEFUNCT = "defunct"
+    NO_CHANGES = "no changes"

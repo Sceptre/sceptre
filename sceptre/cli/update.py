@@ -57,14 +57,30 @@ def update_command(ctx, path, change_set, verbose, yes):
         try:
             # Wait for change set to be created
             statuses = plan.wait_for_cs_completion(change_set_name)
-            # Exit if change set fails to create
+
+            at_least_one_ready = False
+
             for status in list(statuses.values()):
-                if status != StackChangeSetStatus.READY:
+                # Exit if change set fails to create
+                if status not in (StackChangeSetStatus.READY, StackChangeSetStatus.NO_CHANGES):
+                    write("Failed to create change set", context.output_format)
                     exit(1)
+
+                if status == StackChangeSetStatus.READY:
+                    at_least_one_ready = True
+
+            # If none are ready, and we haven't exited, there are no changes
+            if not at_least_one_ready:
+                write("No changes detected", context.output_format)
+                exit(0)
 
             # Describe changes
             descriptions = plan.describe_change_set(change_set_name)
-            for description in list(descriptions.values()):
+            for stack, description in descriptions.items():
+                # No need to print if there are no changes
+                if statuses[stack] == StackChangeSetStatus.NO_CHANGES:
+                    continue
+
                 if not verbose:
                     description = simplify_change_set_description(description)
                 write(description, context.output_format)
@@ -72,8 +88,7 @@ def update_command(ctx, path, change_set, verbose, yes):
             # Execute change set if happy with changes
             if yes or click.confirm("Proceed with stack update?"):
                 plan.execute_change_set(change_set_name)
-        except Exception as e:
-            raise e
+
         finally:
             # Clean up by deleting change set
             plan.delete_change_set(change_set_name)
