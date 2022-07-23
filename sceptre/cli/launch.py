@@ -90,23 +90,33 @@ class Launcher:
 
     def _validate_launch_for_missing_dependencies(self, deploy_plan: SceptrePlan):
         validated_stacks = set()
+        skipped_dependencies = set()
 
         def validate_stack_dependencies(stack: Stack):
             if stack in validated_stacks:
                 # In order to avoid unnecessary recursions on stacks already evaluated, we'll return
                 # early if we've already evaluated the stack without issue.
                 return
-            if stack.launch_action in (LaunchAction.delete, LaunchAction.skip):
+            if stack.launch_action == LaunchAction.delete:
                 raise DependencyDoesNotExistError(
                     f"Launch plan depends on stack {stack.name} with launch_action:"
                     f"{stack.launch_action.name}. This plan cannot be launched."
                 )
             for dependency in stack.dependencies:
+                if dependency.launch_action == LaunchAction.skip:
+                    skipped_dependencies.add(dependency)
                 validate_stack_dependencies(dependency)
             validated_stacks.add(stack)
 
         for stack in deploy_plan:
             validate_stack_dependencies(stack)
+
+        message = (
+            "WARNING: Launch plan depends on stacks marked with launch_action:skip. Sceptre will "
+            "attempt to continue with launch, but it may fail if any StackConfigs require certain "
+            "resources or outputs that don't currently exist."
+        )
+        self._print_stacks_with_message(list(skipped_dependencies), message)
 
     def _print_skips(self, stacks_to_skip: List[Stack]):
         skip_message = "During launch, the following stacks will be skipped, neither created nor deleted:"
@@ -116,7 +126,7 @@ class Launcher:
         if not len(stacks):
             return
 
-        message = message if message.endswith('\n') else f'{message}\n'
+        message = f'* {message}\n'
         for stack in stacks:
             message += f"{Fore.YELLOW}{stack.name}{Style.RESET_ALL}\n"
 

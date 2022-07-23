@@ -80,7 +80,7 @@ class StackGraph(object):
     def _generate_edges(self, stack, dependencies):
         """
         Adds edges to the graph based on a list of dependencies that are
-        generated from the inital stack config. Each of the paths
+        generated from the initial stack config. Each of the paths
         in the inital_dependency_paths list are a depency that the inital
         Stack config depends on.
 
@@ -92,13 +92,17 @@ class StackGraph(object):
         self.logger.debug(
             "Generate dependencies for stack {0}".format(stack)
         )
+        dependencies_added = set()
         for dependency in dependencies:
             self.graph.add_edge(dependency, stack)
             if not nx.is_directed_acyclic_graph(self.graph):
                 raise CircularDependenciesError(
-                    "Dependency cycle detected: {} {}".format(stack,
-                                                              dependency))
-            self.logger.debug("  Added dependency: {}".format(dependency))
+                    f"Dependency cycle detected: {stack} {dependency}"
+                )
+            # It's possible multiples of the same dependency can be added
+            if dependency not in dependencies_added:
+                dependencies_added.add(dependency)
+                self.logger.debug("  Added dependency: {}".format(dependency))
 
         if not dependencies:
             self.graph.add_node(stack)
