@@ -41,15 +41,30 @@ logger = getLogger(__name__)
     '-n',
     '--no-placeholders',
     is_flag=True,
-    help="If True, no placeholder values will be supplied for resolvers that cannot be resolved."
+    help="If set, no placeholder values will be supplied for resolvers that cannot be resolved."
+)
+@click.option(
+    '-a',
+    '--all',
+    'all_stacks',
+    is_flag=True,
+    help="If set, it will perform diffing on ALL stacks, not just the ones with launch_action:include"
 )
 @click.argument('path')
 @click.pass_context
 @catch_exceptions
-def diff_command(ctx: Context, differ: str, show_no_echo: bool, no_placeholders: bool, path: str):
+def diff_command(
+    ctx: Context,
+    differ: str,
+    show_no_echo: bool,
+    no_placeholders: bool,
+    all_stacks: bool,
+    path: str
+):
     """Indicates the difference between the currently DEPLOYED stacks in the command path and
     the stacks configured in Sceptre right now. This command will compare both the templates as well
-    as the subset of stack configurations that can be compared.
+    as the subset of stack configurations that can be compared. By default, only stacks that can be
+    launched will be diffed, but this can be overridden with the "--all" flag.
 
     Some settings (such as sceptre_user_data) are not available in a CloudFormation stack
     description, so the diff will not be indicated. Currently compared stack configurations are:
@@ -99,7 +114,7 @@ def diff_command(ctx: Context, differ: str, show_no_echo: bool, no_placeholders:
 
     execution_context = null_context() if no_placeholders else use_resolver_placeholders_on_error()
     with execution_context:
-        diffs: Dict[Stack, StackDiff] = plan.diff(stack_differ)
+        diffs: Dict[Stack, StackDiff] = plan.diff(stack_differ, all_stacks)
 
     num_stacks_with_diff = output_diffs(diffs.values(), writer_class, sys.stdout, output_format)
 

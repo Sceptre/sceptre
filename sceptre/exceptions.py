@@ -189,7 +189,7 @@ class TemplateNotFoundError(SceptreException):
     pass
 
 
-class StackDependencyIsExcludedError(SceptreException):
+class StackDependencyCannotBeLaunchedError(SceptreException):
     """
     Error raised when launching a stack dependent upon a stack that is excluded
     """

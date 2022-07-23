@@ -190,16 +190,7 @@ class StackActions(object):
 
         :returns: The Stack's status.
         """
-        if self.stack.launch_action == LaunchAction.skip:
-            self.logger.info("f'{self.stack.name} has launch_action:skip - Performing no action")
-            return StackStatus.SKIPPED
-
         self._protect_execution()
-
-        if self.stack.launch_action == LaunchAction.remove:
-            self.logger.info(f'{self.stack.name} has launch_action:remove - Deleting Stack (if it exists)')
-            return self.delete()
-
         self.logger.info(f"{self.stack.name} - Launching Stack")
 
         try:
@@ -1001,13 +992,15 @@ class StackActions(object):
             raise
 
     @add_stack_hooks
-    def diff(self, stack_differ):
+    def diff(self, stack_differ, all_stacks: bool):
         """
         Returns a diff of Template and Remote Template
         using a specific diff library.
 
         :param stack_differ: The diff lib to use, default difflib.
         :type: sceptre.diffing.stack_differ.StackDiffer
+
+        :param all_stacks: If True, will perform the diff on ALL stacks
 
         :returns: A StackDiff object.
         :rtype: sceptre.diffing.stack_differ.StackDiff

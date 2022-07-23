@@ -16,7 +16,7 @@ import sys
 import yaml
 
 from os import environ, path, walk
-from typing import Set
+from typing import Set, Tuple
 from pathlib import Path
 from jinja2 import Environment
 from jinja2 import StrictUndefined
@@ -204,7 +204,7 @@ class ConfigReader(object):
         node.tag = loader.resolve(type(node), node.value, (True, False))
         return node
 
-    def construct_stacks(self) -> Set[Stack]:
+    def construct_stacks(self) -> Tuple[Set[Stack], Set[Stack]]:
         """
         Traverses the files under the command path.
         For each file encountered, a Stack is constructed
@@ -273,7 +273,7 @@ class ConfigReader(object):
 
         return stacks, command_stacks
 
-    def resolve_stacks(self, stack_map):
+    def resolve_stacks(self, stack_map) -> Set[Stack]:
         """
         Transforms map of Stacks into a set of Stacks, transforms dependencies
         from a list of Strings (stack names) to a list of Stacks.

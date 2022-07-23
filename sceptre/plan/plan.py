@@ -7,8 +7,9 @@ This module implements a SceptrePlan, which is responsible for holding all
 nessessary information for a command to execute.
 """
 from os import path, walk
-from typing import Dict
+from typing import Dict, List, Set, Callable
 
+from sceptre.context import SceptreContext
 from sceptre.diffing.stack_differ import StackDiff
 from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.config.graph import StackGraph
@@ -20,18 +21,17 @@ from sceptre.stack import Stack
 
 class SceptrePlan(object):
 
-    def __init__(self, context):
+    def __init__(self, context: SceptreContext):
         """
         Intialises a SceptrePlan and generates the Stacks, StackGraph and
         launch order of required.
 
         :param context: A SceptreContext
-        :type sceptre.context.SceptreContext:
         """
         self.context = context
         self.command = None
         self.reverse = None
-        self.launch_order = None
+        self.launch_order: List[Set[Stack]] = []
 
         self.config_reader = ConfigReader(context)
         all_stacks, command_stacks = self.config_reader.construct_stacks()
@@ -42,13 +42,11 @@ class SceptrePlan(object):
         executor = SceptrePlanExecutor(self.command, self.launch_order)
         return executor.execute(*args)
 
-    def _generate_launch_order(self, reverse=False):
+    def _generate_launch_order(self, reverse=False) -> List[Set[Stack]]:
         if self.context.ignore_dependencies:
             return [self.command_stacks]
 
         graph = self.graph.filtered(self.command_stacks, reverse)
-        if self.context.ignore_dependencies:
-            return [self.command_stacks]
 
         launch_order = []
         while graph.graph:
