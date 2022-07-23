@@ -106,7 +106,7 @@ in its Stack and StackGroup Configs; If you delete a Stack Config, Sceptre won't
 
 Therefore, the way to accomplish this "clean up" operation is to perform the change in 2 stages:
 
-1. First, add ``launch_action: "exclude"`` to the Stack Config(s) you want to clean up. This will
+1. First, add ``launch_action: "remove"`` to the Stack Config(s) you want to clean up. This will
    cause that stack to be deleted (if it exists) when you run ``sceptre launch``. For more information
    on ``launch_action``, see the :ref:`Stack Config entry on it<launch_action>`.
 2. Once you've launched the Stack(s) to have them deleted this way, only **then** should you
