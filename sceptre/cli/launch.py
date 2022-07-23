@@ -46,7 +46,8 @@ def launch_command(ctx: Context, path: str, yes: bool):
         ignore_dependencies=ctx.obj.get("ignore_dependencies")
     )
     launcher = Launcher(context)
-    return launcher.launch(yes)
+    exit_code = launcher.launch(yes)
+    exit(exit_code)
 
 
 class Launcher:
