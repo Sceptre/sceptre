@@ -1,0 +1,4 @@
+launch_action: skip
+
+template:
+  path: valid_template.yaml

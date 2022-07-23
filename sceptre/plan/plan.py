@@ -23,7 +23,7 @@ from sceptre.stack import Stack
 
 def require_resolved(func) -> Callable:
     @functools.wraps(func)
-    def wrapped(self: SceptrePlan, *args, **kwargs):
+    def wrapped(self: "SceptrePlan", *args, **kwargs):
         if self.launch_order is None:
             raise RuntimeError(f"You cannot call {func.__name__}() before resolve().")
         return func(self, *args, **kwargs)
@@ -82,7 +82,9 @@ class SceptrePlan(object):
 
     @require_resolved
     def __iter__(self) -> Iterable[Stack]:
-        yield from itertools.chain.from_iterable(self.launch_order)
+        # We cast it to list so it's "frozen" in time, in case the launch order is modified
+        # while iterating.
+        yield from list(itertools.chain.from_iterable(self.launch_order))
 
     @require_resolved
     def remove_stack_from_plan(self, stack: Stack):

@@ -13,7 +13,7 @@ from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer
 from sceptre.helpers import null_context
 from sceptre.plan.plan import SceptrePlan
 from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error
-from sceptre.stack import Stack
+from sceptre.stack import Stack, LaunchAction
 
 logger = getLogger(__name__)
 
@@ -102,6 +102,8 @@ def diff_command(
     )
     output_format = context.output_format
     plan = SceptrePlan(context)
+    if not all_stacks:
+        filter_plan_for_launchable(plan)
 
     if differ == "deepdiff":
         stack_differ = DeepDiffStackDiffer(show_no_echo)
@@ -114,7 +116,7 @@ def diff_command(
 
     execution_context = null_context() if no_placeholders else use_resolver_placeholders_on_error()
     with execution_context:
-        diffs: Dict[Stack, StackDiff] = plan.diff(stack_differ, all_stacks)
+        diffs: Dict[Stack, StackDiff] = plan.diff(stack_differ)
 
     num_stacks_with_diff = output_diffs(diffs.values(), writer_class, sys.stdout, output_format)
 
@@ -171,3 +173,10 @@ def output_buffer_with_normalized_bar_lengths(buffer: io.StringIO, output_stream
         if DiffWriter.LINE_BAR in line:
             line = line.replace(DiffWriter.LINE_BAR, full_length_line_bar)
         output_stream.write(line)
+
+
+def filter_plan_for_launchable(plan: SceptrePlan):
+    plan.resolve(plan.diff.__name__)
+    for stack in plan:
+        if stack.launch_action != LaunchAction.deploy:
+            plan.remove_stack_from_plan(stack)

@@ -992,7 +992,7 @@ class StackActions(object):
             raise
 
     @add_stack_hooks
-    def diff(self, stack_differ, all_stacks: bool):
+    def diff(self, stack_differ):
         """
         Returns a diff of Template and Remote Template
         using a specific diff library.
