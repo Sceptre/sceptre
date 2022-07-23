@@ -154,9 +154,9 @@ class Launcher:
         result = deletion_plan.delete()
         exit_code = stack_status_exit_code(result.values())
         if exit_code != 0:
-            failed_stack_names = [s for s in result.keys() if result[s] != StackStatus.COMPLETE]
+            failed_stacks = [s for s in result.keys() if result[s] != StackStatus.COMPLETE]
             self._print_stacks_with_message(
-                failed_stack_names,
+                failed_stacks,
                 "Stack deletion failed, so could not proceed with launch. Failed Stacks:"
             )
         return exit_code
