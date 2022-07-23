@@ -58,7 +58,7 @@ class SceptrePlan(object):
             launch_order.append(batch)
 
             for stack in batch:
-                graph.remove_stack_from_plan(stack)
+                graph.remove_stack(stack)
 
         if not launch_order:
             raise ConfigFileNotFoundError(
