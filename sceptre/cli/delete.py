@@ -48,9 +48,8 @@ def delete_command(ctx, path, change_set_name, yes):
         delete_msg = "The following stacks, in the following order, will be deleted:\n"
 
     dependencies = ''
-    for stacks in plan.launch_order:
-        for stack in stacks:
-            dependencies += "{}{}{}\n".format(Fore.YELLOW, stack.name, Style.RESET_ALL)
+    for stack in plan:
+        dependencies += "{}{}{}\n".format(Fore.YELLOW, stack.name, Style.RESET_ALL)
 
     print(delete_msg + "{}".format(dependencies))
 

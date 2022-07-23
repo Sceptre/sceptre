@@ -1,16 +1,16 @@
 import logging
+from typing import List
 
 import click
 from click import Context
 from colorama import Fore, Style
 
+from sceptre.cli.helpers import catch_exceptions, confirmation, stack_status_exit_code
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import catch_exceptions
-from sceptre.cli.helpers import confirmation
-from sceptre.cli.helpers import stack_status_exit_code
-from sceptre.exceptions import StackDependencyCannotBeLaunchedError
+from sceptre.exceptions import DependencyDoesNotExistError
 from sceptre.plan.plan import SceptrePlan
 from sceptre.stack import LaunchAction, Stack
+from sceptre.stack_status import StackStatus
 
 logger = logging.getLogger(__name__)
 
@@ -38,78 +38,120 @@ def launch_command(ctx: Context, path: str, yes: bool):
     :param path: The path to launch. Can be a Stack or StackGroup.
     :param yes: A flag to answer 'yes' to all CLI questions.
     """
-    deploy_context = SceptreContext(
+    context = SceptreContext(
         command_path=path,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies")
     )
+    launcher = Launcher(context)
+    return launcher.launch(yes)
 
-    plan = SceptrePlan(deploy_context)
-    plan.resolve(plan.launch.__name__)
 
-    stacks_to_delete = []
-    stacks_to_skip = []
-    for i, batch in enumerate(plan.launch_order):
-        for stack in batch:
-            if stack.launch_action == LaunchAction.delete:
-                stacks_to_delete.append((i, stack))
-            elif stack.launch_action == LaunchAction.skip:
-                stacks_to_skip.append((i, stack))
-            elif is_any_stack_dependency_deleted_in_launch(stack):
-                raise StackDependencyCannotBeLaunchedError()
+class Launcher:
+    def __init__(self, context: SceptreContext, plan_factory=SceptrePlan):
+        self._context = context
+        self._make_plan = plan_factory
 
-    if stacks_to_skip:
-        skip_message = "During launch, the following stacks will be skipped, neither created nor deleted:\n"
-        for batch_index, stack in stacks_to_skip:
-            skip_message += f"{Fore.YELLOW}{stack.name}{Style.RESET_ALL}\n"
-            plan.launch_order[batch_index].remove(stack)
+    def launch(self, yes: bool) -> int:
+        deploy_plan = self._create_deploy_plan()
+        stacks_to_skip = self._get_stacks_to_skip(deploy_plan)
+        stacks_to_delete = self._get_stacks_to_delete(deploy_plan)
+        self._exclude_stacks_from_plan(deploy_plan, *stacks_to_skip, *stacks_to_delete)
+        self._validate_launch_for_missing_dependencies(deploy_plan)
+        self._print_skips(stacks_to_skip)
+        self._print_deletions(stacks_to_delete)
+        self._confirm_launch(yes)
+        if len(stacks_to_delete) > 0:
+            delete_plan = self._create_deletion_plan(stacks_to_delete)
+            code = self._delete(delete_plan)
+            if code != 0:
+                return code
 
-        print(skip_message)
+        code = self._deploy(deploy_plan)
+        return code
 
-    if stacks_to_delete:
-        delete_context = SceptreContext(
-            command_path=path,
-            project_path=ctx.obj.get("project_path"),
-            user_variables=ctx.obj.get("user_variables"),
-            options=ctx.obj.get("options"),
-            ignore_dependencies=True,
-            full_scan=True
-        )
-        deletion_plan = SceptrePlan(delete_context)
-        deletion_plan.command_stacks = set()
+    def _create_deploy_plan(self) -> SceptrePlan:
+        plan = self._make_plan(self._context)
+        # The plan must be resolved so we can modify launch order and items before executing it
+        plan.resolve(plan.launch.__name__)
+        return plan
 
-        delete_message = "During launch, the following stacks will be will be deleted, if they exist:\n"
-        for batch_index, stack in stacks_to_delete:
-            delete_message += f"{Fore.YELLOW}{stack.name}{Style.RESET_ALL}\n"
-            deletion_plan.command_stacks.add(stack)
-            plan.launch_order[batch_index].remove(stack)
+    def _get_stacks_to_skip(self, deploy_plan: SceptrePlan) -> List[Stack]:
+        return [stack for stack in deploy_plan if stack.launch_action == LaunchAction.skip]
 
-        print(delete_message)
+    def _get_stacks_to_delete(self, deploy_plan: SceptrePlan) -> List[Stack]:
+        return [stack for stack in deploy_plan if stack.launch_action == LaunchAction.delete]
 
-    confirmation(plan.launch.__name__, yes, command_path=path)
+    def _exclude_stacks_from_plan(self, deployment_plan: SceptrePlan, *stacks: Stack):
+        for stack in stacks:
+            deployment_plan.remove_stack_from_plan(stack)
 
-    if stacks_to_delete:
-        deletions = deletion_plan.delete()
-        exit_code = stack_status_exit_code(deletions.values())
+    def _validate_launch_for_missing_dependencies(self, deploy_plan: SceptrePlan):
+        validated_stacks = set()
+
+        def validate_stack_dependencies(stack: Stack):
+            if stack in validated_stacks:
+                # In order to avoid unnecessary recursions on stacks already evaluated, we'll return
+                # early if we've already evaluated the stack without issue.
+                return
+            if stack.launch_action in (LaunchAction.delete, LaunchAction.skip):
+                raise DependencyDoesNotExistError(
+                    f"Launch plan depends on stack {stack.name} with launch_action:"
+                    f"{stack.launch_action.name}. This plan cannot be launched."
+                )
+            for dependency in stack.dependencies:
+                validate_stack_dependencies(dependency)
+            validated_stacks.add(stack)
+
+        for stack in deploy_plan:
+            validate_stack_dependencies(stack)
+
+    def _print_skips(self, stacks_to_skip: List[Stack]):
+        skip_message = "During launch, the following stacks will be skipped, neither created nor deleted:"
+        self._print_stacks_with_message(stacks_to_skip, skip_message)
+
+    def _print_stacks_with_message(self, stacks: List[Stack], message: str):
+        if not len(stacks):
+            return
+
+        message = message if message.endswith('\n') else f'{message}\n'
+        for stack in stacks:
+            message += f"{Fore.YELLOW}{stack.name}{Style.RESET_ALL}\n"
+
+        click.echo(message)
+
+    def _print_deletions(self, stacks_to_delete: List[Stack]):
+        delete_message = "During launch, the following stacks will be will be deleted, if they exist:"
+        self._print_stacks_with_message(stacks_to_delete, delete_message)
+
+    def _confirm_launch(self, yes: bool):
+        confirmation("launch", yes, command_path=self._context.command_path)
+
+    def _create_deletion_plan(self, stacks_to_delete: List[Stack]) -> SceptrePlan:
+        # We need a new context for deletion
+        delete_context = self._context.clone()
+        delete_context.full_scan = True  # full_scan lets us pull all stacks in root directory
+        delete_context.ignore_dependencies = True  # we ONLY care about deleting the command stacks
+        deletion_plan = self._make_plan(delete_context)
+        # We're overriding the command_stacks so we target only those stacks that have been marked
+        # with launch_action:delete
+        deletion_plan.command_stacks = set(stacks_to_delete)
+        return deletion_plan
+
+    def _delete(self, deletion_plan: SceptrePlan) -> int:
+        result = deletion_plan.delete()
+        exit_code = stack_status_exit_code(result.values())
         if exit_code != 0:
-            exit(exit_code)
-
-    responses = plan.launch()
-    exit(stack_status_exit_code(responses.values()))
-
-
-def is_any_stack_dependency_deleted_in_launch(stack: Stack) -> bool:
-    for dependency in stack.dependencies:
-        dependency: Stack
-        if dependency.launch_action == LaunchAction.delete:
-            logger.error(
-                f"Stack {stack.name} depends on stack {dependency.name}, which has a launch "
-                f"action of remove. Cannot launch stack {stack.name}"
+            failed_stack_names = [s for s in result.keys() if result[s] != StackStatus.COMPLETE]
+            self._print_stacks_with_message(
+                failed_stack_names,
+                "Stack deletion failed, so could not proceed with launch. Failed Stacks:"
             )
-            return True
-        if is_any_stack_dependency_deleted_in_launch(dependency):
-            return True
+        return exit_code
 
-    return False
+    def _deploy(self, deploy_plan: SceptrePlan) -> int:
+        result = deploy_plan.launch()
+        exit_code = stack_status_exit_code(result.values())
+        return exit_code

@@ -6,8 +6,9 @@ sceptre.plan.plan
 This module implements a SceptrePlan, which is responsible for holding all
 nessessary information for a command to execute.
 """
+import itertools
 from os import path, walk
-from typing import Dict, List, Set, Callable
+from typing import Dict, List, Set, Callable, Iterable
 
 from sceptre.context import SceptreContext
 from sceptre.diffing.stack_differ import StackDiff
@@ -57,7 +58,7 @@ class SceptrePlan(object):
             launch_order.append(batch)
 
             for stack in batch:
-                graph.remove_stack(stack)
+                graph.remove_stack_from_plan(stack)
 
         if not launch_order:
             raise ConfigFileNotFoundError(
@@ -66,6 +67,20 @@ class SceptrePlan(object):
             )
 
         return launch_order
+
+    def __iter__(self) -> Iterable[Stack]:
+        if self.launch_order:
+            launch_order = self.launch_order
+        else:
+            launch_order = self._generate_launch_order()
+        return itertools.chain.from_iterable(launch_order)
+
+    def remove_stack_from_plan(self, stack: Stack):
+        if self.launch_order is None:
+            raise RuntimeError("You cannot call remove_stack() before resolving the plan.")
+        for batch in self.launch_order:
+            if stack in batch:
+                batch.remove(stack)
 
     def resolve(self, command, reverse=False):
         if command == self.command and reverse == self.reverse:

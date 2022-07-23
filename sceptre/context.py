@@ -123,3 +123,15 @@ class SceptreContext(object):
                 self.command_path
             )
         )
+
+    def clone(self) -> "SceptreContext":
+        return type(self)(
+            project_path=self.project_path,
+            command_path=self.command_path,
+            user_variables=self.user_variables,
+            options=self.options,
+            output_format=self.output_format,
+            no_colour=self.no_colour,
+            ignore_dependencies=self.ignore_dependencies,
+            full_scan=self.full_scan
+        )
