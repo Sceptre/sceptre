@@ -89,6 +89,7 @@ class SceptrePlan(object):
         for batch in self.launch_order:
             if stack in batch:
                 batch.remove(stack)
+                return
 
     def resolve(self, command, reverse=False):
         if command == self.command and reverse == self.reverse:
