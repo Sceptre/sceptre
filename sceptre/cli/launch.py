@@ -54,7 +54,7 @@ def launch_command(ctx: Context, path: str, yes: bool):
     for i, batch in enumerate(plan.launch_order):
         for stack in batch:
             if stack.launch_action == LaunchAction.delete:
-                stacks_to_delete.append(stack)
+                stacks_to_delete.append((i, stack))
             elif stack.launch_action == LaunchAction.skip:
                 stacks_to_skip.append((i, stack))
             elif is_any_stack_dependency_deleted_in_launch(stack):
@@ -78,11 +78,13 @@ def launch_command(ctx: Context, path: str, yes: bool):
             full_scan=True
         )
         deletion_plan = SceptrePlan(delete_context)
-        deletion_plan.command_stacks = set(stacks_to_delete)
+        deletion_plan.command_stacks = set()
 
         delete_message = "During launch, the following stacks will be will be deleted, if they exist:\n"
-        for stack in stacks_to_delete:
+        for batch_index, stack in stacks_to_delete:
             delete_message += f"{Fore.YELLOW}{stack.name}{Style.RESET_ALL}\n"
+            deletion_plan.command_stacks.add(stack)
+            plan.launch_order[batch_index].remove(stack)
 
         print(delete_message)
 

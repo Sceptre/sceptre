@@ -567,7 +567,7 @@ class ConfigReader(object):
             notifications=config.get("notifications"),
             on_failure=config.get("on_failure"),
             stack_timeout=config.get("stack_timeout", 0),
-            launch_action=LaunchAction[config.get('launch_action', DEFAULT_LAUNCH_ACTION)],
+            launch_action=LaunchAction[config.get('launch_action', DEFAULT_LAUNCH_ACTION.name)],
             stack_group_config=parsed_stack_group_config
         )
 
