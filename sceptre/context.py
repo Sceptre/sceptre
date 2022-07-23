@@ -6,7 +6,7 @@ sceptre.context
 This module implements the SceptreContext class which holds details about the
 paths used in a Sceptre project.
 """
-
+from copy import deepcopy
 from os import path
 
 from sceptre.helpers import normalise_path
@@ -125,13 +125,6 @@ class SceptreContext(object):
         )
 
     def clone(self) -> "SceptreContext":
-        return type(self)(
-            project_path=self.project_path,
-            command_path=self.command_path,
-            user_variables=self.user_variables,
-            options=self.options,
-            output_format=self.output_format,
-            no_colour=self.no_colour,
-            ignore_dependencies=self.ignore_dependencies,
-            full_scan=self.full_scan
-        )
+        new = type(self).__new__(type(self))
+        new.__dict__.update(deepcopy(self.__dict__))
+        return new
