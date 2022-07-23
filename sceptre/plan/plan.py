@@ -6,9 +6,10 @@ sceptre.plan.plan
 This module implements a SceptrePlan, which is responsible for holding all
 nessessary information for a command to execute.
 """
+import functools
 import itertools
 from os import path, walk
-from typing import Dict, List, Set, Callable, Iterable
+from typing import Dict, List, Set, Callable, Iterable, Optional, Any
 
 from sceptre.context import SceptreContext
 from sceptre.diffing.stack_differ import StackDiff
@@ -18,6 +19,16 @@ from sceptre.config.reader import ConfigReader
 from sceptre.plan.executor import SceptrePlanExecutor
 from sceptre.helpers import sceptreise_path
 from sceptre.stack import Stack
+
+
+def require_resolved(func) -> Callable:
+    @functools.wraps(func)
+    def wrapped(self: SceptrePlan, *args, **kwargs):
+        if self.launch_order is None:
+            raise RuntimeError(f"You cannot call {func.__name__}() before resolve().")
+        return func(self, *args, **kwargs)
+
+    return wrapped
 
 
 class SceptrePlan(object):
@@ -32,13 +43,14 @@ class SceptrePlan(object):
         self.context = context
         self.command = None
         self.reverse = None
-        self.launch_order: List[Set[Stack]] = []
+        self.launch_order: Optional[List[Set[Stack]]] = None
 
         self.config_reader = ConfigReader(context)
         all_stacks, command_stacks = self.config_reader.construct_stacks()
         self.graph = StackGraph(all_stacks)
         self.command_stacks = command_stacks
 
+    @require_resolved
     def _execute(self, *args):
         executor = SceptrePlanExecutor(self.command, self.launch_order)
         return executor.execute(*args)
@@ -68,16 +80,12 @@ class SceptrePlan(object):
 
         return launch_order
 
+    @require_resolved
     def __iter__(self) -> Iterable[Stack]:
-        if self.launch_order:
-            launch_order = self.launch_order
-        else:
-            launch_order = self._generate_launch_order()
-        return itertools.chain.from_iterable(launch_order)
+        yield from itertools.chain.from_iterable(self.launch_order)
 
+    @require_resolved
     def remove_stack_from_plan(self, stack: Stack):
-        if self.launch_order is None:
-            raise RuntimeError("You cannot call remove_stack() before resolving the plan.")
         for batch in self.launch_order:
             if stack in batch:
                 batch.remove(stack)
