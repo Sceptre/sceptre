@@ -24,9 +24,12 @@ from sceptre.template import Template
 
 
 class LaunchAction(Enum):
-    include = 1  # This is the default value for all stacks. It means launch runs create/update.
-    remove = 2  # This means launch won't create and will delete it if it exists.
+    deploy = 1  # This is the default value for all stacks. It means launch runs create/update.
+    delete = 2  # This means launch won't create and will delete it if it exists.
     skip = 3  # This means launch will ignore it and perform no actions at all on it.
+
+
+DEFAULT_LAUNCH_ACTION = LaunchAction.deploy
 
 
 class Stack(object):
@@ -149,7 +152,7 @@ class Stack(object):
         required_version: str = None, parameters: dict = None, sceptre_user_data: dict = None, hooks: Hook = None,
         s3_details: dict = None, iam_role: str = None, dependencies=None, role_arn: str = None, protected: bool = False,
         tags: dict = None, external_name: str = None, notifications=None, on_failure: str = None, profile: str = None,
-        stack_timeout: int = 0, iam_role_session_duration: int = 0, launch_action: LaunchAction = LaunchAction.include,
+        stack_timeout: int = 0, iam_role_session_duration: int = 0, launch_action: LaunchAction = LaunchAction.deploy,
         stack_group_config: dict = {}
     ):
         self.logger = logging.getLogger(__name__)
@@ -159,7 +162,7 @@ class Stack(object):
 
         # If excluded from launch, we don't care about template configurations. The config could be
         # entirely empty apart from launch_action: exclude.
-        if launch_action == LaunchAction.include and not template_path and not template_handler_config:
+        if launch_action == LaunchAction.deploy and not template_path and not template_handler_config:
             raise InvalidConfigFileError("Neither 'template_path' nor 'template' is set")
 
         self.name = sceptreise_path(name)

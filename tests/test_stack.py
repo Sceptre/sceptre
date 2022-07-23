@@ -136,7 +136,7 @@ class TestStack(object):
         Stack(
             name='dev/stack/app', project_code='testing',
             template_handler_config=None, template_path=None,
-            launch_action=LaunchAction.remove,
+            launch_action=LaunchAction.delete,
             region=sentinel.region
         )
 

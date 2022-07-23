@@ -49,7 +49,7 @@ class TestCli(object):
         self.mock_stack.profile = None
         self.mock_stack.external_name = 'mock-stack-external'
         self.mock_stack.dependencies = []
-        self.mock_stack.launch_action = LaunchAction.include
+        self.mock_stack.launch_action = LaunchAction.deploy
 
         self.mock_config_reader.construct_stacks.return_value = \
             set([self.mock_stack]), set([self.mock_stack])

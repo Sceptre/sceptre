@@ -325,7 +325,7 @@ class TestConfigReader(object):
             required_version='>1.0',
             template_bucket_name='stack_group_template_bucket_name',
             template_key_prefix=None,
-            launch_action=LaunchAction.include,
+            launch_action=LaunchAction.deploy,
             stack_group_config={
                 "project_path": self.context.project_path,
                 "custom_key": "custom_value"

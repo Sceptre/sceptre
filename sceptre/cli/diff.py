@@ -48,7 +48,7 @@ logger = getLogger(__name__)
     '--all',
     'all_stacks',
     is_flag=True,
-    help="If set, it will perform diffing on ALL stacks, not just the ones with launch_action:include"
+    help="If set, it will perform diffing on ALL stacks, not just the ones with launch_action:deploy"
 )
 @click.argument('path')
 @click.pass_context

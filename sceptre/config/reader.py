@@ -32,7 +32,7 @@ from sceptre.exceptions import InvalidSceptreDirectoryError
 from sceptre.exceptions import VersionIncompatibleError
 from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.helpers import sceptreise_path
-from sceptre.stack import Stack, LaunchAction
+from sceptre.stack import Stack, LaunchAction, DEFAULT_LAUNCH_ACTION
 from sceptre.config import strategies
 
 ConfigAttributes = collections.namedtuple("Attributes", "required optional")
@@ -567,7 +567,7 @@ class ConfigReader(object):
             notifications=config.get("notifications"),
             on_failure=config.get("on_failure"),
             stack_timeout=config.get("stack_timeout", 0),
-            launch_action=LaunchAction[config.get('launch_action', 'include')],
+            launch_action=LaunchAction[config.get('launch_action', DEFAULT_LAUNCH_ACTION)],
             stack_group_config=parsed_stack_group_config
         )
 

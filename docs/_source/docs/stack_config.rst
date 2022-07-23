@@ -113,15 +113,15 @@ launch_action
 This setting determines how the stack should be handled when running ``sceptre launch``. This must
 be one of three values:
 
-* "include" - The stack will be created/updated as "normal". **This is the default value on all stacks**
-* "remove" - If the stack does NOT exist, it won't be created; It will be excluded from the launch.
+* "deploy" - The stack will be created/updated as "normal". **This is the default value on all stacks**
+* "delete" - If the stack does NOT exist, it won't be created; It will be excluded from the launch.
    If the stack *DOES* exist, it will be deleted.
 * "skip" - The stack will be completely ignored by the launch command. If the stack does NOT exist,
    it won't be created. If it *DOES* exist, it will neither be updated nor deleted.
 
 This setting is especially useful in two situations:
 
-1. You can use it to make conditional stacks that may or may not be included in a Stack Group based
+1. You can use it to make conditional stacks that may or may not be included in a deployment based
    upon some Jinja2 logic.
 2. If your CI/CD deployment process runs ``sceptre launch``, you can use this to have stacks deleted
    when it runs. Once the stack(s) have been deleted, you can then delete the StackConfig file.
@@ -134,13 +134,13 @@ For Example:
        path: "my/test/resources.yaml"
 
    {% if not var.use_test_resources %}
-   launch_action: "remove"
+   launch_action: "delete"
    {% endif %}
 
 .. note::
 
    The ``launch_action`` configuration only applies to the **launch** command. You can still run
-   ``create``, ``update``, or ``delete`` commands on a stack marked with ``launch_action: "remove"``;
+   ``create``, ``update``, or ``delete`` commands on a stack marked with ``launch_action: "delete"``;
    these commands will ignore the launch_action setting.
 
 notifications
