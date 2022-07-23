@@ -167,7 +167,7 @@ class TestStack(object):
             "on_failure=sentinel.on_failure, " \
             "stack_timeout=sentinel.stack_timeout, " \
             "stack_group_config={}, " \
-            "launch_action=include" \
+            f"launch_action={self.stack.launch_action.name}" \
             ")"
 
     def test_configuration_manager__iam_role_raises_recursive_resolve__returns_connection_manager_with_no_role(self):
