@@ -365,45 +365,6 @@ class TestStackActions(object):
         assert response == sentinel.launch_response
 
     @patch("sceptre.plan.actions.StackActions.create")
-    @patch("sceptre.plan.actions.StackActions._get_status")
-    def test_launch__excluded_stack_that_does_not_exist__returns_complete_status_without_create(
-        self, mock_get_status, mock_create
-    ):
-        self.stack.launch_action = LaunchAction.delete
-        mock_get_status.side_effect = StackDoesNotExistError()
-        result = self.actions.launch()
-
-        mock_create.assert_not_called()
-        assert result == StackStatus.COMPLETE
-
-    @pytest.mark.parametrize('current_status', [
-        'CREATE_COMPLETE',
-        'UPDATE_COMPLETE',
-        'CREATE_FAILED',
-        'UPDATE_ROLLBACK_COMPLETE',
-        'CREATE_IN_PROGRESS',
-        'UPDATE_IN_PROGRESS',
-        'UPDATE_FAILED',
-    ])
-    def test_launch__excluded_stack_exists__deletes_stack(self, current_status):
-        get_status = Mock()
-        self.stack.launch_action = LaunchAction.delete
-
-        with patch.multiple(
-            'sceptre.plan.actions.StackActions',
-            _get_status=get_status,
-            _wait_for_completion=DEFAULT
-        ):
-            get_status.return_value = current_status
-            self.actions.launch()
-
-        self.mock_ConnectionManager.return_value.call.assert_any_call(
-            service='cloudformation',
-            command='delete_stack',
-            kwargs={'StackName': self.stack.external_name, 'RoleARN': self.stack.role_arn}
-        )
-
-    @patch("sceptre.plan.actions.StackActions.create")
     @patch("sceptre.plan.actions.StackActions.delete")
     @patch("sceptre.plan.actions.StackActions._get_status")
     def test_launch_with_stack_that_failed_to_create(
