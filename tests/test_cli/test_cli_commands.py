@@ -30,7 +30,7 @@ from sceptre.stack import Stack, LaunchAction
 from sceptre.stack_status import StackStatus
 
 
-class TestCli(object):
+class TestCli:
 
     def setup_method(self, test_method):
         self.patcher_ConfigReader = patch("sceptre.plan.plan.ConfigReader")
