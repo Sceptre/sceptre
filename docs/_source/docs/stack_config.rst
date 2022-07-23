@@ -115,9 +115,13 @@ be one of three values:
 
 * "deploy" - The stack will be created/updated as "normal". **This is the default value on all stacks**
 * "delete" - If the stack does NOT exist, it won't be created; It will be excluded from the launch.
-   If the stack *DOES* exist, it will be deleted.
+   If the stack *DOES* exist, it will be deleted. You **cannot** mark as stack with "delete" that
+   other stacks marked "deploy" depend upon.
 * "skip" - The stack will be completely ignored by the launch command. If the stack does NOT exist,
-   it won't be created. If it *DOES* exist, it will neither be updated nor deleted.
+   it won't be created. If it *DOES* exist, it will neither be updated nor deleted. You *can* mark
+   a stack with "skip" that other stacks depend upon, but the launch will fail if dependent stacks
+   require resources or outputs that don't exist because the stack has been skipped.
+   **Use this option at your own risk.**
 
 This setting is especially useful in two situations:
 
@@ -133,6 +137,9 @@ For Example:
    template:
        path: "my/test/resources.yaml"
 
+   # Configured this way, if the var "use_test_resources" is not true, the stack will be deleted and
+   # excluded from the launch. But if "use_test_resources" is true, the stack will be deployed along
+   # with the rest of the resources being deployed.
    {% if not var.use_test_resources %}
    launch_action: "delete"
    {% endif %}
