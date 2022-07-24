@@ -1,21 +1,22 @@
 # -*- coding: utf-8 -*-
 import datetime
 import json
+from unittest.mock import patch, sentinel, Mock, call
 
 import pytest
 from botocore.exceptions import ClientError
 from dateutil.tz import tzutc
-from unittest.mock import patch, sentinel, Mock, call, DEFAULT
 
-from sceptre.exceptions import CannotUpdateFailedStackError
-from sceptre.exceptions import ProtectedStackError
-from sceptre.exceptions import StackDoesNotExistError
-from sceptre.exceptions import UnknownStackChangeSetStatusError
-from sceptre.exceptions import UnknownStackStatusError
+from sceptre.exceptions import (
+    CannotUpdateFailedStackError,
+    ProtectedStackError,
+    StackDoesNotExistError,
+    UnknownStackChangeSetStatusError,
+    UnknownStackStatusError
+)
 from sceptre.plan.actions import StackActions
-from sceptre.stack import Stack, LaunchAction
-from sceptre.stack_status import StackChangeSetStatus
-from sceptre.stack_status import StackStatus
+from sceptre.stack import Stack
+from sceptre.stack_status import StackChangeSetStatus, StackStatus
 from sceptre.template import Template
 
 
