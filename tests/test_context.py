@@ -66,3 +66,25 @@ class TestSceptreContext(object):
         )
         full_templates_path = path.join("project_path", self.templates_path)
         assert context.full_templates_path() == full_templates_path
+
+    def test_clone__returns_full_clone_of_context(self):
+        context = SceptreContext(
+            project_path="project_path",
+            command_path="command",
+            user_variables={"user": "variables"},
+            options={"hello": "there"},
+            output_format=sentinel.output_format,
+            no_colour=sentinel.no_colour,
+            ignore_dependencies=sentinel.ignore_dependencies
+        )
+        clone = context.clone()
+        assert clone is not context
+        assert clone.project_path == context.project_path
+        assert clone.command_path == context.command_path
+        assert clone.user_variables == context.user_variables
+        assert clone.user_variables is not context.user_variables
+        assert clone.options == context.options
+        assert clone.options is not context.options
+        assert clone.output_format == context.output_format
+        assert clone.no_colour == context.no_colour
+        assert clone.ignore_dependencies == context.ignore_dependencies
