@@ -145,7 +145,7 @@ class Launcher:
     def _delete(self, stacks_to_delete: List[Stack]) -> int:
         if len(stacks_to_delete) == 0:
             return 0
-        
+
         delete_plan = self._create_deletion_plan(stacks_to_delete)
         result = delete_plan.delete()
         exit_code = stack_status_exit_code(result.values())

@@ -125,6 +125,7 @@ class SceptreContext(object):
         )
 
     def clone(self) -> "SceptreContext":
+        """Creates a new, deep clone of the context with all the same values."""
         new = type(self).__new__(type(self))
         new.__dict__.update(deepcopy(self.__dict__))
         return new
