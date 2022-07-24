@@ -65,8 +65,9 @@ def diff_command(
 ):
     """Indicates the difference between the currently DEPLOYED stacks in the command path and
     the stacks configured in Sceptre right now. This command will compare both the templates as well
-    as the subset of stack configurations that can be compared. By default, only stacks that can be
-    launched will be diffed, but this can be overridden with the "--all" flag.
+    as the subset of stack configurations that can be compared. By default, all stacks relevant to
+    the path will be will be diffed, but the --launchable flag will narrow the scope down to only
+    stacks with launch_action: deploy.
 
     Some settings (such as sceptre_user_data) are not available in a CloudFormation stack
     description, so the diff will not be indicated. Currently compared stack configurations are:
