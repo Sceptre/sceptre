@@ -13,6 +13,7 @@ from contextlib import contextmanager
 from botocore.exceptions import ClientError
 from helpers import read_template_file, get_cloudformation_stack_name
 from helpers import retry_boto_call
+from sceptre.cli.launch import Launcher
 from sceptre.diffing.diff_writer import DeepDiffWriter, DiffWriter
 from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff
 
@@ -271,10 +272,10 @@ def step_impl(context, stack_name):
         project_path=context.sceptre_dir
     )
 
-    sceptre_plan = SceptrePlan(sceptre_context)
+    launcher = Launcher(sceptre_context)
 
     try:
-        sceptre_plan.launch()
+        launcher.launch(True)
     except Exception as e:
         context.error = e
 
@@ -287,10 +288,10 @@ def step_impl(context, stack_name):
         ignore_dependencies=True
     )
 
-    sceptre_plan = SceptrePlan(sceptre_context)
+    launcher = Launcher(sceptre_context)
 
     try:
-        sceptre_plan.launch()
+        launcher.launch(True)
     except Exception as e:
         context.error = e
 

@@ -5,6 +5,7 @@ from behave import *
 from botocore.exceptions import ClientError
 
 from helpers import read_template_file, get_cloudformation_stack_name, retry_boto_call
+from sceptre.cli.launch import Launcher
 from sceptre.context import SceptreContext
 from sceptre.diffing.diff_writer import DeepDiffWriter
 from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer
@@ -51,9 +52,8 @@ def step_impl(context, stack_group_name):
         command_path=stack_group_name,
         project_path=context.sceptre_dir
     )
-
-    sceptre_plan = SceptrePlan(sceptre_context)
-    sceptre_plan.launch()
+    launcher = Launcher(sceptre_context)
+    launcher.launch(True)
 
 
 @when('the user launches stack_group "{stack_group_name}" with ignore dependencies')
@@ -64,8 +64,8 @@ def step_impl(context, stack_group_name):
         ignore_dependencies=True
     )
 
-    sceptre_plan = SceptrePlan(sceptre_context)
-    sceptre_plan.launch()
+    launcher = Launcher(sceptre_context)
+    launcher.launch(True)
 
 
 @when('the user deletes stack_group "{stack_group_name}"')
