@@ -111,3 +111,9 @@ Therefore, the way to accomplish this "clean up" operation is to perform the cha
    on ``launch_action``, see the :ref:`Stack Config entry on it<launch_action>`.
 2. Once you've launched the Stack(s) to have them deleted this way, only **then** should you
    delete the Stack Configs.
+
+.. note::
+
+   Using ``launch_action: "delete"`` will not work if any other stacks depend on that stack that are
+   not themselves marked with ``launch_action: "delete"``. Attempting to launch any stacks that
+   depend on a stack marked "delete" will result in Sceptre immediately failing the launch.
