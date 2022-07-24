@@ -116,7 +116,8 @@ be one of three values:
 * "deploy" - The stack will be created/updated as "normal". **This is the default value on all stacks**
 * "delete" - If the stack does NOT exist, it won't be created; It will be excluded from the launch.
    If the stack *DOES* exist, it will be deleted. You **cannot** mark as stack with "delete" that
-   other stacks marked "deploy" depend upon.
+   other stacks marked "deploy" depend upon. If a stack is marked "delete", you do not need any
+   other Stack Config keys present on it in order for it to be deleted.
 * "skip" - The stack will be completely ignored by the launch command. If the stack does NOT exist,
    it won't be created. If it *DOES* exist, it will neither be updated nor deleted. You *can* mark
    a stack with "skip" that other stacks depend upon, but the launch will fail if dependent stacks
