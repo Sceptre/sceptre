@@ -116,7 +116,6 @@ class TestLauncher:
         expected_stacks = set(self.all_stacks)
         assert expected_stacks == launched_stacks
         assert self.plans[0].executions[0][0] == "launch"
-        assert len(self.plans) == 1
         assert len(self.plans[0].executions) == 1
 
     def test_launch__no_deletions__returns_0(self):
