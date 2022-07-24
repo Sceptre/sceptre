@@ -44,11 +44,13 @@ logger = getLogger(__name__)
     help="If set, no placeholder values will be supplied for resolvers that cannot be resolved."
 )
 @click.option(
-    '-a',
-    '--all',
-    'all_stacks',
+    '-l',
+    '--launchable',
     is_flag=True,
-    help="If set, it will perform diffing on ALL stacks, not just the ones with launch_action:deploy"
+    help=(
+         "If set, will only perform diffing on stacks that have a \"deploy\" launch_action; "
+         "Otherwise, it will diff all stacks, no matter the launch_action"
+    )
 )
 @click.argument('path')
 @click.pass_context
@@ -58,7 +60,7 @@ def diff_command(
     differ: str,
     show_no_echo: bool,
     no_placeholders: bool,
-    all_stacks: bool,
+    launchable: bool,
     path: str
 ):
     """Indicates the difference between the currently DEPLOYED stacks in the command path and
@@ -102,7 +104,7 @@ def diff_command(
     )
     output_format = context.output_format
     plan = SceptrePlan(context)
-    if not all_stacks:
+    if launchable:
         filter_plan_for_launchable(plan)
 
     if differ == "deepdiff":
@@ -176,6 +178,7 @@ def output_buffer_with_normalized_bar_lengths(buffer: io.StringIO, output_stream
 
 
 def filter_plan_for_launchable(plan: SceptrePlan):
+    """Filters out the stacks without launch_action:deploy from the SceptrePlan."""
     plan.resolve(plan.diff.__name__)
     for stack in plan:
         if stack.launch_action != LaunchAction.deploy:
