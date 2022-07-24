@@ -52,6 +52,11 @@ def launch_command(ctx: Context, path: str, yes: bool):
 
 class Launcher:
     def __init__(self, context: SceptreContext, plan_factory=SceptrePlan):
+        """Launcher is a utility to coordinate the flow of launching.
+
+        :param context: The Sceptre context to use for launching
+        :param plan_factory: A callable with the signature of (SceptreContext) -> SceptrePlan
+        """
         self._context = context
         self._make_plan = plan_factory
 
@@ -59,18 +64,15 @@ class Launcher:
         deploy_plan = self._create_deploy_plan()
         stacks_to_skip = self._get_stacks_to_skip(deploy_plan)
         stacks_to_delete = self._get_stacks_to_delete(deploy_plan)
+
         self._exclude_stacks_from_plan(deploy_plan, *stacks_to_skip, *stacks_to_delete)
         self._validate_launch_for_missing_dependencies(deploy_plan)
         self._print_skips(stacks_to_skip)
         self._print_deletions(stacks_to_delete)
         self._confirm_launch(yes)
-        if len(stacks_to_delete) > 0:
-            delete_plan = self._create_deletion_plan(stacks_to_delete)
-            code = self._delete(delete_plan)
-            if code != 0:
-                return code
 
-        code = self._deploy(deploy_plan)
+        code = self._delete(stacks_to_delete)
+        code = code or self._deploy(deploy_plan)
         return code
 
     def _create_deploy_plan(self) -> SceptrePlan:
@@ -140,6 +142,18 @@ class Launcher:
     def _confirm_launch(self, yes: bool):
         confirmation("launch", yes, command_path=self._context.command_path)
 
+    def _delete(self, stacks_to_delete: List[Stack]) -> int:
+        delete_plan = self._create_deletion_plan(stacks_to_delete)
+        result = delete_plan.delete()
+        exit_code = stack_status_exit_code(result.values())
+        if exit_code != 0:
+            failed_stacks = [s for s in result.keys() if result[s] != StackStatus.COMPLETE]
+            self._print_stacks_with_message(
+                failed_stacks,
+                "Stack deletion failed, so could not proceed with launch. Failed Stacks:"
+            )
+        return exit_code
+
     def _create_deletion_plan(self, stacks_to_delete: List[Stack]) -> SceptrePlan:
         # We need a new context for deletion
         delete_context = self._context.clone()
@@ -150,17 +164,6 @@ class Launcher:
         # with launch_action:delete
         deletion_plan.command_stacks = set(stacks_to_delete)
         return deletion_plan
-
-    def _delete(self, deletion_plan: SceptrePlan) -> int:
-        result = deletion_plan.delete()
-        exit_code = stack_status_exit_code(result.values())
-        if exit_code != 0:
-            failed_stacks = [s for s in result.keys() if result[s] != StackStatus.COMPLETE]
-            self._print_stacks_with_message(
-                failed_stacks,
-                "Stack deletion failed, so could not proceed with launch. Failed Stacks:"
-            )
-        return exit_code
 
     def _deploy(self, deploy_plan: SceptrePlan) -> int:
         result = deploy_plan.launch()
