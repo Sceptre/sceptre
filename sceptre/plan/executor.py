@@ -7,12 +7,9 @@ This module implements a SceptrePlanExecutor, which is responsible for
 executing the command specified in a SceptrePlan.
 """
 import logging
-
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Callable
 
 from sceptre.plan.actions import StackActions
-from sceptre.stack import Stack
 from sceptre.stack_status import StackStatus
 
 

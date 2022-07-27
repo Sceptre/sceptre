@@ -29,7 +29,7 @@ from sceptre.exceptions import (
 )
 from sceptre.helpers import normalise_path
 from sceptre.hooks import add_stack_hooks
-from sceptre.stack import LaunchAction, Stack
+from sceptre.stack import Stack
 from sceptre.stack_status import StackChangeSetStatus, StackStatus
 
 

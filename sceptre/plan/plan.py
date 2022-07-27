@@ -9,15 +9,15 @@ nessessary information for a command to execute.
 import functools
 import itertools
 from os import path, walk
-from typing import Dict, List, Set, Callable, Iterable, Optional, Any
+from typing import Dict, List, Set, Callable, Iterable, Optional
 
+from sceptre.config.graph import StackGraph
+from sceptre.config.reader import ConfigReader
 from sceptre.context import SceptreContext
 from sceptre.diffing.stack_differ import StackDiff
 from sceptre.exceptions import ConfigFileNotFoundError
-from sceptre.config.graph import StackGraph
-from sceptre.config.reader import ConfigReader
-from sceptre.plan.executor import SceptrePlanExecutor
 from sceptre.helpers import sceptreise_path
+from sceptre.plan.executor import SceptrePlanExecutor
 from sceptre.stack import Stack
 
 

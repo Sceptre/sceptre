@@ -90,8 +90,6 @@ class TestLauncher:
         self.plan_factory = create_autospec(SceptrePlan)
         self.plan_factory.side_effect = self.fake_plan_factory
 
-
-
         self.launcher = Launcher(self.context, self.plan_factory)
 
     def fake_plan_factory(self, sceptre_context):
@@ -124,10 +122,12 @@ class TestLauncher:
 
         assert result == 0
 
-    @pytest.mark.parametrize("launch_action", [
-        LaunchAction.skip,
-        LaunchAction.delete
-    ])
+    @pytest.mark.parametrize(
+        "launch_action", [
+            LaunchAction.skip,
+            LaunchAction.delete
+        ]
+    )
     def test_launch__does_not_launch_stacks_that_should_be_excluded(self, launch_action):
         self.all_stacks[4].launch_action = launch_action
         self.all_stacks[5].launch_action = launch_action
