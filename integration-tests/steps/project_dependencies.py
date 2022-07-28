@@ -51,7 +51,7 @@ def step_impl(context: Context, stack_name):
     buckets = get_template_buckets(plan)
     assert len(buckets) > 0
     filtered_objects = list(chain.from_iterable(
-        bucket.objects.filter_by(
+        bucket.objects.filter(
             Prefix=stack_name
         )
         for bucket in buckets
