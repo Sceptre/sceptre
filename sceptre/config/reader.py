@@ -543,6 +543,15 @@ class ConfigReader(object):
         s3_details = self._collect_s3_details(
             stack_name, config
         )
+        launch_action_name = config.get('launch_action', DEFAULT_LAUNCH_ACTION.name)
+        try:
+            launch_action = LaunchAction[launch_action_name]
+        except KeyError as e:
+            raise InvalidConfigFileError(
+                f'{launch_action_name} is not a valid launch_action enumeration. Valid values are: '
+                f'{", ".join(option.name for option in LaunchAction)}'
+            ) from e
+
         stack = Stack(
             name=stack_name,
             project_code=config["project_code"],
@@ -567,7 +576,7 @@ class ConfigReader(object):
             notifications=config.get("notifications"),
             on_failure=config.get("on_failure"),
             stack_timeout=config.get("stack_timeout", 0),
-            launch_action=LaunchAction[config.get('launch_action', DEFAULT_LAUNCH_ACTION.name)],
+            launch_action=launch_action,
             stack_group_config=parsed_stack_group_config
         )
 

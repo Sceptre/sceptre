@@ -6,6 +6,8 @@ import pytest
 import yaml
 import errno
 
+from pyfakefs.fake_filesystem_unittest import Patcher
+
 from sceptre.context import SceptreContext
 from sceptre.exceptions import DependencyDoesNotExistError
 from sceptre.exceptions import VersionIncompatibleError
@@ -333,6 +335,20 @@ class TestConfigReader(object):
         )
 
         assert stacks == ({sentinel.stack}, {sentinel.stack})
+
+    @patch("sceptre.config.reader.ConfigReader._collect_s3_details")
+    @patch("sceptre.config.reader.Stack")
+    def test_construct_stacks__invalid_launch_action__raises_invalid_config_file_error(
+        self, mock_Stack, mock_collect_s3_details
+    ):
+        mock_Stack.return_value = sentinel.stack
+        sentinel.stack.dependencies = []
+
+        mock_collect_s3_details.return_value = sentinel.s3_details
+        self.context.project_path = os.path.abspath("tests/fixtures")
+        self.context.command_path = "invalid-launch-action.yaml"
+        with pytest.raises(InvalidConfigFileError):
+            ConfigReader(self.context).construct_stacks()
 
     @pytest.mark.parametrize("command_path,filepaths,expected_stacks,expected_command_stacks,full_scan", [
         (
