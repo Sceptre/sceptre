@@ -104,7 +104,7 @@ isn't needed anymore and you want this automatically applied by the same process
 This "clean up" is complicated by the fact that Sceptre doesn't know about anything that isn't
 in its Stack and StackGroup Configs; If you delete a Stack Config, Sceptre won't know to clean it up.
 
-Therefore, the way to accomplish this "clean up" operation is to perform the change in 2 stages:
+Therefore, the way to accomplish this "clean up" operation is to perform the change in 2 steps:
 
 1. First, add ``launch_action: "delete"`` to the Stack Config(s) you want to clean up. This will
    cause that stack to be deleted (if it exists) when you run ``sceptre launch``. For more information
