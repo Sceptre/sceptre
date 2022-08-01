@@ -111,14 +111,14 @@ launch_action
 * Inheritance strategy: Overrides parent if set
 
 This setting determines how the stack should be handled when running ``sceptre launch``. This must
-be one of three values:
+be one of the following values:
 
-* "deploy" - The stack will be created/updated as "normal". **This is the default value on all stacks**
-* "delete" - If the stack does NOT exist, it won't be created; It will be excluded from the launch.
+* **"deploy"** - The stack will be created/updated as "normal". **This is the default value on all stacks**
+* **"delete"** - If the stack does NOT exist, it won't be created; It will be excluded from the launch.
    If the stack *DOES* exist, it will be deleted. You **cannot** mark as stack with "delete" that
    other stacks marked "deploy" depend upon. If a stack is marked "delete", you do not need any
    other Stack Config keys present on it in order for it to be deleted.
-* "skip" - The stack will be completely ignored by the launch command. If the stack does NOT exist,
+* **"skip"** - The stack will be completely ignored by the launch command. If the stack does NOT exist,
    it won't be created. If it *DOES* exist, it will neither be updated nor deleted. You *can* mark
    a stack with "skip" that other stacks depend upon, but the launch will fail if dependent stacks
    require resources or outputs that don't exist because the stack has been skipped.
