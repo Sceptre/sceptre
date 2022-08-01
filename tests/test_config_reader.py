@@ -1,23 +1,23 @@
 # -*- coding: utf-8 -*-
 
+import errno
 import os
 from unittest.mock import patch, sentinel, MagicMock
+
 import pytest
 import yaml
-import errno
-
-from pyfakefs.fake_filesystem_unittest import Patcher
-
-from sceptre.context import SceptreContext
-from sceptre.exceptions import DependencyDoesNotExistError
-from sceptre.exceptions import VersionIncompatibleError
-from sceptre.exceptions import ConfigFileNotFoundError
-from sceptre.exceptions import InvalidSceptreDirectoryError
-from sceptre.exceptions import InvalidConfigFileError
-
-from freezegun import freeze_time
 from click.testing import CliRunner
+from freezegun import freeze_time
+
 from sceptre.config.reader import ConfigReader
+from sceptre.context import SceptreContext
+from sceptre.exceptions import (
+    DependencyDoesNotExistError,
+    VersionIncompatibleError,
+    ConfigFileNotFoundError,
+    InvalidSceptreDirectoryError,
+    InvalidConfigFileError
+)
 from sceptre.stack import LaunchAction
 
 
