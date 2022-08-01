@@ -104,13 +104,13 @@ isn't needed anymore and you want this automatically applied by the same process
 This "clean up" is complicated by the fact that Sceptre doesn't know about anything that isn't
 in its Stack and StackGroup Configs; If you delete a Stack Config, Sceptre won't know to clean it up.
 
-Therefore, the way to accomplish this "clean up" operation is to perform the change in 2 steps:
+Therefore, the way to accomplish this "clean up" operation is to perform the change in 3 steps:
 
-1. First, add ``launch_action: "delete"`` to the Stack Config(s) you want to clean up. This will
-   cause that stack to be deleted (if it has been deployed to AWS) when you run ``sceptre launch``.
+1. First, add ``launch_action: "delete"`` to the Stack Config(s) you want to clean up.
    For more information on ``launch_action``, see the :ref:`Stack Config entry on it<launch_action>`.
-2. Once you've launched the Stack(s) to have them deleted this way, only **then** should you
-   delete the Stack Configs.
+2. Run ``sceptre launch`` to apply the change to AWS. This will cause that stack to be deleted.
+3. Delete the local Stack Config files you added the launch_action to in step 1, since the stacks
+   they create have all been deleted.
 
 .. note::
 
