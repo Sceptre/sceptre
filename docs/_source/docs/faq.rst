@@ -93,13 +93,13 @@ Sceptre project, see the `sceptre-sam-handler`_ page on PyPI.
 
 .. _sceptre-sam-handler: https://pypi.org/project/sceptre-sam-handler/
 
-My CI/CD process uses ``sceptre launch``. How do I delete stacks that aren't needed any more?
+My CI/CD process uses ``sceptre launch``. How do I delete stacks that aren't needed anymore?
 ---------------------------------------------------------------------------------------------
 
 Running the ``launch`` command is a very useful "1-stop-shop" to apply changes from Stack Configs,
 creating stacks that don't exist and updating stacks that do exist. This makes it a very useful
 command to configure your CI/CD system to invoke. However, sometimes you need to delete a stack that
-isn't needed any more and you want this automatically applied by the same process.
+isn't needed anymore and you want this automatically applied by the same process.
 
 This "clean up" is complicated by the fact that Sceptre doesn't know about anything that isn't
 in its Stack and StackGroup Configs; If you delete a Stack Config, Sceptre won't know to clean it up.
