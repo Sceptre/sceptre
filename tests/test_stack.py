@@ -6,7 +6,7 @@ import pytest
 
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.resolvers import Resolver
-from sceptre.stack import Stack, LaunchAction
+from sceptre.stack import Stack
 from sceptre.template import Template
 
 
@@ -158,7 +158,8 @@ class TestStack(object):
             "on_failure=sentinel.on_failure, " \
             "stack_timeout=sentinel.stack_timeout, " \
             "stack_group_config={}, " \
-            f"launch_action={self.stack.launch_action.name}" \
+            "ignore=False, " \
+            "obsolete=False" \
             ")"
 
     def test_configuration_manager__iam_role_raises_recursive_resolve__returns_connection_manager_with_no_role(self):

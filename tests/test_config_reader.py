@@ -18,7 +18,6 @@ from sceptre.exceptions import (
     InvalidSceptreDirectoryError,
     InvalidConfigFileError
 )
-from sceptre.stack import LaunchAction
 
 
 class TestConfigReader(object):
@@ -327,6 +326,8 @@ class TestConfigReader(object):
             required_version='>1.0',
             template_bucket_name='stack_group_template_bucket_name',
             template_key_prefix=None,
+            ignore=False,
+            obsolete=False,
             stack_group_config={
                 "project_path": self.context.project_path,
                 "custom_key": "custom_value"
@@ -334,20 +335,6 @@ class TestConfigReader(object):
         )
 
         assert stacks == ({sentinel.stack}, {sentinel.stack})
-
-    @patch("sceptre.config.reader.ConfigReader._collect_s3_details")
-    @patch("sceptre.config.reader.Stack")
-    def test_construct_stacks__invalid_launch_action__raises_invalid_config_file_error(
-        self, mock_Stack, mock_collect_s3_details
-    ):
-        mock_Stack.return_value = sentinel.stack
-        sentinel.stack.dependencies = []
-
-        mock_collect_s3_details.return_value = sentinel.s3_details
-        self.context.project_path = os.path.abspath("tests/fixtures")
-        self.context.command_path = "invalid-launch-action.yaml"
-        with pytest.raises(InvalidConfigFileError):
-            ConfigReader(self.context).construct_stacks()
 
     @pytest.mark.parametrize("command_path,filepaths,expected_stacks,expected_command_stacks,full_scan", [
         (

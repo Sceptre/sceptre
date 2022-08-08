@@ -26,7 +26,7 @@ from sceptre.diffing.stack_differ import \
 
 from sceptre.exceptions import SceptreException
 from sceptre.plan.actions import StackActions
-from sceptre.stack import Stack, LaunchAction
+from sceptre.stack import Stack
 from sceptre.stack_status import StackStatus
 
 
@@ -42,13 +42,17 @@ class TestCli:
         self.mock_config_reader = MagicMock(spec=ConfigReader)
         self.mock_stack_actions = MagicMock(spec=StackActions)
 
-        self.mock_stack = MagicMock(spec=Stack)
+        self.mock_stack = MagicMock(
+            spec=Stack,
+            region=None,
+            profile=None,
+            external_name='mock-stack-external',
+            dependencies=[],
+            ignore=False,
+            obsolete=False,
+        )
 
         self.mock_stack.name = 'mock-stack'
-        self.mock_stack.region = None
-        self.mock_stack.profile = None
-        self.mock_stack.external_name = 'mock-stack-external'
-        self.mock_stack.dependencies = []
 
         self.mock_config_reader.construct_stacks.return_value = \
             set([self.mock_stack]), set([self.mock_stack])

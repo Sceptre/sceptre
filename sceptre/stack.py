@@ -8,7 +8,6 @@ This module implements a Stack class, which stores a Stack's data.
 """
 
 import logging
-from enum import Enum
 from typing import List
 
 from sceptre.connection_manager import ConnectionManager
@@ -196,58 +195,33 @@ class Stack(object):
     def __repr__(self):
         return (
             "sceptre.stack.Stack("
-            "name='{name}', "
-            "project_code={project_code}, "
-            "template_path={template_path}, "
-            "template_handler_config={template_handler_config}, "
-            "region={region}, "
-            "template_bucket_name={template_bucket_name}, "
-            "template_key_prefix={template_key_prefix}, "
-            "required_version={required_version}, "
-            "iam_role={iam_role}, "
-            "iam_role_session_duration={iam_role_session_duration}, "
-            "profile={profile}, "
-            "sceptre_user_data={sceptre_user_data}, "
-            "parameters={parameters}, "
-            "hooks={hooks}, "
-            "s3_details={s3_details}, "
-            "dependencies={dependencies}, "
-            "role_arn={role_arn}, "
-            "protected={protected}, "
-            "tags={tags}, "
-            "external_name={external_name}, "
-            "notifications={notifications}, "
-            "on_failure={on_failure}, "
-            "stack_timeout={stack_timeout}, "
-            "stack_group_config={stack_group_config}, "
-            "launch_action={launch_action}"
-            ")".format(
-                name=self.name,
-                project_code=self.project_code,
-                template_path=self.template_path,
-                template_handler_config=self.template_handler_config,
-                region=self.region,
-                template_bucket_name=self.template_bucket_name,
-                template_key_prefix=self.template_key_prefix,
-                required_version=self.required_version,
-                iam_role=self.iam_role,
-                iam_role_session_duration=self.iam_role_session_duration,
-                profile=self.profile,
-                sceptre_user_data=self.sceptre_user_data,
-                parameters=self.parameters,
-                hooks=self.hooks,
-                s3_details=self.s3_details,
-                dependencies=self.dependencies,
-                role_arn=self.role_arn,
-                protected=self.protected,
-                tags=self.tags,
-                external_name=self.external_name,
-                notifications=self.notifications,
-                on_failure=self.on_failure,
-                stack_timeout=self.stack_timeout,
-                launch_action=self.launch_action.name,
-                stack_group_config=self.stack_group_config
-            )
+            f"name='{self.name}', "
+            f"project_code={self.project_code}, "
+            f"template_path={self.template_path}, "
+            f"template_handler_config={self.template_handler_config}, "
+            f"region={self.region}, "
+            f"template_bucket_name={self.template_bucket_name}, "
+            f"template_key_prefix={self.template_key_prefix}, "
+            f"required_version={self.required_version}, "
+            f"iam_role={self.iam_role}, "
+            f"iam_role_session_duration={self.iam_role_session_duration}, "
+            f"profile={self.profile}, "
+            f"sceptre_user_data={self.sceptre_user_data}, "
+            f"parameters={self.parameters}, "
+            f"hooks={self.hooks}, "
+            f"s3_details={self.s3_details}, "
+            f"dependencies={self.dependencies}, "
+            f"role_arn={self.role_arn}, "
+            f"protected={self.protected}, "
+            f"tags={self.tags}, "
+            f"external_name={self.external_name}, "
+            f"notifications={self.notifications}, "
+            f"on_failure={self.on_failure}, "
+            f"stack_timeout={self.stack_timeout}, "
+            f"stack_group_config={self.stack_group_config}, "
+            f"ignore={self.ignore}, "
+            f"obsolete={self.obsolete}"
+            ")"
         )
 
     def __str__(self):
@@ -278,7 +252,8 @@ class Stack(object):
             self.notifications == stack.notifications and
             self.on_failure == stack.on_failure and
             self.stack_timeout == stack.stack_timeout and
-            self.launch_action == stack.launch_action and
+            self.ignore == stack.ignore and
+            self.obsolete == stack.obsolete and
             self.stack_group_config == stack.stack_group_config
         )
 
