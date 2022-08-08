@@ -9,7 +9,7 @@ from sceptre.cli.helpers import catch_exceptions, confirmation, stack_status_exi
 from sceptre.context import SceptreContext
 from sceptre.exceptions import DependencyDoesNotExistError
 from sceptre.plan.plan import SceptrePlan
-from sceptre.stack import LaunchAction, Stack
+from sceptre.stack import Stack
 from sceptre.stack_status import StackStatus
 
 logger = logging.getLogger(__name__)
@@ -20,9 +20,15 @@ logger = logging.getLogger(__name__)
 @click.option(
     "-y", "--yes", is_flag=True, help="Assume yes to all questions."
 )
+@click.option(
+    "-p",
+    "--prune",
+    is_flag=True,
+    help="If set, will delete all stacks in the command path marked as obsolete."
+)
 @click.pass_context
 @catch_exceptions
-def launch_command(ctx: Context, path: str, yes: bool):
+def launch_command(ctx: Context, path: str, yes: bool, prune: bool):
     """
     Launch a Stack or StackGroup for a given config PATH. This command is intended as a catch-all
     command that will apply any changes from Stack Configs indicated via the path.
@@ -30,13 +36,15 @@ def launch_command(ctx: Context, path: str, yes: bool):
     \b
     * Any Stacks that do not exist will be created
     * Any stacks that already exist will be updated (if there are any changes)
-    * If any stacks are marked with launch_type: exclude, they will NOT be created and, if they exist,
-    will be deleted.
+    * If any stacks are marked with "ignore: True", those stacks will neither be created nor updated
+    * If any stacks are marked with "obsolete: True", those stacks will neither be created nor updated.
+        Furthermore, if the "-p"/"--prune" flag is used, these stacks will be deleted prior to any
+        other launch commands
 
     \f
-
     :param path: The path to launch. Can be a Stack or StackGroup.
     :param yes: A flag to answer 'yes' to all CLI questions.
+    :params prune: If True, will delete obsolete stacks
     """
     context = SceptreContext(
         command_path=path,
@@ -46,7 +54,7 @@ def launch_command(ctx: Context, path: str, yes: bool):
         ignore_dependencies=ctx.obj.get("ignore_dependencies")
     )
     launcher = Launcher(context)
-    exit_code = launcher.launch(yes)
+    exit_code = launcher.launch(yes, prune)
     exit(exit_code)
 
 
@@ -60,13 +68,13 @@ class Launcher:
         self._context = context
         self._make_plan = plan_factory
 
-    def launch(self, yes: bool) -> int:
+    def launch(self, yes: bool, prune: bool) -> int:
         deploy_plan = self._create_deploy_plan()
-        stacks_to_skip = self._get_stacks_to_skip(deploy_plan)
-        stacks_to_delete = self._get_stacks_to_delete(deploy_plan)
+        stacks_to_skip = self._get_stacks_to_skip(deploy_plan, prune)
+        stacks_to_delete = self._get_stacks_to_delete(deploy_plan, prune)
 
         self._exclude_stacks_from_plan(deploy_plan, *stacks_to_skip, *stacks_to_delete)
-        self._validate_launch_for_missing_dependencies(deploy_plan)
+        self._validate_launch_for_missing_dependencies(deploy_plan, prune)
         self._print_skips(stacks_to_skip)
         self._print_deletions(stacks_to_delete)
         self._confirm_launch(yes)
@@ -81,17 +89,17 @@ class Launcher:
         plan.resolve(plan.launch.__name__)
         return plan
 
-    def _get_stacks_to_skip(self, deploy_plan: SceptrePlan) -> List[Stack]:
-        return [stack for stack in deploy_plan if stack.launch_action == LaunchAction.skip]
+    def _get_stacks_to_skip(self, deploy_plan: SceptrePlan, prune: bool) -> List[Stack]:
+        return [stack for stack in deploy_plan if stack.ignore or (stack.obsolete and not prune)]
 
-    def _get_stacks_to_delete(self, deploy_plan: SceptrePlan) -> List[Stack]:
-        return [stack for stack in deploy_plan if stack.launch_action == LaunchAction.delete]
+    def _get_stacks_to_delete(self, deploy_plan: SceptrePlan, prune: bool) -> List[Stack]:
+        return [stack for stack in deploy_plan if prune and stack.obsolete]
 
     def _exclude_stacks_from_plan(self, deployment_plan: SceptrePlan, *stacks: Stack):
         for stack in stacks:
             deployment_plan.remove_stack_from_plan(stack)
 
-    def _validate_launch_for_missing_dependencies(self, deploy_plan: SceptrePlan):
+    def _validate_launch_for_missing_dependencies(self, deploy_plan: SceptrePlan, prune: bool):
         validated_stacks = set()
         skipped_dependencies = set()
 
@@ -100,13 +108,14 @@ class Launcher:
                 # In order to avoid unnecessary recursions on stacks already evaluated, we'll return
                 # early if we've already evaluated the stack without issue.
                 return
-            if stack.launch_action == LaunchAction.delete:
+            if prune and stack.obsolete:
                 raise DependencyDoesNotExistError(
-                    f"Launch plan depends on stack {stack.name} with launch_action:"
-                    f"{stack.launch_action.name}. This plan cannot be launched."
+                    f"Launch plan with option depends on stack {stack.name} that is marked as obsolete. "
+                    f"This plan cannot be launched with the --prune option. Only obsolete stacks can "
+                    f"depend upon obsolete stacks when pruning."
                 )
             for dependency in stack.dependencies:
-                if dependency.launch_action == LaunchAction.skip:
+                if dependency.ignore or dependency.obsolete:
                     skipped_dependencies.add(dependency)
                 validate_stack_dependencies(dependency)
             validated_stacks.add(stack)
@@ -115,9 +124,9 @@ class Launcher:
             validate_stack_dependencies(stack)
 
         message = (
-            "WARNING: Launch plan depends on stacks marked with launch_action:skip. Sceptre will "
-            "attempt to continue with launch, but it may fail if any StackConfigs require certain "
-            "resources or outputs that don't currently exist."
+            "WARNING: Launch plan depends on the following ignored and/or obsolete stacks. Sceptre "
+            "will attempt to continue with launch, but it may fail if any Stack Configs require "
+            "certain resources or outputs that don't currently exist."
         )
         self._print_stacks_with_message(list(skipped_dependencies), message)
 

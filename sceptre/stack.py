@@ -9,6 +9,7 @@ This module implements a Stack class, which stores a Stack's data.
 
 import logging
 from enum import Enum
+from typing import List
 
 from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import InvalidConfigFileError
@@ -21,15 +22,6 @@ from sceptre.resolvers import (
     PlaceholderType
 )
 from sceptre.template import Template
-
-
-class LaunchAction(Enum):
-    deploy = 1  # This is the default value for all stacks. It means launch runs create/update.
-    delete = 2  # This means launch won't create and will delete it if it exists.
-    skip = 3  # This means launch will ignore it and perform no actions at all on it.
-
-
-DEFAULT_LAUNCH_ACTION = LaunchAction.deploy
 
 
 class Stack(object):
@@ -101,9 +93,12 @@ class Stack(object):
             be rolled back. Specifying zero, as well as omitting the field,\
             will result in no timeout. Supports only positive integer value.
 
-    :param launch_action: If LaunchAction.include, will create/update the stack when the\
-            launch command is invoked. If LaunchAction.exclude, will delete the stack\
-            (if it exists) when the launch command is invoked.
+    :param ignore: If True, this stack will be ignored during launches (but it can be explicitly
+            deployed with create, update, and delete commands.
+
+    :param obsolete: If True, this stack will operate the same as if ignore was set, but it will
+            also be deleted if the prune command is invoked or the --prune option is used with the
+            launch command.
 
     :param iam_role_session_duration: The session duration when Scetre assumes a role.\
            If not supplied, Sceptre uses default value (3600 seconds)
@@ -151,8 +146,8 @@ class Stack(object):
         template_handler_config: dict = None, template_bucket_name: str = None, template_key_prefix: str = None,
         required_version: str = None, parameters: dict = None, sceptre_user_data: dict = None, hooks: Hook = None,
         s3_details: dict = None, iam_role: str = None, dependencies=None, role_arn: str = None, protected: bool = False,
-        tags: dict = None, external_name: str = None, notifications=None, on_failure: str = None, profile: str = None,
-        stack_timeout: int = 0, iam_role_session_duration: int = 0, launch_action: LaunchAction = LaunchAction.deploy,
+        tags: dict = None, external_name: str = None, notifications: List[str] = None, on_failure: str = None,
+        profile: str = None, stack_timeout: int = 0, iam_role_session_duration: int = 0, ignore=False, obsolete=False,
         stack_group_config: dict = {}
     ):
         self.logger = logging.getLogger(__name__)
@@ -160,9 +155,7 @@ class Stack(object):
         if template_path and template_handler_config:
             raise InvalidConfigFileError("Both 'template_path' and 'template' are set, specify one or the other")
 
-        # If excluded from launch, we don't care about template configurations. The config could be
-        # entirely empty apart from launch_action: exclude.
-        if launch_action == LaunchAction.deploy and not template_path and not template_handler_config:
+        if not template_path and not template_handler_config:
             raise InvalidConfigFileError("Neither 'template_path' nor 'template' is set")
 
         self.name = sceptreise_path(name)
@@ -179,7 +172,8 @@ class Stack(object):
         self.profile = profile
         self.template_key_prefix = template_key_prefix
         self.iam_role_session_duration = iam_role_session_duration
-        self.launch_action = launch_action
+        self.ignore = ignore
+        self.obsolete = obsolete
 
         self._template = None
         self._connection_manager = None

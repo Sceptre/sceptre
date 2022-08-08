@@ -9,7 +9,7 @@ from sceptre.cli.launch import Launcher
 from sceptre.context import SceptreContext
 from sceptre.exceptions import DependencyDoesNotExistError
 from sceptre.plan.plan import SceptrePlan
-from sceptre.stack import Stack, LaunchAction
+from sceptre.stack import Stack
 from sceptre.stack_status import StackStatus
 
 
@@ -70,12 +70,12 @@ class TestLauncher:
         )
 
         self.all_stacks = [
-            Mock(spec=Stack, launch_action=LaunchAction.deploy, dependencies=[]),
-            Mock(spec=Stack, launch_action=LaunchAction.deploy, dependencies=[]),
-            Mock(spec=Stack, launch_action=LaunchAction.deploy, dependencies=[]),
-            Mock(spec=Stack, launch_action=LaunchAction.deploy, dependencies=[]),
-            Mock(spec=Stack, launch_action=LaunchAction.deploy, dependencies=[]),
-            Mock(spec=Stack, launch_action=LaunchAction.deploy, dependencies=[])
+            Mock(spec=Stack, ignore=False, obsolete=False, dependencies=[]),
+            Mock(spec=Stack, ignore=False, obsolete=False, dependencies=[]),
+            Mock(spec=Stack, ignore=False, obsolete=False, dependencies=[]),
+            Mock(spec=Stack, ignore=False, obsolete=False, dependencies=[]),
+            Mock(spec=Stack, ignore=False, obsolete=False, dependencies=[]),
+            Mock(spec=Stack, ignore=False, obsolete=False, dependencies=[])
         ]
         for index, stack in enumerate(self.all_stacks):
             stack.name = f'stacks/stack-{index}.yaml'
@@ -106,9 +106,9 @@ class TestLauncher:
         launch_order = self.plans[plan_number].executions[0][1]
         return list(itertools.chain.from_iterable(launch_order))
 
-    def test_launch__launches_stacks_marked_deploy(self):
-        assert all(s.launch_action == LaunchAction.deploy for s in self.all_stacks)
-        self.launcher.launch(True)
+    def test_launch__launches_stacks_that_are_neither_ignored_nor_obsolete(self):
+        assert all(not s.ignore and not s.obsolete for s in self.all_stacks)
+        self.launcher.launch(True, True)
 
         launched_stacks = set(self.get_executed_stacks(0))
         expected_stacks = set(self.all_stacks)
@@ -116,34 +116,17 @@ class TestLauncher:
         assert self.plans[0].executions[0][0] == "launch"
         assert len(self.plans[0].executions) == 1
 
-    def test_launch__no_deletions__returns_0(self):
-        assert all(s.launch_action == LaunchAction.deploy for s in self.all_stacks)
-        result = self.launcher.launch(True)
-
-        assert result == 0
-
-    @pytest.mark.parametrize(
-        "launch_action", [
-            LaunchAction.skip,
-            LaunchAction.delete
-        ]
-    )
-    def test_launch__does_not_launch_stacks_that_should_be_excluded(self, launch_action):
-        self.all_stacks[4].launch_action = launch_action
-        self.all_stacks[5].launch_action = launch_action
-
-        self.launcher.launch(True)
-
-        launched_stacks = set(self.get_executed_stacks(0))
-        expected_stacks = {s for i, s in enumerate(self.all_stacks) if i not in (4, 5)}
-        assert expected_stacks == launched_stacks
+    def test_launch__prune__no_obsolete_stacks__does_not_delete_any_stacks(self):
+        assert all(not s.obsolete for s in self.all_stacks)
+        self.launcher.launch(True, True)
+        assert len(self.plans) == 1
         assert self.plans[0].executions[0][0] == "launch"
 
-    def test_launch__deletes_stacks_marked_with_delete_launch_action(self):
-        self.all_stacks[4].launch_action = LaunchAction.delete
-        self.all_stacks[5].launch_action = LaunchAction.delete
+    def test_launch__prune__obsolete_stacks__deletes_only_obsolete_stacks(self):
+        self.all_stacks[4].obsolete = True
+        self.all_stacks[5].obsolete = True
 
-        self.launcher.launch(True)
+        self.launcher.launch(True, True)
 
         deleted_stacks = set(self.get_executed_stacks(1))
         expected_stacks = {self.all_stacks[4], self.all_stacks[5]}
@@ -151,11 +134,40 @@ class TestLauncher:
         assert self.plans[1].executions[0][0] == "delete"
         assert self.plans[1].command_stacks == {self.all_stacks[4], self.all_stacks[5]}
 
-    def test_launch__deletes_stacks_using_properly_configured_context_object(self):
-        self.all_stacks[4].launch_action = LaunchAction.delete
-        self.all_stacks[5].launch_action = LaunchAction.delete
+    def test_launch__no_prune__obsolete_stacks__does_not_delete_any_stacks(self):
+        self.all_stacks[4].obsolete = True
+        self.all_stacks[5].obsolete = True
 
-        self.launcher.launch(True)
+        self.launcher.launch(True, False)
+        assert len(self.plans) == 1
+        assert self.plans[0].executions[0][0] == "launch"
+
+    @pytest.mark.parametrize("prune", [
+        pytest.param(True, id="prune"),
+        pytest.param(False, id="no prune")
+    ])
+    def test_launch__returns_0(self, prune):
+        assert all(not s.ignore and not s.obsolete for s in self.all_stacks)
+        result = self.launcher.launch(True, prune)
+
+        assert result == 0
+
+    def test_launch__does_not_launch_stacks_that_should_be_excluded(self):
+        self.all_stacks[4].ignore = True
+        self.all_stacks[5].obsolete = True
+
+        self.launcher.launch(True, True)
+
+        launched_stacks = set(self.get_executed_stacks(0))
+        expected_stacks = {s for i, s in enumerate(self.all_stacks) if i not in (4, 5)}
+        assert expected_stacks == launched_stacks
+        assert self.plans[0].executions[0][0] == "launch"
+
+    def test_launch__prune__deletes_stacks_using_properly_configured_context_object(self):
+        self.all_stacks[4].obsolete = True
+        self.all_stacks[5].obsolete = True
+
+        self.launcher.launch(True, True)
 
         delete_plan_context = next(p.context for p in self.plans if p.command == "delete")
         assert delete_plan_context.project_path == self.context.project_path
@@ -163,27 +175,32 @@ class TestLauncher:
         assert delete_plan_context.ignore_dependencies is True
         assert delete_plan_context.full_scan is True
 
-    def test_launch__stack_with_dependency_marked_delete__raises_dependency_does_not_exist_error(self):
-        self.all_stacks[0].launch_action = LaunchAction.delete
+    def test_launch__prune__stack_with_dependency_marked_obsolete__raises_dependency_does_not_exist_error(self):
+        self.all_stacks[0].obsolete = True
         self.all_stacks[1].dependencies.append(self.all_stacks[0])
 
         with pytest.raises(DependencyDoesNotExistError):
-            self.launcher.launch(True)
+            self.launcher.launch(True, True)
 
-    def test_launch__stacks_marked_delete__delete_and_deploy_actions_succeed__returns_0(self):
-        self.all_stacks[0].launch_action = LaunchAction.delete
+    def test_launch__no_prune__does_not_raise_error(self):
+        self.all_stacks[0].obsolete = True
+        self.all_stacks[1].dependencies.append(self.all_stacks[0])
+        self.launcher.launch(True, False)
 
-        code = self.launcher.launch(True)
+    def test_launch__stacks_are_pruned__delete_and_deploy_actions_succeed__returns_0(self):
+        self.all_stacks[0].obsolete = True
+
+        code = self.launcher.launch(True, True)
         assert code == 0
 
-    def test_launch__stacks_marked_delete__delete_action_fails__returns_nonzero(self):
-        self.all_stacks[3].launch_action = LaunchAction.delete
+    def test_launch__stacks_are_pruned__delete_action_fails__returns_nonzero(self):
+        self.all_stacks[3].obsolete = True
         self.statuses_to_return[self.all_stacks[3]] = StackStatus.FAILED
 
-        code = self.launcher.launch(True)
+        code = self.launcher.launch(True, True)
         assert code != 0
 
     def test_launch__deploy_action_fails__returns_nonzero(self):
         self.statuses_to_return[self.all_stacks[3]] = StackStatus.FAILED
-        code = self.launcher.launch(True)
+        code = self.launcher.launch(True, False)
         assert code != 0

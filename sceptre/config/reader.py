@@ -32,7 +32,7 @@ from sceptre.exceptions import InvalidSceptreDirectoryError
 from sceptre.exceptions import VersionIncompatibleError
 from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.helpers import sceptreise_path
-from sceptre.stack import Stack, LaunchAction, DEFAULT_LAUNCH_ACTION
+from sceptre.stack import Stack
 from sceptre.config import strategies
 
 ConfigAttributes = collections.namedtuple("Attributes", "required optional")
@@ -59,7 +59,8 @@ CONFIG_MERGE_STRATEGIES = {
     "template_key_value": strategies.child_wins,
     "template_path": strategies.child_wins,
     "template": strategies.child_wins,
-    "launch_action": strategies.child_wins
+    "ignore": strategies.child_wins,
+    "obsolete": strategies.child_wins
 }
 
 STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
@@ -543,14 +544,6 @@ class ConfigReader(object):
         s3_details = self._collect_s3_details(
             stack_name, config
         )
-        launch_action_name = config.get('launch_action', DEFAULT_LAUNCH_ACTION.name)
-        try:
-            launch_action = LaunchAction[launch_action_name]
-        except KeyError as e:
-            raise InvalidConfigFileError(
-                f'{launch_action_name} is not a valid launch_action enumeration. Valid values are: '
-                f'{", ".join(option.name for option in LaunchAction)}'
-            ) from e
 
         stack = Stack(
             name=stack_name,
@@ -576,7 +569,8 @@ class ConfigReader(object):
             notifications=config.get("notifications"),
             on_failure=config.get("on_failure"),
             stack_timeout=config.get("stack_timeout", 0),
-            launch_action=launch_action,
+            ignore=config.get("ignore", False),
+            obsolete=config.get("obsolete", False),
             stack_group_config=parsed_stack_group_config
         )
 

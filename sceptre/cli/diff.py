@@ -13,7 +13,7 @@ from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer
 from sceptre.helpers import null_context
 from sceptre.plan.plan import SceptrePlan
 from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error
-from sceptre.stack import Stack, LaunchAction
+from sceptre.stack import Stack
 
 logger = getLogger(__name__)
 
@@ -184,5 +184,5 @@ def filter_plan_for_launchable(plan: SceptrePlan):
     """Filters out the stacks without launch_action:deploy from the SceptrePlan."""
     plan.resolve(plan.diff.__name__)
     for stack in plan:
-        if stack.launch_action != LaunchAction.deploy:
+        if stack.obsolete or stack.ignore:
             plan.remove_stack_from_plan(stack)

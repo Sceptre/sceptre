@@ -131,15 +131,6 @@ class TestStack(object):
                 region="region"
             )
 
-    def test_initialize__stack_has_excluded_launch_type__no_template_parameters__does_not_raise_error(self):
-        # If not for LaunchAction.exclude, this would blow up with an InvalidConfigFileError
-        Stack(
-            name='dev/stack/app', project_code='testing',
-            template_handler_config=None, template_path=None,
-            launch_action=LaunchAction.delete,
-            region=sentinel.region
-        )
-
     def test_stack_repr(self):
         assert self.stack.__repr__() == \
             "sceptre.stack.Stack(" \
