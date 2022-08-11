@@ -71,15 +71,15 @@ class Launcher:
     def launch(self, yes: bool, prune: bool) -> int:
         deploy_plan = self._create_deploy_plan()
         stacks_to_skip = self._get_stacks_to_skip(deploy_plan, prune)
-        stacks_to_delete = self._get_stacks_to_delete(deploy_plan, prune)
+        stacks_to_prune = self._get_stacks_to_prune(deploy_plan, prune)
 
-        self._exclude_stacks_from_plan(deploy_plan, *stacks_to_skip, *stacks_to_delete)
+        self._exclude_stacks_from_plan(deploy_plan, *stacks_to_skip, *stacks_to_prune)
         self._validate_launch_for_missing_dependencies(deploy_plan, prune)
         self._print_skips(stacks_to_skip)
-        self._print_deletions(stacks_to_delete)
+        self._print_deletions(stacks_to_prune)
         self._confirm_launch(yes)
 
-        code = self._delete(stacks_to_delete)
+        code = self._prune(stacks_to_prune)
         code = code or self._deploy(deploy_plan)
         return code
 
@@ -92,7 +92,7 @@ class Launcher:
     def _get_stacks_to_skip(self, deploy_plan: SceptrePlan, prune: bool) -> List[Stack]:
         return [stack for stack in deploy_plan if stack.ignore or (stack.obsolete and not prune)]
 
-    def _get_stacks_to_delete(self, deploy_plan: SceptrePlan, prune: bool) -> List[Stack]:
+    def _get_stacks_to_prune(self, deploy_plan: SceptrePlan, prune: bool) -> List[Stack]:
         return [stack for stack in deploy_plan if prune and stack.obsolete]
 
     def _exclude_stacks_from_plan(self, deployment_plan: SceptrePlan, *stacks: Stack):
@@ -144,18 +144,18 @@ class Launcher:
 
         click.echo(message)
 
-    def _print_deletions(self, stacks_to_delete: List[Stack]):
+    def _print_deletions(self, stacks_to_prune: List[Stack]):
         delete_message = "During launch, the following stacks will be will be deleted, if they exist:"
-        self._print_stacks_with_message(stacks_to_delete, delete_message)
+        self._print_stacks_with_message(stacks_to_prune, delete_message)
 
     def _confirm_launch(self, yes: bool):
         confirmation("launch", yes, command_path=self._context.command_path)
 
-    def _delete(self, stacks_to_delete: List[Stack]) -> int:
-        if len(stacks_to_delete) == 0:
+    def _prune(self, stacks_to_prune: List[Stack]) -> int:
+        if len(stacks_to_prune) == 0:
             return 0
 
-        delete_plan = self._create_deletion_plan(stacks_to_delete)
+        delete_plan = self._create_prune_plan(stacks_to_prune)
         result = delete_plan.delete()
         exit_code = stack_status_exit_code(result.values())
         if exit_code != 0:
@@ -166,7 +166,7 @@ class Launcher:
             )
         return exit_code
 
-    def _create_deletion_plan(self, stacks_to_delete: List[Stack]) -> SceptrePlan:
+    def _create_prune_plan(self, stacks_to_prune: List[Stack]) -> SceptrePlan:
         # We need a new context for deletion
         delete_context = self._context.clone()
         delete_context.full_scan = True  # full_scan lets us pull all stacks in root directory
@@ -174,7 +174,7 @@ class Launcher:
         deletion_plan = self._make_plan(delete_context)
         # We're overriding the command_stacks so we target only those stacks that have been marked
         # with launch_action:delete
-        deletion_plan.command_stacks = set(stacks_to_delete)
+        deletion_plan.command_stacks = set(stacks_to_prune)
         return deletion_plan
 
     def _deploy(self, deploy_plan: SceptrePlan) -> int:

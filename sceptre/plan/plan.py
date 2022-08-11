@@ -93,6 +93,13 @@ class SceptrePlan(object):
                 batch.remove(stack)
                 return
 
+    @require_resolved
+    def filter(self, predicate: Callable[[Stack], bool]):
+        # Cast self to list so we're not modifying what we're iterating over
+        for stack in list(self):
+            if not predicate(stack):
+                self.remove_stack_from_plan(stack)
+
     def resolve(self, command, reverse=False):
         if command == self.command and reverse == self.reverse:
             return

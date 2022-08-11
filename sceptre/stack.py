@@ -8,7 +8,7 @@ This module implements a Stack class, which stores a Stack's data.
 """
 
 import logging
-from typing import List
+from typing import List, Union
 
 from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import InvalidConfigFileError
@@ -144,10 +144,10 @@ class Stack(object):
         self, name: str, project_code: str, region: str, template_path: str = None,
         template_handler_config: dict = None, template_bucket_name: str = None, template_key_prefix: str = None,
         required_version: str = None, parameters: dict = None, sceptre_user_data: dict = None, hooks: Hook = None,
-        s3_details: dict = None, iam_role: str = None, dependencies=None, role_arn: str = None, protected: bool = False,
-        tags: dict = None, external_name: str = None, notifications: List[str] = None, on_failure: str = None,
-        profile: str = None, stack_timeout: int = 0, iam_role_session_duration: int = 0, ignore=False, obsolete=False,
-        stack_group_config: dict = {}
+        s3_details: dict = None, iam_role: str = None, dependencies: List["Stack"] = None, role_arn: str = None,
+        protected: bool = False, tags: dict = None, external_name: str = None, notifications: List[str] = None,
+        on_failure: str = None, profile: str = None, stack_timeout: int = 0, iam_role_session_duration: int = 0,
+        ignore=False, obsolete=False, stack_group_config: dict = {}
     ):
         self.logger = logging.getLogger(__name__)
 

@@ -16,6 +16,7 @@ import colorama
 from sceptre import __version__
 from sceptre.cli.new import new_group
 from sceptre.cli.create import create_command
+from sceptre.cli.prune import prune_command
 from sceptre.cli.update import update_command
 from sceptre.cli.delete import delete_command
 from sceptre.cli.launch import launch_command
@@ -92,3 +93,4 @@ cli.add_command(describe_group)
 cli.add_command(fetch_remote_template_command)
 cli.add_command(diff_command)
 cli.add_command(drift_group)
+cli.add_command(prune_command)

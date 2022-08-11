@@ -183,6 +183,4 @@ def output_buffer_with_normalized_bar_lengths(buffer: io.StringIO, output_stream
 def filter_plan_for_launchable(plan: SceptrePlan):
     """Filters out the stacks without launch_action:deploy from the SceptrePlan."""
     plan.resolve(plan.diff.__name__)
-    for stack in plan:
-        if stack.obsolete or stack.ignore:
-            plan.remove_stack_from_plan(stack)
+    plan.filter(lambda stack: not stack.ignore and not stack.obsolete)

@@ -187,3 +187,10 @@ class TemplateNotFoundError(SceptreException):
     Error raised when a Template file is not found
     """
     pass
+
+
+class CannotPruneStackError(SceptreException):
+    """
+    Error raised when an obsolete stack cannot be pruned because another stack depends on it that is
+    not itself obsolete.
+    """
