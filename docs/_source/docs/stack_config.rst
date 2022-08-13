@@ -139,51 +139,7 @@ For Example:
 .. note::
    The ``ignore`` configuration **only** applies to the **launch** command. You can still run
    ``create``, ``update``, or ``delete`` commands on a stack marked with ``ignore: "true"``;
-   these commands will ignore the ``ignore`` setting and act upon the stack regardless.
-
-.. _launch_action:
-
-launch_action
-~~~~~~~~~~~~~
-* Resolvable: No
-* Can be inherited from StackGroup: Yes
-* Inheritance strategy: Overrides parent if set
-
-This setting determines how the stack should be handled when running ``sceptre launch``. This must
-be one of the following values:
-
-* **"delete"** - If the stack does NOT exist, it won't be created; It will be excluded from the launch.
-   If the stack *DOES* exist, it will be deleted. You **cannot** mark as stack with "delete" that
-   other stacks marked "deploy" depend upon. If a stack is marked "delete", you do not need any
-   other Stack Config keys present on it in order for it to be deleted.
-
-
-This setting is especially useful in two situations:
-
-1. You can use it to make conditional stacks that may or may not be included in a deployment based
-   upon some Jinja2 logic.
-2. If your CI/CD deployment process runs ``sceptre launch``, you can use this to have stacks deleted
-   when it runs. Once the stack(s) have been deleted, you can then delete the StackConfig file.
-
-For Example:
-
-.. code-block:: yaml
-
-   template:
-       path: "my/test/resources.yaml"
-
-   # Configured this way, if the var "use_test_resources" is not true, the stack will be deleted and
-   # excluded from the launch. But if "use_test_resources" is true, the stack will be deployed along
-   # with the rest of the resources being deployed.
-   {% if not var.use_test_resources %}
-   launch_action: "delete"
-   {% endif %}
-
-.. note::
-
-   The ``launch_action`` configuration only applies to the **launch** command. You can still run
-   ``create``, ``update``, or ``delete`` commands on a stack marked with ``launch_action: "delete"``;
-   these commands will ignore the launch_action setting.
+   these commands will ignore the ``ignore`` setting and act upon the stack the same as any other.
 
 notifications
 ~~~~~~~~~~~~~
@@ -196,6 +152,39 @@ can be specified per Stack. This configuration will be used by the ``create``,
 ``update``, and ``delete`` commands. More information about Stack notifications
 can found under the relevant section in the `AWS CloudFormation API
 documentation`_.
+
+.. _`obsolete`:
+
+obsolete
+~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This configuration should be set with a boolean value of ``True`` or ``False``. By default, this is
+set to ``False`` on all stacks.
+
+The ``obsolete`` configuration should be used to mark stacks to be deleted via ``prune`` actions,
+if they currently exist on AWS. (If they don't exist on AWS, pruning does nothing).
+
+There are two ways to prune obsolete stacks:
+
+1. ``sceptre prune`` will delete *all* obsolete stacks in the **project**
+2. ``sceptre launch --prune [command path]`` will delete all obsolete stacks in the command path
+   before continuing with the launch.
+
+In practice, the ``obsolete`` configuration operates identically to ``ignore`` with the extra prune
+effects. When the ``launch`` command is invoked without the ``--prune`` flag, obsolete stacks will
+be ignored and not launched, just as if ``ignore: True`` was on the Stack Config.
+
+**Important**: You cannot have non-obsolete stacks dependent upon obsolete stacks. Both the
+``prune`` and ``launch --prune`` will reject such configurations and will not continue if this sort
+of dependency structure is detected. Only obsolete stacks can depend on obsolete stacks.
+
+.. note::
+   The ``obsolete`` configuration **only** applies to the **launch** and **prune** commands. You can
+   still run ``create``, ``update``, or ``delete`` commands on a stack marked with ``obsolete: "true"``;
+   these commands will ignore the ``obsolete`` setting and act upon the stack the same as any other.
 
 on_failure
 ~~~~~~~~~~

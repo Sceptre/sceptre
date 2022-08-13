@@ -106,14 +106,15 @@ in its Stack and StackGroup Configs; If you delete a Stack Config, Sceptre won't
 
 Therefore, the way to accomplish this "clean up" operation is to perform the change in 3 steps:
 
-1. First, add ``launch_action: "delete"`` to the Stack Config(s) you want to clean up.
-   For more information on ``launch_action``, see the :ref:`Stack Config entry on it<launch_action>`.
-2. Run ``sceptre launch`` to apply the change to AWS. This will cause that stack to be deleted.
-3. Delete the local Stack Config files you added the launch_action to in step 1, since the stacks
-   they create have all been deleted.
+1. First, add ``obsolete: True`` to the Stack Config(s) you want to clean up.
+   For more information on ``obsolete``, see the :ref:`Stack Config entry on it<obsolete>`.
+2. Update your CI/CD process to run ``sceptre launch --prune`` instead of ``sceptre launch``. This
+   will cause all stacks marked as obsolete to be deleted going forward.
+3. Once your CI/CD process has cleaned up all the obsolete stacks, delete the local Stack Config files
+   you marked as obsolete in step 1, since the stacks they create have all been deleted.
 
 .. note::
 
-   Using ``launch_action: "delete"`` will not work if any other stacks depend on that stack that are
-   not themselves marked with ``launch_action: "delete"``. Attempting to launch any stacks that
-   depend on a stack marked "delete" will result in Sceptre immediately failing the launch.
+   Using ``obsolete: True`` will not work if any other stacks depend on that stack that are
+   not themselves obsolete. Attempting to prune any stacks that depend on a obsolete stack will
+   result in Sceptre immediately failing the launch.

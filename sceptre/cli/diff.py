@@ -49,9 +49,8 @@ logger = getLogger(__name__)
     'all_',
     is_flag=True,
     help=(
-         "If set, will perform diffing on ALL stacks, not just ones that have a \"deploy\" "
-         "launch_action; Otherwise, it will diff only stacks that would be created or updated when "
-         "running the launch command."
+         "If set, will perform diffing on ALL stacks, including ignored and obsolete ones; Otherwise, "
+         "it will diff only stacks that would be created or updated when running the launch command."
     )
 )
 @click.argument('path')
@@ -181,6 +180,5 @@ def output_buffer_with_normalized_bar_lengths(buffer: io.StringIO, output_stream
 
 
 def filter_plan_for_launchable(plan: SceptrePlan):
-    """Filters out the stacks without launch_action:deploy from the SceptrePlan."""
     plan.resolve(plan.diff.__name__)
     plan.filter(lambda stack: not stack.ignore and not stack.obsolete)
