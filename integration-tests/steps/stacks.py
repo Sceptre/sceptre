@@ -267,33 +267,32 @@ def step_impl(context, stack_name):
 
 @when('the user launches stack "{stack_name}"')
 def step_impl(context, stack_name):
+    launch_stack(context, stack_name)
+
+
+@when('the user launches stack "{stack_name}" with --prune')
+def step_impl(context, stack_name):
+    launch_stack(context, stack_name, True)
+
+
+def launch_stack(context, stack_name, prune=False, ignore_dependencies=False):
     sceptre_context = SceptreContext(
         command_path=stack_name + '.yaml',
-        project_path=context.sceptre_dir
+        project_path=context.sceptre_dir,
+        ignore_dependencies=ignore_dependencies
     )
 
     launcher = Launcher(sceptre_context)
 
     try:
-        launcher.launch(True)
+        launcher.launch(True, prune)
     except Exception as e:
         context.error = e
 
 
 @when('the user launches stack "{stack_name}" with ignore dependencies')
 def step_impl(context, stack_name):
-    sceptre_context = SceptreContext(
-        command_path=stack_name + '.yaml',
-        project_path=context.sceptre_dir,
-        ignore_dependencies=True
-    )
-
-    launcher = Launcher(sceptre_context)
-
-    try:
-        launcher.launch(True)
-    except Exception as e:
-        context.error = e
+    launch_stack(context, stack_name, False, True)
 
 
 @when('the user describes the resources of stack "{stack_name}"')

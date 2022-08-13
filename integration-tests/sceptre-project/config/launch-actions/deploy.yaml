@@ -1,5 +1,2 @@
-# This is the default so it isn't required, but for testing let's explicitly set it.
-launch_action: deploy
-
 template:
   path: valid_template.yaml

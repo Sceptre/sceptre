@@ -1,0 +1,5 @@
+# This stack shouldn't ever be launched
+obsolete: True
+
+template:
+  path: valid_template.yaml

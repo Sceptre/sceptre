@@ -1,4 +1,4 @@
-launch_action: skip
+ignore: True
 
 template:
   path: valid_template.yaml

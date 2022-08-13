@@ -48,24 +48,28 @@ def step_impl(context, stack_group_name, status):
 
 @when('the user launches stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
-    sceptre_context = SceptreContext(
-        command_path=stack_group_name,
-        project_path=context.sceptre_dir
-    )
-    launcher = Launcher(sceptre_context)
-    launcher.launch(True)
+    launch_stack_group(context, stack_group_name)
+
+
+@when('the user launches stack_group "{stack_group_name}" with --prune')
+def step_impl(context, stack_group_name):
+    launch_stack_group(context, stack_group_name, True)
 
 
 @when('the user launches stack_group "{stack_group_name}" with ignore dependencies')
 def step_impl(context, stack_group_name):
+    launch_stack_group(context, stack_group_name, False, True)
+
+
+def launch_stack_group(context, stack_group_name, prune=False, ignore_dependencies=False):
     sceptre_context = SceptreContext(
         command_path=stack_group_name,
         project_path=context.sceptre_dir,
-        ignore_dependencies=True
+        ignore_dependencies=ignore_dependencies
     )
 
     launcher = Launcher(sceptre_context)
-    launcher.launch(True)
+    launcher.launch(True, prune)
 
 
 @when('the user deletes stack_group "{stack_group_name}"')
