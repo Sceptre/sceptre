@@ -228,33 +228,25 @@ class Stack(object):
         return self.name
 
     def __eq__(self, stack):
+        # We should no use any resolvable properties in __eq__, since it is used when adding the
+        # Stack to a set, which is done very early in plan resolution. Trying to reference resolvers
+        # before the plan is fully resolved can potentially blow up.
         return (
             self.name == stack.name and
+            self.external_name == stack.external_name and
             self.project_code == stack.project_code and
             self.template_path == stack.template_path and
-            self.template_handler_config == stack.template_handler_config and
             self.region == stack.region and
-            self.template_bucket_name == stack.template_bucket_name and
             self.template_key_prefix == stack.template_key_prefix and
             self.required_version == stack.required_version and
-            self.iam_role == stack.iam_role and
             self.iam_role_session_duration == stack.iam_role_session_duration and
             self.profile == stack.profile and
-            self.sceptre_user_data == stack.sceptre_user_data and
-            self.parameters == stack.parameters and
-            self.hooks == stack.hooks and
-            self.s3_details == stack.s3_details and
             self.dependencies == stack.dependencies and
-            self.role_arn == stack.role_arn and
             self.protected == stack.protected and
-            self.tags == stack.tags and
-            self.external_name == stack.external_name and
-            self.notifications == stack.notifications and
             self.on_failure == stack.on_failure and
             self.stack_timeout == stack.stack_timeout and
             self.ignore == stack.ignore and
-            self.obsolete == stack.obsolete and
-            self.stack_group_config == stack.stack_group_config
+            self.obsolete == stack.obsolete
         )
 
     def __hash__(self):
