@@ -17,9 +17,7 @@ logger = logging.getLogger(__name__)
 
 @click.command(name="launch", short_help="Launch a Stack or StackGroup.")
 @click.argument("path")
-@click.option(
-    "-y", "--yes", is_flag=True, help="Assume yes to all questions."
-)
+@click.option("-y", "--yes", is_flag=True, help="Assume yes to all questions.")
 @click.option(
     "-p",
     "--prune",
@@ -38,13 +36,8 @@ def launch_command(ctx: Context, path: str, yes: bool, prune: bool):
     * Any stacks that already exist will be updated (if there are any changes)
     * If any stacks are marked with "ignore: True", those stacks will neither be created nor updated
     * If any stacks are marked with "obsolete: True", those stacks will neither be created nor updated.
-        Furthermore, if the "-p"/"--prune" flag is used, these stacks will be deleted prior to any
-        other launch commands
-
-    \f
-    :param path: The path to launch. Can be a Stack or StackGroup.
-    :param yes: A flag to answer 'yes' to all CLI questions.
-    :params prune: If True, will delete obsolete stacks
+      Furthermore, if the "-p"/"--prune" flag is used, these stacks will be deleted prior to any
+      other launch commands
     """
     context = SceptreContext(
         command_path=path,
@@ -59,12 +52,12 @@ def launch_command(ctx: Context, path: str, yes: bool, prune: bool):
 
 
 class Launcher:
-    def __init__(self, context: SceptreContext, plan_factory=SceptrePlan):
-        """Launcher is a utility to coordinate the flow of launching.
+    """Launcher is a utility to coordinate the flow of launching.
 
-        :param context: The Sceptre context to use for launching
-        :param plan_factory: A callable with the signature of (SceptreContext) -> SceptrePlan
-        """
+    :param context: The Sceptre context to use for launching
+    :param plan_factory: A callable with the signature of (SceptreContext) -> SceptrePlan
+    """
+    def __init__(self, context: SceptreContext, plan_factory=SceptrePlan):
         self._context = context
         self._make_plan = plan_factory
 

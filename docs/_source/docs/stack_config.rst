@@ -111,12 +111,14 @@ ignore
 This configuration should be set with a boolean value of ``True`` or ``False``. By default, this is
 set to ``False`` on all stacks.
 
-This setting determines how the stack should be handled when running ``sceptre launch``. A stack
+``ignore`` determines how the stack should be handled when running ``sceptre launch``. A stack
 marked with ``ignore: True`` will be completely ignored by the launch command. If the stack does NOT
-exist, it won't be created. If it *DOES* exist, it will neither be updated nor deleted. You *can*
-mark a stack with ``ignore: True`` that other non-ignored stacks depend on, but the lauch will fail
-if dependent stacks require resources or outputs that don't exist because the stack has not been
-launched. **Therefore, only ignore dependencies of other stacks if you are aware of the risks of launch failure.**
+exist on AWS, it won't be created. If it *DOES* exist, it will neither be updated nor deleted.
+
+You *can* mark a stack with ``ignore: True`` that other non-ignored stacks depend on, but the launch
+will fail if dependent stacks require resources or outputs that don't exist because the stack has not been
+launched. **Therefore, only ignore dependencies of other stacks if you are aware of the risks of
+launch failure.**
 
 This setting can be especially useful when combined with Jinja logic to exclude certain stacks from
 launch based upon conditional Jinja-based template logic.

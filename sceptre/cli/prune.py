@@ -17,12 +17,8 @@ from sceptre.stack import Stack
 def prune_command(ctx, yes: bool):
     """
     This command deletes all obsolete stacks in the project. Only obsolete stacks can be deleted
-    via prune, however; If any non-obsolete stacks depend on obsolete stacks, an error will be
-    raised and this command will fail
-
-    \f
-
-    :param yes: Flag to answer yes to all CLI questions.
+    via prune; If any non-obsolete stacks depend on obsolete stacks, an error will be
+    raised and this command will fail.
     """
     context = SceptreContext(
         # We're going to override the command stacks, so the path doesn't really matter
@@ -39,16 +35,16 @@ def prune_command(ctx, yes: bool):
 
 
 class Pruner:
+    """Pruner is a utility to coordinate the flow of deleting all stacks in the project that
+    are marked "obsolete".
+
+    Note: The command_path on the passed context will be ignored; This command operates on the
+    entire project rather than on any particular command path.
+
+    :param context: The Sceptre context to use for pruning
+    :param plan_factory: A callable with the signature of (SceptreContext) -> SceptrePlan
+    """
     def __init__(self, context:  SceptreContext, plan_factory=SceptrePlan):
-        """Pruner is a utility to coordinate the flow of deleting all stacks in the project that
-        are marked "obsolete".
-
-        Note: The command_path on the passed context will be ignored; This command operates on the
-        entire project rather than on any particular command path.
-
-        :param context: The Sceptre context to use for pruning
-        :param plan_factory: A callable with the signature of (SceptreContext) -> SceptrePlan
-        """
         self._context = context
         self._make_plan = plan_factory
 
