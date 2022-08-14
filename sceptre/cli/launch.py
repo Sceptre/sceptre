@@ -124,7 +124,7 @@ class Launcher:
         self._print_stacks_with_message(list(skipped_dependencies), message)
 
     def _print_skips(self, stacks_to_skip: List[Stack]):
-        skip_message = "During launch, the following stacks will be skipped, neither created nor deleted:"
+        skip_message = "During launch, the following stacks will be skipped, neither created nor updated:"
         self._print_stacks_with_message(stacks_to_skip, skip_message)
 
     def _print_stacks_with_message(self, stacks: List[Stack], message: str):
