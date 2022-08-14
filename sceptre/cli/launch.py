@@ -166,7 +166,7 @@ class Launcher:
         delete_context.ignore_dependencies = True  # we ONLY care about deleting the command stacks
         deletion_plan = self._make_plan(delete_context)
         # We're overriding the command_stacks so we target only those stacks that have been marked
-        # with launch_action:delete
+        # with obsolete: True
         deletion_plan.command_stacks = set(stacks_to_prune)
         return deletion_plan
 
