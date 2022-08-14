@@ -82,6 +82,7 @@ class SceptrePlan(object):
 
     @require_resolved
     def __iter__(self) -> Iterable[Stack]:
+        """Iterates the stacks in the launch_order"""
         # We cast it to list so it's "frozen" in time, in case the launch order is modified
         # while iterating.
         yield from list(itertools.chain.from_iterable(self.launch_order))
@@ -95,8 +96,12 @@ class SceptrePlan(object):
 
     @require_resolved
     def filter(self, predicate: Callable[[Stack], bool]):
-        # Cast self to list so we're not modifying what we're iterating over
-        for stack in list(self):
+        """Filters the plan's resolved launch_order to remove specific stacks.
+
+        :param predicate: This callable should take a single Stack and return True if it should stay
+            in the launch_order or False if it should be filtered out.
+        """
+        for stack in self:
             if not predicate(stack):
                 self.remove_stack_from_plan(stack)
 
