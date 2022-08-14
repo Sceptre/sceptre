@@ -10,6 +10,7 @@ available to a Stack.
 import json
 import logging
 import time
+import typing
 import urllib
 from datetime import datetime, timedelta
 from os import path
@@ -31,6 +32,9 @@ from sceptre.helpers import normalise_path
 from sceptre.hooks import add_stack_hooks
 from sceptre.stack import Stack
 from sceptre.stack_status import StackChangeSetStatus, StackStatus
+
+if typing.TYPE_CHECKING:
+    from sceptre.diffing.stack_differ import StackDiff, StackDiffer
 
 
 class StackActions(object):
@@ -992,18 +996,13 @@ class StackActions(object):
             raise
 
     @add_stack_hooks
-    def diff(self, stack_differ):
+    def diff(self, stack_differ: "StackDiffer") -> "StackDiff":
         """
-        Returns a diff of Template and Remote Template
-        using a specific diff library.
+        Returns a diff of local and deployed template and stack configuration using a specific diff
+        library.
 
-        :param stack_differ: The diff lib to use, default difflib.
-        :type: sceptre.diffing.stack_differ.StackDiffer
-
-        :param all_stacks: If True, will perform the diff on ALL stacks
-
-        :returns: A StackDiff object.
-        :rtype: sceptre.diffing.stack_differ.StackDiff
+        :param stack_differ: The differ to use
+        :returns: A StackDiff object with the full, computed diff
         """
         return stack_differ.diff(self)
 
