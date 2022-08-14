@@ -116,5 +116,5 @@ Therefore, the way to accomplish this "clean up" operation is to perform the cha
 .. note::
 
    Using ``obsolete: True`` will not work if any other stacks depend on that stack that are
-   not themselves obsolete. Attempting to prune any stacks that depend on a obsolete stack will
-   result in Sceptre immediately failing the launch.
+   not themselves obsolete. Attempting to prune any obsolete stacks that are depended on by
+   non-obsolete stacks will result in Sceptre immediately failing the launch.
