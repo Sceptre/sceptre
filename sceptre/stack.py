@@ -8,7 +8,7 @@ This module implements a Stack class, which stores a Stack's data.
 """
 
 import logging
-from typing import List, Union
+from typing import List
 
 from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import InvalidConfigFileError
