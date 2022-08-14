@@ -140,7 +140,7 @@ For Example:
 
 .. note::
    The ``ignore`` configuration **only** applies to the **launch** command. You can still run
-   ``create``, ``update``, or ``delete`` commands on a stack marked with ``ignore: "true"``;
+   ``create``, ``update``, or ``delete`` commands on a stack marked with ``ignore: True``;
    these commands will ignore the ``ignore`` setting and act upon the stack the same as any other.
 
 notifications
@@ -171,7 +171,7 @@ if they currently exist on AWS. (If they don't exist on AWS, pruning does nothin
 
 There are two ways to prune obsolete stacks:
 
-1. ``sceptre prune`` will delete *all* obsolete stacks in the **project**
+1. ``sceptre prune`` will delete *all* obsolete stacks in the **project**.
 2. ``sceptre launch --prune [command path]`` will delete all obsolete stacks in the command path
    before continuing with the launch.
 
