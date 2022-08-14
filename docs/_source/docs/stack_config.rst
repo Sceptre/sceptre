@@ -185,7 +185,7 @@ of dependency structure is detected. Only obsolete stacks can depend on obsolete
 
 .. note::
    The ``obsolete`` configuration **only** applies to the **launch** and **prune** commands. You can
-   still run ``create``, ``update``, or ``delete`` commands on a stack marked with ``obsolete: "true"``;
+   still run ``create``, ``update``, or ``delete`` commands on a stack marked with ``obsolete: True``;
    these commands will ignore the ``obsolete`` setting and act upon the stack the same as any other.
 
 on_failure
