@@ -303,6 +303,8 @@ class ConfigReader(object):
                             "have their full path from `config` defined."
                             .format(stackname=stack.name, dep=dep,
                                     stackkeys=", ".join(stack_map.keys())))
+                # We deduplicate the dependencies using a set here, since it's possible that a given
+                # dependency ends up in the list multiple times.
                 stack.dependencies = list(set(stack.dependencies))
             else:
                 stack.dependencies = []
