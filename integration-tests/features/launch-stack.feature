@@ -24,7 +24,7 @@ Feature: Launch stack
     When the user launches stack "1/A" with ignore dependencies
     Then stack "1/A" exists in "CREATE_COMPLETE" state
 
-  Scenario: launch an obsolete that doesn't exist
+  Scenario: launch an obsolete stack that doesn't exist
     Given stack "launch-actions/obsolete" does not exist
     When the user launches stack "launch-actions/obsolete"
     Then stack "launch-actions/obsolete" does not exist
