@@ -101,8 +101,8 @@ creating stacks that don't exist and updating stacks that do exist. This makes i
 command to configure your CI/CD system to invoke. However, sometimes you need to delete a stack that
 isn't needed anymore and you want this automatically applied by the same process.
 
-This "clean up" is complicated by the fact that Sceptre doesn't know about anything that isn't
-in its Stack and StackGroup Configs; If you delete a Stack Config, Sceptre won't know to clean it up.
+This "clean up" is complicated by the fact that Sceptre doesn't know anything that isn't in its
+Stack and StackGroup Configs; If you delete a Stack Config, Sceptre won't know to clean it up.
 
 Therefore, the way to accomplish this "clean up" operation is to perform the change in 3 steps:
 
