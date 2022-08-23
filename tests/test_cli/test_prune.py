@@ -6,7 +6,7 @@ from unittest.mock import Mock, create_autospec
 
 import pytest
 
-from sceptre.cli.prune import Pruner
+from sceptre.cli.prune import Pruner, PATH_FOR_WHOLE_PROJECT
 from sceptre.context import SceptreContext
 from sceptre.exceptions import CannotPruneStackError
 from sceptre.plan.plan import SceptrePlan
@@ -79,7 +79,7 @@ class TestPruner:
 
         self.context = SceptreContext(
             project_path="project",
-            command_path="my-test-group",
+            command_path=PATH_FOR_WHOLE_PROJECT,
         )
 
         self.all_stacks = [
@@ -129,7 +129,7 @@ class TestPruner:
         self.pruner.prune(True)
         assert len(self.plans[0].executions) == 0
 
-    def test_prune__obsolete_stacks__deletes_only_obsolete_stacks(self):
+    def test_prune__whole_project__obsolete_stacks__deletes_all_obsolete_stacks(self):
         self.all_stacks[4].obsolete = True
         self.all_stacks[5].obsolete = True
 
@@ -137,6 +137,15 @@ class TestPruner:
 
         assert self.plans[0].executions[0][0] == 'delete'
         assert set(self.executed_stacks) == {self.all_stacks[4], self.all_stacks[5]}
+
+    def test_prune__command_path__obsolete_stacks__deletes_only_obsolete_stacks_on_path(self):
+        self.all_stacks[4].obsolete = True  # On command path
+        self.all_stacks[5].obsolete = True  # not on command path
+        self.context.command_path = "my/command/path"
+        self.pruner.prune(True)
+
+        assert self.plans[0].executions[0][0] == 'delete'
+        assert set(self.executed_stacks) == {self.all_stacks[4]}
 
     def test_prune__obsolete_stacks__returns_zero(self):
         self.all_stacks[4].obsolete = True

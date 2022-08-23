@@ -1,16 +1,17 @@
 import logging
 from typing import List
+from unittest.mock import ANY
 
 import click
 from click import Context
 from colorama import Fore, Style
 
 from sceptre.cli.helpers import catch_exceptions, confirmation, stack_status_exit_code
+from sceptre.cli.prune import Pruner
 from sceptre.context import SceptreContext
 from sceptre.exceptions import DependencyDoesNotExistError
 from sceptre.plan.plan import SceptrePlan
 from sceptre.stack import Stack
-from sceptre.stack_status import StackStatus
 
 logger = logging.getLogger(__name__)
 
@@ -57,9 +58,10 @@ class Launcher:
     :param context: The Sceptre context to use for launching
     :param plan_factory: A callable with the signature of (SceptreContext) -> SceptrePlan
     """
-    def __init__(self, context: SceptreContext, plan_factory=SceptrePlan):
+    def __init__(self, context: SceptreContext, plan_factory=SceptrePlan, pruner_factory=Pruner):
         self._context = context
         self._make_plan = plan_factory
+        self._make_pruner = pruner_factory
 
     def launch(self, yes: bool, prune: bool) -> int:
         deploy_plan = self._create_deploy_plan()
@@ -69,10 +71,12 @@ class Launcher:
         self._exclude_stacks_from_plan(deploy_plan, *stacks_to_skip, *stacks_to_prune)
         self._validate_launch_for_missing_dependencies(deploy_plan, prune)
         self._print_skips(stacks_to_skip)
-        self._print_deletions(stacks_to_prune)
-        self._confirm_launch(yes)
 
-        code = self._prune(stacks_to_prune)
+        code = 0
+        if prune:
+            code = self._prune(yes)
+
+        self._confirm_launch(yes)
         code = code or self._deploy(deploy_plan)
         return code
 
@@ -144,31 +148,12 @@ class Launcher:
     def _confirm_launch(self, yes: bool):
         confirmation("launch", yes, command_path=self._context.command_path)
 
-    def _prune(self, stacks_to_prune: List[Stack]) -> int:
-        if len(stacks_to_prune) == 0:
-            return 0
-
-        delete_plan = self._create_prune_plan(stacks_to_prune)
-        result = delete_plan.delete()
-        exit_code = stack_status_exit_code(result.values())
+    def _prune(self, yes: bool) -> int:
+        pruner = self._make_pruner(ANY, self._make_plan)
+        exit_code = pruner.prune(yes)
         if exit_code != 0:
-            failed_stacks = [s for s in result.keys() if result[s] != StackStatus.COMPLETE]
-            self._print_stacks_with_message(
-                failed_stacks,
-                "Stack deletion failed, so could not proceed with launch. Failed Stacks:"
-            )
+            click.echo("Stack deletion failed, so could not proceed with launch.")
         return exit_code
-
-    def _create_prune_plan(self, stacks_to_prune: List[Stack]) -> SceptrePlan:
-        # We need a new context for deletion
-        delete_context = self._context.clone()
-        delete_context.full_scan = True  # full_scan lets us pull all stacks in root directory
-        delete_context.ignore_dependencies = True  # we ONLY care about deleting the command stacks
-        deletion_plan = self._make_plan(delete_context)
-        # We're overriding the command_stacks so we target only those stacks that have been marked
-        # with obsolete: True
-        deletion_plan.command_stacks = set(stacks_to_prune)
-        return deletion_plan
 
     def _deploy(self, deploy_plan: SceptrePlan) -> int:
         result = deploy_plan.launch()

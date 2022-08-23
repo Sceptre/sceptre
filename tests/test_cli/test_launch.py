@@ -6,6 +6,7 @@ from unittest.mock import create_autospec, Mock
 import pytest
 
 from sceptre.cli.launch import Launcher
+from sceptre.cli.prune import Pruner
 from sceptre.context import SceptreContext
 from sceptre.exceptions import DependencyDoesNotExistError
 from sceptre.plan.plan import SceptrePlan
@@ -68,6 +69,12 @@ class TestLauncher:
             project_path="project",
             command_path="my-test-group",
         )
+        self.cloned_context = self.context.clone()
+        # Since contexts don't have a __eq__ method, you can't assert easily off the result of
+        # clone without some hijinks.
+        self.context = Mock(wraps=self.context, **{
+            'clone.return_value': self.cloned_context
+        })
 
         self.all_stacks = [
             Mock(spec=Stack, ignore=False, obsolete=False, dependencies=[]),
@@ -87,10 +94,16 @@ class TestLauncher:
 
         self.statuses_to_return = defaultdict(lambda: StackStatus.COMPLETE)
 
+        self.fake_pruner = Mock(spec=Pruner, **{
+            'prune.return_value': 0
+        })
+
         self.plan_factory = create_autospec(SceptrePlan)
         self.plan_factory.side_effect = self.fake_plan_factory
+        self.pruner_factory = create_autospec(Pruner)
+        self.pruner_factory.return_value = self.fake_pruner
 
-        self.launcher = Launcher(self.context, self.plan_factory)
+        self.launcher = Launcher(self.context, self.plan_factory, self.pruner_factory)
 
     def fake_plan_factory(self, sceptre_context):
         fake_plan = FakePlan(
@@ -122,17 +135,10 @@ class TestLauncher:
         assert len(self.plans) == 1
         assert self.plans[0].executions[0][0] == "launch"
 
-    def test_launch__prune__obsolete_stacks__deletes_only_obsolete_stacks(self):
-        self.all_stacks[4].obsolete = True
-        self.all_stacks[5].obsolete = True
-
+    def test_launch__prune__instantiates_and_invokes_pruner(self):
         self.launcher.launch(True, True)
-
-        deleted_stacks = set(self.get_executed_stacks(1))
-        expected_stacks = {self.all_stacks[4], self.all_stacks[5]}
-        assert expected_stacks == deleted_stacks
-        assert self.plans[1].executions[0][0] == "delete"
-        assert self.plans[1].command_stacks == {self.all_stacks[4], self.all_stacks[5]}
+        self.pruner_factory.assert_any_call(self.context.clone(), self.plan_factory)
+        self.fake_pruner.prune.assert_any_call(True)
 
     def test_launch__no_prune__obsolete_stacks__does_not_delete_any_stacks(self):
         self.all_stacks[4].obsolete = True

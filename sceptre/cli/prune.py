@@ -7,22 +7,24 @@ from sceptre.exceptions import CannotPruneStackError
 from sceptre.plan.plan import SceptrePlan
 from sceptre.stack import Stack
 
+PATH_FOR_WHOLE_PROJECT = "."
+
 
 @click.command(name="prune", short_help="Deletes all obsolete stacks in the project")
 @click.option(
     "-y", "--yes", is_flag=True, help="Assume yes to all questions."
 )
+@click.argument("path", default=PATH_FOR_WHOLE_PROJECT)
 @click.pass_context
 @catch_exceptions
-def prune_command(ctx, yes: bool):
+def prune_command(ctx, yes: bool, path):
     """
     This command deletes all obsolete stacks in the project. Only obsolete stacks can be deleted
     via prune; If any non-obsolete stacks depend on obsolete stacks, an error will be
     raised and this command will fail.
     """
     context = SceptreContext(
-        # We're going to override the command stacks, so the path doesn't really matter
-        command_path=".",
+        command_path=path,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
@@ -66,14 +68,15 @@ class Pruner:
 
     def _create_plan(self):
         context = self._context.clone()
-        # We require full_scan because we're pruning ALL stacks in the project, regardless of any
-        # command path
         context.full_scan = True
-        # The command_path doesn't matter, since we're going to override the command stacks
-        context.command_path = "."
         plan = self._make_plan(self._context)
+        if context.command_path == PATH_FOR_WHOLE_PROJECT:
+            stacks = plan.graph
+        else:
+            stacks = plan.command_stacks
+
         plan.command_stacks = {
-            stack for stack in plan.graph if stack.obsolete
+            stack for stack in stacks if stack.obsolete
         }
         return plan
 
