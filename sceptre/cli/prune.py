@@ -56,7 +56,8 @@ class Pruner:
             return 0
 
         self._resolve_plan(plan)
-        self._validate_plan_for_dependencies_on_obsolete_stacks(plan)
+        if not self._context.ignore_dependencies:
+            self._validate_plan_for_dependencies_on_obsolete_stacks(plan)
         self._print_stacks_to_be_deleted(plan)
         self._confirm_prune(yes)
 

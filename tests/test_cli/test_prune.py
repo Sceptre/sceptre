@@ -176,6 +176,22 @@ class TestPruner:
         with pytest.raises(CannotPruneStackError):
             self.pruner.prune(True)
 
+    def test_prune__non_obsolete_stacks_depend_on_obsolete_stacks__ignore_dependencies__deletes_obsolete_stacks(self):
+        self.all_stacks[1].obsolete = True
+        self.all_stacks[3].obsolete = False
+        self.all_stacks[4].obsolete = False
+        self.all_stacks[5].obsolete = False
+        self.all_stacks[3].dependencies.append(self.all_stacks[1])
+        self.all_stacks[4].dependencies.append(self.all_stacks[3])
+        self.all_stacks[5].dependencies.append(self.all_stacks[3])
+        self.context.ignore_dependencies = True
+        self.pruner.prune(True)
+
+        assert self.plans[0].executions[0][0] == 'delete'
+        assert set(self.executed_stacks) == {
+            self.all_stacks[1],
+        }
+
     def test_prune__delete_action_fails__returns_nonzero(self):
         self.all_stacks[1].obsolete = True
         self.statuses_to_return[self.all_stacks[1]] = StackStatus.FAILED
