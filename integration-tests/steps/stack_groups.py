@@ -6,6 +6,7 @@ from botocore.exceptions import ClientError
 
 from helpers import read_template_file, get_cloudformation_stack_name, retry_boto_call
 from sceptre.cli.launch import Launcher
+from sceptre.cli.prune import PATH_FOR_WHOLE_PROJECT, Pruner
 from sceptre.context import SceptreContext
 from sceptre.diffing.diff_writer import DeepDiffWriter
 from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer
@@ -293,6 +294,17 @@ def step_impl(context, group_name, diff_type):
     differ = differ_classes[diff_type]()
     context.writer_class = writer_class[diff_type]
     context.output = list(sceptre_plan.diff(differ).values())
+
+
+@when("the whole project is pruned")
+def step_impl(context):
+    sceptre_context = SceptreContext(
+        command_path=PATH_FOR_WHOLE_PROJECT,
+        project_path=context.sceptre_dir,
+    )
+
+    pruner = Pruner(sceptre_context)
+    pruner.prune()
 
 
 def get_stack_creation_times(context, stacks):

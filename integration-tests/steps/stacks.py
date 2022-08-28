@@ -14,6 +14,7 @@ from botocore.exceptions import ClientError
 from helpers import read_template_file, get_cloudformation_stack_name
 from helpers import retry_boto_call
 from sceptre.cli.launch import Launcher
+from sceptre.cli.prune import Pruner
 from sceptre.diffing.diff_writer import DeepDiffWriter, DiffWriter
 from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff
 
@@ -273,6 +274,17 @@ def step_impl(context, stack_name):
 @when('the user launches stack "{stack_name}" with --prune')
 def step_impl(context, stack_name):
     launch_stack(context, stack_name, True)
+
+
+@when('command path "{path}" is pruned')
+def step_impl(context, path):
+    sceptre_context = SceptreContext(
+        command_path=path,
+        project_path=context.sceptre_dir,
+    )
+
+    pruner = Pruner(sceptre_context)
+    pruner.prune()
 
 
 def launch_stack(context, stack_name, prune=False, ignore_dependencies=False):
