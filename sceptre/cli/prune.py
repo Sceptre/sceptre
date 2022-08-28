@@ -32,7 +32,11 @@ def prune_command(ctx, yes: bool, path):
         full_scan=True,
     )
     pruner = Pruner(context)
-    code = pruner.prune(yes)
+    pruner.print_operations()
+    if not yes:
+        pruner.confirm()
+
+    code = pruner.prune()
     exit(code)
 
 
@@ -50,18 +54,27 @@ class Pruner:
         self._context = context
         self._make_plan = plan_factory
 
-    def prune(self, yes: bool) -> int:
+    def confirm(self):
+        self._confirm_prune()
+
+    def print_operations(self):
         plan = self._create_plan()
 
         if not self._plan_has_obsolete_stacks(plan):
             self._print_no_obsolete_stacks()
+
+        self._resolve_plan(plan)
+        self._print_stacks_to_be_deleted(plan)
+
+    def prune(self) -> int:
+        plan = self._create_plan()
+
+        if not self._plan_has_obsolete_stacks(plan):
             return 0
 
         self._resolve_plan(plan)
         if not self._context.ignore_dependencies:
             self._validate_plan_for_dependencies_on_obsolete_stacks(plan)
-        self._print_stacks_to_be_deleted(plan)
-        self._confirm_prune(yes)
 
         code = self._prune(plan)
         return code
@@ -124,17 +137,21 @@ class Pruner:
             check_for_non_obsolete_dependencies(stack)
 
     def _print_stacks_to_be_deleted(self, plan: SceptrePlan):
-        delete_msg = "The following obsolete stacks will be deleted:\n"
+        delete_msg = "* The following obsolete stacks will be deleted (if they exist on AWS):\n"
 
         stacks_list = ''
         for stack in plan:
+            # It's possible there could be stacks in the plan that aren't obsolete because those
+            # stacks depend on obsolete stacks. They won't pass validation, but that's not the
+            # point of this method. We'll just skip those here and fail validation later.
+            if not stack.obsolete:
+                continue
             stacks_list += "{}{}{}\n".format(Fore.YELLOW, stack.name, Style.RESET_ALL)
 
         click.echo(delete_msg + stacks_list)
 
-    def _confirm_prune(self, yes: bool):
-        if not yes:
-            click.confirm("Do you want to delete these stacks?", abort=True)
+    def _confirm_prune(self):
+        click.confirm("Do you want to delete these stacks?", abort=True)
 
     def _prune(self, plan: SceptrePlan):
         responses = plan.delete()

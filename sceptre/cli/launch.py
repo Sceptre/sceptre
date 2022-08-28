@@ -1,6 +1,5 @@
 import logging
 from typing import List
-from unittest.mock import ANY
 
 import click
 from click import Context
@@ -48,7 +47,11 @@ def launch_command(ctx: Context, path: str, yes: bool, prune: bool):
         ignore_dependencies=ctx.obj.get("ignore_dependencies")
     )
     launcher = Launcher(context)
-    exit_code = launcher.launch(yes, prune)
+    launcher.print_operations(prune)
+    if not yes:
+        launcher.confirm(prune)
+
+    exit_code = launcher.launch(prune)
     exit(exit_code)
 
 
@@ -63,20 +66,29 @@ class Launcher:
         self._make_plan = plan_factory
         self._make_pruner = pruner_factory
 
-    def launch(self, yes: bool, prune: bool) -> int:
+    def confirm(self, prune: bool):
+        self._confirm_launch(prune)
+
+    def print_operations(self, prune: bool):
+        deploy_plan = self._create_deploy_plan()
+        stacks_to_skip = self._get_stacks_to_skip(deploy_plan, prune)
+        self._print_skips(stacks_to_skip)
+        if prune:
+            pruner = self._make_pruner(self._context, self._make_plan)
+            pruner.print_operations()
+
+    def launch(self, prune: bool) -> int:
         deploy_plan = self._create_deploy_plan()
         stacks_to_skip = self._get_stacks_to_skip(deploy_plan, prune)
         stacks_to_prune = self._get_stacks_to_prune(deploy_plan, prune)
 
         self._exclude_stacks_from_plan(deploy_plan, *stacks_to_skip, *stacks_to_prune)
         self._validate_launch_for_missing_dependencies(deploy_plan, prune)
-        self._print_skips(stacks_to_skip)
 
         code = 0
         if prune:
-            code = self._prune(yes)
+            code = self._prune()
 
-        self._confirm_launch(yes)
         code = code or self._deploy(deploy_plan)
         return code
 
@@ -107,9 +119,8 @@ class Launcher:
                 return
             if prune and stack.obsolete:
                 raise DependencyDoesNotExistError(
-                    f"Launch plan with option depends on stack {stack.name} that is marked as obsolete. "
-                    f"This plan cannot be launched with the --prune option. Only obsolete stacks can "
-                    f"depend upon obsolete stacks when pruning."
+                    f"Launch plan with --prune option depends on stack '{stack.name}' that is marked "
+                    f"as obsolete. Only obsolete stacks can depend upon obsolete stacks when pruning."
                 )
             for dependency in stack.dependencies:
                 if dependency.ignore or dependency.obsolete:
@@ -121,9 +132,9 @@ class Launcher:
             validate_stack_dependencies(stack)
 
         message = (
-            "WARNING: Launch plan depends on the following ignored and/or obsolete stacks. Sceptre "
-            "will attempt to continue with launch, but it may fail if any Stack Configs require "
-            "certain resources or outputs that don't currently exist."
+            "WARNING: Launch plan depends on the following ignored and/or obsolete stacks.\n"
+            "  Sceptre will attempt to continue with launch, but it may fail if any Stack Configs \n"
+            "  require certain resources or outputs that don't currently exist."
         )
         self._print_stacks_with_message(list(skipped_dependencies), message)
 
@@ -145,12 +156,15 @@ class Launcher:
         delete_message = "During launch, the following stacks will be will be deleted, if they exist:"
         self._print_stacks_with_message(stacks_to_prune, delete_message)
 
-    def _confirm_launch(self, yes: bool):
-        confirmation("launch", yes, command_path=self._context.command_path)
+    def _confirm_launch(self, prune: bool):
+        operation_name = "launch"
+        if prune:
+            operation_name += " --prune"
+        confirmation(operation_name, False, command_path=self._context.command_path)
 
-    def _prune(self, yes: bool) -> int:
-        pruner = self._make_pruner(ANY, self._make_plan)
-        exit_code = pruner.prune(yes)
+    def _prune(self) -> int:
+        pruner = self._make_pruner(self._context, self._make_plan)
+        exit_code = pruner.prune()
         if exit_code != 0:
             click.echo("Stack deletion failed, so could not proceed with launch.")
         return exit_code
