@@ -62,6 +62,7 @@ class Pruner:
 
         if not self._plan_has_obsolete_stacks(plan):
             self._print_no_obsolete_stacks()
+            return
 
         self._resolve_plan(plan)
         self._print_stacks_to_be_deleted(plan)
