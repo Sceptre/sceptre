@@ -228,7 +228,7 @@ class Stack(object):
         return self.name
 
     def __eq__(self, stack):
-        # We should no use any resolvable properties in __eq__, since it is used when adding the
+        # We should not use any resolvable properties in __eq__, since it is used when adding the
         # Stack to a set, which is done very early in plan resolution. Trying to reference resolvers
         # before the plan is fully resolved can potentially blow up.
         return (
