@@ -33,7 +33,7 @@ def prune_command(ctx, yes: bool, path):
     )
     pruner = Pruner(context)
     pruner.print_operations()
-    if not yes:
+    if not yes and pruner.prune_count > 0:
         pruner.confirm()
 
     code = pruner.prune()
@@ -54,6 +54,8 @@ class Pruner:
         self._context = context
         self._make_plan = plan_factory
 
+        self._plan = None
+
     def confirm(self):
         self._confirm_prune()
 
@@ -64,8 +66,14 @@ class Pruner:
             self._print_no_obsolete_stacks()
             return
 
-        self._resolve_plan(plan)
         self._print_stacks_to_be_deleted(plan)
+
+    @property
+    def prune_count(self) -> 0:
+        plan = self._create_plan()
+        if self._plan_has_obsolete_stacks(plan):
+            return len(list(plan))
+        return 0
 
     def prune(self) -> int:
         plan = self._create_plan()
@@ -73,7 +81,6 @@ class Pruner:
         if not self._plan_has_obsolete_stacks(plan):
             return 0
 
-        self._resolve_plan(plan)
         if not self._context.ignore_dependencies:
             self._validate_plan_for_dependencies_on_obsolete_stacks(plan)
 
@@ -81,29 +88,33 @@ class Pruner:
         return code
 
     def _create_plan(self):
-        context = self._context.clone()
-        context.full_scan = True
-        plan = self._make_plan(self._context)
-        if context.command_path == PATH_FOR_WHOLE_PROJECT:
-            stacks = plan.graph
-        else:
-            stacks = plan.command_stacks
+        if not self._plan:
+            context = self._context.clone()
+            context.full_scan = True
+            plan = self._make_plan(self._context)
+            if context.command_path == PATH_FOR_WHOLE_PROJECT:
+                stacks = plan.graph
+            else:
+                stacks = plan.command_stacks
 
-        plan.command_stacks = {
-            stack for stack in stacks if stack.obsolete
-        }
-        return plan
+            plan.command_stacks = {
+                stack for stack in stacks if stack.obsolete
+            }
+            self._resolve_plan(plan)
+            self._plan = plan
+        return self._plan
 
     def _plan_has_obsolete_stacks(self, plan: SceptrePlan):
         return len(plan.command_stacks) > 0
 
     def _print_no_obsolete_stacks(self):
-        click.echo("There are no stacks marked obsolete, so there is nothing to prune.")
+        click.echo("* There are no stacks marked obsolete, so there is nothing to prune.")
 
     def _resolve_plan(self, plan: SceptrePlan):
-        # Prune is actually a particular kind of filtered deletion, so we use delete as the actual
-        # resolved command.
-        plan.resolve(plan.delete.__name__, reverse=True)
+        if len(plan.command_stacks) > 0:
+            # Prune is actually a particular kind of filtered deletion, so we use delete as the actual
+            # resolved command.
+            plan.resolve(plan.delete.__name__, reverse=True)
 
     def _validate_plan_for_dependencies_on_obsolete_stacks(self, plan: SceptrePlan):
         def check_for_non_obsolete_dependencies(stack: Stack):

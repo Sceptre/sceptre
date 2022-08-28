@@ -66,6 +66,8 @@ class Launcher:
         self._make_plan = plan_factory
         self._make_pruner = pruner_factory
 
+        self._plan = None
+
     def confirm(self, prune: bool):
         self._confirm_launch(prune)
 
@@ -93,10 +95,12 @@ class Launcher:
         return code
 
     def _create_deploy_plan(self) -> SceptrePlan:
-        plan = self._make_plan(self._context)
-        # The plan must be resolved so we can modify launch order and items before executing it
-        plan.resolve(plan.launch.__name__)
-        return plan
+        if not self._plan:
+            plan = self._make_plan(self._context)
+            # The plan must be resolved so we can modify launch order and items before executing it
+            plan.resolve(plan.launch.__name__)
+            self._plan = plan
+        return self._plan
 
     def _get_stacks_to_skip(self, deploy_plan: SceptrePlan, prune: bool) -> List[Stack]:
         return [stack for stack in deploy_plan if stack.ignore or (stack.obsolete and not prune)]
