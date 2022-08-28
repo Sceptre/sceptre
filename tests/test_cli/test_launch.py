@@ -73,7 +73,8 @@ class TestLauncher:
         # Since contexts don't have a __eq__ method, you can't assert easily off the result of
         # clone without some hijinks.
         self.context = Mock(wraps=self.context, **{
-            'clone.return_value': self.cloned_context
+            'clone.return_value': self.cloned_context,
+            'ignore_dependencies': False
         })
 
         self.all_stacks = [
@@ -121,7 +122,7 @@ class TestLauncher:
 
     def test_launch__launches_stacks_that_are_neither_ignored_nor_obsolete(self):
         assert all(not s.ignore and not s.obsolete for s in self.all_stacks)
-        self.launcher.launch(True, True)
+        self.launcher.launch(True)
 
         launched_stacks = set(self.get_executed_stacks(0))
         expected_stacks = set(self.all_stacks)
@@ -131,20 +132,19 @@ class TestLauncher:
 
     def test_launch__prune__no_obsolete_stacks__does_not_delete_any_stacks(self):
         assert all(not s.obsolete for s in self.all_stacks)
-        self.launcher.launch(True, True)
+        self.launcher.launch(True)
         assert len(self.plans) == 1
         assert self.plans[0].executions[0][0] == "launch"
 
     def test_launch__prune__instantiates_and_invokes_pruner(self):
-        self.launcher.launch(True, True)
-        self.pruner_factory.assert_any_call(self.context.clone(), self.plan_factory)
-        self.fake_pruner.prune.assert_any_call(True)
+        self.launcher.launch(True)
+        self.fake_pruner.prune.assert_any_call()
 
     def test_launch__no_prune__obsolete_stacks__does_not_delete_any_stacks(self):
         self.all_stacks[4].obsolete = True
         self.all_stacks[5].obsolete = True
 
-        self.launcher.launch(True, False)
+        self.launcher.launch(False)
         assert len(self.plans) == 1
         assert self.plans[0].executions[0][0] == "launch"
 
@@ -154,7 +154,7 @@ class TestLauncher:
     ])
     def test_launch__returns_0(self, prune):
         assert all(not s.ignore and not s.obsolete for s in self.all_stacks)
-        result = self.launcher.launch(True, prune)
+        result = self.launcher.launch(prune)
 
         assert result == 0
 
@@ -162,51 +162,38 @@ class TestLauncher:
         self.all_stacks[4].ignore = True
         self.all_stacks[5].obsolete = True
 
-        self.launcher.launch(True, True)
+        self.launcher.launch(True)
 
         launched_stacks = set(self.get_executed_stacks(0))
         expected_stacks = {s for i, s in enumerate(self.all_stacks) if i not in (4, 5)}
         assert expected_stacks == launched_stacks
         assert self.plans[0].executions[0][0] == "launch"
 
-    def test_launch__prune__deletes_stacks_using_properly_configured_context_object(self):
-        self.all_stacks[4].obsolete = True
-        self.all_stacks[5].obsolete = True
-
-        self.launcher.launch(True, True)
-
-        delete_plan_context = next(p.context for p in self.plans if p.command == "delete")
-        assert delete_plan_context.project_path == self.context.project_path
-        assert delete_plan_context.command_path == self.context.command_path
-        assert delete_plan_context.ignore_dependencies is True
-        assert delete_plan_context.full_scan is True
-
     def test_launch__prune__stack_with_dependency_marked_obsolete__raises_dependency_does_not_exist_error(self):
         self.all_stacks[0].obsolete = True
         self.all_stacks[1].dependencies.append(self.all_stacks[0])
 
         with pytest.raises(DependencyDoesNotExistError):
-            self.launcher.launch(True, True)
+            self.launcher.launch(True)
 
     def test_launch__no_prune__does_not_raise_error(self):
         self.all_stacks[0].obsolete = True
         self.all_stacks[1].dependencies.append(self.all_stacks[0])
-        self.launcher.launch(True, False)
+        self.launcher.launch(False)
 
     def test_launch__stacks_are_pruned__delete_and_deploy_actions_succeed__returns_0(self):
         self.all_stacks[0].obsolete = True
 
-        code = self.launcher.launch(True, True)
+        code = self.launcher.launch(True)
         assert code == 0
 
-    def test_launch__stacks_are_pruned__delete_action_fails__returns_nonzero(self):
-        self.all_stacks[3].obsolete = True
-        self.statuses_to_return[self.all_stacks[3]] = StackStatus.FAILED
+    def test_launch__pruner_returns_nonzero__returns_nonzero(self):
+        self.fake_pruner.prune.return_value = 99
 
-        code = self.launcher.launch(True, True)
-        assert code != 0
+        code = self.launcher.launch(True)
+        assert code == 99
 
     def test_launch__deploy_action_fails__returns_nonzero(self):
         self.statuses_to_return[self.all_stacks[3]] = StackStatus.FAILED
-        code = self.launcher.launch(True, False)
+        code = self.launcher.launch(False)
         assert code != 0
