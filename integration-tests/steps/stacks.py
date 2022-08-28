@@ -285,7 +285,7 @@ def launch_stack(context, stack_name, prune=False, ignore_dependencies=False):
     launcher = Launcher(sceptre_context)
 
     try:
-        launcher.launch(True, prune)
+        launcher.launch(prune)
     except Exception as e:
         context.error = e
 

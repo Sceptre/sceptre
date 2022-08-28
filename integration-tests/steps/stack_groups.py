@@ -69,7 +69,7 @@ def launch_stack_group(context, stack_group_name, prune=False, ignore_dependenci
     )
 
     launcher = Launcher(sceptre_context)
-    launcher.launch(True, prune)
+    launcher.launch(prune)
 
 
 @when('the user deletes stack_group "{stack_group_name}"')
