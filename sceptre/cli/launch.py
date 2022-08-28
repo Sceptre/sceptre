@@ -129,7 +129,8 @@ class Launcher:
             for dependency in stack.dependencies:
                 if dependency.ignore or dependency.obsolete:
                     skipped_dependencies.add(dependency)
-                validate_stack_dependencies(dependency)
+                if not self._context.ignore_dependencies:
+                    validate_stack_dependencies(dependency)
             validated_stacks.add(stack)
 
         for stack in deploy_plan:

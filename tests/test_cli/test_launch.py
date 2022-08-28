@@ -1,3 +1,4 @@
+import functools
 import itertools
 from collections import defaultdict
 from typing import Optional, List, Set
@@ -53,11 +54,23 @@ class FakePlan(SceptrePlan):
             chunk = {
                 stack for stack in all_stacks[start_index: start_index + 2]
                 if stack not in self.command_stacks
+                and self._has_dependency_on_a_command_stack(stack)
             }
-
-            launch_order.append(chunk)
+            if len(chunk):
+                launch_order.append(chunk)
 
         return launch_order
+
+    @functools.lru_cache()
+    def _has_dependency_on_a_command_stack(self, stack):
+        if len(self.command_stacks.intersection(stack.dependencies)):
+            return True
+
+        for dependency in stack.dependencies:
+            if self._has_dependency_on_a_command_stack(dependency):
+                return True
+
+        return False
 
 
 class TestLauncher:
@@ -88,10 +101,7 @@ class TestLauncher:
         for index, stack in enumerate(self.all_stacks):
             stack.name = f'stacks/stack-{index}.yaml'
 
-        self.command_stacks = [
-            self.all_stacks[2],
-            self.all_stacks[4]
-        ]
+        self.command_stacks = list(self.all_stacks)
 
         self.statuses_to_return = defaultdict(lambda: StackStatus.COMPLETE)
 
@@ -122,8 +132,8 @@ class TestLauncher:
 
     def test_launch__launches_stacks_that_are_neither_ignored_nor_obsolete(self):
         assert all(not s.ignore and not s.obsolete for s in self.all_stacks)
+        self.command_stacks = self.all_stacks
         self.launcher.launch(True)
-
         launched_stacks = set(self.get_executed_stacks(0))
         expected_stacks = set(self.all_stacks)
         assert expected_stacks == launched_stacks
@@ -173,8 +183,18 @@ class TestLauncher:
         self.all_stacks[0].obsolete = True
         self.all_stacks[1].dependencies.append(self.all_stacks[0])
 
+        self.command_stacks = [self.all_stacks[0]]
+
         with pytest.raises(DependencyDoesNotExistError):
             self.launcher.launch(True)
+
+    def test_launch__prune__ignore_dependencies__stack_with_dependency_marked_obsolete__raises_no_error(self):
+        self.all_stacks[0].obsolete = True
+        self.all_stacks[1].dependencies.append(self.all_stacks[0])
+
+        self.command_stacks = [self.all_stacks[0]]
+        self.context.ignore_dependencies = True
+        self.launcher.launch(True)
 
     def test_launch__no_prune__does_not_raise_error(self):
         self.all_stacks[0].obsolete = True
