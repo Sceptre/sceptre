@@ -8,7 +8,7 @@ This module implements a Stack class, which stores a Stack's data.
 """
 
 import logging
-from typing import List
+from typing import List, Any
 
 from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import InvalidConfigFileError
@@ -171,8 +171,8 @@ class Stack(object):
         self.profile = profile
         self.template_key_prefix = template_key_prefix
         self.iam_role_session_duration = iam_role_session_duration
-        self.ignore = ignore
-        self.obsolete = obsolete
+        self.ignore = self._ensure_boolean("ignore", ignore)
+        self.obsolete = self._ensure_boolean("obsolete", obsolete)
 
         self._template = None
         self._connection_manager = None
@@ -191,6 +191,11 @@ class Stack(object):
         self.notifications = notifications or []
 
         self.hooks = hooks or {}
+
+    def _ensure_boolean(self, config_name: str, value: Any) -> bool:
+        if not isinstance(value, bool):
+            raise InvalidConfigFileError(f"Value for {config_name} must be a boolean, not a {type(value).__name__}")
+        return value
 
     def __repr__(self):
         return (
