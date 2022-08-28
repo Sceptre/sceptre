@@ -122,18 +122,18 @@ class TestPruner:
         return list(itertools.chain.from_iterable(launch_order))
 
     def test_prune__no_obsolete_stacks__returns_zero(self):
-        code = self.pruner.prune(True)
+        code = self.pruner.prune()
         assert code == 0
 
     def test_prune__no_obsolete_stacks__does_not_call_command_on_plan(self):
-        self.pruner.prune(True)
+        self.pruner.prune()
         assert len(self.plans[0].executions) == 0
 
     def test_prune__whole_project__obsolete_stacks__deletes_all_obsolete_stacks(self):
         self.all_stacks[4].obsolete = True
         self.all_stacks[5].obsolete = True
 
-        self.pruner.prune(True)
+        self.pruner.prune()
 
         assert self.plans[0].executions[0][0] == 'delete'
         assert set(self.executed_stacks) == {self.all_stacks[4], self.all_stacks[5]}
@@ -142,7 +142,7 @@ class TestPruner:
         self.all_stacks[4].obsolete = True  # On command path
         self.all_stacks[5].obsolete = True  # not on command path
         self.context.command_path = "my/command/path"
-        self.pruner.prune(True)
+        self.pruner.prune()
 
         assert self.plans[0].executions[0][0] == 'delete'
         assert set(self.executed_stacks) == {self.all_stacks[4]}
@@ -151,7 +151,7 @@ class TestPruner:
         self.all_stacks[4].obsolete = True
         self.all_stacks[5].obsolete = True
 
-        code = self.pruner.prune(True)
+        code = self.pruner.prune()
         assert code == 0
 
     def test_prune__obsolete_stacks_depend_on_other_obsolete_stacks__deletes_only_obsolete_stacks(self):
@@ -163,7 +163,7 @@ class TestPruner:
         self.all_stacks[4].dependencies.append(self.all_stacks[3])
         self.all_stacks[5].dependencies.append(self.all_stacks[3])
 
-        self.pruner.prune(True)
+        self.pruner.prune()
 
         assert self.plans[0].executions[0][0] == 'delete'
         assert set(self.executed_stacks) == {
@@ -183,7 +183,7 @@ class TestPruner:
         self.all_stacks[5].dependencies.append(self.all_stacks[3])
 
         with pytest.raises(CannotPruneStackError):
-            self.pruner.prune(True)
+            self.pruner.prune()
 
     def test_prune__non_obsolete_stacks_depend_on_obsolete_stacks__ignore_dependencies__deletes_obsolete_stacks(self):
         self.all_stacks[1].obsolete = True
@@ -194,7 +194,7 @@ class TestPruner:
         self.all_stacks[4].dependencies.append(self.all_stacks[3])
         self.all_stacks[5].dependencies.append(self.all_stacks[3])
         self.context.ignore_dependencies = True
-        self.pruner.prune(True)
+        self.pruner.prune()
 
         assert self.plans[0].executions[0][0] == 'delete'
         assert set(self.executed_stacks) == {
@@ -205,5 +205,5 @@ class TestPruner:
         self.all_stacks[1].obsolete = True
         self.statuses_to_return[self.all_stacks[1]] = StackStatus.FAILED
 
-        code = self.pruner.prune(True)
+        code = self.pruner.prune()
         assert code != 0
