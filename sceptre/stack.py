@@ -194,7 +194,9 @@ class Stack(object):
 
     def _ensure_boolean(self, config_name: str, value: Any) -> bool:
         if not isinstance(value, bool):
-            raise InvalidConfigFileError(f"Value for {config_name} must be a boolean, not a {type(value).__name__}")
+            raise InvalidConfigFileError(
+                f"{self.name}: Value for {config_name} must be a boolean, not a {type(value).__name__}"
+            )
         return value
 
     def __repr__(self):
