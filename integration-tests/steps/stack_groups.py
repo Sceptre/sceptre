@@ -5,6 +5,8 @@ from behave import *
 from botocore.exceptions import ClientError
 
 from helpers import read_template_file, get_cloudformation_stack_name, retry_boto_call
+from sceptre.cli.launch import Launcher
+from sceptre.cli.prune import PATH_FOR_WHOLE_PROJECT, Pruner
 from sceptre.context import SceptreContext
 from sceptre.diffing.diff_writer import DeepDiffWriter
 from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer
@@ -47,25 +49,28 @@ def step_impl(context, stack_group_name, status):
 
 @when('the user launches stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
-    sceptre_context = SceptreContext(
-        command_path=stack_group_name,
-        project_path=context.sceptre_dir
-    )
+    launch_stack_group(context, stack_group_name)
 
-    sceptre_plan = SceptrePlan(sceptre_context)
-    sceptre_plan.launch()
+
+@when('the user launches stack_group "{stack_group_name}" with --prune')
+def step_impl(context, stack_group_name):
+    launch_stack_group(context, stack_group_name, True)
 
 
 @when('the user launches stack_group "{stack_group_name}" with ignore dependencies')
 def step_impl(context, stack_group_name):
+    launch_stack_group(context, stack_group_name, False, True)
+
+
+def launch_stack_group(context, stack_group_name, prune=False, ignore_dependencies=False):
     sceptre_context = SceptreContext(
         command_path=stack_group_name,
         project_path=context.sceptre_dir,
-        ignore_dependencies=True
+        ignore_dependencies=ignore_dependencies
     )
 
-    sceptre_plan = SceptrePlan(sceptre_context)
-    sceptre_plan.launch()
+    launcher = Launcher(sceptre_context)
+    launcher.launch(prune)
 
 
 @when('the user deletes stack_group "{stack_group_name}"')
@@ -289,6 +294,17 @@ def step_impl(context, group_name, diff_type):
     differ = differ_classes[diff_type]()
     context.writer_class = writer_class[diff_type]
     context.output = list(sceptre_plan.diff(differ).values())
+
+
+@when("the whole project is pruned")
+def step_impl(context):
+    sceptre_context = SceptreContext(
+        command_path=PATH_FOR_WHOLE_PROJECT,
+        project_path=context.sceptre_dir,
+    )
+
+    pruner = Pruner(sceptre_context)
+    pruner.prune()
 
 
 def get_stack_creation_times(context, stacks):

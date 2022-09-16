@@ -16,7 +16,7 @@ import sys
 import yaml
 
 from os import environ, path, walk
-from typing import Set
+from typing import Set, Tuple
 from pathlib import Path
 from jinja2 import Environment
 from jinja2 import StrictUndefined
@@ -58,7 +58,9 @@ CONFIG_MERGE_STRATEGIES = {
     "template_bucket_name": strategies.child_wins,
     "template_key_value": strategies.child_wins,
     "template_path": strategies.child_wins,
-    "template": strategies.child_wins
+    "template": strategies.child_wins,
+    "ignore": strategies.child_wins,
+    "obsolete": strategies.child_wins
 }
 
 STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
@@ -203,7 +205,7 @@ class ConfigReader(object):
         node.tag = loader.resolve(type(node), node.value, (True, False))
         return node
 
-    def construct_stacks(self) -> Set[Stack]:
+    def construct_stacks(self) -> Tuple[Set[Stack], Set[Stack]]:
         """
         Traverses the files under the command path.
         For each file encountered, a Stack is constructed
@@ -272,7 +274,7 @@ class ConfigReader(object):
 
         return stacks, command_stacks
 
-    def resolve_stacks(self, stack_map):
+    def resolve_stacks(self, stack_map) -> Set[Stack]:
         """
         Transforms map of Stacks into a set of Stacks, transforms dependencies
         from a list of Strings (stack names) to a list of Stacks.
@@ -301,7 +303,9 @@ class ConfigReader(object):
                             "have their full path from `config` defined."
                             .format(stackname=stack.name, dep=dep,
                                     stackkeys=", ".join(stack_map.keys())))
-
+                # We deduplicate the dependencies using a set here, since it's possible that a given
+                # dependency ends up in the list multiple times.
+                stack.dependencies = list(set(stack.dependencies))
             else:
                 stack.dependencies = []
             stacks.add(stack)
@@ -542,6 +546,7 @@ class ConfigReader(object):
         s3_details = self._collect_s3_details(
             stack_name, config
         )
+
         stack = Stack(
             name=stack_name,
             project_code=config["project_code"],
@@ -566,6 +571,8 @@ class ConfigReader(object):
             notifications=config.get("notifications"),
             on_failure=config.get("on_failure"),
             stack_timeout=config.get("stack_timeout", 0),
+            ignore=config.get("ignore", False),
+            obsolete=config.get("obsolete", False),
             stack_group_config=parsed_stack_group_config
         )
 

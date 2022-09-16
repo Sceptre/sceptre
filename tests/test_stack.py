@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import importlib
+from unittest.mock import MagicMock, sentinel
 
 import pytest
-from unittest.mock import MagicMock, sentinel
 
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.resolvers import Resolver
@@ -62,7 +61,7 @@ class TestStack(object):
         )
         self.stack._template = MagicMock(spec=Template)
 
-    def test_initiate_stack_with_template_path(self):
+    def test_initialize_stack_with_template_path(self):
         stack = Stack(
             name='dev/stack/app', project_code=sentinel.project_code,
             template_path=sentinel.template_path,
@@ -93,7 +92,7 @@ class TestStack(object):
         assert stack.on_failure is None
         assert stack.stack_group_config == {}
 
-    def test_initiate_stack_with_template_handler(self):
+    def test_initialize_stack_with_template_handler(self):
         stack = Stack(
             name='dev/stack/app', project_code=sentinel.project_code,
             template_handler_config=sentinel.template_handler_config,
@@ -132,6 +131,30 @@ class TestStack(object):
                 region="region"
             )
 
+    def test_init__non_boolean_ignore_value__raises_invalid_config_file_error(self):
+        with pytest.raises(InvalidConfigFileError):
+            Stack(
+                name='dev/stack/app', project_code=sentinel.project_code,
+                template_handler_config=sentinel.template_handler_config,
+                template_bucket_name=sentinel.template_bucket_name,
+                template_key_prefix=sentinel.template_key_prefix,
+                required_version=sentinel.required_version,
+                region=sentinel.region, external_name=sentinel.external_name,
+                ignore="true"
+            )
+
+    def test_init__non_boolean_obsolete_value__raises_invalid_config_file_error(self):
+        with pytest.raises(InvalidConfigFileError):
+            Stack(
+                name='dev/stack/app', project_code=sentinel.project_code,
+                template_handler_config=sentinel.template_handler_config,
+                template_bucket_name=sentinel.template_bucket_name,
+                template_key_prefix=sentinel.template_key_prefix,
+                required_version=sentinel.required_version,
+                region=sentinel.region, external_name=sentinel.external_name,
+                obsolete="true"
+            )
+
     def test_stack_repr(self):
         assert self.stack.__repr__() == \
             "sceptre.stack.Stack(" \
@@ -158,20 +181,10 @@ class TestStack(object):
             "notifications=[sentinel.notification], " \
             "on_failure=sentinel.on_failure, " \
             "stack_timeout=sentinel.stack_timeout, " \
-            "stack_group_config={}" \
+            "stack_group_config={}, " \
+            "ignore=False, " \
+            "obsolete=False" \
             ")"
-
-    def test_repr_can_eval_correctly(self):
-        sceptre = importlib.import_module('sceptre')
-        evaluated_stack = eval(
-            repr(self.stack),
-            {
-                'sceptre': sceptre,
-                'sentinel': sentinel
-            }
-        )
-        assert isinstance(evaluated_stack, Stack)
-        assert evaluated_stack.__eq__(self.stack)
 
     def test_configuration_manager__iam_role_raises_recursive_resolve__returns_connection_manager_with_no_role(self):
         class FakeResolver(Resolver):

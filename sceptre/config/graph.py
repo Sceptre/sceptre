@@ -8,8 +8,11 @@ acyclic graph of a Stack's dependencies.
 """
 
 import logging
+from typing import List
+
 import networkx as nx
 from sceptre.exceptions import CircularDependenciesError
+from sceptre.stack import Stack
 
 
 class StackGraph(object):
@@ -77,27 +80,25 @@ class StackGraph(object):
             self._generate_edges(stack, stack.dependencies)
         self.graph.remove_edges_from(nx.selfloop_edges(self.graph))
 
-    def _generate_edges(self, stack, dependencies):
+    def _generate_edges(self, stack: Stack, dependencies: List[Stack]):
         """
         Adds edges to the graph based on a list of dependencies that are
-        generated from the inital stack config. Each of the paths
+        generated from the initial stack config. Each of the paths
         in the inital_dependency_paths list are a depency that the inital
         Stack config depends on.
 
         :param stack: A Sceptre Stack
-        :type stack: sceptre.stack.Stack
         :param dependencies: a collection of dependency paths
-        :type dependencies: list
         """
         self.logger.debug(
             "Generate dependencies for stack {0}".format(stack)
         )
-        for dependency in dependencies:
+        for dependency in set(dependencies):
             self.graph.add_edge(dependency, stack)
             if not nx.is_directed_acyclic_graph(self.graph):
                 raise CircularDependenciesError(
-                    "Dependency cycle detected: {} {}".format(stack,
-                                                              dependency))
+                    f"Dependency cycle detected: {stack} {dependency}"
+                )
             self.logger.debug("  Added dependency: {}".format(dependency))
 
         if not dependencies:

@@ -13,6 +13,8 @@ from contextlib import contextmanager
 from botocore.exceptions import ClientError
 from helpers import read_template_file, get_cloudformation_stack_name
 from helpers import retry_boto_call
+from sceptre.cli.launch import Launcher
+from sceptre.cli.prune import Pruner
 from sceptre.diffing.diff_writer import DeepDiffWriter, DiffWriter
 from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff
 
@@ -266,33 +268,43 @@ def step_impl(context, stack_name):
 
 @when('the user launches stack "{stack_name}"')
 def step_impl(context, stack_name):
+    launch_stack(context, stack_name)
+
+
+@when('the user launches stack "{stack_name}" with --prune')
+def step_impl(context, stack_name):
+    launch_stack(context, stack_name, True)
+
+
+@when('command path "{path}" is pruned')
+def step_impl(context, path):
     sceptre_context = SceptreContext(
-        command_path=stack_name + '.yaml',
-        project_path=context.sceptre_dir
+        command_path=path,
+        project_path=context.sceptre_dir,
     )
 
-    sceptre_plan = SceptrePlan(sceptre_context)
+    pruner = Pruner(sceptre_context)
+    pruner.prune()
+
+
+def launch_stack(context, stack_name, prune=False, ignore_dependencies=False):
+    sceptre_context = SceptreContext(
+        command_path=stack_name + '.yaml',
+        project_path=context.sceptre_dir,
+        ignore_dependencies=ignore_dependencies
+    )
+
+    launcher = Launcher(sceptre_context)
 
     try:
-        sceptre_plan.launch()
+        launcher.launch(prune)
     except Exception as e:
         context.error = e
 
 
 @when('the user launches stack "{stack_name}" with ignore dependencies')
 def step_impl(context, stack_name):
-    sceptre_context = SceptreContext(
-        command_path=stack_name + '.yaml',
-        project_path=context.sceptre_dir,
-        ignore_dependencies=True
-    )
-
-    sceptre_plan = SceptrePlan(sceptre_context)
-
-    try:
-        sceptre_plan.launch()
-    except Exception as e:
-        context.error = e
+    launch_stack(context, stack_name, False, True)
 
 
 @when('the user describes the resources of stack "{stack_name}"')

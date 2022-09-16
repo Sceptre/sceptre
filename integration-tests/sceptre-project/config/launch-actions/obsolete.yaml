@@ -1,0 +1,4 @@
+obsolete: True
+
+template:
+  path: valid_template.yaml

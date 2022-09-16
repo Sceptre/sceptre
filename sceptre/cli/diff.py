@@ -41,15 +41,34 @@ logger = getLogger(__name__)
     '-n',
     '--no-placeholders',
     is_flag=True,
-    help="If True, no placeholder values will be supplied for resolvers that cannot be resolved."
+    help="If set, no placeholder values will be supplied for resolvers that cannot be resolved."
+)
+@click.option(
+    '-a',
+    '--all',
+    'all_',
+    is_flag=True,
+    help=(
+         "If set, will perform diffing on ALL stacks, including ignored and obsolete ones; Otherwise, "
+         "it will diff only stacks that would be created or updated when running the launch command."
+    )
 )
 @click.argument('path')
 @click.pass_context
 @catch_exceptions
-def diff_command(ctx: Context, differ: str, show_no_echo: bool, no_placeholders: bool, path: str):
+def diff_command(
+    ctx: Context,
+    differ: str,
+    show_no_echo: bool,
+    no_placeholders: bool,
+    all_: bool,
+    path: str
+):
     """Indicates the difference between the currently DEPLOYED stacks in the command path and
     the stacks configured in Sceptre right now. This command will compare both the templates as well
-    as the subset of stack configurations that can be compared.
+    as the subset of stack configurations that can be compared. By default, only stacks that would
+    be launched via the launch command will be diffed, but you can diff ALL stacks relevant to the
+    passed command path if you pass the --all flag.
 
     Some settings (such as sceptre_user_data) are not available in a CloudFormation stack
     description, so the diff will not be indicated. Currently compared stack configurations are:
@@ -60,7 +79,7 @@ def diff_command(ctx: Context, differ: str, show_no_echo: bool, no_placeholders:
       * role_arn
       * stack_tags
 
-    Important: There are resolvers (notably !stack_output, among others) that rely on other stacks
+    Important: There are resolvers (notably !stack_output) that rely on other stacks
     to be already deployed when they are resolved. When producing a diff on Stack Configs that have
     such resolvers that point to non-deployed stacks, this presents a challenge, since this means
     those resolvers cannot be resolved. This particularly applies to stack parameters and when a
@@ -87,6 +106,8 @@ def diff_command(ctx: Context, differ: str, show_no_echo: bool, no_placeholders:
     )
     output_format = context.output_format
     plan = SceptrePlan(context)
+    if not all_:
+        filter_plan_for_launchable(plan)
 
     if differ == "deepdiff":
         stack_differ = DeepDiffStackDiffer(show_no_echo)
@@ -156,3 +177,8 @@ def output_buffer_with_normalized_bar_lengths(buffer: io.StringIO, output_stream
         if DiffWriter.LINE_BAR in line:
             line = line.replace(DiffWriter.LINE_BAR, full_length_line_bar)
         output_stream.write(line)
+
+
+def filter_plan_for_launchable(plan: SceptrePlan):
+    plan.resolve(plan.diff.__name__)
+    plan.filter(lambda stack: not stack.ignore and not stack.obsolete)

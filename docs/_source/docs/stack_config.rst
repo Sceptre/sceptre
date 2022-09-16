@@ -16,7 +16,9 @@ particular Stack. The available keys are listed below.
 -  `template_path`_ or `template`_ *(required)*
 -  `dependencies`_ *(optional)*
 -  `hooks`_ *(optional)*
+-  `ignore`_ *(optional)*
 -  `notifications`_ *(optional)*
+-  `obsolete`_ *(optional)*
 -  `on_failure`_ *(optional)*
 -  `parameters`_ *(optional)*
 -  `protected`_ *(optional)*
@@ -100,6 +102,47 @@ hooks
 A list of arbitrary shell or Python commands or scripts to run. Find out more
 in the :doc:`hooks` section.
 
+ignore
+~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This configuration should be set with a boolean value of ``True`` or ``False``. By default, this is
+set to ``False`` on all stacks.
+
+``ignore`` determines how the stack should be handled when running ``sceptre launch``. A stack
+marked with ``ignore: True`` will be completely ignored by the launch command. If the stack does NOT
+exist on AWS, it won't be created. If it *DOES* exist, it will neither be updated nor deleted.
+
+You *can* mark a stack with ``ignore: True`` that other non-ignored stacks depend on, but the launch
+will fail if dependent stacks require resources or outputs that don't exist because the stack has not been
+launched. **Therefore, only ignore dependencies of other stacks if you are aware of the risks of
+launch failure.**
+
+This setting can be especially useful when combined with Jinja logic to exclude certain stacks from
+launch based upon conditional Jinja-based template logic.
+
+For Example:
+
+.. code-block:: yaml
+
+   template:
+       path: "my/test/resources.yaml"
+
+   # Configured this way, if the var "use_test_resources" is not true, the stack will not be launched
+   # and instead excluded from the launch. But if "use_test_resources" is true, the stack will be
+   # deployed along with the rest of the resources being deployed.
+   {% if not var.use_test_resources %}
+   ignore: True
+   {% endif %}
+
+
+.. note::
+   The ``ignore`` configuration **only** applies to the **launch** command. You can still run
+   ``create``, ``update``, or ``delete`` commands on a stack marked with ``ignore: True``;
+   these commands will ignore the ``ignore`` setting and act upon the stack the same as any other.
+
 notifications
 ~~~~~~~~~~~~~
 * Resolvable: Yes
@@ -111,6 +154,39 @@ can be specified per Stack. This configuration will be used by the ``create``,
 ``update``, and ``delete`` commands. More information about Stack notifications
 can found under the relevant section in the `AWS CloudFormation API
 documentation`_.
+
+.. _`obsolete`:
+
+obsolete
+~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This configuration should be set with a boolean value of ``True`` or ``False``. By default, this is
+set to ``False`` on all stacks.
+
+The ``obsolete`` configuration should be used to mark stacks to be deleted via ``prune`` actions,
+if they currently exist on AWS. (If they don't exist on AWS, pruning does nothing).
+
+There are two ways to prune obsolete stacks:
+
+1. ``sceptre prune`` will delete *all* obsolete stacks in the **project**.
+2. ``sceptre launch --prune [command path]`` will delete all obsolete stacks in the command path
+   before continuing with the launch.
+
+In practice, the ``obsolete`` configuration operates identically to ``ignore`` with the extra prune
+effects. When the ``launch`` command is invoked without the ``--prune`` flag, obsolete stacks will
+be ignored and not launched, just as if ``ignore: True`` was on the Stack Config.
+
+**Important**: You cannot have non-obsolete stacks dependent upon obsolete stacks. Both the
+``prune`` and ``launch --prune`` will reject such configurations and will not continue if this sort
+of dependency structure is detected. Only obsolete stacks can depend on obsolete stacks.
+
+.. note::
+   The ``obsolete`` configuration **only** applies to the **launch** and **prune** commands. You can
+   still run ``create``, ``update``, or ``delete`` commands on a stack marked with ``obsolete: True``;
+   these commands will ignore the ``obsolete`` setting and act upon the stack the same as any other.
 
 on_failure
 ~~~~~~~~~~
@@ -245,7 +321,7 @@ For more information on this configuration, its implications, and its uses, see
 :ref:`Sceptre and IAM: iam_role <iam_role_permissions>`.
 
 iam_role_session_duration
-~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 * Resolvable: No
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set

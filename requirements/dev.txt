@@ -12,10 +12,10 @@ pytest-sugar>=0.9.4,<1.0.0
 readme-renderer>=24.0,<25.0
 requests-mock>=1.9.3,<2.0
 setuptools==63.2.0
-Sphinx>=1.6.5,<4.3
+Sphinx>=1.6.5,<=5.1.1
 sphinx-click>=2.0.1,<4.0.0
 sphinx-rtd-theme==0.5.2
-sphinx-autodoc-typehints==1.12.0
+sphinx-autodoc-typehints==1.19.2
 docutils<0.17 # temporary fix for sphinx-rtd-theme==0.5.2, it depends on docutils<0.17
 tox>=3.23.0,<4.0.0
 twine>=1.12.1,<2.0.0

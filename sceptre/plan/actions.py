@@ -10,6 +10,7 @@ available to a Stack.
 import json
 import logging
 import time
+import typing
 import urllib
 from datetime import datetime, timedelta
 from os import path
@@ -18,17 +19,22 @@ from typing import Union, Optional, Tuple, Dict
 import botocore
 from dateutil.tz import tzutc
 
-from sceptre.connection_manager import ConnectionManager
-from sceptre.exceptions import CannotUpdateFailedStackError
-from sceptre.exceptions import ProtectedStackError
-from sceptre.exceptions import StackDoesNotExistError
-from sceptre.exceptions import UnknownStackChangeSetStatusError
-from sceptre.exceptions import UnknownStackStatusError
-from sceptre.hooks import add_stack_hooks
-from sceptre.stack_status import StackChangeSetStatus
-from sceptre.stack_status import StackStatus
 from sceptre.config.reader import ConfigReader
+from sceptre.connection_manager import ConnectionManager
+from sceptre.exceptions import (
+    CannotUpdateFailedStackError,
+    ProtectedStackError,
+    StackDoesNotExistError,
+    UnknownStackChangeSetStatusError,
+    UnknownStackStatusError
+)
 from sceptre.helpers import normalise_path
+from sceptre.hooks import add_stack_hooks
+from sceptre.stack import Stack
+from sceptre.stack_status import StackChangeSetStatus, StackStatus
+
+if typing.TYPE_CHECKING:
+    from sceptre.diffing.stack_differ import StackDiff, StackDiffer
 
 
 class StackActions(object):
@@ -40,7 +46,7 @@ class StackActions(object):
     :type stack: sceptre.stack.Stack
     """
 
-    def __init__(self, stack):
+    def __init__(self, stack: Stack):
         self.stack = stack
         self.name = self.stack.name
         self.logger = logging.getLogger(__name__)
@@ -177,7 +183,7 @@ class StackActions(object):
         return self._wait_for_completion()
 
     @add_stack_hooks
-    def launch(self):
+    def launch(self) -> StackStatus:
         """
         Launches the Stack.
 
@@ -187,10 +193,10 @@ class StackActions(object):
         performed, launch exits gracefully.
 
         :returns: The Stack's status.
-        :rtype: sceptre.stack_status.StackStatus
         """
         self._protect_execution()
-        self.logger.info("%s - Launching Stack", self.stack.name)
+        self.logger.info(f"{self.stack.name} - Launching Stack")
+
         try:
             existing_status = self._get_status()
         except StackDoesNotExistError:
@@ -214,7 +220,6 @@ class StackActions(object):
             )
             status = StackStatus.IN_PROGRESS
         elif existing_status.endswith("FAILED"):
-            status = StackStatus.FAILED
             raise CannotUpdateFailedStackError(
                 "'{0}' is in a the state '{1}' and cannot be updated".format(
                     self.stack.name, existing_status
@@ -991,16 +996,13 @@ class StackActions(object):
             raise
 
     @add_stack_hooks
-    def diff(self, stack_differ):
+    def diff(self, stack_differ: "StackDiffer") -> "StackDiff":
         """
-        Returns a diff of Template and Remote Template
-        using a specific diff library.
+        Returns a diff of local and deployed template and stack configuration using a specific diff
+        library.
 
-        :param stack_differ: The diff lib to use, default difflib.
-        :type: sceptre.diffing.stack_differ.StackDiffer
-
-        :returns: A StackDiff object.
-        :rtype: sceptre.diffing.stack_differ.StackDiff
+        :param stack_differ: The differ to use
+        :returns: A StackDiff object with the full, computed diff
         """
         return stack_differ.diff(self)
 
@@ -1010,10 +1012,10 @@ class StackActions(object):
         Show stack drift for a running stack.
 
         :returns: The stack drift detection status.
-        If the stack does not exist, we return a detection and
-        stack drift status of STACK_DOES_NOT_EXIST.
-        If drift detection times out after 5 minutes, we return
-        TIMED_OUT.
+            If the stack does not exist, we return a detection and
+            stack drift status of STACK_DOES_NOT_EXIST.
+            If drift detection times out after 5 minutes, we return
+            TIMED_OUT.
         """
         try:
             self._get_status()

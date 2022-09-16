@@ -30,7 +30,7 @@ from sceptre.stack import Stack
 from sceptre.stack_status import StackStatus
 
 
-class TestCli(object):
+class TestCli:
 
     def setup_method(self, test_method):
         self.patcher_ConfigReader = patch("sceptre.plan.plan.ConfigReader")
@@ -42,13 +42,17 @@ class TestCli(object):
         self.mock_config_reader = MagicMock(spec=ConfigReader)
         self.mock_stack_actions = MagicMock(spec=StackActions)
 
-        self.mock_stack = MagicMock(spec=Stack)
+        self.mock_stack = MagicMock(
+            spec=Stack,
+            region=None,
+            profile=None,
+            external_name='mock-stack-external',
+            dependencies=[],
+            ignore=False,
+            obsolete=False,
+        )
 
         self.mock_stack.name = 'mock-stack'
-        self.mock_stack.region = None
-        self.mock_stack.profile = None
-        self.mock_stack.external_name = 'mock-stack-external'
-        self.mock_stack.dependencies = []
 
         self.mock_config_reader.construct_stacks.return_value = \
             set([self.mock_stack]), set([self.mock_stack])

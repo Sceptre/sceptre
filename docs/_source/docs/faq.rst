@@ -92,3 +92,29 @@ Sceptre project, see the `sceptre-sam-handler`_ page on PyPI.
 
 
 .. _sceptre-sam-handler: https://pypi.org/project/sceptre-sam-handler/
+
+My CI/CD process uses ``sceptre launch``. How do I delete stacks that aren't needed anymore?
+---------------------------------------------------------------------------------------------
+
+Running the ``launch`` command is a very useful "1-stop-shop" to apply changes from Stack Configs,
+creating stacks that don't exist and updating stacks that do exist. This makes it a very useful
+command to configure your CI/CD system to invoke. However, sometimes you need to delete a stack that
+isn't needed anymore and you want this automatically applied by the same process.
+
+This "clean up" is complicated by the fact that Sceptre doesn't know anything that isn't in its
+Stack and StackGroup Configs; If you delete a Stack Config, Sceptre won't know to clean it up.
+
+Therefore, the way to accomplish this "clean up" operation is to perform the change in 3 steps:
+
+1. First, add ``obsolete: True`` to the Stack Config(s) you want to clean up.
+   For more information on ``obsolete``, see the :ref:`Stack Config entry on it<obsolete>`.
+2. Update your CI/CD process to run ``sceptre launch --prune`` instead of ``sceptre launch``. This
+   will cause all stacks marked as obsolete to be deleted going forward.
+3. Once your CI/CD process has cleaned up all the obsolete stacks, delete the local Stack Config files
+   you marked as obsolete in step 1, since the stacks they create have all been deleted.
+
+.. note::
+
+   Using ``obsolete: True`` will not work if any other stacks depend on that stack that are
+   not themselves obsolete. Attempting to prune any obsolete stacks that are depended on by
+   non-obsolete stacks will result in Sceptre immediately failing the launch.

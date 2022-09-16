@@ -1,21 +1,23 @@
 # -*- coding: utf-8 -*-
 
+import errno
 import os
 from unittest.mock import patch, sentinel, MagicMock
+
 import pytest
 import yaml
-import errno
-
-from sceptre.context import SceptreContext
-from sceptre.exceptions import DependencyDoesNotExistError
-from sceptre.exceptions import VersionIncompatibleError
-from sceptre.exceptions import ConfigFileNotFoundError
-from sceptre.exceptions import InvalidSceptreDirectoryError
-from sceptre.exceptions import InvalidConfigFileError
-
-from freezegun import freeze_time
 from click.testing import CliRunner
+from freezegun import freeze_time
+
 from sceptre.config.reader import ConfigReader
+from sceptre.context import SceptreContext
+from sceptre.exceptions import (
+    DependencyDoesNotExistError,
+    VersionIncompatibleError,
+    ConfigFileNotFoundError,
+    InvalidSceptreDirectoryError,
+    InvalidConfigFileError
+)
 
 
 class TestConfigReader(object):
@@ -324,6 +326,8 @@ class TestConfigReader(object):
             required_version='>1.0',
             template_bucket_name='stack_group_template_bucket_name',
             template_key_prefix=None,
+            ignore=False,
+            obsolete=False,
             stack_group_config={
                 "project_path": self.context.project_path,
                 "custom_key": "custom_value"

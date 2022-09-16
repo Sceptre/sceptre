@@ -6,49 +6,60 @@ sceptre.plan.plan
 This module implements a SceptrePlan, which is responsible for holding all
 nessessary information for a command to execute.
 """
+import functools
+import itertools
 from os import path, walk
-from typing import Dict
+from typing import Dict, List, Set, Callable, Iterable, Optional
 
-from sceptre.diffing.stack_differ import StackDiff
-from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.config.graph import StackGraph
 from sceptre.config.reader import ConfigReader
-from sceptre.plan.executor import SceptrePlanExecutor
+from sceptre.context import SceptreContext
+from sceptre.diffing.stack_differ import StackDiff
+from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.helpers import sceptreise_path
+from sceptre.plan.executor import SceptrePlanExecutor
 from sceptre.stack import Stack
+
+
+def require_resolved(func) -> Callable:
+    @functools.wraps(func)
+    def wrapped(self: "SceptrePlan", *args, **kwargs):
+        if self.launch_order is None:
+            raise RuntimeError(f"You cannot call {func.__name__}() before resolve().")
+        return func(self, *args, **kwargs)
+
+    return wrapped
 
 
 class SceptrePlan(object):
 
-    def __init__(self, context):
+    def __init__(self, context: SceptreContext):
         """
         Intialises a SceptrePlan and generates the Stacks, StackGraph and
         launch order of required.
 
         :param context: A SceptreContext
-        :type sceptre.context.SceptreContext:
         """
         self.context = context
         self.command = None
         self.reverse = None
-        self.launch_order = None
+        self.launch_order: Optional[List[Set[Stack]]] = None
 
         self.config_reader = ConfigReader(context)
         all_stacks, command_stacks = self.config_reader.construct_stacks()
         self.graph = StackGraph(all_stacks)
         self.command_stacks = command_stacks
 
+    @require_resolved
     def _execute(self, *args):
         executor = SceptrePlanExecutor(self.command, self.launch_order)
         return executor.execute(*args)
 
-    def _generate_launch_order(self, reverse=False):
+    def _generate_launch_order(self, reverse=False) -> List[Set[Stack]]:
         if self.context.ignore_dependencies:
             return [self.command_stacks]
 
         graph = self.graph.filtered(self.command_stacks, reverse)
-        if self.context.ignore_dependencies:
-            return [self.command_stacks]
 
         launch_order = []
         while graph.graph:
@@ -68,6 +79,31 @@ class SceptrePlan(object):
             )
 
         return launch_order
+
+    @require_resolved
+    def __iter__(self) -> Iterable[Stack]:
+        """Iterates the stacks in the launch_order"""
+        # We cast it to list so it's "frozen" in time, in case the launch order is modified
+        # while iterating.
+        yield from list(itertools.chain.from_iterable(self.launch_order))
+
+    @require_resolved
+    def remove_stack_from_plan(self, stack: Stack):
+        for batch in self.launch_order:
+            if stack in batch:
+                batch.remove(stack)
+                return
+
+    @require_resolved
+    def filter(self, predicate: Callable[[Stack], bool]):
+        """Filters the plan's resolved launch_order to remove specific stacks.
+
+        :param predicate: This callable should take a single Stack and return True if it should stay
+            in the launch_order or False if it should be filtered out.
+        """
+        for stack in self:
+            if not predicate(stack):
+                self.remove_stack_from_plan(stack)
 
     def resolve(self, command, reverse=False):
         if command == self.command and reverse == self.reverse:
