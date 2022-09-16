@@ -4,6 +4,33 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 3.2.0 (2022.09.20)
+
+### Added
+ - [Resolve #1225] Added Python 3.10 support (#1227)
+ - Implemented a `sceptre dump config` command (#1220)
+ - [Resolve #1224] Add --drifted option to `drift show` command (#1246)
+ - [Resolve #1212] Conditional Stacks via "ignore" and "obsolete";
+   `sceptre prune` command for cleaning up obsolete stacks (#1229)
+
+### Changed
+ - [Resolve #1225] Updating `troposphere` version for python 3.10 compatibility (#1226)
+ - [Resolve #1225] Updating Sceptre to use importlib on Python 3.10 (#1240)
+
+### Fixed
+ - [Resolve #1218] Fixing false-diff reports when parameters end with linebreaks (#1219)
+ - [Resolve #1236] Updating `networkx` to miticate CWE-502 (#1243)
+ - [Resolve #1245] Updating `setuptools` version to address build failure (#1247)
+ - [Resolve #1234] Bugfix to support empty var files (#1248)
+ - [Resolve #1223] Fix crash when resolvers return lists of `None` (#1249)
+
+### Nonfunctional
+ - Added sponsors section to CONTRIBUTING.md (#1221)
+ - Made unit tests run in parallel when running `make test-all` (#1231)
+ - Removing awscli from CircleCI builds (#1232)
+ - Updated sceptre-circleci docker image for Python 3.10 support (#1230)
+ - Using CircleCI cache to speed up builds (#1242)
+
 ## 3.1.0 (2022.04.13)
 
 ### Added
