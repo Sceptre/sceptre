@@ -16,6 +16,14 @@ deepdiff_json_defaults = {
     StackConfiguration: lambda x: dict(x._asdict())
 }
 
+try:
+    from colorama import Fore, Back, Style, init
+    init()
+except ImportError:  # fallback so that the imported classes always exist
+    class ColorFallback():
+        __getattr__ = lambda self, name: ''
+    Fore = Back = Style = ColorFallback()
+
 
 class DiffWriter(Generic[DiffType]):
     """A component responsible for taking a StackDiff and writing it in a way that is useful and
@@ -203,7 +211,18 @@ class DiffLibWriter(DiffWriter[List[str]]):
     def has_template_difference(self) -> bool:
         return len(self.template_diff) > 0
 
+    def _color_diff(self, diff):
+        for line in diff:
+            if line.startswith('+'):
+                yield Fore.GREEN + line + Fore.RESET
+            elif line.startswith('-'):
+                yield Fore.RED + line + Fore.RESET
+            elif line.startswith('^'):
+                yield Fore.BLUE + line + Fore.RESET
+            else:
+                yield line
+
     def dump_diff(self, diff: List[str]) -> str:
         # Difflib doesn't care about the output format since it only outputs strings. We would have
         # accounted for the output format in the differ itself rather than here.
-        return '\n'.join(diff)
+        return '\n'.join(self._color_diff(diff))
