@@ -8,6 +8,7 @@ import cfn_flip
 import yaml
 from deepdiff import DeepDiff
 from deepdiff.serialization import json_convertor_default
+from colorama import Fore
 
 from sceptre.diffing.stack_differ import StackConfiguration, StackDiff, DiffType
 
@@ -15,14 +16,6 @@ deepdiff_json_defaults = {
     datetime.date: lambda x: x.isoformat(),
     StackConfiguration: lambda x: dict(x._asdict())
 }
-
-try:
-    from colorama import Fore, Back, Style, init
-    init()
-except ImportError:  # fallback so that the imported classes always exist
-    class ColorFallback():
-        __getattr__ = lambda self, name: ''
-    Fore = Back = Style = ColorFallback()
 
 
 class DiffWriter(Generic[DiffType]):
