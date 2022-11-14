@@ -95,6 +95,8 @@ def diff_command(
     Particularly in cases where the replaced value doesn't work in the template as the template logic
     requires and causes an error, there is nothing further Sceptre can do and diffing will fail.
     """
+    no_colour = ctx.obj.get('no_colour')
+
     context = SceptreContext(
         command_path=path,
         project_path=ctx.obj.get("project_path"),
@@ -102,7 +104,7 @@ def diff_command(
         options=ctx.obj.get("options"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies"),
         output_format=ctx.obj.get('output_format'),
-        no_colour=ctx.obj.get('no_colour')
+        no_colour=no_colour
     )
     output_format = context.output_format
     plan = SceptrePlan(context)
@@ -122,7 +124,7 @@ def diff_command(
     with execution_context:
         diffs: Dict[Stack, StackDiff] = plan.diff(stack_differ)
 
-    num_stacks_with_diff = output_diffs(diffs.values(), writer_class, sys.stdout, output_format)
+    num_stacks_with_diff = output_diffs(diffs.values(), writer_class, no_colour, sys.stdout, output_format)
 
     if num_stacks_with_diff:
         logger.warning(
@@ -133,6 +135,7 @@ def diff_command(
 def output_diffs(
     diffs: Iterable[StackDiff],
     writer_class: Type[DiffWriter],
+    no_colour: bool,
     output_buffer: TextIO,
     output_format: str,
 ) -> int:
@@ -140,6 +143,7 @@ def output_diffs(
 
     :param diffs: The differences computed
     :param writer_class: The DiffWriter class to be instantiated for each StackDiff
+    :param no_colour: The no_colour attribute from the Sceptre context
     :param output_buffer: The buffer to write the diff results to
     :param output_format: The format to output the results in
     :return: The number of stacks that had a difference
@@ -150,7 +154,7 @@ def output_diffs(
     num_stacks_with_diff = 0
 
     for stack_diff in diffs:
-        writer = writer_class(stack_diff, line_buffer, output_format)
+        writer = writer_class(stack_diff, no_colour, line_buffer, output_format)
         writer.write()
         if writer.has_difference:
             num_stacks_with_diff += 1
