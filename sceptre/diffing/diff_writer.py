@@ -3,6 +3,7 @@ import json
 import re
 from abc import abstractmethod
 from typing import TextIO, Generic, List
+from colorama import Fore
 
 import cfn_flip
 import yaml
