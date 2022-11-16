@@ -209,7 +209,7 @@ class DiffLibWriter(DiffWriter[List[str]]):
         return '\n'.join(diff)
 
 
-class ColouredDiffLibWriter(DiffLibWriter[List[str]]):
+class ColouredDiffLibWriter(DiffLibWriter):
     """A DiffWriter for StackDiffs where the DiffType is a a list of strings with coloured diffs."""
 
     def _colour_diff(self, diff):

@@ -8,7 +8,7 @@ from click import Context
 
 from sceptre.cli.helpers import catch_exceptions
 from sceptre.context import SceptreContext
-from sceptre.diffing.diff_writer import DeepDiffWriter, DiffLibWriter, DiffWriter
+from sceptre.diffing.diff_writer import DeepDiffWriter, DiffLibWriter, ColouredDiffLibWriter, DiffWriter
 from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff
 from sceptre.helpers import null_context
 from sceptre.plan.plan import SceptrePlan

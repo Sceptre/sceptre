@@ -9,7 +9,7 @@ import pytest
 import yaml
 from deepdiff import DeepDiff
 
-from sceptre.diffing.diff_writer import DiffWriter, DeepDiffWriter, deepdiff_json_defaults, DiffLibWriter
+from sceptre.diffing.diff_writer import DiffWriter, DeepDiffWriter, deepdiff_json_defaults, DiffLibWriter, ColouredDiffLibWriter
 from sceptre.diffing.stack_differ import StackDiff, DiffType, StackConfiguration
 
 
