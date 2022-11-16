@@ -18,12 +18,11 @@ class ImplementedDiffWriter(DiffWriter):
     def __init__(
         self,
         stack_diff: StackDiff,
-        no_colour: bool,
         output_stream: TextIO,
         output_format: str,
         capturing_mock: Mock
     ):
-        super().__init__(stack_diff, no_colour, output_stream, output_format)
+        super().__init__(stack_diff, output_stream, output_format)
         self.capturing_mock = capturing_mock
 
     def dump_diff(self, diff: DiffType) -> str:
@@ -81,7 +80,6 @@ class TestDiffWriter:
     def writer(self):
         return ImplementedDiffWriter(
             self.diff,
-            True,
             self.output_stream,
             self.output_format,
             self.capturing_mock
@@ -239,7 +237,6 @@ class TestDeepDiffWriter:
     def writer(self):
         return DeepDiffWriter(
             self.diff,
-            True,
             self.output_stream,
             self.output_format,
         )
