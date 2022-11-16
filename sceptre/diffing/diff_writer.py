@@ -8,7 +8,6 @@ import cfn_flip
 import yaml
 from deepdiff import DeepDiff
 from deepdiff.serialization import json_convertor_default
-from colorama import Fore
 
 from sceptre.diffing.stack_differ import StackConfiguration, StackDiff, DiffType
 
@@ -26,11 +25,10 @@ class DiffWriter(Generic[DiffType]):
     STAR_BAR = '*' * 80
     LINE_BAR = '-' * 80
 
-    def __init__(self, stack_diff: StackDiff, no_colour: bool, output_stream: TextIO, output_format: str):
+    def __init__(self, stack_diff: StackDiff, output_stream: TextIO, output_format: str):
         """Initializes the DiffWriter
 
         :param stack_diff: The diff this writer will be outputting
-        :param no_colour: The no_colour attribute from the context
         :param output_stream: The stream this writer should output to; Generally, this will be
             stdout
         :param output_format: Output format specified for the base Sceptre cli command; This should
@@ -38,7 +36,6 @@ class DiffWriter(Generic[DiffType]):
         """
         self.stack_name = stack_diff.stack_name
         self.stack_diff = stack_diff
-        self.no_colour = no_colour
 
         self.template_diff = stack_diff.template_diff
         self.config_diff = stack_diff.config_diff
@@ -206,7 +203,16 @@ class DiffLibWriter(DiffWriter[List[str]]):
     def has_template_difference(self) -> bool:
         return len(self.template_diff) > 0
 
-    def _color_diff(self, diff):
+    def dump_diff(self, diff: List[str]) -> str:
+        # Difflib doesn't care about the output format since it only outputs strings. We would have
+        # accounted for the output format in the differ itself rather than here.
+        return '\n'.join(diff)
+
+
+class ColouredDiffLibWriter(DiffLibWriter[List[str]]):
+    """A DiffWriter for StackDiffs where the DiffType is a a list of strings with coloured diffs."""
+
+    def _colour_diff(self, diff):
         for line in diff:
             if line.startswith('+'):
                 yield Fore.GREEN + line + Fore.RESET
@@ -218,9 +224,4 @@ class DiffLibWriter(DiffWriter[List[str]]):
                 yield line
 
     def dump_diff(self, diff: List[str]) -> str:
-        # Difflib doesn't care about the output format since it only outputs strings. We would have
-        # accounted for the output format in the differ itself rather than here.
-        _diff = diff
-        if not self.no_colour:
-            _diff = self._color_diff(diff)
-        return '\n'.join(_diff)
+        return '\n'.join(self._colour_diff(diff))
