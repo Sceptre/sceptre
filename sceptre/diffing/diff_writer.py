@@ -213,7 +213,7 @@ class DiffLibWriter(DiffWriter[List[str]]):
 class ColouredDiffLibWriter(DiffLibWriter):
     """A DiffWriter for StackDiffs where the DiffType is a a list of strings with coloured diffs."""
 
-    def _colour_diff(self, diff):
+    def _colour_diff(self, diff: List[str]):
         for line in diff:
             if line.startswith('+'):
                 yield Fore.GREEN + line + Fore.RESET
