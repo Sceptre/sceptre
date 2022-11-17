@@ -225,4 +225,5 @@ class ColouredDiffLibWriter(DiffLibWriter):
                 yield line
 
     def dump_diff(self, diff: List[str]) -> str:
-        return '\n'.join(self._colour_diff(diff))
+        coloured_diff = self._colour_diff(diff)
+        return super().dump_diff(coloured_diff)
