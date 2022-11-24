@@ -259,7 +259,7 @@ Template ``templates/S3Cdk.py``:
       raise exceptions.SceptreException('Asset manifest artifact not found')
 
     # https://github.com/aws/aws-cdk/tree/main/packages/cdk-assets
-    os.environ['AWS_PROFILE'] = sceptre_user_data['AwsProfile']
+    os.environ['AWS_PROFILE'] = sceptre_user_data['aws_profile']
     cdk_assets_result = subprocess.run(f'npx cdk-assets publish --path {asset_artifacts.file}', shell=True)
     cdk_assets_result.check_returncode()
 
