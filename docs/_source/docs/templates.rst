@@ -192,17 +192,18 @@ AWS CDK
 
 This example generates a cloudformation template from `AWS CDK`_ code.
 
-Stack:
+Stack `dev/S3CdkStack.yaml`:
 
 .. code-block:: yaml
 
+  template_path: templates/S3Cdk.py
   sceptre_user_data:
     bucket_name: my-bucket
     aws_profile: {{ var.profile }} 
 
 ..
 
-Template:
+Template `templates/S3Cdk.py`:
 
 .. code-block:: python
 
@@ -271,7 +272,7 @@ Template:
 
 Generate cloudformation:
 
-``sceptre generate dev/S3CdkStack.py``
+``sceptre generate dev/S3CdkStack.yaml``
 
 .. code-block:: yaml
 
