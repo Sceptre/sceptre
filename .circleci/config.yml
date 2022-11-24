@@ -285,7 +285,7 @@ workflows:
             branches:
               ignore: /^pull\/.*/
       - deploy-latest-dockerhub:
-          context: sceptre-core
+          context: sceptreorg-dockerhub
           requires:
             - build-docker-image
           filters:
@@ -327,7 +327,7 @@ workflows:
             branches:
               ignore: /.*/
       - deploy-dockerhub-tagged:
-          context: sceptre-core
+          context: sceptreorg-dockerhub
           requires:
             - build-docker-image
           filters:
