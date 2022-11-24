@@ -192,7 +192,7 @@ AWS CDK
 
 This example generates a cloudformation template from `AWS CDK`_ code.
 
-Stack `dev/S3CdkStack.yaml`:
+Stack ``dev/S3CdkStack.yaml``:
 
 .. code-block:: yaml
 
@@ -203,7 +203,7 @@ Stack `dev/S3CdkStack.yaml`:
 
 ..
 
-Template `templates/S3Cdk.py`:
+Template ``templates/S3Cdk.py``:
 
 .. code-block:: python
 
@@ -267,7 +267,7 @@ Template `templates/S3Cdk.py`:
     template = app_synth.get_stack_by_name(stack_name).template
     return yaml.safe_dump(template)
 
-.. _AWS_CDK: https://github.com/aws/aws-cdk
+.. _AWS CDK: https://github.com/aws/aws-cdk
 
 
 Generate cloudformation:
