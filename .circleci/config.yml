@@ -6,14 +6,14 @@ orbs:
 executors:
   docker-publisher:
     environment:
-      IMAGE_NAME: cloudreach/sceptre
+      IMAGE_NAME: sceptreorg/sceptre
     docker:
       - image: circleci/buildpack-deps:stretch
 
 aliases:
   - &docs-job
     docker:
-      - image: cloudreach/sceptre-circleci:1.0.0
+      - image: sceptreorg/sceptre-circleci:1.0.0
         environment:
           REPOSITORY_PATH: '/home/circleci/docs'
           DEPLOYMENT_GIT_SSH: 'git@github.com:Sceptre/sceptre.github.io.git'
@@ -35,7 +35,7 @@ aliases:
 jobs:
   build:
     docker:
-      - image: cloudreach/sceptre-circleci:1.0.0
+      - image: sceptreorg/sceptre-circleci:1.0.0
     steps:
       - checkout
       - run:
@@ -72,7 +72,7 @@ jobs:
 
   lint-and-unit-tests:
     docker:
-      - image: cloudreach/sceptre-circleci:1.0.0
+      - image: sceptreorg/sceptre-circleci:1.0.0
     steps:
       - attach_workspace:
           at: /home/circleci
@@ -107,7 +107,7 @@ jobs:
   integration-tests:
     parallelism: 2
     docker:
-      - image: cloudreach/sceptre-circleci:1.0.0
+      - image: sceptreorg/sceptre-circleci:1.0.0
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
@@ -158,7 +158,7 @@ jobs:
 
   deploy-pypi:
     docker:
-      - image: cloudreach/sceptre-circleci:1.0.0
+      - image: sceptreorg/sceptre-circleci:1.0.0
     steps:
       - attach_workspace:
           at: /home/circleci
