@@ -192,6 +192,8 @@ AWS CDK
 
 This example generates a cloudformation template from `AWS CDK`_ code.
 
+Stack:
+
 .. code-block:: yaml
 
   sceptre_user_data:
@@ -200,6 +202,7 @@ This example generates a cloudformation template from `AWS CDK`_ code.
 
 ..
 
+Template:
 
 .. code-block:: python
 
