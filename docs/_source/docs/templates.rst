@@ -195,7 +195,8 @@ This example generates a cloudformation template from `AWS CDK`_ code.
 .. code-block:: yaml
 
   sceptre_user_data:
-    BucketName: my-bucket
+    bucket_name: my-bucket
+    aws_profile: {{ var.profile }} 
 
 ..
 
@@ -203,25 +204,64 @@ This example generates a cloudformation template from `AWS CDK`_ code.
 .. code-block:: python
 
   import yaml
-  from aws_cdk import (
-      aws_s3 as s3,
-      core as cdk
-  )
+  import aws_cdk
+  import subprocess
+  import os
+  from constructs import Construct
+  from sceptre import exceptions
+ 
+  class CdkStack(aws_cdk.Stack):
+      '''
+      Stack to perform the following:
+  
+      - Create an S3 Bucket
+      - Deploy an 'object-key.txt' file to the bucket
+  
+      Notes:
+      - 'sceptre_user_data' must contain the following keys:
+          - 'bucket_name' - The name for the S3 Bucket
+          - 'aws_profile' - The name of the AWS profile used for publishing the CDK assets
+      '''
+  
+      def __init__(self, scope: Construct, construct_id: str, sceptre_user_data, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+  
+        bucket_name = sceptre_user_data['bucket_name']
+        s3_bucket = aws_cdk.aws_s3.Bucket(self, 'S3Bucket',
+                                          bucket_name=bucket_name)
+  
+        aws_cdk.aws_s3_deployment.BucketDeployment(self,
+                                                   'S3Deployment',
+                                                   sources=[aws_cdk.aws_s3_deployment.Source.data(
+                                                     'object-key.txt', 'hello, world!')],
+                                                   destination_bucket=s3_bucket)
+  
+  def sceptre_handler(sceptre_user_data: dict) -> str:
 
-  class S3CdkStack(cdk.Stack):
+    # Synthesize App
+    app = aws_cdk.App()
+    stack_name = 'CDKStack'
+    CdkStack(app, stack_name, sceptre_user_data)
+    app_synth = app.synth()
 
-    def __init__(self, scope: cdk.Stack, construct_id: str, sceptre_user_data, **kwargs) -> None:
-      super().__init__(scope, construct_id, **kwargs)
+    # Publish CDK Assets
+    asset_artifacts = None
 
-      bucket_name = sceptre_user_data['BucketName']
-      bucket = s3.Bucket(self, "S3Bucket",
-                         bucket_name=bucket_name)
+    for artifacts in app_synth.artifacts:
+      if isinstance(artifacts, aws_cdk.cx_api.AssetManifestArtifact):
+        asset_artifacts = artifacts
+        break
+    if asset_artifacts is None:
+      raise exceptions.SceptreException('Asset manifest artifact not found')
 
-  def sceptre_handler(sceptre_user_data):
-      app = cdk.App()
-      S3CdkStack(app, "S3CdkStack", sceptre_user_data)
-      template = app.synth().get_stack_by_name("S3CdkStack").template
-      return yaml.safe_dump(template)
+    # https://github.com/aws/aws-cdk/tree/main/packages/cdk-assets
+    os.environ['AWS_PROFILE'] = sceptre_user_data['AwsProfile']
+    cdk_assets_result = subprocess.run(f'npx cdk-assets publish --path {asset_artifacts.file}', shell=True)
+    cdk_assets_result.check_returncode()
+
+    # Return synthesized template
+    template = app_synth.get_stack_by_name(stack_name).template
+    return yaml.safe_dump(template)
 
 .. _AWS_CDK: https://github.com/aws/aws-cdk
 
@@ -232,11 +272,146 @@ Generate cloudformation:
 
 .. code-block:: yaml
 
-  Resources:
-    S3Bucket07682993:
-      DeletionPolicy: Retain
-      Properties:
-        BucketName: my-bucket
-      Type: AWS::S3::Bucket
-      UpdateReplacePolicy: Retain
+Parameters:
+  BootstrapVersion:
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically
+      retrieved from SSM Parameter Store. [cdk:skip]
+    Type: AWS::SSM::Parameter::Value<String>
+Resources:
+  CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C81C01536:
+    DependsOn:
+    - CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRoleDefaultPolicy88902FDF
+    - CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265
+    Properties:
+      Code:
+        S3Bucket:
+          Fn::Sub: cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}
+        S3Key: 2bc265c5e0569aeb24a6349c15bd54e76e845892376515e036627ab0cc70bb64.zip
+      Handler: index.handler
+      Layers:
+      - Ref: S3DeploymentAwsCliLayer8AAFE44F
+      Role:
+        Fn::GetAtt:
+        - CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265
+        - Arn
+      Runtime: python3.9
+      Timeout: 900
+    Type: AWS::Lambda::Function
+  CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: sts:AssumeRole
+          Effect: Allow
+         Principal:
+            Service: lambda.amazonaws.com
+        Version: '2012-10-17'
+      ManagedPolicyArns:
+      - Fn::Join:
+        - ''
+        - - 'arn:'
+          - Ref: AWS::Partition
+          - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Type: AWS::IAM::Role
+  CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRoleDefaultPolicy88902FDF:
+    Properties:
+      PolicyDocument:
+        Statement:
+        - Action:
+          - s3:GetObject*
+          - s3:GetBucket*
+          - s3:List*
+          Effect: Allow
+          Resource:
+          - Fn::Join:
+            - ''
+            - - 'arn:'
+              - Ref: AWS::Partition
+              - ':s3:::'
+              - Fn::Sub: cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}
+          - Fn::Join:
+            - ''
+            - - 'arn:'
+              - Ref: AWS::Partition
+              - ':s3:::'
+              - Fn::Sub: cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}
+              - /*
+        - Action:
+          - s3:GetObject*
+          - s3:GetBucket*
+          - s3:List*
+          - s3:DeleteObject*
+          - s3:PutObject
+          - s3:PutObjectLegalHold
+          - s3:PutObjectRetention
+          - s3:PutObjectTagging
+          - s3:PutObjectVersionTagging
+          - s3:Abort*
+          Effect: Allow
+          Resource:
+          - Fn::GetAtt:
+            - S3Bucket07682993
+            - Arn
+          - Fn::Join:
+            - ''
+            - - Fn::GetAtt:
+                - S3Bucket07682993
+                - Arn
+              - /*
+        Version: '2012-10-17'
+      PolicyName: CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRoleDefaultPolicy88902FDF
+      Roles:
+      - Ref: CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756CServiceRole89A01265
+    Type: AWS::IAM::Policy
+  S3Bucket07682993:
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: my-bucket
+      Tags:
+      - Key: aws-cdk:cr-owned:d7218acd
+        Value: 'true'
+    Type: AWS::S3::Bucket
+    UpdateReplacePolicy: Retain
+  S3DeploymentAwsCliLayer8AAFE44F:
+    Properties:
+      Content:
+        S3Bucket:
+          Fn::Sub: cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}
+        S3Key: 5d8d1d0aacea23824c62f362e1e3c14b7dd14a31c71b53bfae4d14a6373c5510.zip
+      Description: /opt/awscli/aws
+    Type: AWS::Lambda::LayerVersion
+  S3DeploymentCustomResource4ADB55A7:
+    DeletionPolicy: Delete
+    Properties:
+      DestinationBucketName:
+        Ref: S3Bucket07682993
+      Prune: true
+      ServiceToken:
+        Fn::GetAtt:
+        - CustomCDKBucketDeployment8693BB64968944B69AAFB0CC9EB8756C81C01536
+        - Arn
+      SourceBucketNames:
+      - Fn::Sub: cdk-hnb659fds-assets-${AWS::AccountId}-${AWS::Region}
+      SourceMarkers:
+      - {}
+      SourceObjectKeys:
+      - a930df18abdf36e70748ff3d515e4d72dfd16dbde04204905b9bc2edc2874a2e.zip
+    Type: Custom::CDKBucketDeployment
+    UpdateReplacePolicy: Delete
+Rules:
+  CheckBootstrapVersion:
+    Assertions:
+    - Assert:
+        Fn::Not:
+        - Fn::Contains:
+          - - '1'
+            - '2'
+            - '3'
+            - '4'
+            - '5'
+          - Ref: BootstrapVersion
+      AssertDescription: CDK bootstrap stack version 6 required. Please run 'cdk bootstrap'
+        with a recent version of the CDK CLI.
+
 ..
