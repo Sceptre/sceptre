@@ -231,14 +231,21 @@ Template ``templates/S3Cdk.py``:
         super().__init__(scope, construct_id, **kwargs)
   
         bucket_name = sceptre_user_data['bucket_name']
-        s3_bucket = aws_cdk.aws_s3.Bucket(self, 'S3Bucket',
-                                          bucket_name=bucket_name)
+        s3_bucket = aws_cdk.aws_s3.Bucket(
+            self, 
+            'S3Bucket',
+            bucket_name=bucket_name
+        )
   
-        aws_cdk.aws_s3_deployment.BucketDeployment(self,
-                                                   'S3Deployment',
-                                                   sources=[aws_cdk.aws_s3_deployment.Source.data(
-                                                     'object-key.txt', 'hello, world!')],
-                                                   destination_bucket=s3_bucket)
+        aws_cdk.aws_s3_deployment.BucketDeployment(
+            self,
+            'S3Deployment',
+            sources=[aws_cdk.aws_s3_deployment.Source.data(
+                'object-key.txt', 
+                'hello, world!'
+            )],
+            destination_bucket=s3_bucket
+        )
   
   def sceptre_handler(sceptre_user_data: dict) -> str:
 
@@ -259,8 +266,9 @@ Template ``templates/S3Cdk.py``:
       raise exceptions.SceptreException('Asset manifest artifact not found')
 
     # https://github.com/aws/aws-cdk/tree/main/packages/cdk-assets
-    os.environ['AWS_PROFILE'] = sceptre_user_data['aws_profile']
-    cdk_assets_result = subprocess.run(f'npx cdk-assets publish --path {asset_artifacts.file}', shell=True)
+    envs = os.environ.copy()
+    envs['AWS_PROFILE'] = sceptre_user_data['aws_profile']
+    cdk_assets_result = subprocess.run(f'npx cdk-assets publish --path {asset_artifacts.file}', shell=True, env=envs)
     cdk_assets_result.check_returncode()
 
     # Return synthesized template
