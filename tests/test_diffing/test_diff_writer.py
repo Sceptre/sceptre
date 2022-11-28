@@ -9,7 +9,8 @@ import pytest
 import yaml
 from deepdiff import DeepDiff
 
-from sceptre.diffing.diff_writer import DiffWriter, DeepDiffWriter, deepdiff_json_defaults, DiffLibWriter, ColouredDiffLibWriter
+from sceptre.diffing.diff_writer import DiffWriter, DeepDiffWriter, deepdiff_json_defaults, \
+    DiffLibWriter, ColouredDiffLibWriter
 from sceptre.diffing.stack_differ import StackDiff, DiffType, StackConfiguration
 
 
@@ -427,5 +428,15 @@ class TestColouredDiffLibWriter:
         )
 
     def test_plus_lines_are_coloured(self):
-        coloured = '\x1b[31m--- file1.txt   2018-01-11 10:39:38.237464052 +0000\n\x1b[39m\n\x1b[32m+++ file2.txt   2018-01-11 10:40:00.323423021 +0000\n\x1b[39m\n@@ -1,4 +1,4 @@\n\n cat\n\n\x1b[31m-mv\n\x1b[39m\n\x1b[31m-comm\n\x1b[39m\n cp\n\n\x1b[32m+diff\n\x1b[39m\n\x1b[32m+comm\n\x1b[39m'
+        coloured = (
+            '\x1b[31m--- file1.txt   2018-01-11 10:39:38.237464052 +0000\n\x1b[39m\n'
+            '\x1b[32m+++ file2.txt   2018-01-11 10:40:00.323423021 +0000\n\x1b[39m\n'
+            '@@ -1,4 +1,4 @@\n\n'
+            ' cat\n\n'
+            '\x1b[31m-mv\n\x1b[39m\n'
+            '\x1b[31m-comm\n\x1b[39m\n'
+            ' cp\n\n'
+            '\x1b[32m+diff\n\x1b[39m\n'
+            '\x1b[32m+comm\n\x1b[39m'
+        )
         assert self.writer.dump_diff(self.template_diff) == coloured
