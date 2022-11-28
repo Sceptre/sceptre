@@ -75,7 +75,7 @@ class SceptrePlan(object):
         if not launch_order:
             error_text = f'No stacks detected from the given path {sceptreise_path(self.context.command_path)}.'
             if len(self._valid_stack_paths()) < 10:
-                error_text += f'Valid stack paths are: {self._valid_stack_paths()}'
+                error_text += f' Valid stack paths are: {self._valid_stack_paths()}'
             raise ConfigFileNotFoundError(error_text)
 
         return launch_order
