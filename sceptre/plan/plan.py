@@ -88,7 +88,7 @@ class SceptrePlan(object):
                 graph.remove_stack(stack)
 
         if not launch_order:
-            _raise_no_launch_order_error()
+            self._raise_no_launch_order_error()
 
         return launch_order
 
