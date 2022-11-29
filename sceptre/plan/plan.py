@@ -56,22 +56,17 @@ class SceptrePlan(object):
         executor = SceptrePlanExecutor(self.command, self.launch_order)
         return executor.execute(*args)
 
-    def _generate_no_launch_order_error(self):
+    def _raise_no_launch_order_error(self):
         MAX_VALID_STACK_PATH_COUNT = 10
 
         error_text = f"No stacks detected from the given path '{sceptreise_path(self.context.command_path)}'."
-        command_path = pathlib.PurePath(self.context.command_path)
-        filtered_valid_stack_paths = []
-        for stack_path in self._valid_stack_paths():
-            for parent in pathlib.PurePath(stack_path).parents:
-                if command_path.parent == parent:
-                    filtered_valid_stack_paths.append(stack_path)
-                    break
-            if filtered_valid_stack_paths and len(filtered_valid_stack_paths) > MAX_VALID_STACK_PATH_COUNT:
-                filtered_valid_stack_paths = None
-                break
-        if filtered_valid_stack_paths:
-            error_text += (f" Valid stack paths under '{sceptreise_path(str(command_path.parent))}' " +
+        command_path_parent = pathlib.PurePath(self.context.command_path).parent
+
+        all_paths = self._valid_stack_paths()
+        filtered_valid_stack_paths = [
+            p for p in all_paths if pathlib.PurePath(p).parent == command_path_parent] or all_paths
+        if filtered_valid_stack_paths and len(filtered_valid_stack_paths) < MAX_VALID_STACK_PATH_COUNT:
+            error_text += (f" Valid stack paths under '{sceptreise_path(str(command_path_parent))}' " +
                            f"are: {filtered_valid_stack_paths}")
         raise ConfigFileNotFoundError(error_text)
 
@@ -93,7 +88,7 @@ class SceptrePlan(object):
                 graph.remove_stack(stack)
 
         if not launch_order:
-            _generate_no_launch_order_error()
+            _raise_no_launch_order_error()
 
         return launch_order
 
