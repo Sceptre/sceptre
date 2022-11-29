@@ -1,7 +1,7 @@
 # Sceptre
 
 [![CircleCI](https://img.shields.io/circleci/build/github/Sceptre/sceptre?logo=circleci)](https://app.circleci.com/pipelines/github/Sceptre)
-[![Docker Image Version (latest semver)](https://img.shields.io/docker/v/cloudreach/sceptre?logo=docker&sort=semver)](https://hub.docker.com/r/cloudreach/sceptre)
+[![Docker Image Version (latest semver)](https://img.shields.io/docker/v/sceptreorg/sceptre?logo=docker&sort=semver)](https://hub.docker.com/r/sceptreorg/sceptre)
 [![PyPI](https://img.shields.io/pypi/v/sceptre?logo=pypi)](https://pypi.org/project/sceptre/)
 [![PyPI - Status](https://img.shields.io/pypi/status/sceptre?logo=pypi)](https://pypi.org/project/sceptre/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/sceptre?logo=pypi)](https://pypi.org/project/sceptre/)
@@ -54,24 +54,24 @@ More information on installing sceptre can be found in our
 
 ### Using Docker Image
 
-View our [Docker repository](https://hub.docker.com/r/cloudreach/sceptre).
+View our [Docker repository](https://hub.docker.com/repositories/sceptreorg).
 Images available from version 2.0.0 onward.
 
 To use our Docker image follow these instructions:
 
-1. Pull the image `docker pull cloudreach/sceptre:[SCEPTRE_VERSION_NUMBER]` e.g.
-   `docker pull cloudreach/sceptre:2.5.0`. Leave out the version number if you
-   wish to run `latest` or run `docker pull cloudreach/sceptre:latest`.
+1. Pull the image `docker pull sceptreorg/sceptre:[SCEPTRE_VERSION_NUMBER]` e.g.
+   `docker pull sceptreorg/sceptre:2.5.0`. Leave out the version number if you
+   wish to run `latest` or run `docker pull sceptreorg/sceptre:latest`.
 
 2. Run the image. You will need to mount the working directory where your
    project resides to a directory called `project`. You will also need to mount
    a volume with your AWS config to your docker container. E.g.
 
-`docker run -v $(pwd):/project -v /Users/me/.aws/:/root/.aws/:ro cloudreach/sceptre:latest --help`
+`docker run -v $(pwd):/project -v /Users/me/.aws/:/root/.aws/:ro sceptreorg/sceptre:latest --help`
 
 If you want to use a custom ENTRYPOINT simply amend the Docker command:
 
-`docker run -ti --entrypoint='' cloudreach/sceptre:latest sh`
+`docker run -ti --entrypoint='' sceptreorg/sceptre:latest sh`
 
 The above command will enter you into the shell of the Docker container where
 you can execute sceptre commands - useful for development.
