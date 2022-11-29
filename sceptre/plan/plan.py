@@ -8,6 +8,7 @@ nessessary information for a command to execute.
 """
 import functools
 import itertools
+import pathlib
 from os import path, walk
 from typing import Dict, List, Set, Callable, Iterable, Optional
 
@@ -55,6 +56,25 @@ class SceptrePlan(object):
         executor = SceptrePlanExecutor(self.command, self.launch_order)
         return executor.execute(*args)
 
+    def _generate_no_launch_order_error(self):
+        MAX_VALID_STACK_PATH_COUNT = 10
+
+        error_text = f"No stacks detected from the given path '{sceptreise_path(self.context.command_path)}'."
+        command_path = pathlib.PurePath(self.context.command_path)
+        filtered_valid_stack_paths = []
+        for stack_path in self._valid_stack_paths():
+            for parent in pathlib.PurePath(stack_path).parents:
+                if command_path.parent == parent:
+                    filtered_valid_stack_paths.append(stack_path)
+                    break
+            if filtered_valid_stack_paths and len(filtered_valid_stack_paths) > MAX_VALID_STACK_PATH_COUNT:
+                filtered_valid_stack_paths = None
+                break
+        if filtered_valid_stack_paths:
+            error_text += (f" Valid stack paths under '{sceptreise_path(str(command_path.parent))}' " +
+                            f"are: {filtered_valid_stack_paths}")
+        raise ConfigFileNotFoundError(error_text)
+
     def _generate_launch_order(self, reverse=False) -> List[Set[Stack]]:
         if self.context.ignore_dependencies:
             return [self.command_stacks]
@@ -73,10 +93,7 @@ class SceptrePlan(object):
                 graph.remove_stack(stack)
 
         if not launch_order:
-            error_text = f'No stacks detected from the given path {sceptreise_path(self.context.command_path)}.'
-            if len(self._valid_stack_paths()) < 10:
-                error_text += f' Valid stack paths are: {self._valid_stack_paths()}'
-            raise ConfigFileNotFoundError(error_text)
+            _generate_no_launch_order_error()
 
         return launch_order
 
