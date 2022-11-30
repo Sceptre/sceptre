@@ -428,7 +428,7 @@ class TestColouredDiffLibWriter:
             self.output_format
         )
 
-    def test_plus_lines_are_coloured(self):
+    def test_lines_are_coloured(self):
         coloured = (
             f'{Fore.RED}--- file1.txt   2018-01-11 10:39:38.237464052 +0000\n{Fore.RESET}\n'
             f"{Fore.GREEN}+++ file2.txt   2018-01-11 10:40:00.323423021 +0000\n{Fore.RESET}\n"
