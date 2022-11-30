@@ -12,6 +12,7 @@ from deepdiff import DeepDiff
 from sceptre.diffing.diff_writer import DiffWriter, DeepDiffWriter, deepdiff_json_defaults, \
     DiffLibWriter, ColouredDiffLibWriter
 from sceptre.diffing.stack_differ import StackDiff, DiffType, StackConfiguration
+from colorama import Fore
 
 
 class ImplementedDiffWriter(DiffWriter):
@@ -429,14 +430,14 @@ class TestColouredDiffLibWriter:
 
     def test_plus_lines_are_coloured(self):
         coloured = (
-            '\x1b[31m--- file1.txt   2018-01-11 10:39:38.237464052 +0000\n\x1b[39m\n'
-            '\x1b[32m+++ file2.txt   2018-01-11 10:40:00.323423021 +0000\n\x1b[39m\n'
+            f'{Fore.RED}--- file1.txt   2018-01-11 10:39:38.237464052 +0000\n{Fore.RESET}\n'
+            f"{Fore.GREEN}+++ file2.txt   2018-01-11 10:40:00.323423021 +0000\n{Fore.RESET}\n"
             '@@ -1,4 +1,4 @@\n\n'
-            ' cat\n\n'
-            '\x1b[31m-mv\n\x1b[39m\n'
-            '\x1b[31m-comm\n\x1b[39m\n'
+            " cat\n\n"
+            f'{Fore.RED}-mv\n{Fore.RESET}\n'
+            f"{Fore.RED}-comm\n{Fore.RESET}\n"
             ' cp\n\n'
-            '\x1b[32m+diff\n\x1b[39m\n'
-            '\x1b[32m+comm\n\x1b[39m'
+            f"{Fore.GREEN}+diff\n{Fore.RESET}\n"
+            f'{Fore.GREEN}+comm\n{Fore.RESET}'
         )
         assert self.writer.dump_diff(self.template_diff) == coloured
