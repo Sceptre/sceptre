@@ -14,6 +14,8 @@ from colorama import Fore, Style
 class StackStatusColourer(object):
     """
     StackStatusColourer adds colours to stack statuses.
+    These are documented here:
+    https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-describing-stacks.html
     """
 
     STACK_STATUS_CODES = {
@@ -24,6 +26,12 @@ class StackStatusColourer(object):
         "DELETE_COMPLETE": Fore.GREEN,
         "DELETE_FAILED": Fore.RED,
         "DELETE_IN_PROGRESS": Fore.YELLOW,
+        "IMPORT_COMPLETE": Fore.GREEN,
+        "IMPORT_IN_PROGRESS": Fore.YELLOW,
+        "IMPORT_ROLLBACK_COMPLETE": Fore.GREEN,
+        "IMPORT_ROLLBACK_FAILED": Fore.RED,
+        "IMPORT_ROLLBACK_IN_PROGRESS": Fore.YELLOW,
+        "REVIEW_IN_PROGRESS": Fore.YELLOW,
         "ROLLBACK_COMPLETE": Fore.RED,
         "ROLLBACK_FAILED": Fore.RED,
         "ROLLBACK_IN_PROGRESS": Fore.YELLOW,
