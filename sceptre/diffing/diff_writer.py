@@ -3,6 +3,7 @@ import json
 import re
 from abc import abstractmethod
 from typing import TextIO, Generic, List
+from colorama import Fore
 
 import cfn_flip
 import yaml
@@ -207,3 +208,22 @@ class DiffLibWriter(DiffWriter[List[str]]):
         # Difflib doesn't care about the output format since it only outputs strings. We would have
         # accounted for the output format in the differ itself rather than here.
         return '\n'.join(diff)
+
+
+class ColouredDiffLibWriter(DiffLibWriter):
+    """A DiffWriter for StackDiffs where the DiffType is a a list of strings with coloured diffs."""
+
+    def _colour_diff(self, diff: List[str]):
+        for line in diff:
+            if line.startswith('+'):
+                yield Fore.GREEN + line + Fore.RESET
+            elif line.startswith('-'):
+                yield Fore.RED + line + Fore.RESET
+            elif line.startswith('^'):
+                yield Fore.BLUE + line + Fore.RESET
+            else:
+                yield line
+
+    def dump_diff(self, diff: List[str]) -> str:
+        coloured_diff = self._colour_diff(diff)
+        return super().dump_diff(coloured_diff)

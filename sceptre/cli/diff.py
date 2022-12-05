@@ -8,7 +8,7 @@ from click import Context
 
 from sceptre.cli.helpers import catch_exceptions
 from sceptre.context import SceptreContext
-from sceptre.diffing.diff_writer import DeepDiffWriter, DiffLibWriter, DiffWriter
+from sceptre.diffing.diff_writer import DeepDiffWriter, DiffLibWriter, ColouredDiffLibWriter, DiffWriter
 from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff
 from sceptre.helpers import null_context
 from sceptre.plan.plan import SceptrePlan
@@ -95,14 +95,16 @@ def diff_command(
     Particularly in cases where the replaced value doesn't work in the template as the template logic
     requires and causes an error, there is nothing further Sceptre can do and diffing will fail.
     """
+    no_colour = ctx.obj.get("no_colour")
+
     context = SceptreContext(
         command_path=path,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies"),
-        output_format=ctx.obj.get('output_format'),
-        no_colour=ctx.obj.get('no_colour')
+        output_format=ctx.obj.get("output_format"),
+        no_colour=no_colour
     )
     output_format = context.output_format
     plan = SceptrePlan(context)
@@ -112,9 +114,9 @@ def diff_command(
     if differ == "deepdiff":
         stack_differ = DeepDiffStackDiffer(show_no_echo)
         writer_class = DeepDiffWriter
-    elif differ == 'difflib':
+    elif differ == "difflib":
         stack_differ = DifflibStackDiffer(show_no_echo)
-        writer_class = DiffLibWriter
+        writer_class = DiffLibWriter if no_colour else ColouredDiffLibWriter
     else:
         raise ValueError(f"Unexpected differ type: {differ}")
 
