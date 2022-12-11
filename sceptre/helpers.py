@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
+import email.utils as eut
+
 from contextlib import contextmanager
+from datetime import datetime
 from os import sep
 
 from sceptre.exceptions import PathConversionError
@@ -117,3 +120,10 @@ def null_context():
     available in py3.6, so providing it here instead.
     """
     yield
+
+
+def get_response_datetime(resp):
+    try:
+        return datetime(*eut.parsedate(resp["ResponseMetadata"]["HTTPHeaders"]["date"])[:6])
+    except (TypeError, KeyError):
+        return None

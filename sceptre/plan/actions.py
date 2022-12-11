@@ -28,7 +28,7 @@ from sceptre.exceptions import (
     UnknownStackChangeSetStatusError,
     UnknownStackStatusError
 )
-from sceptre.helpers import normalise_path
+from sceptre.helpers import normalise_path, get_response_datetime
 from sceptre.hooks import add_stack_hooks
 from sceptre.stack import Stack
 from sceptre.stack_status import StackChangeSetStatus, StackStatus
@@ -50,6 +50,7 @@ class StackActions(object):
         self.stack = stack
         self.name = self.stack.name
         self.logger = logging.getLogger(__name__)
+        self.most_recent_event_datetime = None
         self.connection_manager = ConnectionManager(
             self.stack.region, self.stack.profile,
             self.stack.external_name, self.stack.iam_role,
@@ -95,6 +96,7 @@ class StackActions(object):
                 "%s - Create stack response: %s", self.stack.name, response
             )
 
+            self._note_response_time(response)
             status = self._wait_for_completion()
         except botocore.exceptions.ClientError as exp:
             if exp.response["Error"]["Code"] == "AlreadyExistsException":
@@ -141,6 +143,7 @@ class StackActions(object):
                 command="update_stack",
                 kwargs=update_stack_kwargs
             )
+            self._note_response_time(response)
             status = self._wait_for_completion(self.stack.stack_timeout)
             self.logger.debug(
                 "%s - Update Stack response: %s", self.stack.name, response
@@ -180,6 +183,7 @@ class StackActions(object):
         self.logger.debug(
             "%s - Cancel update Stack response: %s", self.stack.name, response
         )
+        self._note_response_time(response)
         return self._wait_for_completion()
 
     @add_stack_hooks
@@ -251,11 +255,12 @@ class StackActions(object):
 
         delete_stack_kwargs = {"StackName": self.stack.external_name}
         delete_stack_kwargs.update(self._get_role_arn())
-        self.connection_manager.call(
+        response = self.connection_manager.call(
             service="cloudformation",
             command="delete_stack",
             kwargs=delete_stack_kwargs
         )
+        self._note_response_time(response)
 
         try:
             status = self._wait_for_completion()
@@ -549,7 +554,7 @@ class StackActions(object):
         self.logger.debug(
             "%s - Executing Change Set '%s'", self.stack.name, change_set_name
         )
-        self.connection_manager.call(
+        response = self.connection_manager.call(
             service="cloudformation",
             command="execute_change_set",
             kwargs={
@@ -557,6 +562,7 @@ class StackActions(object):
                 "StackName": self.stack.external_name
             }
         )
+        self._note_response_time(response)
 
         status = self._wait_for_completion()
         return status
@@ -767,6 +773,9 @@ class StackActions(object):
                 "currently enabled".format(self.stack.name)
             )
 
+    def _note_response_time(self, resp):
+        self.most_recent_event_datetime = get_response_datetime(resp)
+
     def _wait_for_completion(self, timeout=0):
         """
         Waits for a Stack operation to finish. Prints CloudFormation events
@@ -784,9 +793,11 @@ class StackActions(object):
 
         status = StackStatus.IN_PROGRESS
 
-        self.most_recent_event_datetime = (
-            datetime.now(tzutc()) - timedelta(seconds=3)
-        )
+        if not self.most_recent_event_datetime:
+            self.most_recent_event_datetime = (
+                datetime.now(tzutc()) - timedelta(seconds=3)
+            )
+
         elapsed = 0
         while status == StackStatus.IN_PROGRESS and not timed_out(elapsed):
             status = self._get_simplified_status(self._get_status())
