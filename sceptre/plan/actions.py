@@ -28,7 +28,7 @@ from sceptre.exceptions import (
     UnknownStackChangeSetStatusError,
     UnknownStackStatusError
 )
-from sceptre.helpers import normalise_path, get_response_datetime
+from sceptre.helpers import normalise_path, extract_datetime_from_aws_response_headers
 from sceptre.hooks import add_stack_hooks
 from sceptre.stack import Stack
 from sceptre.stack_status import StackChangeSetStatus, StackStatus
@@ -774,7 +774,7 @@ class StackActions(object):
             )
 
     def _note_response_time(self, resp):
-        self.most_recent_event_datetime = get_response_datetime(resp)
+        self.most_recent_event_datetime = extract_datetime_from_aws_response_headers(resp)
 
     def _wait_for_completion(self, timeout=0):
         """

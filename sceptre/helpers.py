@@ -122,8 +122,17 @@ def null_context():
     yield
 
 
-def get_response_datetime(resp):
+def extract_datetime_from_aws_response_headers(boto_response):
+    """Returns a datetime.datetime extracted from the response metadata in a
+    boto response or None if it's unable to find or parse one.
+    :param boto_response: A dictionary returned from a boto client call
+    :type boto_response: dict
+    :returns a datetime.datetime or None
+    """
     try:
-        return datetime(*eut.parsedate(resp["ResponseMetadata"]["HTTPHeaders"]["date"])[:6])
+        # email.utils.parsedate returns a 9-tuple that can be passed to
+        # time.mktime. Fields 6 (tm_wday), 7 (tm_yday), and 8 (tm_isdst) are
+        # unneeded so we slice them off when passing to datetime().
+        return datetime(*eut.parsedate(boto_response["ResponseMetadata"]["HTTPHeaders"]["date"])[:6])
     except (TypeError, KeyError):
         return None

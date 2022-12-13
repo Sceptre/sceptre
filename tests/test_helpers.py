@@ -9,7 +9,7 @@ from sceptre.exceptions import PathConversionError
 from sceptre.helpers import get_external_stack_name
 from sceptre.helpers import normalise_path
 from sceptre.helpers import sceptreise_path
-from sceptre.helpers import get_response_datetime
+from sceptre.helpers import extract_datetime_from_aws_response_headers
 
 
 class TestHelpers(object):
@@ -70,24 +70,24 @@ class TestHelpers(object):
                 'this\\path\\is\\invalid\\'
             )
 
-    def test_get_response_datetime_valid(self):
+    def test_get_response_datetime__response_is_none__returns_datetime(self):
         resp = {
             "ResponseMetadata": {
                 "HTTPHeaders": {"date": "Wed, 16 Oct 2019 07:28:00 GMT"}
             }
         }
-        assert get_response_datetime(resp) == datetime(2019, 10, 16, 7, 28)
+        assert extract_datetime_from_aws_response_headers(resp) == datetime(2019, 10, 16, 7, 28)
 
-    def test_get_response_datetime_invalid(self):
+    def test_get_response_datetime__date_string_is_invalid__returns_none(self):
         resp = {
             "ResponseMetadata": {
                 "HTTPHeaders": {"date": "garbage"}
             }
         }
-        assert get_response_datetime(resp) is None
+        assert extract_datetime_from_aws_response_headers(resp) is None
 
-    def test_get_response_datetime_missing(self):
-        assert get_response_datetime({}) is None
+    def test_get_response_datetime__response_is_empty__returns_none(self):
+        assert extract_datetime_from_aws_response_headers({}) is None
 
-    def test_get_response_datetime_null(self):
-        assert get_response_datetime(None) is None
+    def test_get_response_datetime__response_is_none__returns_none(self):
+        assert extract_datetime_from_aws_response_headers(None) is None
