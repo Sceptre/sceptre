@@ -50,7 +50,6 @@ class StackActions(object):
         self.stack = stack
         self.name = self.stack.name
         self.logger = logging.getLogger(__name__)
-        self.most_recent_event_datetime = None
         self.connection_manager = ConnectionManager(
             self.stack.region, self.stack.profile,
             self.stack.external_name, self.stack.iam_role,
@@ -96,8 +95,7 @@ class StackActions(object):
                 "%s - Create stack response: %s", self.stack.name, response
             )
 
-            self._note_response_time(response)
-            status = self._wait_for_completion()
+            status = self._wait_for_completion(boto_response=response)
         except botocore.exceptions.ClientError as exp:
             if exp.response["Error"]["Code"] == "AlreadyExistsException":
                 self.logger.info(
@@ -143,8 +141,7 @@ class StackActions(object):
                 command="update_stack",
                 kwargs=update_stack_kwargs
             )
-            self._note_response_time(response)
-            status = self._wait_for_completion(self.stack.stack_timeout)
+            status = self._wait_for_completion(self.stack.stack_timeout, boto_response=response)
             self.logger.debug(
                 "%s - Update Stack response: %s", self.stack.name, response
             )
@@ -183,8 +180,7 @@ class StackActions(object):
         self.logger.debug(
             "%s - Cancel update Stack response: %s", self.stack.name, response
         )
-        self._note_response_time(response)
-        return self._wait_for_completion()
+        return self._wait_for_completion(boto_response=response)
 
     @add_stack_hooks
     def launch(self) -> StackStatus:
@@ -260,10 +256,9 @@ class StackActions(object):
             command="delete_stack",
             kwargs=delete_stack_kwargs
         )
-        self._note_response_time(response)
 
         try:
-            status = self._wait_for_completion()
+            status = self._wait_for_completion(boto_response=response)
         except StackDoesNotExistError:
             status = StackStatus.COMPLETE
         except botocore.exceptions.ClientError as error:
@@ -562,9 +557,7 @@ class StackActions(object):
                 "StackName": self.stack.external_name
             }
         )
-        self._note_response_time(response)
-
-        status = self._wait_for_completion()
+        status = self._wait_for_completion(boto_response=response)
         return status
 
     def change_set_creation_failed_due_to_no_changes(self, reason: str) -> bool:
@@ -773,15 +766,13 @@ class StackActions(object):
                 "currently enabled".format(self.stack.name)
             )
 
-    def _note_response_time(self, resp):
-        self.most_recent_event_datetime = extract_datetime_from_aws_response_headers(resp)
-
-    def _wait_for_completion(self, timeout=0):
+    def _wait_for_completion(self, timeout=0, boto_response=None):
         """
         Waits for a Stack operation to finish. Prints CloudFormation events
         while it waits.
 
         :param timeout: Timeout before returning, in minutes.
+        :param boto_response: Response from the boto call which initiated the stack change.
 
         :returns: The final Stack status.
         :rtype: sceptre.stack_status.StackStatus
@@ -793,15 +784,14 @@ class StackActions(object):
 
         status = StackStatus.IN_PROGRESS
 
-        if not self.most_recent_event_datetime:
-            self.most_recent_event_datetime = (
-                datetime.now(tzutc()) - timedelta(seconds=3)
-            )
+        most_recent_event_datetime = extract_datetime_from_aws_response_headers(
+            boto_response
+        ) or (datetime.now(tzutc()) - timedelta(seconds=3))
 
         elapsed = 0
         while status == StackStatus.IN_PROGRESS and not timed_out(elapsed):
             status = self._get_simplified_status(self._get_status())
-            self._log_new_events()
+            most_recent_event_datetime = self._log_new_events(most_recent_event_datetime)
             time.sleep(4)
             elapsed += 4
 
@@ -854,15 +844,20 @@ class StackActions(object):
                 "{0} is unknown".format(status)
             )
 
-    def _log_new_events(self):
+    def _log_new_events(self, after_datetime):
         """
         Log the latest Stack events while the Stack is being built.
+
+        :param after_datetime: Only events after this datetime will be logged.
+        :type after_datetime: datetime.datetime
+        :returns: The datetime of the last logged event or after_datetime if no events were logged.
+        :rtype: datetime.datetime
         """
         events = self.describe_events()["StackEvents"]
         events.reverse()
         new_events = [
             event for event in events
-            if event["Timestamp"] > self.most_recent_event_datetime
+            if event["Timestamp"] > after_datetime
         ]
         for event in new_events:
             self.logger.info(" ".join([
@@ -872,7 +867,8 @@ class StackActions(object):
                 event["ResourceStatus"],
                 event.get("ResourceStatusReason", "")
             ]))
-            self.most_recent_event_datetime = event["Timestamp"]
+            after_datetime = event["Timestamp"]
+        return after_datetime
 
     def wait_for_cs_completion(self, change_set_name):
         """
