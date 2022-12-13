@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-import dateutil.parser
-
 from contextlib import contextmanager
+from datetime import datetime
 from os import sep
+from typing import Optional
+
+import dateutil.parser
 
 from sceptre.exceptions import PathConversionError
 
@@ -121,11 +123,10 @@ def null_context():
     yield
 
 
-def extract_datetime_from_aws_response_headers(boto_response):
+def extract_datetime_from_aws_response_headers(boto_response: dict) -> Optional[datetime]:
     """Returns a datetime.datetime extracted from the response metadata in a
     boto response or None if it's unable to find or parse one.
     :param boto_response: A dictionary returned from a boto client call
-    :type boto_response: dict
     :returns a datetime.datetime or None
     """
     if boto_response is None:
@@ -133,7 +134,7 @@ def extract_datetime_from_aws_response_headers(boto_response):
     try:
         return dateutil.parser.parse(boto_response["ResponseMetadata"]["HTTPHeaders"]["date"])
     except (KeyError, dateutil.parser.ParserError):
-        # We expect a KeyError if the date isn't present in the response. We expect
-        # a ParserError if it's not well-formatted. Any other error we want to pass
-        # along.
+        # We expect a KeyError if the date isn't present in the response. We
+        # expect a ParserError if it's not well-formed. Any other error we want
+        # to pass along.
         return None

@@ -14,21 +14,19 @@ import typing
 import urllib
 from datetime import datetime, timedelta
 from os import path
-from typing import Union, Optional, Tuple, Dict
+from typing import Dict, Optional, Tuple, Union
 
 import botocore
 from dateutil.tz import tzutc
 
 from sceptre.config.reader import ConfigReader
 from sceptre.connection_manager import ConnectionManager
-from sceptre.exceptions import (
-    CannotUpdateFailedStackError,
-    ProtectedStackError,
-    StackDoesNotExistError,
-    UnknownStackChangeSetStatusError,
-    UnknownStackStatusError
-)
-from sceptre.helpers import normalise_path, extract_datetime_from_aws_response_headers
+from sceptre.exceptions import (CannotUpdateFailedStackError,
+                                ProtectedStackError, StackDoesNotExistError,
+                                UnknownStackChangeSetStatusError,
+                                UnknownStackStatusError)
+from sceptre.helpers import (extract_datetime_from_aws_response_headers,
+                             normalise_path)
 from sceptre.hooks import add_stack_hooks
 from sceptre.stack import Stack
 from sceptre.stack_status import StackChangeSetStatus, StackStatus
@@ -766,7 +764,7 @@ class StackActions(object):
                 "currently enabled".format(self.stack.name)
             )
 
-    def _wait_for_completion(self, timeout=0, boto_response=None):
+    def _wait_for_completion(self, timeout=0, boto_response: Optional[dict] = None) -> StackStatus:
         """
         Waits for a Stack operation to finish. Prints CloudFormation events
         while it waits.
@@ -775,7 +773,6 @@ class StackActions(object):
         :param boto_response: Response from the boto call which initiated the stack change.
 
         :returns: The final Stack status.
-        :rtype: sceptre.stack_status.StackStatus
         """
         timeout = 60 * timeout
 
@@ -844,14 +841,12 @@ class StackActions(object):
                 "{0} is unknown".format(status)
             )
 
-    def _log_new_events(self, after_datetime):
+    def _log_new_events(self, after_datetime: datetime) -> datetime:
         """
         Log the latest Stack events while the Stack is being built.
 
         :param after_datetime: Only events after this datetime will be logged.
-        :type after_datetime: datetime.datetime
         :returns: The datetime of the last logged event or after_datetime if no events were logged.
-        :rtype: datetime.datetime
         """
         events = self.describe_events()["StackEvents"]
         events.reverse()
