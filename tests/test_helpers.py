@@ -3,7 +3,7 @@
 import pytest
 
 from os.path import join, sep
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 from sceptre.exceptions import PathConversionError
 from sceptre.helpers import get_external_stack_name
@@ -70,13 +70,22 @@ class TestHelpers(object):
                 'this\\path\\is\\invalid\\'
             )
 
-    def test_get_response_datetime__response_is_none__returns_datetime(self):
+    def test_get_response_datetime__response_is_valid__returns_datetime(self):
         resp = {
             "ResponseMetadata": {
                 "HTTPHeaders": {"date": "Wed, 16 Oct 2019 07:28:00 GMT"}
             }
         }
-        assert extract_datetime_from_aws_response_headers(resp) == datetime(2019, 10, 16, 7, 28)
+        assert extract_datetime_from_aws_response_headers(resp) == datetime(2019, 10, 16, 7, 28, tzinfo=timezone.utc)
+
+    def test_get_response_datetime__response_has_offset__returns_datetime(self):
+        resp = {
+            "ResponseMetadata": {
+                "HTTPHeaders": {"date": "Wed, 16 Oct 2019 07:28:00 +0400"}
+            }
+        }
+        offset = timezone(timedelta(hours=4))
+        assert extract_datetime_from_aws_response_headers(resp) == datetime(2019, 10, 16, 7, 28, tzinfo=offset)
 
     def test_get_response_datetime__date_string_is_invalid__returns_none(self):
         resp = {

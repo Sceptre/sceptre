@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-import email.utils as eut
+import dateutil.parser
 
 from contextlib import contextmanager
-from datetime import datetime
 from os import sep
 
 from sceptre.exceptions import PathConversionError
@@ -129,10 +128,12 @@ def extract_datetime_from_aws_response_headers(boto_response):
     :type boto_response: dict
     :returns a datetime.datetime or None
     """
+    if boto_response is None:
+        return None
     try:
-        # email.utils.parsedate returns a 9-tuple that can be passed to
-        # time.mktime. Fields 6 (tm_wday), 7 (tm_yday), and 8 (tm_isdst) are
-        # unneeded so we slice them off when passing to datetime().
-        return datetime(*eut.parsedate(boto_response["ResponseMetadata"]["HTTPHeaders"]["date"])[:6])
-    except (TypeError, KeyError):
+        return dateutil.parser.parse(boto_response["ResponseMetadata"]["HTTPHeaders"]["date"])
+    except (KeyError, dateutil.parser.ParserError):
+        # We expect a KeyError if the date isn't present in the response. We expect
+        # a ParserError if it's not well-formatted. Any other error we want to pass
+        # along.
         return None
