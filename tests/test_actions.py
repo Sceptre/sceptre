@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import json
-from unittest.mock import patch, sentinel, Mock, call
+from unittest.mock import patch, sentinel, Mock, call, ANY
 
 import pytest
 from botocore.exceptions import ClientError
@@ -127,7 +127,7 @@ class TestStackActions(object):
                 "TimeoutInMinutes": sentinel.timeout
             }
         )
-        mock_wait_for_completion.assert_called_once_with()
+        mock_wait_for_completion.assert_called_once_with(boto_response=ANY)
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
     def test_create_sends_correct_request_no_notifications(
@@ -162,7 +162,7 @@ class TestStackActions(object):
                 "TimeoutInMinutes": sentinel.stack_timeout
             }
         )
-        mock_wait_for_completion.assert_called_once_with()
+        mock_wait_for_completion.assert_called_once_with(boto_response=ANY)
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
     def test_create_sends_correct_request_with_no_failure_no_timeout(
@@ -194,7 +194,8 @@ class TestStackActions(object):
                 ]
             }
         )
-        mock_wait_for_completion.assert_called_once_with()
+
+        mock_wait_for_completion.assert_called_once_with(boto_response=ANY)
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
     def test_create_stack_already_exists(
@@ -245,7 +246,8 @@ class TestStackActions(object):
             }
         )
         mock_wait_for_completion.assert_called_once_with(
-            sentinel.stack_timeout
+            sentinel.stack_timeout,
+            boto_response=ANY
         )
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
@@ -284,7 +286,7 @@ class TestStackActions(object):
         ]
         self.actions.connection_manager.call.assert_has_calls(calls)
         mock_wait_for_completion.assert_has_calls(
-            [call(sentinel.stack_timeout), call()]
+            [call(sentinel.stack_timeout, boto_response=ANY), call(boto_response=ANY)]
         )
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
@@ -319,7 +321,8 @@ class TestStackActions(object):
             }
         )
         mock_wait_for_completion.assert_called_once_with(
-            sentinel.stack_timeout
+            sentinel.stack_timeout,
+            boto_response=ANY
         )
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
@@ -352,7 +355,7 @@ class TestStackActions(object):
             command="cancel_update_stack",
             kwargs={"StackName": sentinel.external_name}
         )
-        mock_wait_for_completion.assert_called_once_with()
+        mock_wait_for_completion.assert_called_once_with(boto_response=ANY)
 
     @patch("sceptre.plan.actions.StackActions.create")
     @patch("sceptre.plan.actions.StackActions._get_status")
@@ -707,7 +710,7 @@ class TestStackActions(object):
                 "StackName": sentinel.external_name
             }
         )
-        mock_wait_for_completion.assert_called_once_with()
+        mock_wait_for_completion.assert_called_once_with(boto_response=ANY)
 
     def test_execute_change_set__change_set_is_failed_for_no_changes__returns_0(self):
         def fake_describe(service, command, kwargs):
@@ -994,7 +997,8 @@ class TestStackActions(object):
         mock_get_simplified_status.return_value = StackStatus.COMPLETE
 
         self.actions._wait_for_completion()
-        mock_log_new_events.assert_called_once_with()
+        mock_log_new_events.assert_called_once()
+        assert type(mock_log_new_events.mock_calls[0].args[0]) is datetime.datetime
 
     @pytest.mark.parametrize("test_input,expected", [
         ("ROLLBACK_COMPLETE", StackStatus.FAILED),
@@ -1017,7 +1021,7 @@ class TestStackActions(object):
         mock_describe_events.return_value = {
             "StackEvents": []
         }
-        self.actions._log_new_events()
+        self.actions._log_new_events(datetime.datetime.utcnow())
         self.actions.describe_events.assert_called_once_with()
 
     @patch("sceptre.plan.actions.StackActions.describe_events")
@@ -1044,10 +1048,7 @@ class TestStackActions(object):
                 }
             ]
         }
-        self.actions.most_recent_event_datetime = (
-            datetime.datetime(2016, 3, 15, 14, 0, 0, 0, tzinfo=tzutc())
-        )
-        self.actions._log_new_events()
+        self.actions._log_new_events(datetime.datetime(2016, 3, 15, 14, 0, 0, 0, tzinfo=tzutc()))
 
     @patch("sceptre.plan.actions.StackActions._get_cs_status")
     def test_wait_for_cs_completion_calls_get_cs_status(
