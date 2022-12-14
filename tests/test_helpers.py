@@ -3,11 +3,13 @@
 import pytest
 
 from os.path import join, sep
+from datetime import datetime, timezone, timedelta
 
 from sceptre.exceptions import PathConversionError
 from sceptre.helpers import get_external_stack_name
 from sceptre.helpers import normalise_path
 from sceptre.helpers import sceptreise_path
+from sceptre.helpers import extract_datetime_from_aws_response_headers
 
 
 class TestHelpers(object):
@@ -67,3 +69,34 @@ class TestHelpers(object):
             sceptreise_path(
                 'this\\path\\is\\invalid\\'
             )
+
+    def test_get_response_datetime__response_is_valid__returns_datetime(self):
+        resp = {
+            "ResponseMetadata": {
+                "HTTPHeaders": {"date": "Wed, 16 Oct 2019 07:28:00 GMT"}
+            }
+        }
+        assert extract_datetime_from_aws_response_headers(resp) == datetime(2019, 10, 16, 7, 28, tzinfo=timezone.utc)
+
+    def test_get_response_datetime__response_has_offset__returns_datetime(self):
+        resp = {
+            "ResponseMetadata": {
+                "HTTPHeaders": {"date": "Wed, 16 Oct 2019 07:28:00 +0400"}
+            }
+        }
+        offset = timezone(timedelta(hours=4))
+        assert extract_datetime_from_aws_response_headers(resp) == datetime(2019, 10, 16, 7, 28, tzinfo=offset)
+
+    def test_get_response_datetime__date_string_is_invalid__returns_none(self):
+        resp = {
+            "ResponseMetadata": {
+                "HTTPHeaders": {"date": "garbage"}
+            }
+        }
+        assert extract_datetime_from_aws_response_headers(resp) is None
+
+    def test_get_response_datetime__response_is_empty__returns_none(self):
+        assert extract_datetime_from_aws_response_headers({}) is None
+
+    def test_get_response_datetime__response_is_none__returns_none(self):
+        assert extract_datetime_from_aws_response_headers(None) is None
