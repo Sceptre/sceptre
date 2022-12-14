@@ -9,8 +9,10 @@ import pytest
 import yaml
 from deepdiff import DeepDiff
 
-from sceptre.diffing.diff_writer import DiffWriter, DeepDiffWriter, deepdiff_json_defaults, DiffLibWriter
+from sceptre.diffing.diff_writer import DiffWriter, DeepDiffWriter, deepdiff_json_defaults, \
+    DiffLibWriter, ColouredDiffLibWriter
 from sceptre.diffing.stack_differ import StackDiff, DiffType, StackConfiguration
+from colorama import Fore
 
 
 class ImplementedDiffWriter(DiffWriter):
@@ -368,3 +370,74 @@ class TestDiffLibWriter:
         result = self.writer.dump_diff(self.diff.config_diff)
         expected = '\n'.join(self.diff.config_diff)
         assert result == expected
+
+
+class TestColouredDiffLibWriter:
+    def setup_method(self, method):
+        self.stack_name = 'stack'
+
+        self.is_deployed = True
+        self.output_format = 'yaml'
+
+        self.output_stream = StringIO()
+
+        self.config1 = StackConfiguration(
+            stack_name=self.stack_name,
+            parameters={},
+            stack_tags={},
+            notifications=[],
+            role_arn=None
+        )
+
+        self.template1 = "foo"
+
+    @property
+    def template_diff(self):
+        return [
+            '--- file1.txt   2018-01-11 10:39:38.237464052 +0000\n',
+            '+++ file2.txt   2018-01-11 10:40:00.323423021 +0000\n',
+            '@@ -1,4 +1,4 @@\n',
+            ' cat\n',
+            '-mv\n',
+            '-comm\n',
+            ' cp\n',
+            '+diff\n',
+            '+comm\n'
+        ]
+
+    @property
+    def config_diff(self):
+        return []
+
+    @property
+    def diff(self):
+        return StackDiff(
+            self.stack_name,
+            self.template_diff,
+            self.config_diff,
+            self.is_deployed,
+            self.config1,
+            self.template1
+        )
+
+    @property
+    def writer(self):
+        return ColouredDiffLibWriter(
+            self.diff,
+            self.output_stream,
+            self.output_format
+        )
+
+    def test_lines_are_coloured(self):
+        coloured = (
+            f'{Fore.RED}--- file1.txt   2018-01-11 10:39:38.237464052 +0000\n{Fore.RESET}\n'
+            f"{Fore.GREEN}+++ file2.txt   2018-01-11 10:40:00.323423021 +0000\n{Fore.RESET}\n"
+            '@@ -1,4 +1,4 @@\n\n'
+            " cat\n\n"
+            f'{Fore.RED}-mv\n{Fore.RESET}\n'
+            f"{Fore.RED}-comm\n{Fore.RESET}\n"
+            ' cp\n\n'
+            f"{Fore.GREEN}+diff\n{Fore.RESET}\n"
+            f'{Fore.GREEN}+comm\n{Fore.RESET}'
+        )
+        assert self.writer.dump_diff(self.template_diff) == coloured
