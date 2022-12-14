@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 import pathlib
-import requests
 import tempfile
-import sceptre.template_handlers.helper as helper
+from urllib.parse import urlparse
 
+import requests
 from requests.adapters import HTTPAdapter
-from requests.exceptions import InvalidURL, ConnectTimeout
 from requests.packages.urllib3.util.retry import Retry
+
+import sceptre.template_handlers.helper as helper
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 from sceptre.template_handlers import TemplateHandler
-from urllib.parse import urlparse
 
 HANDLER_OPTION_KEY = "http_template_handler"
 HANDLER_RETRIES_OPTION_PARAM = "retries"
@@ -77,23 +77,22 @@ class Http(TemplateHandler):
 
         return template
 
-    def _get_template(self, url, retries, timeout):
+    def _get_template(self, url: str, retries: int, timeout: int) -> str:
         """
         Get template from the web
         :param url: The url to the template
-        :type: str
         :param retries: The number of retry attempts.
-        :rtype: int
         :param timeout: The timeout for the session in seconds.
-        :rtype: int
+        :raises: :class:`requests.exceptions.HTTPError`: When a download error occurs
         """
         self.logger.debug("Downloading file from: %s", url)
         session = self._get_retry_session(retries=retries)
-        try:
-            response = session.get(url, timeout=timeout)
-            return response.content
-        except (InvalidURL, ConnectTimeout) as e:
-            raise e
+        response = session.get(url, timeout=timeout)
+
+        # If the response was unsuccessful, raise an error.
+        response.raise_for_status()
+
+        return response.content
 
     def _get_retry_session(self,
                            retries,

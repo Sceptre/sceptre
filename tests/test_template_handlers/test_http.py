@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import json
+from unittest.mock import patch
 
 import pytest
+from requests.exceptions import HTTPError
 
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 from sceptre.template_handlers.http import Http
-from unittest.mock import patch
 
 
 class TestHttp(object):
@@ -19,6 +20,16 @@ class TestHttp(object):
         )
         result = template_handler.handle()
         assert result == b"Stuff is working"
+
+    def test_get_template__request_error__raises_error(self, requests_mock):
+        url = "https://raw.githubusercontent.com/acme/bucket.yaml"
+        requests_mock.get(url, content=b"Error message", status_code=404)
+        template_handler = Http(
+            name="vpc",
+            arguments={"url": url},
+        )
+        with pytest.raises(HTTPError):
+            template_handler.handle()
 
     def test_handler_unsupported_type(self):
         handler = Http("http_handler", {'url': 'https://raw.githubusercontent.com/acme/bucket.unsupported'})
