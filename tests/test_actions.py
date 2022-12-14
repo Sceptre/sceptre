@@ -997,7 +997,8 @@ class TestStackActions(object):
         mock_get_simplified_status.return_value = StackStatus.COMPLETE
 
         self.actions._wait_for_completion()
-        mock_log_new_events.assert_called_once_with()
+        mock_log_new_events.assert_called_once()
+        assert type(mock_log_new_events.mock_calls[0].args[0]) is datetime.datetime
 
     @pytest.mark.parametrize("test_input,expected", [
         ("ROLLBACK_COMPLETE", StackStatus.FAILED),
@@ -1020,7 +1021,7 @@ class TestStackActions(object):
         mock_describe_events.return_value = {
             "StackEvents": []
         }
-        self.actions._log_new_events()
+        self.actions._log_new_events(datetime.datetime.utcnow())
         self.actions.describe_events.assert_called_once_with()
 
     @patch("sceptre.plan.actions.StackActions.describe_events")
@@ -1047,10 +1048,7 @@ class TestStackActions(object):
                 }
             ]
         }
-        self.actions.most_recent_event_datetime = (
-            datetime.datetime(2016, 3, 15, 14, 0, 0, 0, tzinfo=tzutc())
-        )
-        self.actions._log_new_events()
+        self.actions._log_new_events(datetime.datetime(2016, 3, 15, 14, 0, 0, 0, tzinfo=tzutc()))
 
     @patch("sceptre.plan.actions.StackActions._get_cs_status")
     def test_wait_for_cs_completion_calls_get_cs_status(
