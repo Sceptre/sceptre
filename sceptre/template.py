@@ -12,6 +12,8 @@ import threading
 import botocore
 import sys
 
+import sceptre.helpers
+
 from sceptre.exceptions import TemplateHandlerNotFoundError
 
 
@@ -62,10 +64,10 @@ class Template(object):
         self._body = None
 
     def __repr__(self):
-        return (
-            "sceptre.template.Template(name='{0}', handler_config={1}, sceptre_user_data={2}, s3_details={3})".format(
-                self.name, self.handler_config, self.sceptre_user_data, self.s3_details
-            )
+        return sceptre.helpers.gen_repr(
+            self,
+            class_label="sceptre.template.Template",
+            attributes=["name", "handler_config", "sceptre_user_data", "s3_details"],
         )
 
     @property

@@ -151,6 +151,6 @@ def gen_repr(instance: Any, class_label: str = None, attributes: List[str] = [])
     if not class_label:
         class_label = instance.__class__.__name__
     attr_str = ", ".join(
-        [f"{a}={str(instance.__getattribute__(a))}" for a in attributes]
+        [f"{a}={repr(instance.__getattribute__(a))}" for a in attributes]
     )
     return f"{class_label}({attr_str})"

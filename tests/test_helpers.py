@@ -108,13 +108,13 @@ class TestHelpers(object):
 
     def test_repr__one_attr__no_commas(self):
         i = SomeClass("a", 2)
-        assert gen_repr(i, attributes=["str_attr"]) == "SomeClass(str_attr=a)"
+        assert gen_repr(i, attributes=["str_attr"]) == "SomeClass(str_attr='a')"
 
     def test_repr__two_attrs__correct_order(self):
         i = SomeClass("b", 6)
         assert (
             gen_repr(i, attributes=["int_attr", "str_attr"])
-            == "SomeClass(int_attr=6, str_attr=b)"
+            == "SomeClass(int_attr=6, str_attr='b')"
         )
 
     def test_repr__override_label__correct_name(self):
