@@ -2,7 +2,7 @@
 from contextlib import contextmanager
 from datetime import datetime
 from os import sep
-from typing import Optional
+from typing import Optional, Any, List
 
 import dateutil.parser
 
@@ -138,3 +138,19 @@ def extract_datetime_from_aws_response_headers(boto_response: dict) -> Optional[
         # expect a ParserError if it's not well-formed. Any other error we want
         # to pass along.
         return None
+
+
+def gen_repr(instance: Any, class_label: str = None, attributes: List[str] = []) -> str:
+    """
+    Returns a standard __repr__ based on instance attributes.
+    :param instance: The instance to represent (`self`).
+    :param class_label: Override the name of the class found through introspection.
+    :param attributes: List the attributes to include the in representation.
+    :returns: A string representation of `instance`
+    """
+    if not class_label:
+        class_label = instance.__class__.__name__
+    attr_str = ", ".join(
+        [f"{a}={str(instance.__getattribute__(a))}" for a in attributes]
+    )
+    return f"{class_label}({attr_str})"

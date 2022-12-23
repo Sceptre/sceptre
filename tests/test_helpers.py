@@ -9,11 +9,16 @@ from sceptre.exceptions import PathConversionError
 from sceptre.helpers import get_external_stack_name
 from sceptre.helpers import normalise_path
 from sceptre.helpers import sceptreise_path
-from sceptre.helpers import extract_datetime_from_aws_response_headers
+from sceptre.helpers import extract_datetime_from_aws_response_headers, gen_repr
+
+
+class SomeClass(object):
+    def __init__(self, str_attr: str, int_attr: int):
+        self.str_attr = str_attr
+        self.int_attr = int_attr
 
 
 class TestHelpers(object):
-
     def test_get_external_stack_name(self):
         result = get_external_stack_name("prj", "dev/ew1/jump-host")
         assert result == "prj-dev-ew1-jump-host"
@@ -100,3 +105,18 @@ class TestHelpers(object):
 
     def test_get_response_datetime__response_is_none__returns_none(self):
         assert extract_datetime_from_aws_response_headers(None) is None
+
+    def test_repr__one_attr__no_commas(self):
+        i = SomeClass("a", 2)
+        assert gen_repr(i, attributes=["str_attr"]) == "SomeClass(str_attr=a)"
+
+    def test_repr__two_attrs__correct_order(self):
+        i = SomeClass("b", 6)
+        assert (
+            gen_repr(i, attributes=["int_attr", "str_attr"])
+            == "SomeClass(int_attr=6, str_attr=b)"
+        )
+
+    def test_repr__override_label__correct_name(self):
+        i = SomeClass("q", 123)
+        assert gen_repr(i, class_label="My.Class") == "My.Class()"
