@@ -34,12 +34,10 @@ class StackStatusColourer(object):
         "UPDATE_ROLLBACK_COMPLETE": Fore.GREEN,
         "UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS": Fore.YELLOW,
         "UPDATE_ROLLBACK_FAILED": Fore.RED,
-        "UPDATE_ROLLBACK_IN_PROGRESS": Fore.YELLOW
+        "UPDATE_ROLLBACK_IN_PROGRESS": Fore.YELLOW,
     }
 
-    STACK_STATUS_PATTERN = re.compile(
-        r"\b({0})\b".format("|".join(STACK_STATUS_CODES))
-    )
+    STACK_STATUS_PATTERN = re.compile(r"\b({0})\b".format("|".join(STACK_STATUS_CODES)))
 
     def colour(self, string):
         """
@@ -60,6 +58,6 @@ class StackStatusColourer(object):
                 "{0}{1}{2}".format(
                     self.STACK_STATUS_CODES[status], status, Style.RESET_ALL
                 ),
-                string
+                string,
             )
         return string

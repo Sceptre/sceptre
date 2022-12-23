@@ -3,10 +3,7 @@ import webbrowser
 
 import click
 
-from sceptre.cli.helpers import (
-    catch_exceptions,
-    write
-)
+from sceptre.cli.helpers import catch_exceptions, write
 from sceptre.context import SceptreContext
 from sceptre.helpers import null_context
 from sceptre.plan.plan import SceptrePlan
@@ -17,10 +14,10 @@ logger = logging.getLogger(__name__)
 
 @click.command(name="validate", short_help="Validates the template.")
 @click.option(
-    '-n',
-    '--no-placeholders',
+    "-n",
+    "--no-placeholders",
     is_flag=True,
-    help="If True, no placeholder values will be supplied for resolvers that cannot be resolved."
+    help="If True, no placeholder values will be supplied for resolvers that cannot be resolved.",
 )
 @click.argument("path")
 @click.pass_context
@@ -39,28 +36,30 @@ def validate_command(ctx, no_placeholders, path):
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         output_format=ctx.obj.get("output_format"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
     )
 
     plan = SceptrePlan(context)
 
-    execution_context = null_context() if no_placeholders else use_resolver_placeholders_on_error()
+    execution_context = (
+        null_context() if no_placeholders else use_resolver_placeholders_on_error()
+    )
     with execution_context:
         responses = plan.validate()
 
     for stack, response in responses.items():
-        if response['ResponseMetadata']['HTTPStatusCode'] == 200:
-            del response['ResponseMetadata']
+        if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
+            del response["ResponseMetadata"]
             click.echo("Template {} is valid. Template details:\n".format(stack.name))
         write(response, context.output_format)
 
 
 @click.command(name="generate", short_help="Prints the template.")
 @click.option(
-    '-n',
-    '--no-placeholders',
+    "-n",
+    "--no-placeholders",
     is_flag=True,
-    help="If True, no placeholder values will be supplied for resolvers that cannot be resolved."
+    help="If True, no placeholder values will be supplied for resolvers that cannot be resolved.",
 )
 @click.argument("path")
 @click.pass_context
@@ -79,12 +78,14 @@ def generate_command(ctx, no_placeholders, path):
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         output_format=ctx.obj.get("output_format"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
     )
 
     plan = SceptrePlan(context)
 
-    execution_context = null_context() if no_placeholders else use_resolver_placeholders_on_error()
+    execution_context = (
+        null_context() if no_placeholders else use_resolver_placeholders_on_error()
+    )
     with execution_context:
         responses = plan.generate()
 
@@ -112,19 +113,19 @@ def estimate_cost_command(ctx, path):
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         output_format=ctx.obj.get("output_format"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
     )
 
     plan = SceptrePlan(context)
     responses = plan.estimate_cost()
 
     for stack, response in responses.items():
-        if response['ResponseMetadata']['HTTPStatusCode'] == 200:
-            del response['ResponseMetadata']
+        if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
+            del response["ResponseMetadata"]
             click.echo("View the estimated cost for {} at:".format(stack.name))
             response = response["Url"]
             webbrowser.open(response, new=2)
-        write(response + "\n", 'text')
+        write(response + "\n", "text")
 
 
 @click.command(name="fetch-remote-template", short_help="Prints the remote template.")
@@ -145,7 +146,7 @@ def fetch_remote_template_command(ctx, path):
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         output_format=ctx.obj.get("output_format"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
     )
 
     plan = SceptrePlan(context)

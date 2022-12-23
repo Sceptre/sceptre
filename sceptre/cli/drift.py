@@ -4,16 +4,9 @@ from click import Context
 from sceptre.context import SceptreContext
 from sceptre.plan.plan import SceptrePlan
 
-from sceptre.cli.helpers import (
-    catch_exceptions,
-    deserialize_json_properties,
-    write
-)
+from sceptre.cli.helpers import catch_exceptions, deserialize_json_properties, write
 
-BAD_STATUSES = [
-    "DETECTION_FAILED",
-    "TIMED_OUT"
-]
+BAD_STATUSES = ["DETECTION_FAILED", "TIMED_OUT"]
 
 
 @click.group(name="drift")
@@ -24,7 +17,9 @@ def drift_group():
     pass
 
 
-@drift_group.command(name="detect", short_help="Run detect stack drift on running stacks.")
+@drift_group.command(
+    name="detect", short_help="Run detect stack drift on running stacks."
+)
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
@@ -46,7 +41,7 @@ def drift_detect(ctx: Context, path: str):
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         output_format=ctx.obj.get("output_format"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
     )
 
     plan = SceptrePlan(context)
@@ -61,7 +56,9 @@ def drift_detect(ctx: Context, path: str):
             exit_status += 1
         for key in ["Timestamp", "ResponseMetadata"]:
             response.pop(key, None)
-        write({stack.external_name: deserialize_json_properties(response)}, output_format)
+        write(
+            {stack.external_name: deserialize_json_properties(response)}, output_format
+        )
 
     exit(exit_status)
 
@@ -91,7 +88,7 @@ def drift_show(ctx, path, drifted):
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         output_format=ctx.obj.get("output_format"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
     )
 
     plan = SceptrePlan(context)
@@ -103,6 +100,8 @@ def drift_show(ctx, path, drifted):
     for stack, (status, response) in responses.items():
         if status in BAD_STATUSES:
             exit_status += 1
-        write({stack.external_name: deserialize_json_properties(response)}, output_format)
+        write(
+            {stack.external_name: deserialize_json_properties(response)}, output_format
+        )
 
     exit(exit_status)

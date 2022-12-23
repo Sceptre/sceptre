@@ -18,7 +18,7 @@ from sceptre.resolvers import (
     ResolvableContainerProperty,
     ResolvableValueProperty,
     RecursiveResolve,
-    PlaceholderType
+    PlaceholderType,
 )
 from sceptre.template import Template
 
@@ -105,63 +105,81 @@ class Stack(object):
     :param stack_group_config: The StackGroup config for the Stack
 
     """
+
     parameters = ResolvableContainerProperty("parameters")
     sceptre_user_data = ResolvableContainerProperty(
-        "sceptre_user_data",
-        PlaceholderType.alphanum
+        "sceptre_user_data", PlaceholderType.alphanum
     )
     notifications = ResolvableContainerProperty("notifications")
-    tags = ResolvableContainerProperty('tags')
+    tags = ResolvableContainerProperty("tags")
     # placeholder_override=None here means that if the template_bucket_name is a resolver,
     # placeholders have been enabled, and that stack hasn't been deployed yet, commands that would
     # otherwise attempt to upload the template (like validate) won't actually use the template bucket
     # and will act as if there was no template bucket set.
-    s3_details = ResolvableContainerProperty(
-        "s3_details",
-        PlaceholderType.none
-    )
+    s3_details = ResolvableContainerProperty("s3_details", PlaceholderType.none)
     template_handler_config = ResolvableContainerProperty(
-        'template_handler_config',
-        PlaceholderType.alphanum
+        "template_handler_config", PlaceholderType.alphanum
     )
 
     template_bucket_name = ResolvableValueProperty(
-        "template_bucket_name",
-        PlaceholderType.none
+        "template_bucket_name", PlaceholderType.none
     )
     # Similarly, the placeholder_override=None for iam_role means that actions that would otherwise
     # use the iam_role will act as if there was no iam role when the iam_role stack has not been
     # deployed for commands that allow placeholders (like validate).
-    iam_role = ResolvableValueProperty(
-        'iam_role',
-        PlaceholderType.none
-    )
-    role_arn = ResolvableValueProperty('role_arn')
+    iam_role = ResolvableValueProperty("iam_role", PlaceholderType.none)
+    role_arn = ResolvableValueProperty("role_arn")
 
     hooks = HookProperty("hooks")
 
     def __init__(
-        self, name: str, project_code: str, region: str, template_path: str = None,
-        template_handler_config: dict = None, template_bucket_name: str = None, template_key_prefix: str = None,
-        required_version: str = None, parameters: dict = None, sceptre_user_data: dict = None, hooks: Hook = None,
-        s3_details: dict = None, iam_role: str = None, dependencies: List["Stack"] = None, role_arn: str = None,
-        protected: bool = False, tags: dict = None, external_name: str = None, notifications: List[str] = None,
-        on_failure: str = None, profile: str = None, stack_timeout: int = 0, iam_role_session_duration: int = 0,
-        ignore=False, obsolete=False, stack_group_config: dict = {}
+        self,
+        name: str,
+        project_code: str,
+        region: str,
+        template_path: str = None,
+        template_handler_config: dict = None,
+        template_bucket_name: str = None,
+        template_key_prefix: str = None,
+        required_version: str = None,
+        parameters: dict = None,
+        sceptre_user_data: dict = None,
+        hooks: Hook = None,
+        s3_details: dict = None,
+        iam_role: str = None,
+        dependencies: List["Stack"] = None,
+        role_arn: str = None,
+        protected: bool = False,
+        tags: dict = None,
+        external_name: str = None,
+        notifications: List[str] = None,
+        on_failure: str = None,
+        profile: str = None,
+        stack_timeout: int = 0,
+        iam_role_session_duration: int = 0,
+        ignore=False,
+        obsolete=False,
+        stack_group_config: dict = {},
     ):
         self.logger = logging.getLogger(__name__)
 
         if template_path and template_handler_config:
-            raise InvalidConfigFileError("Both 'template_path' and 'template' are set, specify one or the other")
+            raise InvalidConfigFileError(
+                "Both 'template_path' and 'template' are set, specify one or the other"
+            )
 
         if not template_path and not template_handler_config:
-            raise InvalidConfigFileError("Neither 'template_path' nor 'template' is set")
+            raise InvalidConfigFileError(
+                "Neither 'template_path' nor 'template' is set"
+            )
 
         self.name = sceptreise_path(name)
         self.project_code = project_code
         self.region = region
         self.required_version = required_version
-        self.external_name = external_name or get_external_stack_name(self.project_code, self.name)
+        self.external_name = external_name or get_external_stack_name(
+            self.project_code, self.name
+        )
         self.template_path = template_path
         self.dependencies = dependencies or []
         self.protected = protected
@@ -239,21 +257,21 @@ class Stack(object):
         # Stack to a set, which is done very early in plan resolution. Trying to reference resolvers
         # before the plan is fully resolved can potentially blow up.
         return (
-            self.name == stack.name and
-            self.external_name == stack.external_name and
-            self.project_code == stack.project_code and
-            self.template_path == stack.template_path and
-            self.region == stack.region and
-            self.template_key_prefix == stack.template_key_prefix and
-            self.required_version == stack.required_version and
-            self.iam_role_session_duration == stack.iam_role_session_duration and
-            self.profile == stack.profile and
-            self.dependencies == stack.dependencies and
-            self.protected == stack.protected and
-            self.on_failure == stack.on_failure and
-            self.stack_timeout == stack.stack_timeout and
-            self.ignore == stack.ignore and
-            self.obsolete == stack.obsolete
+            self.name == stack.name
+            and self.external_name == stack.external_name
+            and self.project_code == stack.project_code
+            and self.template_path == stack.template_path
+            and self.region == stack.region
+            and self.template_key_prefix == stack.template_key_prefix
+            and self.required_version == stack.required_version
+            and self.iam_role_session_duration == stack.iam_role_session_duration
+            and self.profile == stack.profile
+            and self.dependencies == stack.dependencies
+            and self.protected == stack.protected
+            and self.on_failure == stack.on_failure
+            and self.stack_timeout == stack.stack_timeout
+            and self.ignore == stack.ignore
+            and self.obsolete == stack.obsolete
         )
 
     def __hash__(self):
@@ -285,7 +303,11 @@ class Stack(object):
                 cache_connection_manager = False
 
             connection_manager = ConnectionManager(
-                self.region, self.profile, self.external_name, iam_role, self.iam_role_session_duration
+                self.region,
+                self.profile,
+                self.external_name,
+                iam_role,
+                self.iam_role_session_duration,
             )
             if cache_connection_manager:
                 self._connection_manager = connection_manager
@@ -304,10 +326,7 @@ class Stack(object):
         """
         if self._template is None:
             if self.template_path:
-                handler_config = {
-                    "type": "file",
-                    "path": self.template_path
-                }
+                handler_config = {"type": "file", "path": self.template_path}
             else:
                 handler_config = self.template_handler_config
 
@@ -317,6 +336,6 @@ class Stack(object):
                 sceptre_user_data=self.sceptre_user_data,
                 stack_group_config=self.stack_group_config,
                 s3_details=self.s3_details,
-                connection_manager=self.connection_manager
+                connection_manager=self.connection_manager,
             )
         return self._template

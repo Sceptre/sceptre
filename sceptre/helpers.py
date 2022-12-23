@@ -19,10 +19,7 @@ def get_external_stack_name(project_code, stack_name):
     :returns: The name given to the stack in CloudFormation.
     :rtype: str
     """
-    return "-".join([
-        project_code,
-        stack_name.replace("/", "-")
-    ])
+    return "-".join([project_code, stack_name.replace("/", "-")])
 
 
 def mask_key(key):
@@ -39,10 +36,7 @@ def mask_key(key):
     """
     num_mask_chars = len(key) - 4
 
-    return "".join([
-        "*" if i < num_mask_chars else c
-        for i, c in enumerate(key)
-    ])
+    return "".join(["*" if i < num_mask_chars else c for i, c in enumerate(key)])
 
 
 def _call_func_on_values(func, attr, cls):
@@ -83,10 +77,10 @@ def normalise_path(path):
     :returns: A normalised path with forward slashes.
     :returns: string
     """
-    if sep == '/':
-        path = path.replace('\\', '/')
-    elif sep == '\\':
-        path = path.replace('/', '\\')
+    if sep == "/":
+        path = path.replace("\\", "/")
+    elif sep == "\\":
+        path = path.replace("/", "\\")
     if path.endswith("/") or path.endswith("\\"):
         raise PathConversionError(
             "'{0}' is an invalid path string. Paths should "
@@ -106,7 +100,7 @@ def sceptreise_path(path):
     :returns: A normalised path with forward slashes.
     :returns: string
     """
-    path = path.replace('\\', '/')
+    path = path.replace("\\", "/")
     if path.endswith("/") or path.endswith("\\"):
         raise PathConversionError(
             "'{0}' is an invalid path string. Paths should "
@@ -123,7 +117,9 @@ def null_context():
     yield
 
 
-def extract_datetime_from_aws_response_headers(boto_response: dict) -> Optional[datetime]:
+def extract_datetime_from_aws_response_headers(
+    boto_response: dict,
+) -> Optional[datetime]:
     """Returns a datetime.datetime extracted from the response metadata in a
     boto response or None if it's unable to find or parse one.
     :param boto_response: A dictionary returned from a boto client call
@@ -132,7 +128,9 @@ def extract_datetime_from_aws_response_headers(boto_response: dict) -> Optional[
     if boto_response is None:
         return None
     try:
-        return dateutil.parser.parse(boto_response["ResponseMetadata"]["HTTPHeaders"]["date"])
+        return dateutil.parser.parse(
+            boto_response["ResponseMetadata"]["HTTPHeaders"]["date"]
+        )
     except (KeyError, dateutil.parser.ParserError):
         # We expect a KeyError if the date isn't present in the response. We
         # expect a ParserError if it's not well-formed. Any other error we want

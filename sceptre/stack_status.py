@@ -12,6 +12,7 @@ class StackStatus(object):
     """
     StackStatus stores simplified Stack statuses.
     """
+
     COMPLETE = "complete"
     FAILED = "failed"
     IN_PROGRESS = "in progress"
@@ -22,6 +23,7 @@ class StackChangeSetStatus(object):
     """
     StackChangeSetStatus stores simplified ChangeSet statuses.
     """
+
     PENDING = "pending"
     READY = "ready"
     DEFUNCT = "defunct"

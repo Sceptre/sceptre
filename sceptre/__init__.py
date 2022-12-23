@@ -4,9 +4,9 @@ import logging
 import warnings
 
 
-__author__ = 'Cloudreach'
-__email__ = 'sceptre@cloudreach.com'
-__version__ = '3.2.0'
+__author__ = "Cloudreach"
+__email__ = "sceptre@cloudreach.com"
+__version__ = "3.2.0"
 
 
 # Set up logging to ``/dev/null`` like a library is supposed to.
@@ -19,4 +19,4 @@ class NullHandler(logging.Handler):  # pragma: no cover
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-logging.getLogger('sceptre').addHandler(NullHandler())
+logging.getLogger("sceptre").addHandler(NullHandler())

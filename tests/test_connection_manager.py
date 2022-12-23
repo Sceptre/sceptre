@@ -13,7 +13,6 @@ from sceptre.exceptions import RetryLimitExceededError, InvalidAWSCredentialsErr
 
 
 class TestConnectionManager(object):
-
     def setup_method(self, test_method):
         self.stack_name = None
         self.profile = None
@@ -33,7 +32,7 @@ class TestConnectionManager(object):
             region=self.region,
             stack_name=self.stack_name,
             profile=self.profile,
-            iam_role=self.iam_role
+            iam_role=self.iam_role,
         )
 
     def test_connection_manager_initialised_with_no_optional_parameters(self):
@@ -52,7 +51,7 @@ class TestConnectionManager(object):
             stack_name="stack",
             profile="profile",
             iam_role="iam_role",
-            iam_role_session_duration=21600
+            iam_role_session_duration=21600,
         )
 
         assert connection_manager.stack_name == "stack"
@@ -72,9 +71,11 @@ class TestConnectionManager(object):
         self.connection_manager.region = "region"
         self.connection_manager.iam_role = "iam_role"
         response = self.connection_manager.__repr__()
-        assert response == "sceptre.connection_manager.ConnectionManager(" \
-            "region='region', profile='profile', stack_name='stack', "\
+        assert (
+            response == "sceptre.connection_manager.ConnectionManager("
+            "region='region', profile='profile', stack_name='stack', "
             "iam_role='iam_role', iam_role_session_duration='None')"
+        )
 
     def test_repr_with_iam_role_session_duration(self):
         self.connection_manager.stack_name = "stack"
@@ -83,9 +84,11 @@ class TestConnectionManager(object):
         self.connection_manager.iam_role = "iam_role"
         self.connection_manager.iam_role_session_duration = 21600
         response = self.connection_manager.__repr__()
-        assert response == "sceptre.connection_manager.ConnectionManager(" \
-            "region='region', profile='profile', stack_name='stack', "\
+        assert (
+            response == "sceptre.connection_manager.ConnectionManager("
+            "region='region', profile='profile', stack_name='stack', "
             "iam_role='iam_role', iam_role_session_duration='21600')"
+        )
 
     def test_boto_session_with_cache(self):
         self.connection_manager._boto_sessions["test"] = sentinel.boto_session
@@ -94,9 +97,7 @@ class TestConnectionManager(object):
         assert boto_session == sentinel.boto_session
 
     @patch("sceptre.connection_manager.boto3.session.Session")
-    def test_boto_session_with_no_profile(
-            self, mock_Session
-    ):
+    def test_boto_session_with_no_profile(self, mock_Session):
         self.connection_manager._boto_sessions = {}
         self.connection_manager.profile = None
 
@@ -110,7 +111,7 @@ class TestConnectionManager(object):
             region_name="eu-west-1",
             aws_access_key_id=ANY,
             aws_secret_access_key=ANY,
-            aws_session_token=ANY
+            aws_session_token=ANY,
         )
 
     @patch("sceptre.connection_manager.boto3.session.Session")
@@ -128,13 +129,11 @@ class TestConnectionManager(object):
             region_name="eu-west-1",
             aws_access_key_id=ANY,
             aws_secret_access_key=ANY,
-            aws_session_token=ANY
+            aws_session_token=ANY,
         )
 
     @patch("sceptre.connection_manager.boto3.session.Session")
-    def test_boto_session_with_no_iam_role(
-            self, mock_Session
-    ):
+    def test_boto_session_with_no_iam_role(self, mock_Session):
         self.connection_manager._boto_sessions = {}
         self.connection_manager.iam_role = None
 
@@ -148,7 +147,7 @@ class TestConnectionManager(object):
             region_name="eu-west-1",
             aws_access_key_id=ANY,
             aws_secret_access_key=ANY,
-            aws_session_token=ANY
+            aws_session_token=ANY,
         )
 
         boto_session.client().assume_role.assert_not_called()
@@ -168,14 +167,14 @@ class TestConnectionManager(object):
             region_name="eu-west-1",
             aws_access_key_id=ANY,
             aws_secret_access_key=ANY,
-            aws_session_token=ANY
+            aws_session_token=ANY,
         )
 
         boto_session.client().assume_role.assert_called_once_with(
             RoleArn=self.connection_manager.iam_role,
             RoleSessionName="{0}-session".format(
                 self.connection_manager.iam_role.split("/")[-1]
-            )
+            ),
         )
 
         credentials = boto_session.client().assume_role()["Credentials"]
@@ -184,7 +183,7 @@ class TestConnectionManager(object):
             region_name="eu-west-1",
             aws_access_key_id=credentials["AccessKeyId"],
             aws_secret_access_key=credentials["SecretAccessKey"],
-            aws_session_token=credentials["SessionToken"]
+            aws_session_token=credentials["SessionToken"],
         )
 
     @patch("sceptre.connection_manager.boto3.session.Session")
@@ -202,7 +201,7 @@ class TestConnectionManager(object):
             RoleSessionName="{0}-session".format(
                 self.connection_manager.iam_role.split("/")[-1]
             ),
-            DurationSeconds=21600
+            DurationSeconds=21600,
         )
 
     @patch("sceptre.connection_manager.boto3.session.Session")
@@ -211,7 +210,11 @@ class TestConnectionManager(object):
         self.connection_manager.iam_role = "iam_role"
 
         mock_Session.return_value.get_credentials.side_effect = [
-            MagicMock(), None, MagicMock(), MagicMock(), MagicMock()
+            MagicMock(),
+            None,
+            MagicMock(),
+            MagicMock(),
+            MagicMock(),
         ]
 
         with pytest.raises(InvalidAWSCredentialsError):
@@ -223,7 +226,7 @@ class TestConnectionManager(object):
     def test_two_boto_sessions(self, mock_Session):
         self.connection_manager._boto_sessions = {
             "one": mock_Session,
-            "two": mock_Session
+            "two": mock_Session,
         }
 
         boto_session_1 = self.connection_manager._boto_sessions["one"]
@@ -231,9 +234,7 @@ class TestConnectionManager(object):
         assert boto_session_1 == boto_session_2
 
     @patch("sceptre.connection_manager.boto3.session.Session.get_credentials")
-    def test_get_client_with_no_pre_existing_clients(
-        self, mock_get_credentials
-    ):
+    def test_get_client_with_no_pre_existing_clients(self, mock_get_credentials):
         service = "s3"
         region = "eu-west-1"
         profile = None
@@ -277,7 +278,7 @@ class TestConnectionManager(object):
 
     @patch("sceptre.connection_manager.boto3.session.Session.get_credentials")
     def test_get_client_with_exisiting_client_and_profile_none(
-            self, mock_get_credentials
+        self, mock_get_credentials
     ):
         service = "cloudformation"
         region = "eu-west-1"
@@ -296,30 +297,24 @@ class TestConnectionManager(object):
 
     @mock_s3
     def test_call_with_valid_service_and_call(self):
-        service = 's3'
-        command = 'list_buckets'
+        service = "s3"
+        command = "list_buckets"
 
         return_value = self.connection_manager.call(service, command, {})
-        assert return_value['ResponseMetadata']['HTTPStatusCode'] == 200
+        assert return_value["ResponseMetadata"]["HTTPStatusCode"] == 200
 
     @mock_s3
     def test_call_with_valid_service_and_stack_name_call(self):
-        service = 's3'
-        command = 'list_buckets'
+        service = "s3"
+        command = "list_buckets"
 
-        connection_manager = ConnectionManager(
-            region=self.region,
-            stack_name='stack'
-        )
+        connection_manager = ConnectionManager(region=self.region, stack_name="stack")
 
-        return_value = connection_manager.call(
-            service, command, {}, stack_name='stack'
-        )
-        assert return_value['ResponseMetadata']['HTTPStatusCode'] == 200
+        return_value = connection_manager.call(service, command, {}, stack_name="stack")
+        assert return_value["ResponseMetadata"]["HTTPStatusCode"] == 200
 
 
-class TestRetry():
-
+class TestRetry:
     def test_retry_boto_call_returns_response_correctly(self):
         def func(*args, **kwargs):
             return sentinel.response
@@ -329,21 +324,14 @@ class TestRetry():
         assert response == sentinel.response
 
     @patch("sceptre.connection_manager.time.sleep")
-    def test_retry_boto_call_pauses_when_request_limit_hit(
-            self, mock_sleep
-    ):
+    def test_retry_boto_call_pauses_when_request_limit_hit(self, mock_sleep):
         mock_func = Mock()
         mock_func.side_effect = [
             ClientError(
-                {
-                    "Error": {
-                        "Code": "Throttling",
-                        "Message": "Request limit hit"
-                    }
-                },
-                sentinel.operation
+                {"Error": {"Code": "Throttling", "Message": "Request limit hit"}},
+                sentinel.operation,
             ),
-            sentinel.response
+            sentinel.response,
         ]
         # The attribute function.__name__ is required by the decorator @wraps.
         mock_func.__name__ = "mock_func"
@@ -354,13 +342,7 @@ class TestRetry():
     def test_retry_boto_call_raises_non_throttling_error(self):
         mock_func = Mock()
         mock_func.side_effect = ClientError(
-            {
-                "Error": {
-                    "Code": 500,
-                    "Message": "Boom!"
-                }
-            },
-            sentinel.operation
+            {"Error": {"Code": 500, "Message": "Boom!"}}, sentinel.operation
         )
         # The attribute function.__name__ is required by the decorator @wraps.
         mock_func.__name__ = "mock_func"
@@ -371,18 +353,11 @@ class TestRetry():
         assert e.value.response["Error"]["Message"] == "Boom!"
 
     @patch("sceptre.connection_manager.time.sleep")
-    def test_retry_boto_call_raises_retry_limit_exceeded_exception(
-            self, mock_sleep
-    ):
+    def test_retry_boto_call_raises_retry_limit_exceeded_exception(self, mock_sleep):
         mock_func = Mock()
         mock_func.side_effect = ClientError(
-            {
-                "Error": {
-                    "Code": "Throttling",
-                    "Message": "Request limit hit"
-                }
-            },
-            sentinel.operation
+            {"Error": {"Code": "Throttling", "Message": "Request limit hit"}},
+            sentinel.operation,
         )
         # The attribute function.__name__ is required by the decorator @wraps.
         mock_func.__name__ = "mock_func"

@@ -8,6 +8,7 @@ class CustomHook(Hook):
     This is a test task.
 
     """
+
     def __init__(self, *args, **kwargs):
         super(CustomHook, self).__init__(*args, **kwargs)
 

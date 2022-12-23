@@ -13,15 +13,10 @@ from sceptre.plan.plan import SceptrePlan
 @click.command(name="update", short_help="Update a stack.")
 @click.argument("path")
 @click.option(
-    "-c", "--change-set", is_flag=True,
-    help="Create a change set before updating."
+    "-c", "--change-set", is_flag=True, help="Create a change set before updating."
 )
-@click.option(
-    "-v", "--verbose", is_flag=True, help="Display verbose output."
-)
-@click.option(
-    "-y", "--yes", is_flag=True, help="Assume yes to all questions."
-)
+@click.option("-v", "--verbose", is_flag=True, help="Display verbose output.")
+@click.option("-y", "--yes", is_flag=True, help="Assume yes to all questions.")
 @click.pass_context
 @catch_exceptions
 def update_command(ctx, path, change_set, verbose, yes):
@@ -46,7 +41,7 @@ def update_command(ctx, path, change_set, verbose, yes):
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         output_format=ctx.obj.get("output_format"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
     )
 
     plan = SceptrePlan(context)
