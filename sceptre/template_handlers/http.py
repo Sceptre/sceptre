@@ -25,16 +25,15 @@ class Http(TemplateHandler):
     while references to jinja (.j2) and python (.py) templates are downloaded,
     transformed into CFN templates then deployed to AWS.
     """
+
     def __init__(self, *args, **kwargs):
         super(Http, self).__init__(*args, **kwargs)
 
     def schema(self):
         return {
             "type": "object",
-            "properties": {
-                "url": {"type": "string"}
-            },
-            "required": ["url"]
+            "properties": {"url": {"type": "string"}},
+            "required": ["url"],
         }
 
     def handle(self):
@@ -47,14 +46,22 @@ class Http(TemplateHandler):
         if path.suffix not in self.supported_template_extensions:
             raise UnsupportedTemplateFileTypeError(
                 "Template has file extension %s. Only %s are supported.",
-                path.suffix, ",".join(self.supported_template_extensions)
+                path.suffix,
+                ",".join(self.supported_template_extensions),
             )
 
-        retries = self._get_handler_option(HANDLER_RETRIES_OPTION_PARAM, DEFAULT_RETRIES_OPTION)
-        timeout = self._get_handler_option(HANDLER_TIMEOUT_OPTION_PARAM, DEFAULT_TIMEOUT_OPTION)
+        retries = self._get_handler_option(
+            HANDLER_RETRIES_OPTION_PARAM, DEFAULT_RETRIES_OPTION
+        )
+        timeout = self._get_handler_option(
+            HANDLER_TIMEOUT_OPTION_PARAM, DEFAULT_TIMEOUT_OPTION
+        )
         try:
             template = self._get_template(url, retries=retries, timeout=timeout)
-            if path.suffix in self.jinja_template_extensions + self.python_template_extensions:
+            if (
+                path.suffix
+                in self.jinja_template_extensions + self.python_template_extensions
+            ):
                 file = tempfile.NamedTemporaryFile(prefix=path.stem)
                 self.logger.debug("Template file saved to: %s", file.name)
                 with file as f:
@@ -62,13 +69,14 @@ class Http(TemplateHandler):
                     f.seek(0)
                     f.read()
                     if path.suffix in self.jinja_template_extensions:
-                        template = helper.render_jinja_template(f.name,
-                                                                {"sceptre_user_data": self.sceptre_user_data},
-                                                                self.stack_group_config.get("j2_environment", {}))
+                        template = helper.render_jinja_template(
+                            f.name,
+                            {"sceptre_user_data": self.sceptre_user_data},
+                            self.stack_group_config.get("j2_environment", {}),
+                        )
                     elif path.suffix in self.python_template_extensions:
                         template = helper.call_sceptre_handler(
-                            f.name,
-                            self.sceptre_user_data
+                            f.name, self.sceptre_user_data
                         )
 
         except Exception as e:
@@ -94,11 +102,13 @@ class Http(TemplateHandler):
 
         return response.content
 
-    def _get_retry_session(self,
-                           retries,
-                           backoff_factor=0.3,
-                           status_forcelist=(429, 500, 502, 503, 504),
-                           session=None):
+    def _get_retry_session(
+        self,
+        retries,
+        backoff_factor=0.3,
+        status_forcelist=(429, 500, 502, 503, 504),
+        session=None,
+    ):
         """
         Get a request session with retries.  Retry options are explained in the request libraries
         https://urllib3.readthedocs.io/en/latest/reference/urllib3.util.html#module-urllib3.util.retry
@@ -112,8 +122,8 @@ class Http(TemplateHandler):
             status_forcelist=status_forcelist,
         )
         adapter = HTTPAdapter(max_retries=retry)
-        session.mount('http://', adapter)
-        session.mount('https://', adapter)
+        session.mount("http://", adapter)
+        session.mount("https://", adapter)
         return session
 
     def _get_handler_option(self, name, default):

@@ -23,5 +23,5 @@ class Cmd(Hook):
         except TypeError:
             raise InvalidHookArgumentTypeError(
                 'The argument "{0}" is the wrong type - cmd hooks require '
-                'arguments of type string.'.format(self.argument)
+                "arguments of type string.".format(self.argument)
             )

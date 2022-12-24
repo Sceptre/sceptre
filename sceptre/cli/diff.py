@@ -8,8 +8,17 @@ from click import Context
 
 from sceptre.cli.helpers import catch_exceptions
 from sceptre.context import SceptreContext
-from sceptre.diffing.diff_writer import DeepDiffWriter, DiffLibWriter, ColouredDiffLibWriter, DiffWriter
-from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer, StackDiff
+from sceptre.diffing.diff_writer import (
+    DeepDiffWriter,
+    DiffLibWriter,
+    ColouredDiffLibWriter,
+    DiffWriter,
+)
+from sceptre.diffing.stack_differ import (
+    DeepDiffStackDiffer,
+    DifflibStackDiffer,
+    StackDiff,
+)
 from sceptre.helpers import null_context
 from sceptre.plan.plan import SceptrePlan
 from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error
@@ -18,42 +27,45 @@ from sceptre.stack import Stack
 logger = getLogger(__name__)
 
 
-@click.command(name="diff", short_help="Compares deployed infrastructure with current configurations")
+@click.command(
+    name="diff",
+    short_help="Compares deployed infrastructure with current configurations",
+)
 @click.option(
-    '-t',
-    '--type',
-    'differ',
-    type=click.Choice(['deepdiff', 'difflib']),
-    default='deepdiff',
+    "-t",
+    "--type",
+    "differ",
+    type=click.Choice(["deepdiff", "difflib"]),
+    default="deepdiff",
     help='The type of differ to use. Use "deepdiff" for recursive key/value comparison. "difflib" '
-         'produces a more traditional "diff" result. Defaults to deepdiff.'
+    'produces a more traditional "diff" result. Defaults to deepdiff.',
 )
 @click.option(
-    '-s',
-    '--show-no-echo',
+    "-s",
+    "--show-no-echo",
     is_flag=True,
-    help='If set, will display the unmasked values of NoEcho parameters generated LOCALLY (NoEcho '
-         'parameters for deployed stacks will always be masked when retrieved from CloudFormation.). '
-         'If not set (the default), parameters identified as NoEcho on the local template will be '
-         'masked when presented in the diff.'
+    help="If set, will display the unmasked values of NoEcho parameters generated LOCALLY (NoEcho "
+    "parameters for deployed stacks will always be masked when retrieved from CloudFormation.). "
+    "If not set (the default), parameters identified as NoEcho on the local template will be "
+    "masked when presented in the diff.",
 )
 @click.option(
-    '-n',
-    '--no-placeholders',
+    "-n",
+    "--no-placeholders",
     is_flag=True,
-    help="If set, no placeholder values will be supplied for resolvers that cannot be resolved."
+    help="If set, no placeholder values will be supplied for resolvers that cannot be resolved.",
 )
 @click.option(
-    '-a',
-    '--all',
-    'all_',
+    "-a",
+    "--all",
+    "all_",
     is_flag=True,
     help=(
-         "If set, will perform diffing on ALL stacks, including ignored and obsolete ones; Otherwise, "
-         "it will diff only stacks that would be created or updated when running the launch command."
-    )
+        "If set, will perform diffing on ALL stacks, including ignored and obsolete ones; Otherwise, "
+        "it will diff only stacks that would be created or updated when running the launch command."
+    ),
 )
-@click.argument('path')
+@click.argument("path")
 @click.pass_context
 @catch_exceptions
 def diff_command(
@@ -62,7 +74,7 @@ def diff_command(
     show_no_echo: bool,
     no_placeholders: bool,
     all_: bool,
-    path: str
+    path: str,
 ):
     """Indicates the difference between the currently DEPLOYED stacks in the command path and
     the stacks configured in Sceptre right now. This command will compare both the templates as well
@@ -104,7 +116,7 @@ def diff_command(
         options=ctx.obj.get("options"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies"),
         output_format=ctx.obj.get("output_format"),
-        no_colour=no_colour
+        no_colour=no_colour,
     )
     output_format = context.output_format
     plan = SceptrePlan(context)
@@ -120,16 +132,18 @@ def diff_command(
     else:
         raise ValueError(f"Unexpected differ type: {differ}")
 
-    execution_context = null_context() if no_placeholders else use_resolver_placeholders_on_error()
+    execution_context = (
+        null_context() if no_placeholders else use_resolver_placeholders_on_error()
+    )
     with execution_context:
         diffs: Dict[Stack, StackDiff] = plan.diff(stack_differ)
 
-    num_stacks_with_diff = output_diffs(diffs.values(), writer_class, sys.stdout, output_format)
+    num_stacks_with_diff = output_diffs(
+        diffs.values(), writer_class, sys.stdout, output_format
+    )
 
     if num_stacks_with_diff:
-        logger.warning(
-            f"{num_stacks_with_diff} stacks with differences detected."
-        )
+        logger.warning(f"{num_stacks_with_diff} stacks with differences detected.")
 
 
 def output_diffs(
@@ -161,7 +175,9 @@ def output_diffs(
     return num_stacks_with_diff
 
 
-def output_buffer_with_normalized_bar_lengths(buffer: io.StringIO, output_stream: TextIO):
+def output_buffer_with_normalized_bar_lengths(
+    buffer: io.StringIO, output_stream: TextIO
+):
     """Takes the output from a buffer and ensures that the star and line bars are the same length
     across the entire buffer and that their length is the full width of longest line.
 
@@ -171,8 +187,8 @@ def output_buffer_with_normalized_bar_lengths(buffer: io.StringIO, output_stream
     buffer.seek(0)
     max_length = len(max(buffer, key=len))
     buffer.seek(0)
-    full_length_star_bar = '*' * max_length
-    full_length_line_bar = '-' * max_length
+    full_length_star_bar = "*" * max_length
+    full_length_line_bar = "-" * max_length
     for line in buffer:
         if DiffWriter.STAR_BAR in line:
             line = line.replace(DiffWriter.STAR_BAR, full_length_star_bar)

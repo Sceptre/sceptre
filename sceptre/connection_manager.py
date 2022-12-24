@@ -63,9 +63,7 @@ def _retry_boto_call(func):
                 else:
                     raise
         raise RetryLimitExceededError(
-            "Exceeded request limit {0} times. Aborting.".format(
-                max_retries
-            )
+            "Exceeded request limit {0} times. Aborting.".format(max_retries)
         )
 
     return decorated
@@ -93,8 +91,12 @@ class ConnectionManager(object):
     _stack_keys = {}
 
     def __init__(
-        self, region, profile=None, stack_name=None,
-        iam_role=None, iam_role_session_duration=None
+        self,
+        region,
+        profile=None,
+        stack_name=None,
+        iam_role=None,
+        iam_role_session_duration=None,
     ):
 
         self.logger = logging.getLogger(__name__)
@@ -112,7 +114,11 @@ class ConnectionManager(object):
         return (
             "sceptre.connection_manager.ConnectionManager(region='{0}', "
             "profile='{1}', stack_name='{2}', iam_role='{3}', iam_role_session_duration='{4}')".format(
-                self.region, self.profile, self.stack_name, self.iam_role, self.iam_role_session_duration
+                self.region,
+                self.profile,
+                self.stack_name,
+                self.iam_role,
+                self.iam_role_session_duration,
             )
         )
 
@@ -143,7 +149,7 @@ class ConnectionManager(object):
                     "region_name": region,
                     "aws_access_key_id": environ.get("AWS_ACCESS_KEY_ID"),
                     "aws_secret_access_key": environ.get("AWS_SECRET_ACCESS_KEY"),
-                    "aws_session_token": environ.get("AWS_SESSION_TOKEN")
+                    "aws_session_token": environ.get("AWS_SESSION_TOKEN"),
                 }
 
                 session = boto3.session.Session(**config)
@@ -161,11 +167,13 @@ class ConnectionManager(object):
                     # maximum session name length is 64 chars. 56 + "-session" = 64
                     session_name = f'{iam_role.split("/")[-1][:56]}-session'
                     assume_role_kwargs = {
-                        'RoleArn': iam_role,
-                        'RoleSessionName': session_name,
+                        "RoleArn": iam_role,
+                        "RoleSessionName": session_name,
                     }
                     if self.iam_role_session_duration:
-                        assume_role_kwargs['DurationSeconds'] = self.iam_role_session_duration
+                        assume_role_kwargs[
+                            "DurationSeconds"
+                        ] = self.iam_role_session_duration
                     sts_response = sts_client.assume_role(**assume_role_kwargs)
 
                     credentials = sts_response["Credentials"]
@@ -173,7 +181,7 @@ class ConnectionManager(object):
                         aws_access_key_id=credentials["AccessKeyId"],
                         aws_secret_access_key=credentials["SecretAccessKey"],
                         aws_session_token=credentials["SessionToken"],
-                        region_name=region
+                        region_name=region,
                     )
 
                     if session.get_credentials() is None:
@@ -189,14 +197,12 @@ class ConnectionManager(object):
                     "Using credential set from %s: %s",
                     session.get_credentials().method,
                     {
-                        "AccessKeyId": mask_key(
-                            session.get_credentials().access_key
-                        ),
+                        "AccessKeyId": mask_key(session.get_credentials().access_key),
                         "SecretAccessKey": mask_key(
                             session.get_credentials().secret_key
                         ),
-                        "Region": session.region_name
-                    }
+                        "Region": session.region_name,
+                    },
                 )
 
                 self.logger.debug("Boto3 session created")
@@ -218,9 +224,7 @@ class ConnectionManager(object):
         with self._client_lock:
             key = (service, region, profile, stack_name, iam_role)
             if self._clients.get(key) is None:
-                self.logger.debug(
-                    "No %s client found, creating one...", service
-                )
+                self.logger.debug("No %s client found, creating one...", service)
                 self._clients[key] = self._get_session(
                     profile, region, iam_role
                 ).client(service)
@@ -229,8 +233,14 @@ class ConnectionManager(object):
 
     @_retry_boto_call
     def call(
-        self, service, command, kwargs=None, profile=None, region=None,
-        stack_name=None, iam_role=None
+        self,
+        service,
+        command,
+        kwargs=None,
+        profile=None,
+        region=None,
+        stack_name=None,
+        iam_role=None,
     ):
         """
         Makes a thread-safe Boto3 client call.

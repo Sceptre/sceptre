@@ -11,9 +11,7 @@ PATH_FOR_WHOLE_PROJECT = "."
 
 
 @click.command(name="prune", short_help="Deletes all obsolete stacks in the project")
-@click.option(
-    "-y", "--yes", is_flag=True, help="Assume yes to all questions."
-)
+@click.option("-y", "--yes", is_flag=True, help="Assume yes to all questions.")
 @click.argument("path", default=PATH_FOR_WHOLE_PROJECT)
 @click.pass_context
 @catch_exceptions
@@ -50,7 +48,8 @@ class Pruner:
     :param context: The Sceptre context to use for pruning
     :param plan_factory: A callable with the signature of (SceptreContext) -> SceptrePlan
     """
-    def __init__(self, context:  SceptreContext, plan_factory=SceptrePlan):
+
+    def __init__(self, context: SceptreContext, plan_factory=SceptrePlan):
         self._context = context
         self._make_plan = plan_factory
 
@@ -97,9 +96,7 @@ class Pruner:
             else:
                 stacks = plan.command_stacks
 
-            plan.command_stacks = {
-                stack for stack in stacks if stack.obsolete
-            }
+            plan.command_stacks = {stack for stack in stacks if stack.obsolete}
             self._resolve_plan(plan)
             self._plan = plan
         return self._plan
@@ -108,7 +105,9 @@ class Pruner:
         return len(plan.command_stacks) > 0
 
     def _print_no_obsolete_stacks(self):
-        click.echo("* There are no stacks marked obsolete, so there is nothing to prune.")
+        click.echo(
+            "* There are no stacks marked obsolete, so there is nothing to prune."
+        )
 
     def _resolve_plan(self, plan: SceptrePlan):
         if len(plan.command_stacks) > 0:
@@ -149,9 +148,11 @@ class Pruner:
             check_for_non_obsolete_dependencies(stack)
 
     def _print_stacks_to_be_deleted(self, plan: SceptrePlan):
-        delete_msg = "* The following obsolete stacks will be deleted (if they exist on AWS):\n"
+        delete_msg = (
+            "* The following obsolete stacks will be deleted (if they exist on AWS):\n"
+        )
 
-        stacks_list = ''
+        stacks_list = ""
         for stack in plan:
             # It's possible there could be stacks in the plan that aren't obsolete because those
             # stacks depend on obsolete stacks. They won't pass validation, but that's not the

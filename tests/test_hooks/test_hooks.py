@@ -22,8 +22,8 @@ class TestHooksFunctions(object):
         mock_object = MagicMock()
 
         mock_object.stack.hooks = {
-            'before_mock_function': [mock_hook_before],
-            'after_mock_function': [mock_hook_after]
+            "before_mock_function": [mock_hook_before],
+            "after_mock_function": [mock_hook_after],
         }
 
         def mock_function(self):
@@ -31,7 +31,7 @@ class TestHooksFunctions(object):
             assert mock_hook_after.run.call_count == 0
 
         mock_object.mock_function = mock_function
-        mock_object.mock_function.__name__ = 'mock_function'
+        mock_object.mock_function.__name__ = "mock_function"
 
         add_stack_hooks(mock_object.mock_function)(mock_object)
 
@@ -74,7 +74,6 @@ class MockClass(object):
 
 
 class TestHookPropertyDescriptor(object):
-
     def setup_method(self, test_method):
         self.mock_object = MockClass()
 

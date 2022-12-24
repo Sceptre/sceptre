@@ -23,7 +23,7 @@ class File(TemplateHandler):
             "properties": {
                 "path": {"type": "string"},
             },
-            "required": ["path"]
+            "required": ["path"],
         }
 
     def handle(self):
@@ -33,7 +33,8 @@ class File(TemplateHandler):
         if input_path.suffix not in self.supported_template_extensions:
             raise UnsupportedTemplateFileTypeError(
                 "Template has file extension %s. Only %s are supported.",
-                input_path.suffix, ",".join(self.supported_template_extensions)
+                input_path.suffix,
+                ",".join(self.supported_template_extensions),
             )
 
         try:
@@ -41,12 +42,13 @@ class File(TemplateHandler):
                 with open(path) as template_file:
                     return template_file.read()
             elif input_path.suffix in self.jinja_template_extensions:
-                return helper.render_jinja_template(path,
-                                                    {"sceptre_user_data": self.sceptre_user_data},
-                                                    self.stack_group_config.get("j2_environment", {}))
+                return helper.render_jinja_template(
+                    path,
+                    {"sceptre_user_data": self.sceptre_user_data},
+                    self.stack_group_config.get("j2_environment", {}),
+                )
             elif input_path.suffix in self.python_template_extensions:
-                return helper.call_sceptre_handler(path,
-                                                   self.sceptre_user_data)
+                return helper.call_sceptre_handler(path, self.sceptre_user_data)
         except Exception as e:
             helper.print_template_traceback(path)
             raise e
@@ -60,6 +62,7 @@ class File(TemplateHandler):
         if the input is absolute.
         """
         return path.join(
-            self.stack_group_config["project_path"], "templates",
-            normalise_path(template_path)
+            self.stack_group_config["project_path"],
+            "templates",
+            normalise_path(template_path),
         )

@@ -90,9 +90,7 @@ class StackGraph(object):
         :param stack: A Sceptre Stack
         :param dependencies: a collection of dependency paths
         """
-        self.logger.debug(
-            "Generate dependencies for stack {0}".format(stack)
-        )
+        self.logger.debug("Generate dependencies for stack {0}".format(stack))
         for dependency in set(dependencies):
             self.graph.add_edge(dependency, stack)
             if not nx.is_directed_acyclic_graph(self.graph):

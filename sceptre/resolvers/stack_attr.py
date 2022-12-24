@@ -22,15 +22,15 @@ class StackAttr(Resolver):
     # These are all the attributes on Stack Configs whose names are changed when they are assigned
     # to the Stack instance.
     STACK_ATTR_MAP = {
-        'template': 'template_handler_config',
-        'protect': 'protected',
-        'stack_name': 'external_name',
-        'stack_tags': 'tags'
+        "template": "template_handler_config",
+        "protect": "protected",
+        "stack_name": "external_name",
+        "stack_tags": "tags",
     }
 
     def resolve(self) -> Any:
         """Returns the resolved value of the field referenced by the resolver's argument."""
-        segments = self.argument.split('.')
+        segments = self.argument.split(".")
 
         # Remap top-level attributes to match stack config
         first_segment = segments[0]

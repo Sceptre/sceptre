@@ -14,6 +14,7 @@ class Hook(object):
     :param stack: The associated stack of the hook.
     :type stack: sceptre.stack.Stack
     """
+
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, argument=None, stack=None):
@@ -66,6 +67,7 @@ class HookProperty(object):
         data structure `value` and calls the setup method.
 
         """
+
         def setup(attr, key, value):
             value.stack = instance
             value.setup()
@@ -98,6 +100,7 @@ def add_stack_hooks(func):
     :param func: a function that operates on a stack
     :type func: function
     """
+
     @wraps(func)
     def decorated(self, *args, **kwargs):
         execute_hooks(self.stack.hooks.get("before_" + func.__name__))

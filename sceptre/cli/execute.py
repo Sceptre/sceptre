@@ -8,9 +8,7 @@ from sceptre.plan.plan import SceptrePlan
 @click.command(name="execute")
 @click.argument("path")
 @click.argument("change-set-name")
-@click.option(
-    "-y", "--yes", is_flag=True, help="Assume yes to all questions."
-)
+@click.option("-y", "--yes", is_flag=True, help="Assume yes to all questions.")
 @click.pass_context
 @catch_exceptions
 def execute_command(ctx, path, change_set_name, yes):
@@ -30,7 +28,7 @@ def execute_command(ctx, path, change_set_name, yes):
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
     )
 
     plan = SceptrePlan(context)
@@ -38,6 +36,6 @@ def execute_command(ctx, path, change_set_name, yes):
         plan.execute_change_set.__name__,
         yes,
         change_set=change_set_name,
-        command_path=path
+        command_path=path,
     )
     plan.execute_change_set(change_set_name)

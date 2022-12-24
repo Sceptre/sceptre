@@ -46,12 +46,14 @@ def are_placeholders_enabled() -> bool:
         return _RESOLVE_PLACEHOLDER_ON_ERROR
 
 
-def create_placeholder_value(resolver: 'resolvers.Resolver', placeholder_type: PlaceholderType) -> Any:
+def create_placeholder_value(
+    resolver: "resolvers.Resolver", placeholder_type: PlaceholderType
+) -> Any:
     placeholder_func = _placeholders[placeholder_type]
     return placeholder_func(resolver)
 
 
-def _create_explicit_resolver_placeholder(resolver: 'resolvers.Resolver') -> str:
+def _create_explicit_resolver_placeholder(resolver: "resolvers.Resolver") -> str:
     """Creates a placeholder value to be substituted for the resolved value when placeholders are
     allowed and the value cannot be resolved.
 
@@ -63,13 +65,13 @@ def _create_explicit_resolver_placeholder(resolver: 'resolvers.Resolver') -> str
     :param resolver: The resolver to create a placeholder for
     :return: The placeholder value
     """
-    base = f'!{type(resolver).__name__}'
-    suffix = f'({resolver.argument})' if resolver.argument is not None else ''
+    base = f"!{type(resolver).__name__}"
+    suffix = f"({resolver.argument})" if resolver.argument is not None else ""
     # double-braces in an f-string is just an escaped single brace
-    return f'{{ {base}{suffix} }}'
+    return f"{{ {base}{suffix} }}"
 
 
-def _create_alphanumeric_placeholder(resolver: 'resolvers.Resolver') -> str:
+def _create_alphanumeric_placeholder(resolver: "resolvers.Resolver") -> str:
     """Creates a placeholder value that is only composed of alphanumeric characters. This is more
     useful when performing operations that send a template to CloudFormation, which will have stricter
     requirements for values in templates.
@@ -86,12 +88,12 @@ def _create_alphanumeric_placeholder(resolver: 'resolvers.Resolver') -> str:
     :return: The placeholder value
     """
     explicit_placeholder = _create_explicit_resolver_placeholder(resolver)
-    alphanum_placeholder = ''.join(c for c in explicit_placeholder if c.isalnum())
+    alphanum_placeholder = "".join(c for c in explicit_placeholder if c.isalnum())
     return alphanum_placeholder
 
 
 _placeholders = {
     PlaceholderType.explicit: _create_explicit_resolver_placeholder,
     PlaceholderType.alphanum: _create_alphanumeric_placeholder,
-    PlaceholderType.none: lambda resolver: None
+    PlaceholderType.none: lambda resolver: None,
 }

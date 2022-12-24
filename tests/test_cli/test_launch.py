@@ -35,13 +35,8 @@ class FakePlan(SceptrePlan):
         self.executions = []
 
     def _execute(self, *args):
-        self.executions.append(
-            (self.command, self.launch_order.copy(), args)
-        )
-        return {
-            stack: self.statuses_to_return[stack]
-            for stack in self
-        }
+        self.executions.append((self.command, self.launch_order.copy(), args))
+        return {stack: self.statuses_to_return[stack] for stack in self}
 
     def _generate_launch_order(self, reverse=False) -> List[Set[Stack]]:
         launch_order = [self.command_stacks]
@@ -52,7 +47,8 @@ class FakePlan(SceptrePlan):
 
         for start_index in range(0, len(all_stacks), 2):
             chunk = {
-                stack for stack in all_stacks[start_index: start_index + 2]
+                stack
+                for stack in all_stacks[start_index : start_index + 2]
                 if stack not in self.command_stacks
                 and self._has_dependency_on_a_command_stack(stack)
             }
@@ -74,7 +70,6 @@ class FakePlan(SceptrePlan):
 
 
 class TestLauncher:
-
     def setup_method(self, test_method):
         self.plans: List[FakePlan] = []
 
@@ -85,10 +80,10 @@ class TestLauncher:
         self.cloned_context = self.context.clone()
         # Since contexts don't have a __eq__ method, you can't assert easily off the result of
         # clone without some hijinks.
-        self.context = Mock(wraps=self.context, **{
-            'clone.return_value': self.cloned_context,
-            'ignore_dependencies': False
-        })
+        self.context = Mock(
+            wraps=self.context,
+            **{"clone.return_value": self.cloned_context, "ignore_dependencies": False},
+        )
 
         self.all_stacks = [
             Mock(spec=Stack, ignore=False, obsolete=False, dependencies=[]),
@@ -96,18 +91,16 @@ class TestLauncher:
             Mock(spec=Stack, ignore=False, obsolete=False, dependencies=[]),
             Mock(spec=Stack, ignore=False, obsolete=False, dependencies=[]),
             Mock(spec=Stack, ignore=False, obsolete=False, dependencies=[]),
-            Mock(spec=Stack, ignore=False, obsolete=False, dependencies=[])
+            Mock(spec=Stack, ignore=False, obsolete=False, dependencies=[]),
         ]
         for index, stack in enumerate(self.all_stacks):
-            stack.name = f'stacks/stack-{index}.yaml'
+            stack.name = f"stacks/stack-{index}.yaml"
 
         self.command_stacks = list(self.all_stacks)
 
         self.statuses_to_return = defaultdict(lambda: StackStatus.COMPLETE)
 
-        self.fake_pruner = Mock(spec=Pruner, **{
-            'prune.return_value': 0
-        })
+        self.fake_pruner = Mock(spec=Pruner, **{"prune.return_value": 0})
 
         self.plan_factory = create_autospec(SceptrePlan)
         self.plan_factory.side_effect = self.fake_plan_factory
@@ -121,7 +114,7 @@ class TestLauncher:
             sceptre_context,
             set(self.command_stacks),
             set(self.all_stacks),
-            self.statuses_to_return
+            self.statuses_to_return,
         )
         self.plans.append(fake_plan)
         return fake_plan
@@ -158,10 +151,9 @@ class TestLauncher:
         assert len(self.plans) == 1
         assert self.plans[0].executions[0][0] == "launch"
 
-    @pytest.mark.parametrize("prune", [
-        pytest.param(True, id="prune"),
-        pytest.param(False, id="no prune")
-    ])
+    @pytest.mark.parametrize(
+        "prune", [pytest.param(True, id="prune"), pytest.param(False, id="no prune")]
+    )
     def test_launch__returns_0(self, prune):
         assert all(not s.ignore and not s.obsolete for s in self.all_stacks)
         result = self.launcher.launch(prune)
@@ -179,7 +171,9 @@ class TestLauncher:
         assert expected_stacks == launched_stacks
         assert self.plans[0].executions[0][0] == "launch"
 
-    def test_launch__prune__stack_with_dependency_marked_obsolete__raises_dependency_does_not_exist_error(self):
+    def test_launch__prune__stack_with_dependency_marked_obsolete__raises_dependency_does_not_exist_error(
+        self,
+    ):
         self.all_stacks[0].obsolete = True
         self.all_stacks[1].dependencies.append(self.all_stacks[0])
 
@@ -188,7 +182,9 @@ class TestLauncher:
         with pytest.raises(DependencyDoesNotExistError):
             self.launcher.launch(True)
 
-    def test_launch__prune__ignore_dependencies__stack_with_dependency_marked_obsolete__raises_no_error(self):
+    def test_launch__prune__ignore_dependencies__stack_with_dependency_marked_obsolete__raises_no_error(
+        self,
+    ):
         self.all_stacks[0].obsolete = True
         self.all_stacks[1].dependencies.append(self.all_stacks[0])
 
@@ -201,7 +197,9 @@ class TestLauncher:
         self.all_stacks[1].dependencies.append(self.all_stacks[0])
         self.launcher.launch(False)
 
-    def test_launch__stacks_are_pruned__delete_and_deploy_actions_succeed__returns_0(self):
+    def test_launch__stacks_are_pruned__delete_and_deploy_actions_succeed__returns_0(
+        self,
+    ):
         self.all_stacks[0].obsolete = True
 
         code = self.launcher.launch(True)
