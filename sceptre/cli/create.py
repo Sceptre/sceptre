@@ -10,9 +10,15 @@ from sceptre.cli.helpers import stack_status_exit_code
 @click.argument("path")
 @click.argument("change-set-name", required=False)
 @click.option("-y", "--yes", is_flag=True, help="Assume yes to all questions.")
+@click.option(
+    "-dr",
+    "--disable-rollback",
+    is_flag=True,
+    help="Disable the auto rollback and keep resources successfully created or updated",
+)
 @click.pass_context
 @catch_exceptions
-def create_command(ctx, path, change_set_name, yes):
+def create_command(ctx, path, change_set_name, yes, disable_rollback: bool):
     """
     Creates a stack for a given config PATH. Or if CHANGE_SET_NAME is specified
     creates a change set for stack in PATH.
@@ -24,9 +30,12 @@ def create_command(ctx, path, change_set_name, yes):
     :type change_set_name: str
     :param yes: A flag to assume yes to all questions.
     :type yes: bool
+    :param disable_rollback: A flag to disable cloudformation rollback.
+    :type disable_rollback: bool
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),

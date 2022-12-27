@@ -552,6 +552,11 @@ class ConfigReader(object):
                 )
 
         s3_details = self._collect_s3_details(stack_name, config)
+        disable_rollback = (
+            True
+            if self.context.command_params.get("disable_rollback")
+            else config.get("disable_rollback", False)
+        )
 
         stack = Stack(
             name=stack_name,
@@ -576,6 +581,7 @@ class ConfigReader(object):
             external_name=config.get("stack_name"),
             notifications=config.get("notifications"),
             on_failure=config.get("on_failure"),
+            disable_rollback=disable_rollback,
             stack_timeout=config.get("stack_timeout", 0),
             ignore=config.get("ignore", False),
             obsolete=config.get("obsolete", False),

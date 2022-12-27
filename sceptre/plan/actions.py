@@ -82,8 +82,12 @@ class StackActions(object):
             ],
         }
 
-        if self.stack.on_failure:
+        # can specify either DisableRollback or OnFailure , but not both
+        if self.stack.disable_rollback:
+            create_stack_kwargs.update({"DisableRollback": self.stack.disable_rollback})
+        elif self.stack.on_failure:
             create_stack_kwargs.update({"OnFailure": self.stack.on_failure})
+
         create_stack_kwargs.update(self.stack.template.get_boto_call_parameter())
         create_stack_kwargs.update(self._get_role_arn())
         create_stack_kwargs.update(self._get_stack_timeout())

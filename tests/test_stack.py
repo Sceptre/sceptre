@@ -31,6 +31,7 @@ def stack_factory(**kwargs):
         "external_name": sentinel.external_name,
         "notifications": [sentinel.notification],
         "on_failure": sentinel.on_failure,
+        "disable_rollback": False,
         "stack_timeout": sentinel.stack_timeout,
         "stack_group_config": {},
     }
@@ -60,6 +61,7 @@ class TestStack(object):
             external_name=sentinel.external_name,
             notifications=[sentinel.notification],
             on_failure=sentinel.on_failure,
+            disable_rollback=False,
             iam_role=sentinel.iam_role,
             iam_role_session_duration=sentinel.iam_role_session_duration,
             stack_timeout=sentinel.stack_timeout,
@@ -98,6 +100,7 @@ class TestStack(object):
         assert stack.tags == {}
         assert stack.notifications == []
         assert stack.on_failure is None
+        assert stack.disable_rollback is False
         assert stack.stack_group_config == {}
 
     def test_initialize_stack_with_template_handler(self):
@@ -131,6 +134,7 @@ class TestStack(object):
         assert stack.tags == {}
         assert stack.notifications == []
         assert stack.on_failure is None
+        assert stack.disable_rollback is False
         assert stack.stack_group_config == {}
 
     def test_raises_exception_if_path_and_handler_configured(self):
@@ -196,6 +200,7 @@ class TestStack(object):
             "external_name=sentinel.external_name, "
             "notifications=[sentinel.notification], "
             "on_failure=sentinel.on_failure, "
+            "disable_rollback=False, "
             "stack_timeout=sentinel.stack_timeout, "
             "stack_group_config={}, "
             "ignore=False, "

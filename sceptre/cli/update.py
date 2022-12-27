@@ -17,9 +17,15 @@ from sceptre.plan.plan import SceptrePlan
 )
 @click.option("-v", "--verbose", is_flag=True, help="Display verbose output.")
 @click.option("-y", "--yes", is_flag=True, help="Assume yes to all questions.")
+@click.option(
+    "-dr",
+    "--disable-rollback",
+    is_flag=True,
+    help="Disable the auto rollback and keep resources successfully created or updated",
+)
 @click.pass_context
 @catch_exceptions
-def update_command(ctx, path, change_set, verbose, yes):
+def update_command(ctx, path, change_set, verbose, yes, disable_rollback: bool):
     """
     Updates a stack for a given config PATH. Or perform an update via
     change-set when the change-set flag is set.
@@ -37,6 +43,7 @@ def update_command(ctx, path, change_set, verbose, yes):
 
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),

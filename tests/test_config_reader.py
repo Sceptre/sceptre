@@ -26,7 +26,14 @@ class TestConfigReader(object):
         self.runner = CliRunner()
         self.test_project_path = os.path.join(os.getcwd(), "tests", "fixtures")
         self.context = SceptreContext(
-            project_path=self.test_project_path, command_path="A"
+            project_path=self.test_project_path,
+            command_path="A",
+            command_params={
+                "yes": True,
+                "path": "A.yaml",
+                "prune": False,
+                "disable_rollback": False,
+            },
         )
 
     def test_config_reader_correctly_initialised(self):
@@ -293,6 +300,7 @@ class TestConfigReader(object):
             external_name=None,
             notifications=None,
             on_failure=None,
+            disable_rollback=False,
             stack_timeout=0,
             required_version=">1.0",
             template_bucket_name="stack_group_template_bucket_name",
