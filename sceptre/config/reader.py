@@ -552,11 +552,10 @@ class ConfigReader(object):
                 )
 
         s3_details = self._collect_s3_details(stack_name, config)
-        disable_rollback = (
-            True
-            if self.context.command_params.get("disable_rollback")
-            else config.get("disable_rollback", False)
-        )
+        # If disable/enable rollback was specified on the command line, use that. Otherwise,
+        # fall back to the stack config.
+        disable_rollback = self.context.command_params.get("disable_rollback")
+        disable_rollback = config.get("disable_rollback", False) if disable_rollback is None else disable_rollback
 
         stack = Stack(
             name=stack_name,

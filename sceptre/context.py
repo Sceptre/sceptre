@@ -73,7 +73,7 @@ class SceptreContext(object):
         self.normal_command_path = normalise_path(command_path)
 
         # the sceptre command parameters (e.g. sceptre launch <command params>)
-        self.command_params = command_params if command_params else {}
+        self.command_params = command_params or {}
 
         # config_file: stack group config. User definable later in v2
         # e.g. {project_path/config/command_path}/config_file

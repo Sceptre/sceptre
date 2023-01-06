@@ -25,15 +25,14 @@ logger = logging.getLogger(__name__)
     help="If set, will delete all stacks in the command path marked as obsolete.",
 )
 @click.option(
-    "-dr",
-    "--disable-rollback",
-    is_flag=True,
-    help="Disable the auto rollback and keep resources successfully created or updated",
+  "--disable-rollback/--enable-rollback",
+  default=None,
+  help="Disable the auto rollback and keep resources successfully created or updated",
 )
 @click.pass_context
 @catch_exceptions
 def launch_command(
-    ctx: Context, path: str, yes: bool, prune: bool, disable_rollback: bool
+    ctx: Context, path: str, yes: bool, prune: bool, disable_rollback: Optional[bool]
 ):
     """
     Launch a Stack or StackGroup for a given config PATH. This command is intended as a catch-all

@@ -11,14 +11,13 @@ from sceptre.cli.helpers import stack_status_exit_code
 @click.argument("change-set-name", required=False)
 @click.option("-y", "--yes", is_flag=True, help="Assume yes to all questions.")
 @click.option(
-    "-dr",
-    "--disable-rollback",
-    is_flag=True,
-    help="Disable the auto rollback and keep resources successfully created or updated",
+  "--disable-rollback/--enable-rollback",
+  default=None,
+  help="Disable the auto rollback and keep resources successfully created or updated",
 )
 @click.pass_context
 @catch_exceptions
-def create_command(ctx, path, change_set_name, yes, disable_rollback: bool):
+def create_command(ctx, path, change_set_name, yes, disable_rollback: Optional[bool]):
     """
     Creates a stack for a given config PATH. Or if CHANGE_SET_NAME is specified
     creates a change set for stack in PATH.
