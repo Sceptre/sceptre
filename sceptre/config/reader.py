@@ -555,7 +555,8 @@ class ConfigReader(object):
         # If disable/enable rollback was specified on the command line, use that. Otherwise,
         # fall back to the stack config.
         disable_rollback = self.context.command_params.get("disable_rollback")
-        disable_rollback = config.get("disable_rollback", False) if disable_rollback is None else disable_rollback
+        if disable_rollback is None:
+            disable_rollback = config.get("disable_rollback", False)
 
         stack = Stack(
             name=stack_name,

@@ -1,5 +1,6 @@
 import click
 
+from typing import Optional
 from sceptre.context import SceptreContext
 from sceptre.cli.helpers import catch_exceptions, confirmation
 from sceptre.plan.plan import SceptrePlan
@@ -30,7 +31,6 @@ def create_command(ctx, path, change_set_name, yes, disable_rollback: Optional[b
     :param yes: A flag to assume yes to all questions.
     :type yes: bool
     :param disable_rollback: A flag to disable cloudformation rollback.
-    :type disable_rollback: bool
     """
     context = SceptreContext(
         command_path=path,

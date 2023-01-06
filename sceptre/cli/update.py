@@ -2,6 +2,7 @@ from uuid import uuid1
 
 import click
 
+from typing import Optional
 from sceptre.context import SceptreContext
 from sceptre.cli.helpers import catch_exceptions, confirmation
 from sceptre.cli.helpers import write, stack_status_exit_code

@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 import click
 from click import Context
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 )
 @click.option(
   "--disable-rollback/--enable-rollback",
-  default=None,
+  default=False,
   help="Disable the auto rollback and keep resources successfully created or updated",
 )
 @click.pass_context
@@ -43,9 +43,8 @@ def launch_command(
     * Any stacks that already exist will be updated (if there are any changes)
     * If any stacks are marked with "ignore: True", those stacks will neither be created nor updated
     * If any stacks are marked with "obsolete: True", those stacks will neither be created nor updated.
-    * If the "-p"/"--prune" flag is used, these stacks will be deleted prior to any
+    * Furthermore, if the "-p"/"--prune" flag is used, these stacks will be deleted prior to any
       other launch commands
-    * If the "-dr"/"--disable-rollback" flag is used, automatic cloudformation rollback will be disabled
     """
     context = SceptreContext(
         command_path=path,
