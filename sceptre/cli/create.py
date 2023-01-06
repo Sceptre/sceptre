@@ -12,9 +12,9 @@ from sceptre.cli.helpers import stack_status_exit_code
 @click.argument("change-set-name", required=False)
 @click.option("-y", "--yes", is_flag=True, help="Assume yes to all questions.")
 @click.option(
-  "--disable-rollback/--enable-rollback",
-  default=None,
-  help="Disable the auto rollback and keep resources successfully created or updated",
+    "--disable-rollback/--enable-rollback",
+    default=None,
+    help="Disable the auto rollback and keep resources successfully created or updated",
 )
 @click.pass_context
 @catch_exceptions

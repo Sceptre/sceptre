@@ -25,9 +25,9 @@ logger = logging.getLogger(__name__)
     help="If set, will delete all stacks in the command path marked as obsolete.",
 )
 @click.option(
-  "--disable-rollback/--enable-rollback",
-  default=False,
-  help="Disable the auto rollback and keep resources successfully created or updated",
+    "--disable-rollback/--enable-rollback",
+    default=False,
+    help="Disable the auto rollback and keep resources successfully created or updated",
 )
 @click.pass_context
 @catch_exceptions
