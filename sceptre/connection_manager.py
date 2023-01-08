@@ -13,7 +13,6 @@ import os
 import random
 import threading
 import time
-from os import environ
 from typing import Optional, Dict
 
 import boto3
@@ -102,6 +101,7 @@ class ConnectionManager(object):
         iam_role_session_duration: Optional[int] = None,
         *,
         session_class=boto3.Session,
+        get_envs_func=lambda: os.environ,
     ):
 
         self.logger = logging.getLogger(__name__)
@@ -116,6 +116,7 @@ class ConnectionManager(object):
             self._stack_keys[stack_name] = (region, profile, iam_role)
 
         self._session_class = session_class
+        self._get_envs = get_envs_func
 
     def __repr__(self):
         return (
@@ -189,7 +190,7 @@ class ConnectionManager(object):
         # Set aws environment variables specific to whatever AWS configuration has been set on the
         # stack's connection manager.
         credentials: Credentials = session.get_credentials()
-        envs = dict(**os.environ) if include_system_envs else {}
+        envs = dict(**self._get_envs()) if include_system_envs else {}
 
         if include_system_envs:
             # We don't want a profile specified, since that could interfere with the credentials we're
@@ -222,7 +223,7 @@ class ConnectionManager(object):
             if self._boto_sessions.get(key) is None:
                 self.logger.debug("No Boto3 session found, creating one...")
                 self.logger.debug("Using cli credentials...")
-
+                environ = self._get_envs()
                 # Credentials from env take priority over profile
                 config = {
                     "profile_name": profile,

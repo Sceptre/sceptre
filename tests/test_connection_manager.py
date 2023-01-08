@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-import os
-from unittest.mock import Mock, patch, sentinel, ANY, create_autospec
+from typing import Union
+from unittest.mock import Mock, patch, sentinel, create_autospec
 
 import pytest
 from boto3.session import Session
@@ -20,12 +20,12 @@ class TestConnectionManager(object):
         self.iam_role_session_duration = 3600
         self.region = "eu-west-1"
 
-        # Temporary workaround for https://github.com/spulec/moto/issues/1924
-        os.environ.setdefault("AWS_ACCESS_KEY_ID", "sceptre_test_key_id")
-        os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "sceptre_test_access_key")
-
+        self.environment_variables = {
+            "AWS_ACCESS_KEY_ID": "sceptre_test_key_id",
+            "AWS_SECRET_ACCESS_KEY": "sceptre_test_access_key",
+        }
         self.session_class = create_autospec(Session)
-        self.mock_session = self.session_class.return_value
+        self.mock_session: Union[Mock, Session] = self.session_class.return_value
 
         self.connection_manager = ConnectionManager(
             region=self.region,
@@ -33,6 +33,7 @@ class TestConnectionManager(object):
             profile=self.profile,
             iam_role=self.iam_role,
             session_class=self.session_class,
+            get_envs_func=lambda: self.environment_variables,
         )
 
         self.connection_manager._boto_sessions = {}
@@ -107,9 +108,9 @@ class TestConnectionManager(object):
         self.session_class.assert_called_once_with(
             profile_name=None,
             region_name=self.region,
-            aws_access_key_id=ANY,
-            aws_secret_access_key=ANY,
-            aws_session_token=ANY,
+            aws_access_key_id=self.environment_variables["AWS_ACCESS_KEY_ID"],
+            aws_secret_access_key=self.environment_variables["AWS_SECRET_ACCESS_KEY"],
+            aws_session_token=None,
         )
         assert boto_session == self.mock_session
 
@@ -122,9 +123,9 @@ class TestConnectionManager(object):
         self.session_class.assert_called_once_with(
             profile_name="fancy",
             region_name=self.region,
-            aws_access_key_id=ANY,
-            aws_secret_access_key=ANY,
-            aws_session_token=ANY,
+            aws_access_key_id=self.environment_variables["AWS_ACCESS_KEY_ID"],
+            aws_secret_access_key=self.environment_variables["AWS_SECRET_ACCESS_KEY"],
+            aws_session_token=None,
         )
         assert boto_session == self.mock_session
 
@@ -136,9 +137,9 @@ class TestConnectionManager(object):
         self.session_class.assert_called_once_with(
             profile_name="fancy",
             region_name=self.region,
-            aws_access_key_id=ANY,
-            aws_secret_access_key=ANY,
-            aws_session_token=ANY,
+            aws_access_key_id=self.environment_variables["AWS_ACCESS_KEY_ID"],
+            aws_secret_access_key=self.environment_variables["AWS_SECRET_ACCESS_KEY"],
+            aws_session_token=None,
         )
         assert boto_session == self.mock_session
 
@@ -150,9 +151,9 @@ class TestConnectionManager(object):
         self.session_class.assert_called_once_with(
             profile_name=None,
             region_name=self.region,
-            aws_access_key_id=ANY,
-            aws_secret_access_key=ANY,
-            aws_session_token=ANY,
+            aws_access_key_id=self.environment_variables["AWS_ACCESS_KEY_ID"],
+            aws_secret_access_key=self.environment_variables["AWS_SECRET_ACCESS_KEY"],
+            aws_session_token=None,
         )
         assert boto_session == self.mock_session
 
@@ -279,6 +280,73 @@ class TestConnectionManager(object):
 
         return_value = connection_manager.call(service, command, {}, stack_name="stack")
         assert return_value["ResponseMetadata"]["HTTPStatusCode"] == 200
+
+    def test_create_session_environment_variables__no_token__returns_envs_dict(self):
+        self.mock_session.configure_mock(
+            **{
+                "region_name": "us-west-2",
+                "get_credentials.return_value.access_key": "new_access_key",
+                "get_credentials.return_value.secret_key": "new_secret_key",
+                "get_credentials.return_value.token": None,
+            }
+        )
+
+        result = self.connection_manager.create_session_environment_variables()
+        expected = {
+            "AWS_ACCESS_KEY_ID": "new_access_key",
+            "AWS_SECRET_ACCESS_KEY": "new_secret_key",
+            "AWS_DEFAULT_REGION": "us-west-2",
+            "AWS_REGION": "us-west-2",
+        }
+        assert expected == result
+
+    def test_create_session_environment_variables__has_session_token__returns_envs_dict_with_token(self):
+        self.mock_session.configure_mock(
+            **{
+                "region_name": "us-west-2",
+                "get_credentials.return_value.access_key": "new_access_key",
+                "get_credentials.return_value.secret_key": "new_secret_key",
+                "get_credentials.return_value.token": "my token",
+            }
+        )
+
+        result = self.connection_manager.create_session_environment_variables()
+        expected = {
+            "AWS_ACCESS_KEY_ID": "new_access_key",
+            "AWS_SECRET_ACCESS_KEY": "new_secret_key",
+            "AWS_DEFAULT_REGION": "us-west-2",
+            "AWS_REGION": "us-west-2",
+            "AWS_SESSION_TOKEN": "my token",
+        }
+        assert expected == result
+
+    def test_create_session_environment_variables__include_system_envs__adds_system_envs_removing_profile_and_token(
+        self,
+    ):
+        self.environment_variables.update(
+            AWS_PROFILE="my_profile",  # We expect this popped out
+            AWS_SESSION_TOKEN="my token",  # This should be removed if there's no token
+            OTHER="value-blah-blah",  # we expect this to be in dictionary coming out,
+        )
+
+        self.mock_session.configure_mock(
+            **{
+                "region_name": "us-west-2",
+                "get_credentials.return_value.access_key": "new_access_key",
+                "get_credentials.return_value.secret_key": "new_secret_key",
+                "get_credentials.return_value.token": None,
+            }
+        )
+
+        result = self.connection_manager.create_session_environment_variables(include_system_envs=True)
+        expected = {
+            "AWS_ACCESS_KEY_ID": "new_access_key",
+            "AWS_SECRET_ACCESS_KEY": "new_secret_key",
+            "AWS_DEFAULT_REGION": "us-west-2",
+            "AWS_REGION": "us-west-2",
+            "OTHER": "value-blah-blah",
+        }
+        assert expected == result
 
 
 class TestRetry:
