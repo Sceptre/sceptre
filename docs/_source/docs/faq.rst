@@ -83,6 +83,32 @@ used.
 
 .. _AWS documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html
 
+.. _using_connection_manager:
+
+How do I call AWS services in my custom hook/resolver/template handler?
+-----------------------------------------------------------------------
+In order to call AWS services in your custom resolver properly, you should use the configurations of
+on the stack where the resolver is being used (unless you need to use a different configuration).
+
+There is a simple interface available for doing this, the
+:py:class:`sceptre.connection_manager.ConnectionManager`. The ConnectionManager is an interface that
+will be pre-configured with the stack's profile, region, and iam_role and will be ready for you to use.
+It is accessible on hooks and resolvers via ``self.stack.connection_manager`` and on
+template_handlers via ``self.connection_manager``.
+
+There are three public methods on the :
+
+- :py:meth:`sceptre.connection_manager.ConnectionManager.call` can be used to directly call a boto3
+  API method on any api service and return the result from boto3. This is perfect when you just need
+  to invoke a boto3 client method without any additional capabilities.
+- :py:meth:`sceptre.connection_manager.ConnectionManager.get_session` can be used to get a boto3 Session
+  object. This is very useful if you need to work with Boto3 Resource objects (like an s3 Bucket) or
+  if you need to create and pass the bot3 session, client, or resource to a third-party framework.
+- :py:meth:`sceptre.connection_manager.ConnectionManager.create_session_environment_variables` creates
+  a dictionary of environment variables used by AWS sdks with all the relevant connection information.
+  This is extremely useful if you are needing to invoke other SDKs using ``subprocess`` and still need
+  the Stack's connection information honored.
+
 How do I build a Serverless application using Sceptre and SAM?
 --------------------------------------------------------------
 

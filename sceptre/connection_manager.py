@@ -9,18 +9,19 @@ Boto3 calls.
 
 import functools
 import logging
+import os
 import random
 import threading
 import time
-from typing import Optional
+from os import environ
+from typing import Optional, Dict
 
 import boto3
-
-from os import environ
+from botocore.credentials import Credentials
 from botocore.exceptions import ClientError
 
-from sceptre.helpers import mask_key
 from sceptre.exceptions import InvalidAWSCredentialsError, RetryLimitExceededError
+from sceptre.helpers import mask_key
 
 
 def _retry_boto_call(func):
@@ -71,7 +72,7 @@ def _retry_boto_call(func):
 
 # STACK_DEFAULT is a sentinel value meaning "default to the stack's configuration". This is in
 # contrast with passing None, which would mean "use no value".
-STACK_DEFAULT = object()
+STACK_DEFAULT = "[STACK DEFAULT]"
 
 
 class ConnectionManager(object):
@@ -156,6 +157,61 @@ class ConnectionManager(object):
         region = self.region if region == STACK_DEFAULT else region
         iam_role = self.iam_role if iam_role == STACK_DEFAULT else iam_role
         return self._get_session(profile, region, iam_role)
+
+    def create_session_environment_variables(
+        self,
+        profile: Optional[str] = STACK_DEFAULT,
+        region: Optional[str] = STACK_DEFAULT,
+        iam_role: Optional[str] = STACK_DEFAULT,
+        include_system_envs: bool = False,
+    ) -> Dict[str, str]:
+        """Creates the standard AWS environment variables that would need to be passed to a
+        subprocess in a hook, resolver, or template handler and allow that subprocess to work with
+        the currently configured session.
+
+        :param profile: The name of the AWS Profile as configured in the local environment. Passing
+            None will result in no profile being specified. Defaults to the ConnectionManager's
+            configured profile (if there is one).
+        :param region: The AWS Region the session should be configured with. Defaults to the
+            ConnectionManager's configured region.
+        :param iam_role: The IAM role ARN that is assumed using STS to create the session. Passing
+            None will result in no IAM role being assumed. Defaults to the ConnectionManager's
+            configured iam_role (if there is one).
+        :param include_system_envs: If True, will return a dict with all the system environment
+            variables included. This is useful for creating a complete dict of environment variables
+            to pass to a subprocess. By default, this method will ONLY return the relevant AWS
+            environment variables.
+
+        :returns: A dict of environment variables with the appropriate credentials available for use.
+        """
+        session = self.get_session(profile, region, iam_role)
+        # Set aws environment variables specific to whatever AWS configuration has been set on the
+        # stack's connection manager.
+        credentials: Credentials = session.get_credentials()
+        envs = dict(**os.environ) if include_system_envs else {}
+
+        if include_system_envs:
+            # We don't want a profile specified, since that could interfere with the credentials we're
+            # about to set. Even if we're using a profile, the credentials will already reflect that
+            # profile's configurations.
+            envs.pop("AWS_PROFILE", None)
+
+        envs.update(
+            AWS_ACCESS_KEY_ID=credentials.access_key,
+            AWS_SECRET_ACCESS_KEY=credentials.secret_key,
+            # Most AWS SDKs use AWS_DEFAULT_REGION for the region; some use AWS_REGION
+            AWS_DEFAULT_REGION=session.region_name,
+            AWS_REGION=session.region_name,
+        )
+
+        if credentials.token:
+            envs["AWS_SESSION_TOKEN"] = credentials.token
+        # There might not be a session token, so if there isn't one, make sure it doesn't exist in
+        # the envs being passed to the subprocess
+        elif include_system_envs:
+            envs.pop("AWS_SESSION_TOKEN", None)
+
+        return envs
 
     def _get_session(self, profile: Optional[str], region: Optional[str], iam_role: Optional[str]) -> boto3.Session:
         with self._session_lock:
