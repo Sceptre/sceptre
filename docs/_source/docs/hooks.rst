@@ -236,4 +236,4 @@ Calling AWS services in your custom hook
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For details on calling AWS services or invoking AWS-related third party tools in your hooks, see
-:ref:`using_connection_manager`.
+:ref:`using_connection_manager`

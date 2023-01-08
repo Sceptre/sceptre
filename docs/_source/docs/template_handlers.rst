@@ -225,4 +225,4 @@ Calling AWS services in your custom template_handler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For details on calling AWS services or invoking AWS-related third party tools in your
-template handler, see :ref:`using_connection_manager`.
+template handler, see :ref:`using_connection_manager`
