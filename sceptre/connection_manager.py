@@ -81,13 +81,10 @@ class ConnectionManager(object):
     the various AWS services that Sceptre needs to interact with.
 
     :param profile: The AWS credentials profile that should be used.
-    :type profile: str
     :param iam_role: The iam_role that should be assumed in the account.
-    :type iam_role: str
     :param stack_name: The CloudFormation stack name for this connection.
-    :type stack_name: str
     :param region: The region to use.
-    :type region: str
+    :param iam_role_session_duration: The duration to assume the specified iam_role per session.
     """
 
     _session_lock = threading.Lock()
@@ -98,11 +95,11 @@ class ConnectionManager(object):
 
     def __init__(
         self,
-        region,
-        profile=None,
-        stack_name=None,
-        iam_role=None,
-        iam_role_session_duration=None,
+        region: str,
+        profile: Optional[str] = None,
+        stack_name: Optional[str] = None,
+        iam_role: Optional[str] = None,
+        iam_role_session_duration: Optional[int] = None,
     ):
 
         self.logger = logging.getLogger(__name__)
