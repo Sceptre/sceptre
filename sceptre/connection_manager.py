@@ -12,6 +12,8 @@ import logging
 import random
 import threading
 import time
+from typing import Optional
+
 import boto3
 
 from os import environ
@@ -62,11 +64,14 @@ def _retry_boto_call(func):
                     attempts += 1
                 else:
                     raise
-        raise RetryLimitExceededError(
-            "Exceeded request limit {0} times. Aborting.".format(max_retries)
-        )
+        raise RetryLimitExceededError("Exceeded request limit {0} times. Aborting.".format(max_retries))
 
     return decorated
+
+
+# STACK_DEFAULT is a sentinel value meaning "default to the stack's configuration". This is in
+# contrast with passing None, which would mean "use no value".
+STACK_DEFAULT = object()
 
 
 class ConnectionManager(object):
@@ -122,19 +127,37 @@ class ConnectionManager(object):
             )
         )
 
-    def _get_session(self, profile, region, iam_role):
+    def get_session(
+        self,
+        profile: Optional[str] = STACK_DEFAULT,
+        region: Optional[str] = STACK_DEFAULT,
+        iam_role: Optional[str] = STACK_DEFAULT,
+    ) -> boto3.Session:
         """
-        Returns a boto session in the target account.
+        Returns a boto3 session for the targeted profile, region, and iam_role.
 
-        If a ``profile`` is specified in ConnectionManager's initialiser,
-        then the profile is used to generate temporary credentials to create
-        the Boto session. If ``profile`` is not specified then the default
-        profile is assumed to create the boto session.
+        For each of profile, region, and iam_role, these values will default to the ConnectionManager's
+        configured default values (which correspond to the Stack's configuration). These values can
+        be overridden, however, by passing them explicitly.
+
+        :param profile: The name of the AWS Profile as configured in the local environment. Passing
+            None will result in no profile being specified. Defaults to the ConnectionManager's
+            configured profile (if there is one).
+        :param region: The AWS Region the session should be configured with. Defaults to the
+            ConnectionManager's configured region.
+        :param iam_role: The IAM role ARN that is assumed using STS to create the session. Passing
+            None will result in no IAM role being assumed. Defaults to the ConnectionManager's
+            configured iam_role (if there is one).
 
         :returns: The Boto3 session.
-        :rtype: boto3.session.Session
         :raises: botocore.exceptions.ClientError
         """
+        profile = self.profile if profile == STACK_DEFAULT else profile
+        region = self.region if region == STACK_DEFAULT else region
+        iam_role = self.iam_role if iam_role == STACK_DEFAULT else iam_role
+        return self._get_session(profile, region, iam_role)
+
+    def _get_session(self, profile: Optional[str], region: Optional[str], iam_role: Optional[str]) -> boto3.Session:
         with self._session_lock:
             self.logger.debug("Getting Boto3 session")
             key = (region, profile, iam_role)
@@ -171,9 +194,7 @@ class ConnectionManager(object):
                         "RoleSessionName": session_name,
                     }
                     if self.iam_role_session_duration:
-                        assume_role_kwargs[
-                            "DurationSeconds"
-                        ] = self.iam_role_session_duration
+                        assume_role_kwargs["DurationSeconds"] = self.iam_role_session_duration
                     sts_response = sts_client.assume_role(**assume_role_kwargs)
 
                     credentials = sts_response["Credentials"]
@@ -186,9 +207,7 @@ class ConnectionManager(object):
 
                     if session.get_credentials() is None:
                         raise InvalidAWSCredentialsError(
-                            "Session credentials were not found. Role: {0}. Region: {1}.".format(
-                                iam_role, region
-                            )
+                            "Session credentials were not found. Role: {0}. Region: {1}.".format(iam_role, region)
                         )
 
                     self._boto_sessions[key] = session
@@ -198,9 +217,7 @@ class ConnectionManager(object):
                     session.get_credentials().method,
                     {
                         "AccessKeyId": mask_key(session.get_credentials().access_key),
-                        "SecretAccessKey": mask_key(
-                            session.get_credentials().secret_key
-                        ),
+                        "SecretAccessKey": mask_key(session.get_credentials().secret_key),
                         "Region": session.region_name,
                     },
                 )
@@ -225,9 +242,7 @@ class ConnectionManager(object):
             key = (service, region, profile, stack_name, iam_role)
             if self._clients.get(key) is None:
                 self.logger.debug("No %s client found, creating one...", service)
-                self._clients[key] = self._get_session(
-                    profile, region, iam_role
-                ).client(service)
+                self._clients[key] = self._get_session(profile, region, iam_role).client(service)
 
             return self._clients[key]
 
