@@ -87,14 +87,19 @@ used.
 
 How do I call AWS services or use AWS-based tools in my custom hook/resolver/template handler?
 ----------------------------------------------------------------------------------------------
-In order to call AWS services in your custom resolver properly, you should use the configurations of
-on the stack where the resolver is being used (unless you need to use a different configuration).
+In order to call AWS services in your custom hook/resolver/template handler properly, you should use
+the IAM configurations of the stack where the resolver is being used (unless you need to use a
+different configuration for a specific reason). This means your hook/resolver/handler should honor the
+``profile``, ``region``, and ``iam_role`` configurations as set for your project and/or Stack Config.
+Simply invoking ``boto3.client('s3')`` is _not_ going to regard those and could end up using the
+wrong credentials or not even working.
 
-There is a simple interface available for doing this, the
+There is a simple interface available for doing this properly, the
 :py:class:`sceptre.connection_manager.ConnectionManager`. The ConnectionManager is an interface that
-will be pre-configured with the stack's profile, region, and iam_role and will be ready for you to use.
-It is accessible on hooks and resolvers via ``self.stack.connection_manager`` and on
-template_handlers via ``self.connection_manager``.
+will be pre-configured with each stack's profile, region, and iam_role and will be ready for you to use.
+If you are using an `iam_role`, it will automatically assume that role via STS for making calls to
+AWS so you can just use it the way you want. It is accessible on hooks and resolvers via
+``self.stack.connection_manager`` and on template_handlers via ``self.connection_manager``.
 
 There are three public methods on the ConnectionManager:
 
@@ -110,7 +115,7 @@ There are three public methods on the ConnectionManager:
   the Stack's connection information honored.
 
 
-Using the connection manager, you can use `https://boto3.amazonaws.com/v1/documentation/api/latest/index.html <boto3>`_
+Using the connection manager, you can use `boto3 <https://boto3.amazonaws.com/v1/documentation/api/latest/index.html>`_
 to perform any AWS actions you need:
 
 .. code-block:: python
@@ -126,7 +131,7 @@ to perform any AWS actions you need:
        environment_variables = self.stack.connection_manager.create_session_environment_variables(
            include_system_envs=True
        )
-       list = subprocess.run(
+       list_output = subprocess.run(
            'aws s3 list-bucket',
            shell=True,
            env=environment_variables,
