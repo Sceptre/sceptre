@@ -100,6 +100,8 @@ class ConnectionManager(object):
         stack_name: Optional[str] = None,
         iam_role: Optional[str] = None,
         iam_role_session_duration: Optional[int] = None,
+        *,
+        session_class=boto3.Session,
     ):
 
         self.logger = logging.getLogger(__name__)
@@ -112,6 +114,8 @@ class ConnectionManager(object):
 
         if stack_name:
             self._stack_keys[stack_name] = (region, profile, iam_role)
+
+        self._session_class = session_class
 
     def __repr__(self):
         return (
@@ -228,7 +232,7 @@ class ConnectionManager(object):
                     "aws_session_token": environ.get("AWS_SESSION_TOKEN"),
                 }
 
-                session = boto3.session.Session(**config)
+                session = self._session_class(**config)
                 self._boto_sessions[key] = session
 
                 if session.get_credentials() is None:
@@ -251,7 +255,7 @@ class ConnectionManager(object):
                     sts_response = sts_client.assume_role(**assume_role_kwargs)
 
                     credentials = sts_response["Credentials"]
-                    session = boto3.session.Session(
+                    session = self._session_class(
                         aws_access_key_id=credentials["AccessKeyId"],
                         aws_secret_access_key=credentials["SecretAccessKey"],
                         aws_session_token=credentials["SessionToken"],
