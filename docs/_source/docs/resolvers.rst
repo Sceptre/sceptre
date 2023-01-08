@@ -300,7 +300,8 @@ This resolver can be used in a Stack config file with the following syntax:
 Calling AWS services in your custom resolver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For details on calling AWS services in your resolver, see :ref:`using_connection_manager`
+For details on calling AWS services or invoking AWS-related third party tools in your resolver, see
+:ref:`using_connection_manager`.
 
 
 Resolver arguments

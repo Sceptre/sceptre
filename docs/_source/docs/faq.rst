@@ -85,8 +85,8 @@ used.
 
 .. _using_connection_manager:
 
-How do I call AWS services in my custom hook/resolver/template handler?
------------------------------------------------------------------------
+How do I call AWS services or use AWS-based tools in my custom hook/resolver/template handler?
+----------------------------------------------------------------------------------------------
 In order to call AWS services in your custom resolver properly, you should use the configurations of
 on the stack where the resolver is being used (unless you need to use a different configuration).
 
@@ -96,7 +96,7 @@ will be pre-configured with the stack's profile, region, and iam_role and will b
 It is accessible on hooks and resolvers via ``self.stack.connection_manager`` and on
 template_handlers via ``self.connection_manager``.
 
-There are three public methods on the :
+There are three public methods on the ConnectionManager:
 
 - :py:meth:`sceptre.connection_manager.ConnectionManager.call` can be used to directly call a boto3
   API method on any api service and return the result from boto3. This is perfect when you just need
@@ -108,6 +108,31 @@ There are three public methods on the :
   a dictionary of environment variables used by AWS sdks with all the relevant connection information.
   This is extremely useful if you are needing to invoke other SDKs using ``subprocess`` and still need
   the Stack's connection information honored.
+
+
+Using the connection manager, you can use `https://boto3.amazonaws.com/v1/documentation/api/latest/index.html <boto3>`_
+to perform any AWS actions you need:
+
+.. code-block:: python
+
+   # For example, in your custom resolver:
+   def resolve(self):
+       # You can invoke a lower-level service method like...
+       obj = self.stack.connection_manager.call('s3', 'get_object', {'Bucket': 'my-bucket', 'Key': 'my-key'})
+       # Or you can create higher-level resource objects like...
+       bucket = self.stack.connection_manager.get_session().resource('s3').Bucket('my-bucket')
+       # Or if you need to invoke a third-party tool via a subprocess, you can create the necessary environment
+       # variables like this:
+       environment_variables = self.stack.connection_manager.create_session_environment_variables(
+           include_system_envs=True
+       )
+       list = subprocess.run(
+           'aws s3 list-bucket',
+           shell=True,
+           env=environment_variables,
+           capture_output=True
+       ).stdout
+
 
 How do I build a Serverless application using Sceptre and SAM?
 --------------------------------------------------------------
