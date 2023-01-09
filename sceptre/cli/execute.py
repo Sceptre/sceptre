@@ -1,5 +1,6 @@
 import click
 
+from typing import Optional
 from sceptre.context import SceptreContext
 from sceptre.cli.helpers import catch_exceptions, confirmation
 from sceptre.plan.plan import SceptrePlan
@@ -9,9 +10,14 @@ from sceptre.plan.plan import SceptrePlan
 @click.argument("path")
 @click.argument("change-set-name")
 @click.option("-y", "--yes", is_flag=True, help="Assume yes to all questions.")
+@click.option(
+    "--disable-rollback/--enable-rollback",
+    default=None,
+    help="Disable or enable the cloudformation automatic rollback",
+)
 @click.pass_context
 @catch_exceptions
-def execute_command(ctx, path, change_set_name, yes):
+def execute_command(ctx, path, change_set_name, yes, disable_rollback: Optional[bool]):
     """
     Executes a Change Set.
     \f
