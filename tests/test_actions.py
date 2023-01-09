@@ -43,6 +43,7 @@ class TestStackActions(object):
             external_name=sentinel.external_name,
             notifications=[sentinel.notification],
             on_failure=sentinel.on_failure,
+            disable_rollback=False,
             stack_timeout=sentinel.stack_timeout,
         )
         self.actions = StackActions(self.stack)
@@ -124,6 +125,39 @@ class TestStackActions(object):
                 "NotificationARNs": [sentinel.notification],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
                 "OnFailure": sentinel.on_failure,
+                "TimeoutInMinutes": sentinel.timeout,
+            },
+        )
+        mock_wait_for_completion.assert_called_once_with(boto_response=ANY)
+
+    @patch("sceptre.plan.actions.StackActions._wait_for_completion")
+    @patch("sceptre.plan.actions.StackActions._get_stack_timeout")
+    def test_create_disable_rollback_overrides_on_failure(
+        self, mock_get_stack_timeout, mock_wait_for_completion
+    ):
+        self.template._body = sentinel.template
+        self.actions.stack.on_failure = "ROLLBACK"
+        self.actions.stack.disable_rollback = True
+
+        mock_get_stack_timeout.return_value = {"TimeoutInMinutes": sentinel.timeout}
+
+        self.actions.create()
+        self.actions.connection_manager.call.assert_called_with(
+            service="cloudformation",
+            command="create_stack",
+            kwargs={
+                "StackName": sentinel.external_name,
+                "TemplateBody": sentinel.template,
+                "Parameters": [{"ParameterKey": "key1", "ParameterValue": "val1"}],
+                "Capabilities": [
+                    "CAPABILITY_IAM",
+                    "CAPABILITY_NAMED_IAM",
+                    "CAPABILITY_AUTO_EXPAND",
+                ],
+                "RoleARN": sentinel.role_arn,
+                "NotificationARNs": [sentinel.notification],
+                "Tags": [{"Key": "tag1", "Value": "val1"}],
+                "DisableRollback": True,
                 "TimeoutInMinutes": sentinel.timeout,
             },
         )
