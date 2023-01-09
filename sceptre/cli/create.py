@@ -14,7 +14,7 @@ from sceptre.cli.helpers import stack_status_exit_code
 @click.option(
     "--disable-rollback/--enable-rollback",
     default=None,
-    help="Disable the auto rollback and keep resources successfully created or updated",
+    help="Disable or enable the cloudformation automatic rollback",
 )
 @click.pass_context
 @catch_exceptions

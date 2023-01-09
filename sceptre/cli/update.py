@@ -21,7 +21,7 @@ from sceptre.plan.plan import SceptrePlan
 @click.option(
     "--disable-rollback/--enable-rollback",
     default=None,
-    help="Disable the auto rollback and keep resources successfully created or updated",
+    help="Disable or enable the cloudformation automatic rollback",
 )
 @click.pass_context
 @catch_exceptions

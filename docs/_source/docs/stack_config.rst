@@ -214,12 +214,13 @@ disable_rollback
 
 This parameter describes the action taken by CloudFormation when a Stack fails
 to create or update, default is False. This option can be set from the stack
-config or from the Sceptre CLI commands to deploy stacks. Enabling disable-rollback
-using the CLI option disables rollback globally for all stacks. This option
-overrides on_failure since Cloudformation does not allow setting both on deployment.
-For more information and valid values see the `AWS Documentation`_.
+config or from the Sceptre CLI commands to deploy stacks. The disable_rollback
+CLI option (i.e. sceptre launch --disable-rollback) disables cloudformation
+rollback globally for all stacks. This option overrides on_failure since
+Cloudformation does not allow setting both on deployment. For more information
+and valid values see the `AWS Documentation`_.
 
-Examples include:
+Examples:
 
 ``disable_rollback: "True"``
 
