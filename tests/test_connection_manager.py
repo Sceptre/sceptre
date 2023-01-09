@@ -8,7 +8,11 @@ from boto3.session import Session
 from botocore.exceptions import ClientError
 from moto import mock_s3
 
-from sceptre.connection_manager import ConnectionManager, _retry_boto_call, STACK_DEFAULT
+from sceptre.connection_manager import (
+    ConnectionManager,
+    _retry_boto_call,
+    STACK_DEFAULT,
+)
 from sceptre.exceptions import RetryLimitExceededError, InvalidAWSCredentialsError
 
 
@@ -66,7 +70,9 @@ class TestConnectionManager(object):
         assert connection_manager.region == self.region
         assert connection_manager._boto_sessions == {}
         assert connection_manager._clients == {}
-        assert connection_manager._stack_keys == {"stack": (self.region, "profile", "iam_role")}
+        assert connection_manager._stack_keys == {
+            "stack": (self.region, "profile", "iam_role")
+        }
 
     def test_repr(self):
         self.connection_manager.stack_name = "stack"
@@ -129,7 +135,9 @@ class TestConnectionManager(object):
         )
         assert boto_session == self.mock_session
 
-    def test_get_session___profile_specified__makes_boto_session_with_passed_profile(self):
+    def test_get_session___profile_specified__makes_boto_session_with_passed_profile(
+        self,
+    ):
         self.connection_manager.profile = None
 
         boto_session = self.connection_manager.get_session(profile="fancy")
@@ -143,7 +151,9 @@ class TestConnectionManager(object):
         )
         assert boto_session == self.mock_session
 
-    def test_get_session__none_for_profile_passed__connection_manager_has_default_profile__uses_no_profile(self):
+    def test_get_session__none_for_profile_passed__connection_manager_has_default_profile__uses_no_profile(
+        self,
+    ):
         self.connection_manager.profile = "default profile"
 
         boto_session = self.connection_manager.get_session(profile=None)
@@ -157,13 +167,17 @@ class TestConnectionManager(object):
         )
         assert boto_session == self.mock_session
 
-    def test_get_session__no_iam_role_passed__no_iam_role_on_connection_manager__does_not_assume_role(self):
+    def test_get_session__no_iam_role_passed__no_iam_role_on_connection_manager__does_not_assume_role(
+        self,
+    ):
         self.connection_manager.iam_role = None
 
         self.connection_manager.get_session()
         self.mock_session.client.assert_not_called()
 
-    def test_get_session__none_passed_for_iam_role__iam_role_on_connection_manager__does_not_assume_role(self):
+    def test_get_session__none_passed_for_iam_role__iam_role_on_connection_manager__does_not_assume_role(
+        self,
+    ):
         self.connection_manager.iam_role = "arn:aws:iam::123456:role/my-path/other-role"
         self.connection_manager.get_session(iam_role=None)
 
@@ -172,7 +186,11 @@ class TestConnectionManager(object):
     @pytest.mark.parametrize(
         "connection_manager,arg",
         [
-            pytest.param("arn:aws:iam::123456:role/my-path/my-role", STACK_DEFAULT, id="role on connection manager"),
+            pytest.param(
+                "arn:aws:iam::123456:role/my-path/my-role",
+                STACK_DEFAULT,
+                id="role on connection manager",
+            ),
             pytest.param(
                 "arn:aws:iam::123456:role/my-path/other-role",
                 "arn:aws:iam::123456:role/my-path/my-role",
@@ -204,7 +222,9 @@ class TestConnectionManager(object):
             aws_session_token=credentials["SessionToken"],
         )
 
-    def test_get_session__iam_role_and_session_duration_on_connection_manager__uses_session_duration(self):
+    def test_get_session__iam_role_and_session_duration_on_connection_manager__uses_session_duration(
+        self,
+    ):
         self.connection_manager.iam_role = "iam_role"
         self.connection_manager.iam_role_session_duration = 21600
 
@@ -212,18 +232,24 @@ class TestConnectionManager(object):
 
         self.mock_session.client.return_value.assume_role.assert_called_once_with(
             RoleArn=self.connection_manager.iam_role,
-            RoleSessionName="{0}-session".format(self.connection_manager.iam_role.split("/")[-1]),
+            RoleSessionName="{0}-session".format(
+                self.connection_manager.iam_role.split("/")[-1]
+            ),
             DurationSeconds=21600,
         )
 
-    def test_get_session__with_iam_role__returning_empty_credentials__raises_invalid_aws_credentials_error(self):
+    def test_get_session__with_iam_role__returning_empty_credentials__raises_invalid_aws_credentials_error(
+        self,
+    ):
         self.connection_manager._boto_sessions = {}
         self.connection_manager.iam_role = "iam_role"
 
         self.mock_session.get_credentials.return_value = None
 
         with pytest.raises(InvalidAWSCredentialsError):
-            self.connection_manager.get_session(self.profile, self.region, self.connection_manager.iam_role)
+            self.connection_manager.get_session(
+                self.profile, self.region, self.connection_manager.iam_role
+            )
 
     def test_get_client_with_no_pre_existing_clients(self):
         service = "s3"
@@ -232,7 +258,9 @@ class TestConnectionManager(object):
         iam_role = None
         stack = self.stack_name
 
-        client = self.connection_manager._get_client(service, region, profile, stack, iam_role)
+        client = self.connection_manager._get_client(
+            service, region, profile, stack, iam_role
+        )
         expected_client = self.mock_session.client.return_value
         assert client == expected_client
         self.mock_session.client.assert_any_call(service)
@@ -244,13 +272,19 @@ class TestConnectionManager(object):
         profile = None
         stack = self.stack_name
 
-        client_1 = self.connection_manager._get_client(service, region, profile, stack, iam_role)
-        client_2 = self.connection_manager._get_client(service, region, profile, stack, iam_role)
+        client_1 = self.connection_manager._get_client(
+            service, region, profile, stack, iam_role
+        )
+        client_2 = self.connection_manager._get_client(
+            service, region, profile, stack, iam_role
+        )
         assert client_1 == client_2
         assert self.mock_session.client.call_count == 1
 
     @patch("sceptre.connection_manager.boto3.session.Session.get_credentials")
-    def test_get_client_with_existing_client_and_profile_none(self, mock_get_credentials):
+    def test_get_client_with_existing_client_and_profile_none(
+        self, mock_get_credentials
+    ):
         service = "cloudformation"
         region = "eu-west-1"
         iam_role = None
@@ -258,8 +292,12 @@ class TestConnectionManager(object):
         stack = self.stack_name
 
         self.connection_manager.profile = None
-        client_1 = self.connection_manager._get_client(service, region, profile, stack, iam_role)
-        client_2 = self.connection_manager._get_client(service, region, profile, stack, iam_role)
+        client_1 = self.connection_manager._get_client(
+            service, region, profile, stack, iam_role
+        )
+        client_2 = self.connection_manager._get_client(
+            service, region, profile, stack, iam_role
+        )
         assert client_1 == client_2
 
     @mock_s3
@@ -300,7 +338,9 @@ class TestConnectionManager(object):
         }
         assert expected == result
 
-    def test_create_session_environment_variables__has_session_token__returns_envs_dict_with_token(self):
+    def test_create_session_environment_variables__has_session_token__returns_envs_dict_with_token(
+        self,
+    ):
         self.mock_session.configure_mock(
             **{
                 "region_name": "us-west-2",
@@ -338,7 +378,9 @@ class TestConnectionManager(object):
             }
         )
 
-        result = self.connection_manager.create_session_environment_variables(include_system_envs=True)
+        result = self.connection_manager.create_session_environment_variables(
+            include_system_envs=True
+        )
         expected = {
             "AWS_ACCESS_KEY_ID": "new_access_key",
             "AWS_SECRET_ACCESS_KEY": "new_secret_key",
@@ -376,7 +418,9 @@ class TestRetry:
 
     def test_retry_boto_call_raises_non_throttling_error(self):
         mock_func = Mock()
-        mock_func.side_effect = ClientError({"Error": {"Code": 500, "Message": "Boom!"}}, sentinel.operation)
+        mock_func.side_effect = ClientError(
+            {"Error": {"Code": 500, "Message": "Boom!"}}, sentinel.operation
+        )
         # The attribute function.__name__ is required by the decorator @wraps.
         mock_func.__name__ = "mock_func"
 

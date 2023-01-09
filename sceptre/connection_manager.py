@@ -64,7 +64,9 @@ def _retry_boto_call(func):
                     attempts += 1
                 else:
                     raise
-        raise RetryLimitExceededError("Exceeded request limit {0} times. Aborting.".format(max_retries))
+        raise RetryLimitExceededError(
+            "Exceeded request limit {0} times. Aborting.".format(max_retries)
+        )
 
     return decorated
 
@@ -215,7 +217,9 @@ class ConnectionManager(object):
 
         return envs
 
-    def _get_session(self, profile: Optional[str], region: Optional[str], iam_role: Optional[str]) -> boto3.Session:
+    def _get_session(
+        self, profile: Optional[str], region: Optional[str], iam_role: Optional[str]
+    ) -> boto3.Session:
         with self._session_lock:
             self.logger.debug("Getting Boto3 session")
             key = (region, profile, iam_role)
@@ -252,7 +256,9 @@ class ConnectionManager(object):
                         "RoleSessionName": session_name,
                     }
                     if self.iam_role_session_duration:
-                        assume_role_kwargs["DurationSeconds"] = self.iam_role_session_duration
+                        assume_role_kwargs[
+                            "DurationSeconds"
+                        ] = self.iam_role_session_duration
                     sts_response = sts_client.assume_role(**assume_role_kwargs)
 
                     credentials = sts_response["Credentials"]
@@ -265,7 +271,9 @@ class ConnectionManager(object):
 
                     if session.get_credentials() is None:
                         raise InvalidAWSCredentialsError(
-                            "Session credentials were not found. Role: {0}. Region: {1}.".format(iam_role, region)
+                            "Session credentials were not found. Role: {0}. Region: {1}.".format(
+                                iam_role, region
+                            )
                         )
 
                     self._boto_sessions[key] = session
@@ -275,7 +283,9 @@ class ConnectionManager(object):
                     session.get_credentials().method,
                     {
                         "AccessKeyId": mask_key(session.get_credentials().access_key),
-                        "SecretAccessKey": mask_key(session.get_credentials().secret_key),
+                        "SecretAccessKey": mask_key(
+                            session.get_credentials().secret_key
+                        ),
                         "Region": session.region_name,
                     },
                 )
@@ -300,7 +310,9 @@ class ConnectionManager(object):
             key = (service, region, profile, stack_name, iam_role)
             if self._clients.get(key) is None:
                 self.logger.debug("No %s client found, creating one...", service)
-                self._clients[key] = self._get_session(profile, region, iam_role).client(service)
+                self._clients[key] = self._get_session(
+                    profile, region, iam_role
+                ).client(service)
 
             return self._clients[key]
 
