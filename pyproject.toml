@@ -28,6 +28,3 @@ show_missing = true
 # https://github.com/pytest-dev/pytest-cov/issues/131
 # https://stackoverflow.com/questions/34870962/how-to-debug-py-test-in-pycharm-when-coverage-is-enabled
 addopts = "-s --cov --cov-report term --cov-report term-missing --cov-report xml"
-
-[tool.black]
-line-length = 120
