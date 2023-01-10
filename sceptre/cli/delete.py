@@ -30,6 +30,7 @@ def delete_command(ctx, path, change_set_name, yes):
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),

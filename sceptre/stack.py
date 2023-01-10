@@ -80,6 +80,8 @@ class Stack(object):
     :param on_failure: This parameter describes the action taken by\
             CloudFormation when a Stack fails to create.
 
+    :param disable_rollback: If True, cloudformation will not rollback on deployment failures
+
     :param iam_role: The ARN of a role for Sceptre to assume before interacting\
             with the environment. If not supplied, Sceptre uses the user's AWS CLI\
             credentials.
@@ -154,6 +156,7 @@ class Stack(object):
         external_name: str = None,
         notifications: List[str] = None,
         on_failure: str = None,
+        disable_rollback=False,
         profile: str = None,
         stack_timeout: int = 0,
         iam_role_session_duration: int = 0,
@@ -184,6 +187,9 @@ class Stack(object):
         self.dependencies = dependencies or []
         self.protected = protected
         self.on_failure = on_failure
+        self.disable_rollback = self._ensure_boolean(
+            "disable_rollback", disable_rollback
+        )
         self.stack_group_config = stack_group_config or {}
         self.stack_timeout = stack_timeout
         self.profile = profile
@@ -242,6 +248,7 @@ class Stack(object):
             f"external_name={self.external_name}, "
             f"notifications={self.notifications}, "
             f"on_failure={self.on_failure}, "
+            f"disable_rollback={self.disable_rollback}, "
             f"stack_timeout={self.stack_timeout}, "
             f"stack_group_config={self.stack_group_config}, "
             f"ignore={self.ignore}, "
@@ -269,6 +276,7 @@ class Stack(object):
             and self.dependencies == stack.dependencies
             and self.protected == stack.protected
             and self.on_failure == stack.on_failure
+            and self.disable_rollback == stack.disable_rollback
             and self.stack_timeout == stack.stack_timeout
             and self.ignore == stack.ignore
             and self.obsolete == stack.obsolete

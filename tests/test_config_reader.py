@@ -26,7 +26,14 @@ class TestConfigReader(object):
         self.runner = CliRunner()
         self.test_project_path = os.path.join(os.getcwd(), "tests", "fixtures")
         self.context = SceptreContext(
-            project_path=self.test_project_path, command_path="A"
+            project_path=self.test_project_path,
+            command_path="A",
+            command_params={
+                "yes": True,
+                "path": "A.yaml",
+                "prune": False,
+                "disable_rollback": None,
+            },
         )
 
     def test_config_reader_correctly_initialised(self):
@@ -293,6 +300,7 @@ class TestConfigReader(object):
             external_name=None,
             notifications=None,
             on_failure=None,
+            disable_rollback=False,
             stack_timeout=0,
             required_version=">1.0",
             template_bucket_name="stack_group_template_bucket_name",
@@ -386,6 +394,42 @@ class TestConfigReader(object):
         all_stacks, command_stacks = config_reader.construct_stacks()
         assert {str(stack) for stack in all_stacks} == expected_stacks
         assert {str(stack) for stack in command_stacks} == expected_command_stacks
+
+    def test_construct_stacks_with_disable_rollback_command_param(self):
+        project_path, config_dir = self.create_project()
+
+        rel_path = "A/1.yaml"
+        config = {
+            "region": "region",
+            "project_code": "project_code",
+            "template_path": rel_path,
+        }
+
+        abs_path = os.path.join(config_dir, rel_path)
+        self.write_config(abs_path, config)
+        self.context.project_path = project_path
+        self.context.command_params["disable_rollback"] = True
+        config_reader = ConfigReader(self.context)
+        all_stacks, command_stacks = config_reader.construct_stacks()
+        assert list(all_stacks)[0].disable_rollback
+
+    def test_construct_stacks_with_disable_rollback_in_stack_config(self):
+        project_path, config_dir = self.create_project()
+
+        rel_path = "A/1.yaml"
+        config = {
+            "region": "region",
+            "project_code": "project_code",
+            "template_path": rel_path,
+            "disable_rollback": True,
+        }
+
+        abs_path = os.path.join(config_dir, rel_path)
+        self.write_config(abs_path, config)
+        self.context.project_path = project_path
+        config_reader = ConfigReader(self.context)
+        all_stacks, command_stacks = config_reader.construct_stacks()
+        assert list(all_stacks)[0].disable_rollback
 
     @pytest.mark.parametrize(
         "filepaths, del_key",

@@ -1,5 +1,6 @@
 import click
 
+from typing import Optional
 from sceptre.context import SceptreContext
 from sceptre.cli.helpers import catch_exceptions, confirmation
 from sceptre.plan.plan import SceptrePlan
@@ -10,9 +11,14 @@ from sceptre.cli.helpers import stack_status_exit_code
 @click.argument("path")
 @click.argument("change-set-name", required=False)
 @click.option("-y", "--yes", is_flag=True, help="Assume yes to all questions.")
+@click.option(
+    "--disable-rollback/--enable-rollback",
+    default=None,
+    help="Disable or enable the cloudformation automatic rollback",
+)
 @click.pass_context
 @catch_exceptions
-def create_command(ctx, path, change_set_name, yes):
+def create_command(ctx, path, change_set_name, yes, disable_rollback: Optional[bool]):
     """
     Creates a stack for a given config PATH. Or if CHANGE_SET_NAME is specified
     creates a change set for stack in PATH.
@@ -24,9 +30,11 @@ def create_command(ctx, path, change_set_name, yes):
     :type change_set_name: str
     :param yes: A flag to assume yes to all questions.
     :type yes: bool
+    :param disable_rollback: A flag to disable cloudformation rollback.
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
