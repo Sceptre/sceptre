@@ -31,6 +31,10 @@ class TestConnectionManager(object):
         self.session_class = create_autospec(Session)
         self.mock_session: Union[Mock, Session] = self.session_class.return_value
 
+        ConnectionManager._boto_sessions = {}
+        ConnectionManager._clients = {}
+        ConnectionManager._stack_keys = {}
+
         self.connection_manager = ConnectionManager(
             region=self.region,
             stack_name=self.stack_name,
@@ -39,10 +43,6 @@ class TestConnectionManager(object):
             session_class=self.session_class,
             get_envs_func=lambda: self.environment_variables,
         )
-
-        self.connection_manager._boto_sessions = {}
-        self.connection_manager._clients = {}
-        self.connection_manager._stack_keys = {}
 
     def test_connection_manager_initialised_with_no_optional_parameters(self):
         connection_manager = ConnectionManager(region=sentinel.region)
