@@ -411,7 +411,7 @@ class TestConfigReader(object):
         self.context.command_params["disable_rollback"] = True
         config_reader = ConfigReader(self.context)
         all_stacks, command_stacks = config_reader.construct_stacks()
-        assert "disable_rollback=True" in str(all_stacks)
+        assert list(all_stacks)[0].disable_rollback
 
     def test_construct_stacks_with_disable_rollback_in_stack_config(self):
         project_path, config_dir = self.create_project()
@@ -429,7 +429,7 @@ class TestConfigReader(object):
         self.context.project_path = project_path
         config_reader = ConfigReader(self.context)
         all_stacks, command_stacks = config_reader.construct_stacks()
-        assert "disable_rollback=True" in str(all_stacks)
+        assert list(all_stacks)[0].disable_rollback
 
     @pytest.mark.parametrize(
         "filepaths, del_key",
