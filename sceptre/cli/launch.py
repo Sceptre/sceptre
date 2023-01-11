@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 import click
 from click import Context
@@ -24,9 +24,16 @@ logger = logging.getLogger(__name__)
     is_flag=True,
     help="If set, will delete all stacks in the command path marked as obsolete.",
 )
+@click.option(
+    "--disable-rollback/--enable-rollback",
+    default=False,
+    help="Disable or enable the cloudformation automatic rollback",
+)
 @click.pass_context
 @catch_exceptions
-def launch_command(ctx: Context, path: str, yes: bool, prune: bool):
+def launch_command(
+    ctx: Context, path: str, yes: bool, prune: bool, disable_rollback: Optional[bool]
+):
     """
     Launch a Stack or StackGroup for a given config PATH. This command is intended as a catch-all
     command that will apply any changes from Stack Configs indicated via the path.
@@ -36,11 +43,12 @@ def launch_command(ctx: Context, path: str, yes: bool, prune: bool):
     * Any stacks that already exist will be updated (if there are any changes)
     * If any stacks are marked with "ignore: True", those stacks will neither be created nor updated
     * If any stacks are marked with "obsolete: True", those stacks will neither be created nor updated.
-      Furthermore, if the "-p"/"--prune" flag is used, these stacks will be deleted prior to any
+    * Furthermore, if the "-p"/"--prune" flag is used, these stacks will be deleted prior to any
       other launch commands
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),

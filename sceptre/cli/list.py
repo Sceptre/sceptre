@@ -30,6 +30,7 @@ def list_resources(ctx, path):
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
@@ -67,6 +68,7 @@ def list_outputs(ctx, path, export):
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path", None),
         user_variables=ctx.obj.get("user_variables", {}),
         options=ctx.obj.get("options", {}),
@@ -108,6 +110,7 @@ def list_change_sets(ctx, path, url):
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         output_format=ctx.obj.get("output_format"),
@@ -138,6 +141,7 @@ def list_stacks(ctx, path):
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         output_format=ctx.obj.get("output_format"),

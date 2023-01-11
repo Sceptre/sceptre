@@ -13,6 +13,7 @@ class TestSceptreContext(object):
         self.context = SceptreContext(
             project_path="project_path/to/sceptre",
             command_path="command-path",
+            command_params=sentinel.command_params,
             user_variables=sentinel.user_variables,
             options=sentinel.options,
             output_format=sentinel.output_format,
@@ -27,6 +28,7 @@ class TestSceptreContext(object):
         context = SceptreContext(
             project_path="project_path",
             command_path="command-path",
+            command_params=sentinel.command_params,
             user_variables=sentinel.user_variables,
             options=sentinel.options,
             output_format=sentinel.output_format,
@@ -41,6 +43,7 @@ class TestSceptreContext(object):
         context = SceptreContext(
             project_path="project_path",
             command_path="command",
+            command_params=sentinel.command_params,
             user_variables=sentinel.user_variables,
             options=sentinel.options,
             output_format=sentinel.output_format,
@@ -55,6 +58,7 @@ class TestSceptreContext(object):
         context = SceptreContext(
             project_path="project_path",
             command_path="command",
+            command_params=sentinel.command_params,
             user_variables=sentinel.user_variables,
             options=sentinel.options,
             output_format=sentinel.output_format,
@@ -68,6 +72,7 @@ class TestSceptreContext(object):
         context = SceptreContext(
             project_path="project_path",
             command_path="command",
+            command_params={"params": "variables"},
             user_variables={"user": "variables"},
             options={"hello": "there"},
             output_format=sentinel.output_format,
