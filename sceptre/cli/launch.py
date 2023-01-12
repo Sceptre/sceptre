@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 )
 @click.option(
     "--disable-rollback/--enable-rollback",
-    default=False,
+    default=None,
     help="Disable or enable the cloudformation automatic rollback",
 )
 @click.pass_context
