@@ -139,16 +139,6 @@ to perform any AWS actions you need:
        ).stdout
 
 
-How do I build a Serverless application using Sceptre and SAM?
---------------------------------------------------------------
-
-There is now a SAM Template Handler that lets you incorporate SAM applications into environments that
-are managed and deployed using Sceptre. For more information on how to install and use SAM in your
-Sceptre project, see the `sceptre-sam-handler`_ page on PyPI.
-
-
-.. _sceptre-sam-handler: https://pypi.org/project/sceptre-sam-handler/
-
 My CI/CD process uses ``sceptre launch``. How do I delete stacks that aren't needed anymore?
 ---------------------------------------------------------------------------------------------
 
