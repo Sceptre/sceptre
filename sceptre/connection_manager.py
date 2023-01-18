@@ -167,7 +167,7 @@ class ConnectionManager(object):
         profile: Optional[str] = STACK_DEFAULT,
         region: Optional[str] = STACK_DEFAULT,
         iam_role: Optional[str] = STACK_DEFAULT,
-        include_system_envs: bool = False,
+        include_system_envs: bool = True,
     ) -> Dict[str, str]:
         """Creates the standard AWS environment variables that would need to be passed to a
         subprocess in a hook, resolver, or template handler and allow that subprocess to work with
@@ -183,8 +183,8 @@ class ConnectionManager(object):
             configured iam_role (if there is one).
         :param include_system_envs: If True, will return a dict with all the system environment
             variables included. This is useful for creating a complete dict of environment variables
-            to pass to a subprocess. By default, this method will ONLY return the relevant AWS
-            environment variables.
+            to pass to a subprocess. If set to False, this method will ONLY return the relevant AWS
+            environment variables. Defaults to True.
 
         :returns: A dict of environment variables with the appropriate credentials available for use.
         """

@@ -360,7 +360,7 @@ class TestConnectionManager(object):
         }
         assert expected == result
 
-    def test_create_session_environment_variables__include_system_envs__adds_system_envs_removing_profile_and_token(
+    def test_create_session_environment_variables__include_system_envs_true__adds_envs_removing_profile_and_token(
         self,
     ):
         self.environment_variables.update(
@@ -387,6 +387,35 @@ class TestConnectionManager(object):
             "AWS_DEFAULT_REGION": "us-west-2",
             "AWS_REGION": "us-west-2",
             "OTHER": "value-blah-blah",
+        }
+        assert expected == result
+
+    def test_create_session_environment_variables__include_system_envs_false__does_not_add_system_envs(
+        self,
+    ):
+        self.environment_variables.update(
+            AWS_PROFILE="my_profile",  # We expect this popped out
+            AWS_SESSION_TOKEN="my token",  # This should be removed if there's no token
+            OTHER="value-blah-blah",  # we expect this to be in dictionary coming out,
+        )
+
+        self.mock_session.configure_mock(
+            **{
+                "region_name": "us-west-2",
+                "get_credentials.return_value.access_key": "new_access_key",
+                "get_credentials.return_value.secret_key": "new_secret_key",
+                "get_credentials.return_value.token": None,
+            }
+        )
+
+        result = self.connection_manager.create_session_environment_variables(
+            include_system_envs=False
+        )
+        expected = {
+            "AWS_ACCESS_KEY_ID": "new_access_key",
+            "AWS_SECRET_ACCESS_KEY": "new_secret_key",
+            "AWS_DEFAULT_REGION": "us-west-2",
+            "AWS_REGION": "us-west-2",
         }
         assert expected == result
 
