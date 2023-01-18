@@ -173,6 +173,14 @@ class ConnectionManager(object):
         subprocess in a hook, resolver, or template handler and allow that subprocess to work with
         the currently configured session.
 
+        | Notes on including system envs:
+        |   * The AWS_DEFAULT_REGION, AWS_REGION, AWS_ACCESS_KEY_ID, and AWS_SECRET_ACCESS_KEY
+        |     environment variables (if they are set in the Sceptre process) will be overwritten in
+        |     the returned dict with the correct values from the newly created Session.
+        |   * If the AWS_SESSION_TOKEN environment variable is currently set for the process, this
+        |     will be overwritten with the new session's token (if there is one) or removed from the
+        |     returned environment variables dict (if the new session doesn't have a token).
+
         :param profile: The name of the AWS Profile as configured in the local environment. Passing
             None will result in no profile being specified. Defaults to the ConnectionManager's
             configured profile (if there is one).
