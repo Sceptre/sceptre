@@ -173,6 +173,12 @@ class ConnectionManager(object):
         subprocess in a hook, resolver, or template handler and allow that subprocess to work with
         the currently configured session.
 
+        The environment variables returned by this method should be everything needed for
+        subprocesses to properly interact with AWS using the ConnectionManager's configurations for
+        profile, iam_role, and region. By default, they include the other process environment
+        variables, such as PATH and any others. If you do not want the other environment variables,
+        you can toggle these off via include_system_envs=False.
+
         | Notes on including system envs:
         |   * The AWS_DEFAULT_REGION, AWS_REGION, AWS_ACCESS_KEY_ID, and AWS_SECRET_ACCESS_KEY
         |     environment variables (if they are set in the Sceptre process) will be overwritten in
