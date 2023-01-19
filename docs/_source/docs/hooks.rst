@@ -231,3 +231,9 @@ Assume a Sceptre `copy` hook that calls the `cp command`_:
 .. _documentation: http://docs.aws.amazon.com/autoscaling/latest/userguide/as-suspend-resume-processes.html
 .. _this is great place to start: https://docs.python.org/3/distributing/
 .. _cp command: http://man7.org/linux/man-pages/man1/cp.1.html
+
+Calling AWS services in your custom hook
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For details on calling AWS services or invoking AWS-related third party tools in your hooks, see
+:ref:`using_connection_manager`

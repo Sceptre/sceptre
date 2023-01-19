@@ -83,6 +83,61 @@ used.
 
 .. _AWS documentation: http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html
 
+.. _using_connection_manager:
+
+How do I call AWS services or use AWS-based tools in my custom hook/resolver/template handler?
+----------------------------------------------------------------------------------------------
+In order to call AWS services in your custom hook/resolver/template handler properly, you should use
+the IAM configurations of the stack where the resolver is being used (unless you need to use a
+different configuration for a specific reason). This means your hook/resolver/handler should honor the
+``profile``, ``region``, and ``iam_role`` configurations as set for your project and/or Stack Config.
+Simply invoking ``boto3.client('s3')`` is _not_ going to regard those and could end up using the
+wrong credentials or not even working.
+
+There is a simple interface available for doing this properly, the
+:py:class:`sceptre.connection_manager.ConnectionManager`. The ConnectionManager is an interface that
+will be pre-configured with each stack's profile, region, and iam_role and will be ready for you to use.
+If you are using an `iam_role`, it will automatically assume that role via STS for making calls to
+AWS so you can just use it the way you want. It is accessible on hooks and resolvers via
+``self.stack.connection_manager`` and on template_handlers via ``self.connection_manager``.
+
+There are three public methods on the ConnectionManager:
+
+- :py:meth:`sceptre.connection_manager.ConnectionManager.call` can be used to directly call a boto3
+  API method on any api service and return the result from boto3. This is perfect when you just need
+  to invoke a boto3 client method without any additional capabilities.
+- :py:meth:`sceptre.connection_manager.ConnectionManager.get_session` can be used to get a boto3 Session
+  object. This is very useful if you need to work with Boto3 Resource objects (like an s3 Bucket) or
+  if you need to create and pass the bot3 session, client, or resource to a third-party framework.
+- :py:meth:`sceptre.connection_manager.ConnectionManager.create_session_environment_variables` creates
+  a dictionary of environment variables used by AWS sdks with all the relevant connection information.
+  This is extremely useful if you are needing to invoke other SDKs using ``subprocess`` and still need
+  the Stack's connection information honored.
+
+
+Using the connection manager, you can use `boto3 <https://boto3.amazonaws.com/v1/documentation/api/latest/index.html>`_
+to perform any AWS actions you need:
+
+.. code-block:: python
+
+   # For example, in your custom resolver:
+   def resolve(self):
+       # You can invoke a lower-level service method like...
+       obj = self.stack.connection_manager.call('s3', 'get_object', {'Bucket': 'my-bucket', 'Key': 'my-key'})
+       # Or you can create higher-level resource objects like...
+       bucket = self.stack.connection_manager.get_session().resource('s3').Bucket('my-bucket')
+       # Or if you need to invoke a third-party tool via a subprocess, you can create the necessary environment
+       # variables like this:
+       environment_variables = self.stack.connection_manager.create_session_environment_variables(
+           include_system_envs=True
+       )
+       list_output = subprocess.run(
+           'aws s3 list-bucket',
+           shell=True,
+           env=environment_variables,
+           capture_output=True
+       ).stdout
+
 
 My CI/CD process uses ``sceptre launch``. How do I delete stacks that aren't needed anymore?
 ---------------------------------------------------------------------------------------------
