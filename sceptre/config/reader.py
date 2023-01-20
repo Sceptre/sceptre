@@ -446,11 +446,17 @@ class ConfigReader(object):
                 ) from err
 
             self.templating_vars.update(stack_group_config)
-            rendered_template = template.render(
-                self.templating_vars,
-                command_path=self.context.command_path.split(path.sep),
-                environment_variable=environ,
-            )
+
+            try:
+                rendered_template = template.render(
+                    self.templating_vars,
+                    command_path=self.context.command_path.split(path.sep),
+                    environment_variable=environ,
+                )
+            except Exception as err:
+                raise SceptreException(
+                    f"{Path(directory_path, basename).as_posix()} - {err}"
+                ) from err
 
             try:
                 config = yaml.safe_load(rendered_template)
