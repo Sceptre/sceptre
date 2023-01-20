@@ -13,6 +13,7 @@ import datetime
 import fnmatch
 import logging
 import sys
+import traceback
 import yaml
 
 from os import environ, path, walk
@@ -432,6 +433,7 @@ class ConfigReader(object):
             j2_environment = Environment(**j2_environment_config)
             template = j2_environment.get_template(basename)
             self.templating_vars.update(stack_group_config)
+
             try:
                 rendered_template = template.render(
                     self.templating_vars,
@@ -439,8 +441,13 @@ class ConfigReader(object):
                     environment_variable=environ
                 )
             except Exception as err:
+                exc_type, exc_value, tb = sys.exc_info()
+                exc_message = ''
+                for line in traceback.format_exception_only(exc_type, exc_value):
+                    exc_message += line.rstrip('\n')
                 raise SceptreException(
-                    f'{Path(directory_path, basename).as_posix()} - {type(err).__name__}({err})')
+                    f'{Path(directory_path, basename).as_posix()} - {exc_message}')
+
             try:
                 config = yaml.safe_load(rendered_template)
             except Exception as err:
