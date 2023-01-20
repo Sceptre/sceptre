@@ -72,7 +72,7 @@ class SceptrePlan(object):
             error_text += (
                 f" Valid stack paths under '{sceptreise_path(str(command_path_parent))}' "
                 + f"are: {filtered_valid_stack_paths}"
-                )
+            )
         raise ConfigFileNotFoundError(error_text)
 
     def _generate_launch_order(self, reverse=False) -> List[Set[Stack]]:
