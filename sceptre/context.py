@@ -46,9 +46,18 @@ class SceptreContext(object):
     :type full_scan: bool
     """
 
-    def __init__(self, project_path, command_path,
-                 user_variables=None, options=None, output_format=None,
-                 no_colour=False, ignore_dependencies=False, full_scan=False):
+    def __init__(
+        self,
+        project_path,
+        command_path,
+        command_params=None,
+        user_variables=None,
+        options=None,
+        output_format=None,
+        no_colour=False,
+        ignore_dependencies=False,
+        full_scan=False,
+    ):
         # project_path: absolute path to the base sceptre project folder
         # e.g. absolute_path/to/sceptre_directory
         self.project_path = normalise_path(project_path)
@@ -63,6 +72,9 @@ class SceptreContext(object):
 
         self.normal_command_path = normalise_path(command_path)
 
+        # the sceptre command parameters (e.g. sceptre launch <command params>)
+        self.command_params = command_params or {}
+
         # config_file: stack group config. User definable later in v2
         # e.g. {project_path/config/command_path}/config_file
         self.config_file = "config.yaml"
@@ -72,12 +84,13 @@ class SceptreContext(object):
         self.templates_path = "templates"
 
         self.user_variables = user_variables if user_variables else {}
-        self.user_variables = user_variables\
-            if user_variables is not None else {}
+        self.user_variables = user_variables if user_variables is not None else {}
         self.options = options if options else {}
         self.output_format = output_format if output_format else ""
         self.no_colour = no_colour if no_colour is True else False
-        self.ignore_dependencies = ignore_dependencies if ignore_dependencies is True else False
+        self.ignore_dependencies = (
+            ignore_dependencies if ignore_dependencies is True else False
+        )
         self.full_scan = full_scan if full_scan is True else False
 
     def full_config_path(self):
@@ -97,8 +110,7 @@ class SceptreContext(object):
         :returns: The absolute path to the path that will be executed
         :rtype: str
         """
-        return path.join(self.project_path, self.config_path,
-                         self.command_path)
+        return path.join(self.project_path, self.config_path, self.command_path)
 
     def full_templates_path(self):
         """
@@ -117,11 +129,7 @@ class SceptreContext(object):
         :rtype: bool
         """
         return path.isfile(
-            path.join(
-                self.project_path,
-                self.config_path,
-                self.command_path
-            )
+            path.join(self.project_path, self.config_path, self.command_path)
         )
 
     def clone(self) -> "SceptreContext":

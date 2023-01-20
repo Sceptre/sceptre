@@ -16,7 +16,7 @@ from sceptre.exceptions import (
     VersionIncompatibleError,
     ConfigFileNotFoundError,
     InvalidSceptreDirectoryError,
-    InvalidConfigFileError
+    InvalidConfigFileError,
 )
 
 
@@ -24,12 +24,16 @@ class TestConfigReader(object):
     @patch("sceptre.config.reader.ConfigReader._check_valid_project_path")
     def setup_method(self, test_method, mock_check_valid_project_path):
         self.runner = CliRunner()
-        self.test_project_path = os.path.join(
-            os.getcwd(), "tests", "fixtures"
-        )
+        self.test_project_path = os.path.join(os.getcwd(), "tests", "fixtures")
         self.context = SceptreContext(
             project_path=self.test_project_path,
-            command_path="A"
+            command_path="A",
+            command_params={
+                "yes": True,
+                "path": "A.yaml",
+                "prune": False,
+                "disable_rollback": None,
+            },
         )
 
     def test_config_reader_correctly_initialised(self):
@@ -45,7 +49,7 @@ class TestConfigReader(object):
         Creates a new random temporary directory with a config subdirectory
         """
         with self.runner.isolated_filesystem():
-            project_path = os.path.abspath('./example')
+            project_path = os.path.abspath("./example")
         config_dir = os.path.join(project_path, "config")
         os.makedirs(config_dir)
         return (project_path, config_dir)
@@ -63,22 +67,17 @@ class TestConfigReader(object):
                 if exc.errno != errno.EEXIST:
                     raise
 
-        with open(abs_path, 'w') as config_file:
-            yaml.safe_dump(
-                config, stream=config_file, default_flow_style=False
-            )
+        with open(abs_path, "w") as config_file:
+            yaml.safe_dump(config, stream=config_file, default_flow_style=False)
 
-    @pytest.mark.parametrize("filepaths,target", [
-        (
-            ["A/1.yaml"], "A/1.yaml"
-        ),
-        (
-            ["A/1.yaml", "A/B/1.yaml"], "A/B/1.yaml"
-        ),
-        (
-            ["A/1.yaml", "A/B/1.yaml", "A/B/C/1.yaml"], "A/B/C/1.yaml"
-        )
-    ])
+    @pytest.mark.parametrize(
+        "filepaths,target",
+        [
+            (["A/1.yaml"], "A/1.yaml"),
+            (["A/1.yaml", "A/B/1.yaml"], "A/B/1.yaml"),
+            (["A/1.yaml", "A/B/1.yaml", "A/B/C/1.yaml"], "A/B/C/1.yaml"),
+        ],
+    )
     def test_read_reads_config_file(self, filepaths, target):
         project_path, config_dir = self.create_project()
 
@@ -93,12 +92,12 @@ class TestConfigReader(object):
         assert config == {
             "project_path": project_path,
             "stack_group_path": os.path.split(target)[0],
-            "filepath": target
+            "filepath": target,
         }
 
     def test_read_nested_configs(self):
         with self.runner.isolated_filesystem():
-            project_path = os.path.abspath('./example')
+            project_path = os.path.abspath("./example")
             config_dir = os.path.join(project_path, "config")
             stack_group_dir_a = os.path.join(config_dir, "A")
             stack_group_dir_b = os.path.join(stack_group_dir_a, "B")
@@ -108,25 +107,22 @@ class TestConfigReader(object):
             config_filename = "config.yaml"
 
             config_a = {"keyA": "A", "shared": "A"}
-            with open(os.path.join(stack_group_dir_a, config_filename), 'w') as\
-                    config_file:
-                yaml.safe_dump(
-                    config_a, stream=config_file, default_flow_style=False
-                )
+            with open(
+                os.path.join(stack_group_dir_a, config_filename), "w"
+            ) as config_file:
+                yaml.safe_dump(config_a, stream=config_file, default_flow_style=False)
 
             config_b = {"keyB": "B", "parent": "{{ keyA }}", "shared": "B"}
-            with open(os.path.join(stack_group_dir_b, config_filename), 'w') as\
-                    config_file:
-                yaml.safe_dump(
-                    config_b, stream=config_file, default_flow_style=False
-                )
+            with open(
+                os.path.join(stack_group_dir_b, config_filename), "w"
+            ) as config_file:
+                yaml.safe_dump(config_b, stream=config_file, default_flow_style=False)
 
             config_c = {"keyC": "C", "parent": "{{ keyB }}", "shared": "C"}
-            with open(os.path.join(stack_group_dir_c, config_filename), 'w') as\
-                    config_file:
-                yaml.safe_dump(
-                    config_c, stream=config_file, default_flow_style=False
-                )
+            with open(
+                os.path.join(stack_group_dir_c, config_filename), "w"
+            ) as config_file:
+                yaml.safe_dump(config_c, stream=config_file, default_flow_style=False)
 
             self.context.project_path = project_path
             reader = ConfigReader(self.context)
@@ -137,7 +133,7 @@ class TestConfigReader(object):
                 "project_path": project_path,
                 "stack_group_path": "A",
                 "keyA": "A",
-                "shared": "A"
+                "shared": "A",
             }
 
             config_b = reader.read("A/B/config.yaml")
@@ -148,12 +144,10 @@ class TestConfigReader(object):
                 "keyA": "A",
                 "keyB": "B",
                 "shared": "B",
-                "parent": "A"
+                "parent": "A",
             }
 
-            config_c = reader.read(
-                "A/B/C/config.yaml"
-            )
+            config_c = reader.read("A/B/C/config.yaml")
 
             assert config_c == {
                 "project_path": project_path,
@@ -162,37 +156,30 @@ class TestConfigReader(object):
                 "keyB": "B",
                 "keyC": "C",
                 "shared": "C",
-                "parent": "B"
+                "parent": "B",
             }
 
     def test_read_reads_config_file_with_base_config(self):
         with self.runner.isolated_filesystem():
-            project_path = os.path.abspath('./example')
+            project_path = os.path.abspath("./example")
             config_dir = os.path.join(project_path, "config")
             stack_group_dir = os.path.join(config_dir, "A")
 
             os.makedirs(stack_group_dir)
 
             config = {"config": "config"}
-            with open(os.path.join(stack_group_dir, "stack.yaml"), 'w') as\
-                    config_file:
-                yaml.safe_dump(
-                    config, stream=config_file, default_flow_style=False
-                )
+            with open(os.path.join(stack_group_dir, "stack.yaml"), "w") as config_file:
+                yaml.safe_dump(config, stream=config_file, default_flow_style=False)
 
-            base_config = {
-                "base_config": "base_config"
-            }
+            base_config = {"base_config": "base_config"}
             self.context.project_path = project_path
-            config = ConfigReader(self.context).read(
-                "A/stack.yaml", base_config
-            )
+            config = ConfigReader(self.context).read("A/stack.yaml", base_config)
 
             assert config == {
                 "project_path": project_path,
                 "stack_group_path": "A",
                 "config": "config",
-                "base_config": "base_config"
+                "base_config": "base_config",
             }
 
     def test_read_with_nonexistant_filepath(self):
@@ -203,12 +190,10 @@ class TestConfigReader(object):
 
     def test_read_with_empty_config_file(self):
         config_reader = ConfigReader(self.context)
-        config = config_reader.read(
-            "account/stack-group/region/subnets.yaml"
-        )
+        config = config_reader.read("account/stack-group/region/subnets.yaml")
         assert config == {
             "project_path": self.test_project_path,
-            "stack_group_path": "account/stack-group/region"
+            "stack_group_path": "account/stack-group/region",
         }
 
     def test_read_with_templated_config_file(self):
@@ -219,15 +204,13 @@ class TestConfigReader(object):
             "region": "region_region",
             "project_code": "account_project_code",
             "required_version": "'>1.0'",
-            "template_bucket_name": "stack_group_template_bucket_name"
+            "template_bucket_name": "stack_group_template_bucket_name",
         }
         os.environ["TEST_ENV_VAR"] = "environment_variable_value"
-        config = config_reader.read(
-            "account/stack-group/region/security_groups.yaml"
-        )
+        config = config_reader.read("account/stack-group/region/security_groups.yaml")
 
         assert config == {
-            'project_path': self.context.project_path,
+            "project_path": self.context.project_path,
             "stack_group_path": "account/stack-group/region",
             "parameters": {
                 "param1": "user_variable_value",
@@ -235,56 +218,51 @@ class TestConfigReader(object):
                 "param3": "region_region",
                 "param4": "account_project_code",
                 "param5": ">1.0",
-                "param6": "stack_group_template_bucket_name"
-            }
+                "param6": "stack_group_template_bucket_name",
+            },
         }
 
     def test_aborts_on_incompatible_version_requirement(self):
-        config = {
-            'required_version': '<0'
-        }
+        config = {"required_version": "<0"}
         with pytest.raises(VersionIncompatibleError):
             ConfigReader(self.context)._check_version(config)
 
     @freeze_time("2012-01-01")
-    @pytest.mark.parametrize("stack_name,config,expected", [
-        (
-            "name",
-            {
-                "template_bucket_name": "bucket-name",
-                "template_key_prefix": "prefix",
-                "region": "eu-west-1"
-            },
-            {
-                "bucket_name": "bucket-name",
-                "bucket_key": "prefix/name/2012-01-01-00-00-00-000000Z.json"
-            }
-        ),
-        (
-            "name",
-            {
-                "template_bucket_name": "bucket-name",
-                "region": "eu-west-1"
-            },
-            {
-                "bucket_name": "bucket-name",
-                "bucket_key": "name/2012-01-01-00-00-00-000000Z.json"
-            }
-        ),
-        (
-            "name",
-            {
-                "template_bucket_name": "bucket-name",
-            },
-            {
-                "bucket_name": "bucket-name",
-                "bucket_key": "name/2012-01-01-00-00-00-000000Z.json"
-            }
-        ),
-        (
-            "name", {}, None
-        )
-    ]
+    @pytest.mark.parametrize(
+        "stack_name,config,expected",
+        [
+            (
+                "name",
+                {
+                    "template_bucket_name": "bucket-name",
+                    "template_key_prefix": "prefix",
+                    "region": "eu-west-1",
+                },
+                {
+                    "bucket_name": "bucket-name",
+                    "bucket_key": "prefix/name/2012-01-01-00-00-00-000000Z.json",
+                },
+            ),
+            (
+                "name",
+                {"template_bucket_name": "bucket-name", "region": "eu-west-1"},
+                {
+                    "bucket_name": "bucket-name",
+                    "bucket_key": "name/2012-01-01-00-00-00-000000Z.json",
+                },
+            ),
+            (
+                "name",
+                {
+                    "template_bucket_name": "bucket-name",
+                },
+                {
+                    "bucket_name": "bucket-name",
+                    "bucket_key": "name/2012-01-01-00-00-00-000000Z.json",
+                },
+            ),
+            ("name", {}, None),
+        ],
     )
     def test_collect_s3_details(self, stack_name, config, expected):
         details = ConfigReader._collect_s3_details(stack_name, config)
@@ -322,94 +300,79 @@ class TestConfigReader(object):
             external_name=None,
             notifications=None,
             on_failure=None,
+            disable_rollback=False,
             stack_timeout=0,
-            required_version='>1.0',
-            template_bucket_name='stack_group_template_bucket_name',
+            required_version=">1.0",
+            template_bucket_name="stack_group_template_bucket_name",
             template_key_prefix=None,
             ignore=False,
             obsolete=False,
             stack_group_config={
                 "project_path": self.context.project_path,
-                "custom_key": "custom_value"
-            }
+                "custom_key": "custom_value",
+            },
         )
 
         assert stacks == ({sentinel.stack}, {sentinel.stack})
 
-    @pytest.mark.parametrize("command_path,filepaths,expected_stacks,expected_command_stacks,full_scan", [
-        (
-            "",
-            ["A/1.yaml"],
-            {"A/1"},
-            {"A/1"},
-            False
-        ),
-        (
-            "",
-            ["A/1.yaml", "A/2.yaml", "A/3.yaml"],
-            {"A/3", "A/2", "A/1"},
-            {"A/3", "A/2", "A/1"},
-            False
-        ),
-        (
-            "",
-            ["A/1.yaml", "A/A/1.yaml"],
-            {"A/1", "A/A/1"},
-            {"A/1", "A/A/1"},
-            False
-        ),
-        (
-            "",
-            ["A/1.yaml", "A/A/1.yaml", "A/A/2.yaml"],
-            {"A/1", "A/A/1", "A/A/2"},
-            {"A/1", "A/A/1", "A/A/2"},
-            False
-        ),
-        (
-            "",
-            ["A/A/1.yaml", "A/B/1.yaml"],
-            {"A/A/1", "A/B/1"},
-            {"A/A/1", "A/B/1"},
-            False
-        ),
-        (
-            "Abd",
-            ["Abc/1.yaml", "Abd/1.yaml"],
-            {"Abd/1"},
-            {"Abd/1"},
-            False
-        ),
-        (
-            "Abd",
-            ["Abc/1.yaml", "Abd/Abc/1.yaml", "Abd/2.yaml"],
-            {"Abd/2", "Abd/Abc/1"},
-            {"Abd/2", "Abd/Abc/1"},
-            False
-        ),
-        (
-            "Abd/Abc",
-            ["Abc/1.yaml", "Abd/Abc/1.yaml", "Abd/2.yaml"],
-            {"Abd/Abc/1"},
-            {"Abd/Abc/1"},
-            False
-        ),
-        (
-            "Ab",
-            ["Abc/1.yaml", "Abd/1.yaml"],
-            set(),
-            set(),
-            False
-        ),
-        (
-            "Abd/Abc",
-            ["Abc/1.yaml", "Abd/Abc/1.yaml", "Abd/2.yaml"],
-            {"Abc/1", "Abd/Abc/1", "Abd/2"},
-            {"Abd/Abc/1"},
-            True
-        ),
-    ])
+    @pytest.mark.parametrize(
+        "command_path,filepaths,expected_stacks,expected_command_stacks,full_scan",
+        [
+            ("", ["A/1.yaml"], {"A/1"}, {"A/1"}, False),
+            (
+                "",
+                ["A/1.yaml", "A/2.yaml", "A/3.yaml"],
+                {"A/3", "A/2", "A/1"},
+                {"A/3", "A/2", "A/1"},
+                False,
+            ),
+            ("", ["A/1.yaml", "A/A/1.yaml"], {"A/1", "A/A/1"}, {"A/1", "A/A/1"}, False),
+            (
+                "",
+                ["A/1.yaml", "A/A/1.yaml", "A/A/2.yaml"],
+                {"A/1", "A/A/1", "A/A/2"},
+                {"A/1", "A/A/1", "A/A/2"},
+                False,
+            ),
+            (
+                "",
+                ["A/A/1.yaml", "A/B/1.yaml"],
+                {"A/A/1", "A/B/1"},
+                {"A/A/1", "A/B/1"},
+                False,
+            ),
+            ("Abd", ["Abc/1.yaml", "Abd/1.yaml"], {"Abd/1"}, {"Abd/1"}, False),
+            (
+                "Abd",
+                ["Abc/1.yaml", "Abd/Abc/1.yaml", "Abd/2.yaml"],
+                {"Abd/2", "Abd/Abc/1"},
+                {"Abd/2", "Abd/Abc/1"},
+                False,
+            ),
+            (
+                "Abd/Abc",
+                ["Abc/1.yaml", "Abd/Abc/1.yaml", "Abd/2.yaml"],
+                {"Abd/Abc/1"},
+                {"Abd/Abc/1"},
+                False,
+            ),
+            ("Ab", ["Abc/1.yaml", "Abd/1.yaml"], set(), set(), False),
+            (
+                "Abd/Abc",
+                ["Abc/1.yaml", "Abd/Abc/1.yaml", "Abd/2.yaml"],
+                {"Abc/1", "Abd/Abc/1", "Abd/2"},
+                {"Abd/Abc/1"},
+                True,
+            ),
+        ],
+    )
     def test_construct_stacks_with_valid_config(
-        self, command_path, filepaths, expected_stacks, expected_command_stacks, full_scan
+        self,
+        command_path,
+        filepaths,
+        expected_stacks,
+        expected_command_stacks,
+        full_scan,
     ):
         project_path, config_dir = self.create_project()
 
@@ -418,7 +381,7 @@ class TestConfigReader(object):
             config = {
                 "region": "region",
                 "project_code": "project_code",
-                "template_path": rel_path
+                "template_path": rel_path,
             }
 
             abs_path = os.path.join(config_dir, rel_path)
@@ -432,13 +395,50 @@ class TestConfigReader(object):
         assert {str(stack) for stack in all_stacks} == expected_stacks
         assert {str(stack) for stack in command_stacks} == expected_command_stacks
 
-    @pytest.mark.parametrize("filepaths, del_key", [
-        (["A/1.yaml"], "project_code"),
-        (["A/1.yaml"], "region"),
-    ])
-    def test_missing_attr(
-        self, filepaths, del_key
-    ):
+    def test_construct_stacks_with_disable_rollback_command_param(self):
+        project_path, config_dir = self.create_project()
+
+        rel_path = "A/1.yaml"
+        config = {
+            "region": "region",
+            "project_code": "project_code",
+            "template_path": rel_path,
+        }
+
+        abs_path = os.path.join(config_dir, rel_path)
+        self.write_config(abs_path, config)
+        self.context.project_path = project_path
+        self.context.command_params["disable_rollback"] = True
+        config_reader = ConfigReader(self.context)
+        all_stacks, command_stacks = config_reader.construct_stacks()
+        assert list(all_stacks)[0].disable_rollback
+
+    def test_construct_stacks_with_disable_rollback_in_stack_config(self):
+        project_path, config_dir = self.create_project()
+
+        rel_path = "A/1.yaml"
+        config = {
+            "region": "region",
+            "project_code": "project_code",
+            "template_path": rel_path,
+            "disable_rollback": True,
+        }
+
+        abs_path = os.path.join(config_dir, rel_path)
+        self.write_config(abs_path, config)
+        self.context.project_path = project_path
+        config_reader = ConfigReader(self.context)
+        all_stacks, command_stacks = config_reader.construct_stacks()
+        assert list(all_stacks)[0].disable_rollback
+
+    @pytest.mark.parametrize(
+        "filepaths, del_key",
+        [
+            (["A/1.yaml"], "project_code"),
+            (["A/1.yaml"], "region"),
+        ],
+    )
+    def test_missing_attr(self, filepaths, del_key):
         project_path, config_dir = self.create_project()
 
         for rel_path in filepaths:
@@ -446,7 +446,7 @@ class TestConfigReader(object):
             config = {
                 "project_code": "project_code",
                 "region": "region",
-                "template_path": rel_path
+                "template_path": rel_path,
             }
             # Delete the mandatory key to be tested.
             del config[del_key]
@@ -466,13 +466,14 @@ class TestConfigReader(object):
         else:
             assert False
 
-    @pytest.mark.parametrize("filepaths, dependency", [
-        (["A/1.yaml", "B/1.yaml", "B/2.yaml"], "A/1.yaml"),
-        (["A/1.yaml", "B/1.yaml", "B/2.yaml"], "B/1.yaml"),
-    ])
-    def test_existing_dependency(
-        self, filepaths, dependency
-    ):
+    @pytest.mark.parametrize(
+        "filepaths, dependency",
+        [
+            (["A/1.yaml", "B/1.yaml", "B/2.yaml"], "A/1.yaml"),
+            (["A/1.yaml", "B/1.yaml", "B/2.yaml"], "B/1.yaml"),
+        ],
+    )
+    def test_existing_dependency(self, filepaths, dependency):
         project_path, config_dir = self.create_project()
 
         for rel_path in filepaths:
@@ -481,7 +482,7 @@ class TestConfigReader(object):
                 "project_code": "project_code",
                 "region": "region",
                 "template_path": rel_path,
-                "dependencies": [dependency]
+                "dependencies": [dependency],
             }
 
             abs_path = os.path.join(config_dir, rel_path)
@@ -496,13 +497,14 @@ class TestConfigReader(object):
         else:
             assert True
 
-    @pytest.mark.parametrize("filepaths, dependency", [
-        (["A/1.yaml", "B/1.yaml", "B/2.yaml"], "A/2.yaml"),
-        (["A/1.yaml", "B/1.yaml", "B/2.yaml"], "1.yaml"),
-    ])
-    def test_missing_dependency(
-        self, filepaths, dependency
-    ):
+    @pytest.mark.parametrize(
+        "filepaths, dependency",
+        [
+            (["A/1.yaml", "B/1.yaml", "B/2.yaml"], "A/2.yaml"),
+            (["A/1.yaml", "B/1.yaml", "B/2.yaml"], "1.yaml"),
+        ],
+    )
+    def test_missing_dependency(self, filepaths, dependency):
         project_path, config_dir = self.create_project()
 
         for rel_path in filepaths:
@@ -511,7 +513,7 @@ class TestConfigReader(object):
                 "project_code": "project_code",
                 "region": "region",
                 "template_path": rel_path,
-                "dependencies": [dependency]
+                "dependencies": [dependency],
             }
 
             abs_path = os.path.join(config_dir, rel_path)
@@ -530,16 +532,17 @@ class TestConfigReader(object):
             assert False
 
     @pytest.mark.parametrize(
-        "filepaths, dependency, parent_config_path", [
-            (["A/1.yaml", "A/2.yaml", "B/1.yaml"], "B/1.yaml", 'A/config.yaml'),
-            (["A/1.yaml", "A/2.yaml"], "A/1.yaml", 'A/config.yaml'),
-        ]
+        "filepaths, dependency, parent_config_path",
+        [
+            (["A/1.yaml", "A/2.yaml", "B/1.yaml"], "B/1.yaml", "A/config.yaml"),
+            (["A/1.yaml", "A/2.yaml"], "A/1.yaml", "A/config.yaml"),
+        ],
     )
-    def test_inherited_dependency_already_resolved(self, filepaths, dependency, parent_config_path):
+    def test_inherited_dependency_already_resolved(
+        self, filepaths, dependency, parent_config_path
+    ):
         project_path, config_dir = self.create_project()
-        parent_config = {
-            'dependencies': [dependency]
-        }
+        parent_config = {"dependencies": [dependency]}
         abs_path = os.path.join(config_dir, parent_config_path)
         self.write_config(abs_path, parent_config)
 
@@ -573,4 +576,4 @@ class TestConfigReader(object):
         config_reader = ConfigReader(self.context)
         new_node = config_reader.resolve_node_tag(mock_loader, mock_node)
 
-        assert new_node.tag == 'new_tag'
+        assert new_node.tag == "new_tag"

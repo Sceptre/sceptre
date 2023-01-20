@@ -13,24 +13,24 @@ from sceptre.exceptions import StackDoesNotExistError
 @then('the user is told "{message}"')
 def step_impl(context, message):
     if message == "stack does not exist":
-        msg = context.error.response['Error']['Message']
+        msg = context.error.response["Error"]["Message"]
         assert msg.endswith("does not exist")
     elif message == "change set does not exist":
-        msg = context.error.response['Error']['Message']
+        msg = context.error.response["Error"]["Message"]
         assert msg.endswith("does not exist")
     elif message == "the template is valid":
         for stack, status in context.response.items():
             assert status["ResponseMetadata"]["HTTPStatusCode"] == 200
     elif message == "the template is malformed":
-        msg = context.error.response['Error']['Message']
+        msg = context.error.response["Error"]["Message"]
         assert msg.startswith("Template format error")
     else:
         raise Exception("Step has incorrect message")
 
 
-@then('no exception is raised')
+@then("no exception is raised")
 def step_impl(context):
-    assert (context.error is None)
+    assert context.error is None
 
 
 @then('a "{exception_type}" is raised')
@@ -53,11 +53,9 @@ def step_impl(context, exception_type):
 
 @given('stack_group "{stack_group}" has AWS config "{config}" set')
 def step_impl(context, stack_group, config):
-    config_path = os.path.join(
-        context.sceptre_dir, "config", stack_group, config
-    )
+    config_path = os.path.join(context.sceptre_dir, "config", stack_group, config)
 
-    os.environ['AWS_CONFIG_FILE'] = config_path
+    os.environ["AWS_CONFIG_FILE"] = config_path
 
 
 def read_template_file(context, template_name):
@@ -67,9 +65,7 @@ def read_template_file(context, template_name):
 
 
 def get_cloudformation_stack_name(context, stack_name):
-    return "-".join(
-        [context.project_code, stack_name.replace("/", "-")]
-    )
+    return "-".join([context.project_code, stack_name.replace("/", "-")])
 
 
 def retry_boto_call(func, *args, **kwargs):
@@ -82,7 +78,7 @@ def retry_boto_call(func, *args, **kwargs):
             response = func(*args, **kwargs)
             return response
         except ClientError as e:
-            if e.response['Error']['Code'] == 'Throttling':
+            if e.response["Error"]["Code"] == "Throttling":
                 time.sleep(delay)
             else:
                 raise e

@@ -1,5 +1,6 @@
 import click
 
+from typing import Optional
 from sceptre.context import SceptreContext
 from sceptre.cli.helpers import catch_exceptions, confirmation
 from sceptre.plan.plan import SceptrePlan
@@ -8,12 +9,15 @@ from sceptre.plan.plan import SceptrePlan
 @click.command(name="execute")
 @click.argument("path")
 @click.argument("change-set-name")
+@click.option("-y", "--yes", is_flag=True, help="Assume yes to all questions.")
 @click.option(
-    "-y", "--yes", is_flag=True, help="Assume yes to all questions."
+    "--disable-rollback/--enable-rollback",
+    default=None,
+    help="Disable or enable the cloudformation automatic rollback",
 )
 @click.pass_context
 @catch_exceptions
-def execute_command(ctx, path, change_set_name, yes):
+def execute_command(ctx, path, change_set_name, yes, disable_rollback: Optional[bool]):
     """
     Executes a Change Set.
     \f
@@ -27,10 +31,11 @@ def execute_command(ctx, path, change_set_name, yes):
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
     )
 
     plan = SceptrePlan(context)
@@ -38,6 +43,6 @@ def execute_command(ctx, path, change_set_name, yes):
         plan.execute_change_set.__name__,
         yes,
         change_set=change_set_name,
-        command_path=path
+        command_path=path,
     )
     plan.execute_change_set(change_set_name)

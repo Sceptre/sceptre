@@ -5,7 +5,6 @@ from sceptre.stack_status_colourer import StackStatusColourer
 
 
 class TestStackStatusColourer(object):
-
     def setup_method(self, test_method):
         init()
         self.stack_status_colourer = StackStatusColourer()
@@ -26,7 +25,7 @@ class TestStackStatusColourer(object):
             "UPDATE_ROLLBACK_COMPLETE": Fore.GREEN,
             "UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS": Fore.YELLOW,
             "UPDATE_ROLLBACK_FAILED": Fore.RED,
-            "UPDATE_ROLLBACK_IN_PROGRESS": Fore.YELLOW
+            "UPDATE_ROLLBACK_IN_PROGRESS": Fore.YELLOW,
         }
 
     def test_colour_with_string_with_no_stack_statuses(self):
@@ -39,16 +38,11 @@ class TestStackStatusColourer(object):
             for status in sorted(self.statuses.keys())
         ]
 
-        responses = [
-            self.stack_status_colourer.colour(string)
-            for string in strings
-        ]
+        responses = [self.stack_status_colourer.colour(string) for string in strings]
 
         assert responses == [
             "string string {0}{1}{2} string".format(
-                self.statuses[status],
-                status,
-                Style.RESET_ALL
+                self.statuses[status], status, Style.RESET_ALL
             )
             for status in sorted(self.statuses.keys())
         ]
@@ -57,11 +51,9 @@ class TestStackStatusColourer(object):
         response = self.stack_status_colourer.colour(
             " ".join(sorted(self.statuses.keys()))
         )
-        assert response == " ".join([
-            "{0}{1}{2}".format(
-                self.statuses[status],
-                status,
-                Style.RESET_ALL
-            )
-            for status in sorted(self.statuses.keys())
-        ])
+        assert response == " ".join(
+            [
+                "{0}{1}{2}".format(self.statuses[status], status, Style.RESET_ALL)
+                for status in sorted(self.statuses.keys())
+            ]
+        )

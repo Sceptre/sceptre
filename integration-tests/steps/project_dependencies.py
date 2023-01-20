@@ -17,13 +17,11 @@ def step_impl(context: Context, stack_name):
     delete it; Otherwise, it will fail since you can't delete a bucket with objects in it.
     """
     context.add_cleanup(
-        cleanup_template_files_in_bucket,
-        context.sceptre_dir,
-        stack_name
+        cleanup_template_files_in_bucket, context.sceptre_dir, stack_name
     )
 
 
-@given('placeholders are allowed')
+@given("placeholders are allowed")
 def step_impl(context: Context):
     placeholder_context = use_resolver_placeholders_on_error()
     placeholder_context.__enter__()
@@ -33,8 +31,7 @@ def step_impl(context: Context):
 @when('the user validates stack_group "{group}"')
 def step_impl(context: Context, group):
     sceptre_context = SceptreContext(
-        command_path=group,
-        project_path=context.sceptre_dir
+        command_path=group, project_path=context.sceptre_dir
     )
     plan = SceptrePlan(sceptre_context)
     result = plan.validate()
@@ -44,24 +41,22 @@ def step_impl(context: Context, group):
 @then('the template for stack "{stack_name}" has been uploaded')
 def step_impl(context: Context, stack_name):
     sceptre_context = SceptreContext(
-        command_path=stack_name + '.yaml',
-        project_path=context.sceptre_dir
+        command_path=stack_name + ".yaml", project_path=context.sceptre_dir
     )
     plan = SceptrePlan(sceptre_context)
     buckets = get_template_buckets(plan)
     assert len(buckets) > 0
-    filtered_objects = list(chain.from_iterable(
-        bucket.objects.filter(
-            Prefix=stack_name
+    filtered_objects = list(
+        chain.from_iterable(
+            bucket.objects.filter(Prefix=stack_name) for bucket in buckets
         )
-        for bucket in buckets
-    ))
+    )
 
     assert len(filtered_objects) == len(plan.command_stacks)
     for stack in plan.command_stacks:
         for obj in filtered_objects:
             if obj.key.startswith(stack.name):
-                s3_template = obj.get()['Body'].read().decode('utf-8')
+                s3_template = obj.get()["Body"].read().decode("utf-8")
                 expected = stack.template.body
                 assert s3_template == expected
                 break
@@ -69,12 +64,14 @@ def step_impl(context: Context, stack_name):
             assert False, "Could not found uploaded template"
 
 
-@then('the stack "{resource_stack_name}" has a notification defined by stack "{topic_stack_name}"')
+@then(
+    'the stack "{resource_stack_name}" has a notification defined by stack "{topic_stack_name}"'
+)
 def step_impl(context, resource_stack_name, topic_stack_name):
     topic_stack_resources = get_stack_resources(context, topic_stack_name)
-    topic = topic_stack_resources[0]['PhysicalResourceId']
+    topic = topic_stack_resources[0]["PhysicalResourceId"]
     resource_stack = describe_stack(context, resource_stack_name)
-    notification_arns = resource_stack['NotificationARNs']
+    notification_arns = resource_stack["NotificationARNs"]
     assert topic in notification_arns
 
 
@@ -93,8 +90,7 @@ def step_impl(context, key, stack_name):
 
 def cleanup_template_files_in_bucket(sceptre_dir, stack_name):
     sceptre_context = SceptreContext(
-        command_path=stack_name + '.yaml',
-        project_path=sceptre_dir
+        command_path=stack_name + ".yaml", project_path=sceptre_dir
     )
     plan = SceptrePlan(sceptre_context)
     buckets = get_template_buckets(plan)
@@ -103,7 +99,7 @@ def cleanup_template_files_in_bucket(sceptre_dir, stack_name):
 
 
 def get_template_buckets(plan: SceptrePlan):
-    s3_resource = boto3.resource('s3')
+    s3_resource = boto3.resource("s3")
     return [
         s3_resource.Bucket(stack.template_bucket_name)
         for stack in plan.command_stacks
@@ -114,28 +110,21 @@ def get_template_buckets(plan: SceptrePlan):
 def get_stack_resources(context, stack_name):
     cf_stack_name = get_cloudformation_stack_name(context, stack_name)
     resources = retry_boto_call(
-        context.client.describe_stack_resources,
-        StackName=cf_stack_name
+        context.client.describe_stack_resources, StackName=cf_stack_name
     )
-    return resources['StackResources']
+    return resources["StackResources"]
 
 
 def get_stack_tags(context, stack_name) -> Dict[str, str]:
     description = describe_stack(context, stack_name)
-    tags = {
-        tag['Key']: tag['Value']
-        for tag in description['Tags']
-    }
+    tags = {tag["Key"]: tag["Value"] for tag in description["Tags"]}
     return tags
 
 
 def describe_stack(context, stack_name) -> dict:
     cf_stack_name = get_cloudformation_stack_name(context, stack_name)
-    response = retry_boto_call(
-        context.client.describe_stacks,
-        StackName=cf_stack_name
-    )
-    return response['Stacks'][0]
+    response = retry_boto_call(context.client.describe_stacks, StackName=cf_stack_name)
+    return response["Stacks"][0]
 
 
 def exit_placeholder_context(placeholder_context: ContextManager):

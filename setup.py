@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 def read_file(rel_path):
     here = os.path.abspath(os.path.dirname(__file__))
-    with codecs.open(os.path.join(here, rel_path), 'r') as fp:
+    with codecs.open(os.path.join(here, rel_path), "r") as fp:
         return fp.read()
 
 
@@ -34,7 +34,7 @@ install_requirements = [
     "sceptre-cmd-resolver>=1.1.3,<2",
     "sceptre-file-resolver>=1.0.4,<2",
     "six>=1.11.0,<2.0.0",
-    "networkx>=2.6,<2.7"
+    "networkx>=2.6,<2.7",
 ]
 
 extra_requirements = {
@@ -50,21 +50,17 @@ setup(
     long_description_content_type="text/markdown",
     author="Cloudreach",
     author_email="sceptre@cloudreach.com",
-    license='Apache2',
+    license="Apache2",
     url="https://github.com/Sceptre/sceptre",
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
-    package_dir={
-        "sceptre": "sceptre"
-    },
+    package_dir={"sceptre": "sceptre"},
     py_modules=["sceptre"],
     entry_points={
-        "console_scripts": [
-            'sceptre = sceptre.cli:cli'
-        ],
+        "console_scripts": ["sceptre = sceptre.cli:cli"],
         "sceptre.hooks": [
             "asg_scheduled_actions ="
             "sceptre.hooks.asg_scaling_processes:ASGScalingProcesses",
-            "cmd = sceptre.hooks.cmd:Cmd"
+            "cmd = sceptre.hooks.cmd:Cmd",
         ],
         "sceptre.resolvers": [
             "environment_variable ="
@@ -74,19 +70,22 @@ setup(
             "stack_output_external ="
             "sceptre.resolvers.stack_output:StackOutputExternal",
             "no_value = sceptre.resolvers.no_value:NoValue",
-            "stack_attr = sceptre.resolvers.stack_attr:StackAttr"
+            "stack_attr = sceptre.resolvers.stack_attr:StackAttr",
         ],
         "sceptre.template_handlers": [
             "file = sceptre.template_handlers.file:File",
             "s3 = sceptre.template_handlers.s3:S3",
-            "http = sceptre.template_handlers.http:Http"
-        ]
+            "http = sceptre.template_handlers.http:Http",
+        ],
     },
     data_files=[
-        (os.path.join("sceptre", "stack_policies"), [
-            os.path.join("sceptre", "stack_policies", "lock.json"),
-            os.path.join("sceptre", "stack_policies", "unlock.json")
-        ])
+        (
+            os.path.join("sceptre", "stack_policies"),
+            [
+                os.path.join("sceptre", "stack_policies", "lock.json"),
+                os.path.join("sceptre", "stack_policies", "unlock.json"),
+            ],
+        )
     ],
     include_package_data=True,
     zip_safe=False,

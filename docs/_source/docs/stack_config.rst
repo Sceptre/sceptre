@@ -20,6 +20,7 @@ particular Stack. The available keys are listed below.
 -  `notifications`_ *(optional)*
 -  `obsolete`_ *(optional)*
 -  `on_failure`_ *(optional)*
+-  `disable_rollback`_ *(optional)*
 -  `parameters`_ *(optional)*
 -  `protected`_ *(optional)*
 -  `role_arn`_ *(optional)*
@@ -205,6 +206,23 @@ Examples include:
 
 ``on_failure: "DELETE"``
 
+disable_rollback
+~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This parameter describes the action taken by CloudFormation when a Stack fails
+to create or update, default is False. This option can be set from the stack
+config or from the Sceptre CLI commands to deploy stacks. The disable_rollback
+CLI option (i.e. sceptre launch --disable-rollback) disables cloudformation
+rollback globally for all stacks. This option overrides on_failure since
+Cloudformation does not allow setting both on deployment. For more information
+and valid values see the `AWS Documentation`_.
+
+Examples:
+
+``disable_rollback: "True"``
 
 parameters
 ~~~~~~~~~~
@@ -579,6 +597,7 @@ Examples
 .. _hooks: #hooks
 .. _notifications: #notifications
 .. _on_failure: #on-failure
+.. _disable_rollback: #disable-rollback
 .. _parameters: #parameters
 .. _protected: #protected
 .. _role_arn: #role-arn

@@ -34,13 +34,8 @@ class FakePlan(SceptrePlan):
         self.executions = []
 
     def _execute(self, *args):
-        self.executions.append(
-            (self.command, self.launch_order.copy(), args)
-        )
-        return {
-            stack: self.statuses_to_return[stack]
-            for stack in self
-        }
+        self.executions.append((self.command, self.launch_order.copy(), args))
+        return {stack: self.statuses_to_return[stack] for stack in self}
 
     def _generate_launch_order(self, reverse=False) -> List[Set[Stack]]:
         launch_order = [self.command_stacks]
@@ -51,7 +46,8 @@ class FakePlan(SceptrePlan):
 
         for start_index in range(0, len(all_stacks), 2):
             chunk = {
-                stack for stack in all_stacks[start_index: start_index + 2]
+                stack
+                for stack in all_stacks[start_index : start_index + 2]
                 if stack not in self.command_stacks
                 and self._has_dependency_on_a_command_stack(stack)
             }
@@ -73,7 +69,6 @@ class FakePlan(SceptrePlan):
 
 
 class TestPruner:
-
     def setup_method(self, test_method):
         self.plans: List[FakePlan] = []
 
@@ -88,15 +83,12 @@ class TestPruner:
             Mock(spec=Stack, ignore=False, obsolete=False, dependencies=[]),
             Mock(spec=Stack, ignore=False, obsolete=False, dependencies=[]),
             Mock(spec=Stack, ignore=False, obsolete=False, dependencies=[]),
-            Mock(spec=Stack, ignore=False, obsolete=False, dependencies=[])
+            Mock(spec=Stack, ignore=False, obsolete=False, dependencies=[]),
         ]
         for index, stack in enumerate(self.all_stacks):
-            stack.name = f'stacks/stack-{index}.yaml'
+            stack.name = f"stacks/stack-{index}.yaml"
 
-        self.command_stacks = [
-            self.all_stacks[2],
-            self.all_stacks[4]
-        ]
+        self.command_stacks = [self.all_stacks[2], self.all_stacks[4]]
 
         self.statuses_to_return = defaultdict(lambda: StackStatus.COMPLETE)
 
@@ -110,7 +102,7 @@ class TestPruner:
             sceptre_context,
             set(self.command_stacks),
             set(self.all_stacks),
-            self.statuses_to_return
+            self.statuses_to_return,
         )
         self.plans.append(fake_plan)
         return fake_plan
@@ -135,16 +127,18 @@ class TestPruner:
 
         self.pruner.prune()
 
-        assert self.plans[0].executions[0][0] == 'delete'
+        assert self.plans[0].executions[0][0] == "delete"
         assert set(self.executed_stacks) == {self.all_stacks[4], self.all_stacks[5]}
 
-    def test_prune__command_path__obsolete_stacks__deletes_only_obsolete_stacks_on_path(self):
+    def test_prune__command_path__obsolete_stacks__deletes_only_obsolete_stacks_on_path(
+        self,
+    ):
         self.all_stacks[4].obsolete = True  # On command path
         self.all_stacks[5].obsolete = True  # not on command path
         self.context.command_path = "my/command/path"
         self.pruner.prune()
 
-        assert self.plans[0].executions[0][0] == 'delete'
+        assert self.plans[0].executions[0][0] == "delete"
         assert set(self.executed_stacks) == {self.all_stacks[4]}
 
     def test_prune__obsolete_stacks__returns_zero(self):
@@ -154,7 +148,9 @@ class TestPruner:
         code = self.pruner.prune()
         assert code == 0
 
-    def test_prune__obsolete_stacks_depend_on_other_obsolete_stacks__deletes_only_obsolete_stacks(self):
+    def test_prune__obsolete_stacks_depend_on_other_obsolete_stacks__deletes_only_obsolete_stacks(
+        self,
+    ):
         self.all_stacks[1].obsolete = True
         self.all_stacks[3].obsolete = True
         self.all_stacks[4].obsolete = True
@@ -165,7 +161,7 @@ class TestPruner:
 
         self.pruner.prune()
 
-        assert self.plans[0].executions[0][0] == 'delete'
+        assert self.plans[0].executions[0][0] == "delete"
         assert set(self.executed_stacks) == {
             self.all_stacks[1],
             self.all_stacks[3],
@@ -173,7 +169,9 @@ class TestPruner:
             self.all_stacks[5],
         }
 
-    def test_prune__non_obsolete_stacks_depend_on_obsolete_stacks__raises_cannot_prune_stack_error(self):
+    def test_prune__non_obsolete_stacks_depend_on_obsolete_stacks__raises_cannot_prune_stack_error(
+        self,
+    ):
         self.all_stacks[1].obsolete = True
         self.all_stacks[3].obsolete = False
         self.all_stacks[4].obsolete = False
@@ -185,7 +183,9 @@ class TestPruner:
         with pytest.raises(CannotPruneStackError):
             self.pruner.prune()
 
-    def test_prune__non_obsolete_stacks_depend_on_obsolete_stacks__ignore_dependencies__deletes_obsolete_stacks(self):
+    def test_prune__non_obsolete_stacks_depend_on_obsolete_stacks__ignore_dependencies__deletes_obsolete_stacks(
+        self,
+    ):
         self.all_stacks[1].obsolete = True
         self.all_stacks[3].obsolete = False
         self.all_stacks[4].obsolete = False
@@ -196,7 +196,7 @@ class TestPruner:
         self.context.ignore_dependencies = True
         self.pruner.prune()
 
-        assert self.plans[0].executions[0][0] == 'delete'
+        assert self.plans[0].executions[0][0] == "delete"
         assert set(self.executed_stacks) == {
             self.all_stacks[1],
         }
