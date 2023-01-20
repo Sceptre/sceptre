@@ -443,7 +443,7 @@ class ConfigReader(object):
             except Exception as err:
                 raise SceptreException(
                     f"{Path(directory_path, basename).as_posix()} - {err}"
-                )
+                ) from err
 
             self.templating_vars.update(stack_group_config)
             rendered_template = template.render(
