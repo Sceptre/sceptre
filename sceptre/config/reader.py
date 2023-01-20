@@ -437,7 +437,14 @@ class ConfigReader(object):
                 stack_group_config.get("j2_environment", {}),
             )
             j2_environment = Environment(**j2_environment_config)
-            template = j2_environment.get_template(basename)
+
+            try:
+                template = j2_environment.get_template(basename)
+            except Exception as err:
+                raise SceptreException(
+                    f"{Path(directory_path, basename).as_posix()} - {err}"
+                ) from err
+
             self.templating_vars.update(stack_group_config)
 
             try:
