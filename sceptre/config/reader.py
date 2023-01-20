@@ -448,7 +448,8 @@ class ConfigReader(object):
                 )
             except Exception as err:
                 raise SceptreException(
-                    f"{Path(directory_path, basename).as_posix()} - {err}")
+                    f"{Path(directory_path, basename).as_posix()} - {err}"
+                )
 
             try:
                 config = yaml.safe_load(rendered_template)
