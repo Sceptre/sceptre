@@ -30,10 +30,12 @@ from sceptre.cli.policy import set_policy_command
 from sceptre.cli.status import status_command
 from sceptre.cli.helpers import catch_exceptions, setup_vars
 
-from sceptre.cli.template import (validate_command,
-                                  generate_command,
-                                  estimate_cost_command,
-                                  fetch_remote_template_command)
+from sceptre.cli.template import (
+    validate_command,
+    generate_command,
+    estimate_cost_command,
+    fetch_remote_template_command,
+)
 
 
 @click.group()
@@ -41,25 +43,46 @@ from sceptre.cli.template import (validate_command,
 @click.option("--debug", is_flag=True, help="Turn on debug logging.")
 @click.option("--dir", "directory", help="Specify sceptre directory.")
 @click.option(
-    "--output", type=click.Choice(["text", "yaml", "json"]), default="text",
-    help="The formatting style for command output.")
+    "--output",
+    type=click.Choice(["text", "yaml", "json"]),
+    default="text",
+    help="The formatting style for command output.",
+)
 @click.option("--no-colour", is_flag=True, help="Turn off output colouring.")
 @click.option(
-    "--var", multiple=True,
-    help="A variable to replace the value of an item in config file.")
+    "--var",
+    multiple=True,
+    help="A variable to replace the value of an item in config file.",
+)
 @click.option(
-    "--var-file", multiple=True, type=click.File("rb"),
-    help="A YAML file of variables to replace the values of items in config files.")
+    "--var-file",
+    multiple=True,
+    type=click.File("rb"),
+    help="A YAML file of variables to replace the values of items in config files.",
+)
 @click.option(
-    "--ignore-dependencies", is_flag=True,
-    help="Ignore dependencies when executing command.")
+    "--ignore-dependencies",
+    is_flag=True,
+    help="Ignore dependencies when executing command.",
+)
 @click.option(
-    "--merge-vars", is_flag=True, default=False,
-    help="Merge variables from successive --vars and var files")
+    "--merge-vars",
+    is_flag=True,
+    default=False,
+    help="Merge variables from successive --vars and var files",
+)
 @click.pass_context
 @catch_exceptions
 def cli(
-        ctx, debug, directory, output, no_colour, var, var_file, ignore_dependencies, merge_vars
+    ctx,
+    debug,
+    directory,
+    output,
+    no_colour,
+    var,
+    var_file,
+    ignore_dependencies,
+    merge_vars,
 ):
     """
     Sceptre is a tool to manage your cloud native infrastructure deployments.
@@ -72,7 +95,7 @@ def cli(
         "output_format": output,
         "no_colour": no_colour,
         "ignore_dependencies": ignore_dependencies,
-        "project_path": directory if directory else os.getcwd()
+        "project_path": directory if directory else os.getcwd(),
     }
 
 

@@ -190,53 +190,21 @@ to generate CloudFormation Template as a `json` string.
 AWS CDK
 ^^^^^^^
 
-This example generates a cloudformation template from `AWS CDK`_ code.
+AWS CDK can be used to programmatically generate templates for your stacks and then Sceptre can
+deploy those stacks. Taking this approach leverages the best capabilities of CDK (simple template
+generation with sane defaults) and the best capabilities of Sceptre ("wiring together" stacks and
+deploying them as consistent environments, leveraging hooks and resolvers to dynamically connect them).
 
-.. code-block:: yaml
+In order to use CDK with Sceptre, you need to install the `sceptre_cdk_handler`_ package. You can find
+documentation and examples on how to use it on the `github repository`_.
 
-  sceptre_user_data:
-    BucketName: my-bucket
+.. _sceptre_cdk_handler: https://pypi.org/project/sceptre-cdk-handler/
+.. _github repository: https://github.com/sceptre/sceptre-cdk-handler
 
-..
+AWS SAM
+^^^^^^^
+There is now a SAM Template Handler that lets you incorporate SAM templates into environments that
+are managed and deployed using Sceptre. For more information on how to install and use SAM in your
+Sceptre project, see the `sceptre-sam-handler`_ page on PyPI.
 
-
-.. code-block:: python
-
-  import yaml
-  from aws_cdk import (
-      aws_s3 as s3,
-      core as cdk
-  )
-
-  class S3CdkStack(cdk.Stack):
-
-    def __init__(self, scope: cdk.Stack, construct_id: str, sceptre_user_data, **kwargs) -> None:
-      super().__init__(scope, construct_id, **kwargs)
-
-      bucket_name = sceptre_user_data['BucketName']
-      bucket = s3.Bucket(self, "S3Bucket",
-                         bucket_name=bucket_name)
-
-  def sceptre_handler(sceptre_user_data):
-      app = cdk.App()
-      S3CdkStack(app, "S3CdkStack", sceptre_user_data)
-      template = app.synth().get_stack_by_name("S3CdkStack").template
-      return yaml.safe_dump(template)
-
-.. _AWS_CDK: https://github.com/aws/aws-cdk
-
-
-Generate cloudformation:
-
-``sceptre generate dev/S3CdkStack.py``
-
-.. code-block:: yaml
-
-  Resources:
-    S3Bucket07682993:
-      DeletionPolicy: Retain
-      Properties:
-        BucketName: my-bucket
-      Type: AWS::S3::Bucket
-      UpdateReplacePolicy: Retain
-..
+.. _sceptre-sam-handler: https://pypi.org/project/sceptre-sam-handler/

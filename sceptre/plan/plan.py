@@ -33,7 +33,6 @@ def require_resolved(func) -> Callable:
 
 
 class SceptrePlan(object):
-
     def __init__(self, context: SceptreContext):
         """
         Intialises a SceptrePlan and generates the Stacks, StackGraph and
@@ -257,7 +256,7 @@ class SceptrePlan(object):
 
         :returns: A dictionary of Stacks
         :rtype: dict
-       """
+        """
         self.resolve(command=self.continue_update_rollback.__name__)
         return self._execute(*args)
 
@@ -400,7 +399,9 @@ class SceptrePlan(object):
 
     def _valid_stack_paths(self):
         return [
-            sceptreise_path(path.relpath(path.join(dirpath, f), self.context.config_path))
+            sceptreise_path(
+                path.relpath(path.join(dirpath, f), self.context.config_path)
+            )
             for dirpath, dirnames, files in walk(self.context.config_path)
             for f in files
             if not f.endswith(self.context.config_file)

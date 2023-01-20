@@ -12,9 +12,7 @@ from colorama import Fore, Style
 @click.command(name="delete", short_help="Deletes a stack or a change set.")
 @click.argument("path")
 @click.argument("change-set-name", required=False)
-@click.option(
-    "-y", "--yes", is_flag=True, help="Assume yes to all questions."
-)
+@click.option("-y", "--yes", is_flag=True, help="Assume yes to all questions.")
 @click.pass_context
 @catch_exceptions
 def delete_command(ctx, path, change_set_name, yes):
@@ -32,6 +30,7 @@ def delete_command(ctx, path, change_set_name, yes):
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
@@ -40,24 +39,23 @@ def delete_command(ctx, path, change_set_name, yes):
     )
 
     plan = SceptrePlan(context)
-    plan.resolve(command='delete', reverse=True)
+    plan.resolve(command="delete", reverse=True)
 
     if change_set_name:
-        delete_msg = "The Change Set will be delete on the following stacks, if applicable:\n"
+        delete_msg = (
+            "The Change Set will be delete on the following stacks, if applicable:\n"
+        )
     else:
         delete_msg = "The following stacks, in the following order, will be deleted:\n"
 
-    dependencies = ''
+    dependencies = ""
     for stack in plan:
         dependencies += "{}{}{}\n".format(Fore.YELLOW, stack.name, Style.RESET_ALL)
 
     print(delete_msg + "{}".format(dependencies))
 
     confirmation(
-        plan.delete.__name__,
-        yes,
-        change_set=change_set_name,
-        command_path=path
+        plan.delete.__name__, yes, change_set=change_set_name, command_path=path
     )
     if change_set_name:
         plan.delete_change_set(change_set_name)

@@ -27,6 +27,7 @@ def catch_exceptions(func):
         simplified.
     :returns: The decorated function.
     """
+
     def logging_level():
         logger = logging.getLogger(__name__)
         return logger.getEffectiveLevel()
@@ -40,8 +41,13 @@ def catch_exceptions(func):
         """
         try:
             return func(*args, **kwargs)
-        except (SceptreException, BotoCoreError, ClientError, Boto3Error,
-                TemplateError) as error:
+        except (
+            SceptreException,
+            BotoCoreError,
+            ClientError,
+            Boto3Error,
+            TemplateError,
+        ) as error:
             if logging_level() == logging.DEBUG:
                 raise
             write(error)
@@ -50,15 +56,11 @@ def catch_exceptions(func):
     return decorated
 
 
-def confirmation(
-    command, ignore, command_path, change_set=None
-):
+def confirmation(command, ignore, command_path, change_set=None):
     if not ignore:
         msg = "Do you want to {} ".format(command)
         if change_set:
-            msg = msg + "change set '{0}' for '{1}'".format(
-                change_set, command_path
-            )
+            msg = msg + "change set '{0}' for '{1}'".format(change_set, command_path)
         else:
             msg = msg + "'{0}'".format(command_path)
         click.confirm(msg, abort=True)
@@ -113,24 +115,17 @@ def _generate_json(stream):
 
 
 def _generate_yaml(stream):
-    kwargs = {
-        "default_flow_style": False,
-        "explicit_start": True
-    }
+    kwargs = {"default_flow_style": False, "explicit_start": True}
 
     if isinstance(stream, (list, set)):
         items = []
         for item in stream:
             try:
                 if isinstance(item, dict):
-                    items.append(
-                        yaml.safe_dump(item, **kwargs)
-                    )
+                    items.append(yaml.safe_dump(item, **kwargs))
                 else:
                     items.append(
-                        yaml.safe_dump(
-                            yaml.load(item, Loader=CfnYamlLoader), **kwargs
-                        )
+                        yaml.safe_dump(yaml.load(item, Loader=CfnYamlLoader), **kwargs)
                     )
             except Exception:
                 print("An error occured whilst writing the YAML object.")
@@ -171,9 +166,9 @@ def _generate_text(stream):
         col_widths = [max(len(c) for c in b) for b in zip(*items)]
         rows = []
         for row in items:
-            rows.append("".join(
-                [field for field, width in zip(row, cycle(col_widths))]
-            ))
+            rows.append(
+                "".join([field for field, width in zip(row, cycle(col_widths))])
+            )
         return "\n".join(rows)
     return stream
 
@@ -233,10 +228,12 @@ def setup_vars(var_file, var, merge_vars, debug, no_colour):
 
                 if merge_vars:
                     message += "{0}. Using values from: {1}.".format(
-                        ", ".join(overloaded_keys), fh.name)
+                        ", ".join(overloaded_keys), fh.name
+                    )
                 else:
                     message += "{0}. Performing deep merge, {1} wins.".format(
-                        ", ".join(overloaded_keys), fh.name)
+                        ", ".join(overloaded_keys), fh.name
+                    )
 
                 logger.debug(message)
 
@@ -263,9 +260,7 @@ def _deep_merge(source, destination):
 
 
 def stack_status_exit_code(statuses):
-    if not all(
-            status == StackStatus.COMPLETE
-            for status in statuses):
+    if not all(status == StackStatus.COMPLETE for status in statuses):
         return 1
     else:
         return 0
@@ -306,8 +301,7 @@ def setup_logging(debug, no_colour):
     formatter_class = logging.Formatter if no_colour else ColouredFormatter
 
     formatter = formatter_class(
-        fmt="[%(asctime)s] - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
+        fmt="[%(asctime)s] - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
     )
 
     log_handler = logging.StreamHandler()
@@ -333,7 +327,7 @@ def simplify_change_set_description(response):
         "ExecutionStatus",
         "StackName",
         "Status",
-        "StatusReason"
+        "StatusReason",
     ]
     desired_resource_changes = [
         "Action",
@@ -341,12 +335,10 @@ def simplify_change_set_description(response):
         "PhysicalResourceId",
         "Replacement",
         "ResourceType",
-        "Scope"
+        "Scope",
     ]
     formatted_response = {
-        k: v
-        for k, v in response.items()
-        if k in desired_response_items
+        k: v for k, v in response.items() if k in desired_response_items
     }
     formatted_response["Changes"] = [
         {
@@ -363,24 +355,16 @@ def simplify_change_set_description(response):
 
 def deserialize_json_properties(value):
     if isinstance(value, str):
-        is_json = (
-            (value.startswith("{") and value.endswith("}"))
-            or
-            (value.startswith("[") and value.endswith("]"))
+        is_json = (value.startswith("{") and value.endswith("}")) or (
+            value.startswith("[") and value.endswith("]")
         )
         if is_json:
             return json.loads(value)
         return value
     if isinstance(value, dict):
-        return {
-            key: deserialize_json_properties(val)
-            for key, val in value.items()
-        }
+        return {key: deserialize_json_properties(val) for key, val in value.items()}
     if isinstance(value, list):
-        return [
-            deserialize_json_properties(item)
-            for item in value
-        ]
+        return [deserialize_json_properties(item) for item in value]
     return value
 
 
@@ -424,39 +408,38 @@ class CustomJsonEncoder(json.JSONEncoder):
 
 
 CFN_FNS = [
-    'And',
-    'Base64',
-    'Cidr',
-    'Equals',
-    'FindInMap',
-    'GetAtt',
-    'GetAZs',
-    'If',
-    'ImportValue',
-    'Join',
-    'Not',
-    'Or',
-    'Select',
-    'Split',
-    'Sub',
-    'Transform',
+    "And",
+    "Base64",
+    "Cidr",
+    "Equals",
+    "FindInMap",
+    "GetAtt",
+    "GetAZs",
+    "If",
+    "ImportValue",
+    "Join",
+    "Not",
+    "Or",
+    "Select",
+    "Split",
+    "Sub",
+    "Transform",
 ]
 
 CFN_TAGS = [
-    'Condition',
-    'Ref',
+    "Condition",
+    "Ref",
 ]
 
 
 def _getatt_constructor(loader, node):
     if isinstance(node.value, six.text_type):
-        return node.value.split('.', 1)
+        return node.value.split(".", 1)
     elif isinstance(node.value, list):
         seq = loader.construct_sequence(node)
         for item in seq:
             if not isinstance(item, six.text_type):
-                raise ValueError(
-                    "Fn::GetAtt does not support complex datastructures")
+                raise ValueError("Fn::GetAtt does not support complex datastructures")
         return seq
     else:
         raise ValueError("Fn::GetAtt only supports string or list values")
@@ -464,11 +447,13 @@ def _getatt_constructor(loader, node):
 
 def _tag_constructor(loader, tag_suffix, node):
     if tag_suffix not in CFN_FNS and tag_suffix not in CFN_TAGS:
-        raise ValueError("Bad tag: !{tag_suffix}. Supported tags are: "
-                         "{supported_tags}".format(
-                             tag_suffix=tag_suffix,
-                             supported_tags=", ".join(sorted(CFN_TAGS + CFN_FNS))
-                         ))
+        raise ValueError(
+            "Bad tag: !{tag_suffix}. Supported tags are: "
+            "{supported_tags}".format(
+                tag_suffix=tag_suffix,
+                supported_tags=", ".join(sorted(CFN_TAGS + CFN_FNS)),
+            )
+        )
 
     if tag_suffix in CFN_FNS:
         tag_suffix = "Fn::{tag_suffix}".format(tag_suffix=tag_suffix)
@@ -476,8 +461,8 @@ def _tag_constructor(loader, tag_suffix, node):
     data = {}
     yield data
 
-    if tag_suffix == 'Fn::GetAtt':
-        constructor = partial(_getatt_constructor, (loader, ))
+    if tag_suffix == "Fn::GetAtt":
+        constructor = partial(_getatt_constructor, (loader,))
     elif isinstance(node, yaml.ScalarNode):
         constructor = loader.construct_scalar
     elif isinstance(node, yaml.SequenceNode):

@@ -35,16 +35,13 @@ def call_sceptre_handler(path, sceptre_user_data):
     # NB: this is a horrible hack...
     relpath = os.path.relpath(path, os.getcwd()).split(os.path.sep)
     relpaths_to_add = [
-        os.path.sep.join(relpath[:i + 1])
-        for i in range(len(relpath[:-1]))
+        os.path.sep.join(relpath[: i + 1]) for i in range(len(relpath[:-1]))
     ]
     # Add any directory between the current working directory and where
     # the template is to the python path
     for directory in relpaths_to_add:
         sys.path.append(os.path.join(os.getcwd(), directory))
-    logger.debug(
-        "Getting CloudFormation from %s", path
-    )
+    logger.debug("Getting CloudFormation from %s", path)
 
     if not os.path.isfile(path):
         raise TemplateNotFoundError("No such template file: '%s'", path)
@@ -54,7 +51,7 @@ def call_sceptre_handler(path, sceptre_user_data):
     try:
         body = module.sceptre_handler(sceptre_user_data)
     except AttributeError as e:
-        if 'sceptre_handler' in str(e):
+        if "sceptre_handler" in str(e):
             raise TemplateSceptreHandlerError(
                 "The template does not have the required "
                 "'sceptre_handler(sceptre_user_data)' function."
@@ -78,13 +75,16 @@ def print_template_traceback(path):
     """
 
     def _print_frame(filename, line, fcn, line_text):
-        logger.error("{}:{}:  Template error in '{}'\n=> `{}`".format(
-            filename, line, fcn, line_text))
+        logger.error(
+            "{}:{}:  Template error in '{}'\n=> `{}`".format(
+                filename, line, fcn, line_text
+            )
+        )
 
     try:
         _, _, tb = sys.exc_info()
         stack_trace = traceback.extract_tb(tb)
-        search_string = os.path.join('', 'templates', '')
+        search_string = os.path.join("", "templates", "")
         if search_string in path:
             template_path = path.split(search_string)[0] + search_string
         else:
@@ -99,9 +99,9 @@ def print_template_traceback(path):
                     _print_frame(frame.filename, frame.lineno, frame.name, frame.line)
     except Exception as tb_exception:
         logger.error(
-            'A template error occured. ' +
-            'Additionally, a traceback exception occured. Exception: %s',
-            tb_exception
+            "A template error occured. "
+            + "Additionally, a traceback exception occured. Exception: %s",
+            tb_exception,
         )
 
 
@@ -129,11 +129,11 @@ def render_jinja_template(path, jinja_vars, j2_environment):
     logger.debug("%s Rendering CloudFormation template", path)
     default_j2_environment_config = {
         "autoescape": select_autoescape(
-            disabled_extensions=('j2',),
+            disabled_extensions=("j2",),
             default=True,
         ),
         "loader": FileSystemLoader(path.parent),
-        "undefined": StrictUndefined
+        "undefined": StrictUndefined,
     }
     j2_environment_config = strategies.dict_merge(
         default_j2_environment_config, j2_environment

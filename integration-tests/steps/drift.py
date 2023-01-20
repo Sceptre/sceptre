@@ -13,9 +13,7 @@ def step_impl(context, stack_name):
     topic_arn = _get_output("TopicName", full_name)
     client = boto3.client("sns")
     client.set_topic_attributes(
-        TopicArn=topic_arn,
-        AttributeName="DisplayName",
-        AttributeValue="WrongName"
+        TopicArn=topic_arn, AttributeName="DisplayName", AttributeValue="WrongName"
     )
 
 
@@ -30,8 +28,7 @@ def _get_output(output_name, stack_name):
 @when('the user detects drift on stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
-        command_path=stack_name + '.yaml',
-        project_path=context.sceptre_dir
+        command_path=stack_name + ".yaml", project_path=context.sceptre_dir
     )
     sceptre_plan = SceptrePlan(sceptre_context)
     values = sceptre_plan.drift_detect().values()
@@ -41,8 +38,7 @@ def step_impl(context, stack_name):
 @when('the user shows drift on stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
-        command_path=stack_name + '.yaml',
-        project_path=context.sceptre_dir
+        command_path=stack_name + ".yaml", project_path=context.sceptre_dir
     )
     sceptre_plan = SceptrePlan(sceptre_context)
     values = sceptre_plan.drift_show().values()
@@ -52,8 +48,7 @@ def step_impl(context, stack_name):
 @when('the user detects drift on stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
     sceptre_context = SceptreContext(
-        command_path=stack_group_name,
-        project_path=context.sceptre_dir
+        command_path=stack_group_name, project_path=context.sceptre_dir
     )
     sceptre_plan = SceptrePlan(sceptre_context)
     values = sceptre_plan.drift_detect().values()
@@ -67,7 +62,10 @@ def step_impl(context, desired_status):
 
 @then('stack resource drift status is "{desired_status}"')
 def step_impl(context, desired_status):
-    assert context.output[0][1]["StackResourceDrifts"][0]["StackResourceDriftStatus"] == desired_status
+    assert (
+        context.output[0][1]["StackResourceDrifts"][0]["StackResourceDriftStatus"]
+        == desired_status
+    )
 
 
 @then('stack_group drift statuses are each one of "{statuses}"')

@@ -18,8 +18,10 @@ def new_group():
     pass
 
 
-@new_group.command("group", short_help="Creates a new Stack Group directory in a project.")
-@click.argument('stack_group')
+@new_group.command(
+    "group", short_help="Creates a new Stack Group directory in a project."
+)
+@click.argument("stack_group")
 @catch_exceptions
 @click.pass_context
 def new_stack_group(ctx, stack_group):
@@ -41,7 +43,7 @@ def new_stack_group(ctx, stack_group):
 
 @new_group.command("project", short_help="Creates a new project.")
 @catch_exceptions
-@click.argument('project_name')
+@click.argument("project_name")
 @click.pass_context
 def new_project(ctx, project_name):
     """
@@ -61,7 +63,7 @@ def new_project(ctx, project_name):
         # Check if stack_group folder already exists
         if e.errno == errno.EEXIST:
             raise ProjectAlreadyExistsError(
-                'Folder \"{0}\" already exists.'.format(project_name)
+                'Folder "{0}" already exists.'.format(project_name)
             )
         else:
             raise
@@ -72,7 +74,7 @@ def new_project(ctx, project_name):
 
     defaults = {
         "project_code": project_name,
-        "region": os.environ.get("AWS_DEFAULT_REGION", "")
+        "region": os.environ.get("AWS_DEFAULT_REGION", ""),
     }
 
     config_path = os.path.join(cwd, project_name, "config")
@@ -92,7 +94,7 @@ def _create_new_stack_group(config_dir, new_path):
     """
     # Create full path to stack_group
     folder_path = os.path.join(config_dir, new_path)
-    new_config_msg = 'Do you want initialise config.yaml?'
+    new_config_msg = "Do you want initialise config.yaml?"
 
     # Make folders for the stack_group
     try:
@@ -100,8 +102,7 @@ def _create_new_stack_group(config_dir, new_path):
     except OSError as e:
         # Check if stack_group folder already exists
         if e.errno == errno.EEXIST:
-            new_config_msg =\
-                'StackGroup path exists. ' + new_config_msg
+            new_config_msg = "StackGroup path exists. " + new_config_msg
         else:
             raise
 
@@ -158,9 +159,7 @@ def _create_config_file(config_dir, path, defaults={}):
 
     # Ask for new values
     for key, value in config.items():
-        config[key] = click.prompt(
-            'Please enter a {0}'.format(key), default=value
-        )
+        config[key] = click.prompt("Please enter a {0}".format(key), default=value)
 
     # Remove values if parent config are the same
     config = {k: v for k, v in config.items() if parent_config.get(k) != v}
@@ -168,9 +167,7 @@ def _create_config_file(config_dir, path, defaults={}):
     # Write config.yaml if config not empty
     filepath = os.path.join(path, "config.yaml")
     if config:
-        with open(filepath, 'w') as config_file:
-            yaml.safe_dump(
-                config, stream=config_file, default_flow_style=False
-            )
+        with open(filepath, "w") as config_file:
+            yaml.safe_dump(config, stream=config_file, default_flow_style=False)
     else:
         click.echo("No config.yaml file needed - covered by parent config.")
