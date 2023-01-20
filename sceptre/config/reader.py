@@ -13,7 +13,6 @@ import datetime
 import fnmatch
 import logging
 import sys
-import traceback
 import yaml
 
 from os import environ, path, walk
@@ -441,12 +440,8 @@ class ConfigReader(object):
                     environment_variable=environ
                 )
             except Exception as err:
-                exc_type, exc_value, tb = sys.exc_info()
-                exc_message = ''
-                for line in traceback.format_exception_only(exc_type, exc_value):
-                    exc_message += line.rstrip('\n')
                 raise SceptreException(
-                    f'{Path(directory_path, basename).as_posix()} - {exc_message}')
+                    f"{Path(directory_path, basename).as_posix()} - {err}")
 
             try:
                 config = yaml.safe_load(rendered_template)
