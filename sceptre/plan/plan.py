@@ -63,10 +63,16 @@ class SceptrePlan(object):
 
         all_paths = self._valid_stack_paths()
         filtered_valid_stack_paths = [
-            p for p in all_paths if pathlib.PurePath(p).parent == command_path_parent] or all_paths
-        if filtered_valid_stack_paths and len(filtered_valid_stack_paths) < MAX_VALID_STACK_PATH_COUNT:
-            error_text += (f" Valid stack paths under '{sceptreise_path(str(command_path_parent))}' " +
-                           f"are: {filtered_valid_stack_paths}")
+            p for p in all_paths if pathlib.PurePath(p).parent == command_path_parent
+        ] or all_paths
+        if (
+            filtered_valid_stack_paths
+            and len(filtered_valid_stack_paths) < MAX_VALID_STACK_PATH_COUNT
+        ):
+            error_text += (
+                f" Valid stack paths under '{sceptreise_path(str(command_path_parent))}' "
+                + f"are: {filtered_valid_stack_paths}"
+                )
         raise ConfigFileNotFoundError(error_text)
 
     def _generate_launch_order(self, reverse=False) -> List[Set[Stack]]:
