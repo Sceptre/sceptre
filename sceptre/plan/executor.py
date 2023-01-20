@@ -15,7 +15,6 @@ from sceptre.stack import Stack
 
 
 class SceptrePlanExecutor(object):
-
     def __init__(self, command: str, launch_order: List[Set[Stack]]):
         """
         Initialises a SceptrePlanExecutor, generates the launch order, threads
@@ -45,8 +44,9 @@ class SceptrePlanExecutor(object):
 
         with ThreadPoolExecutor(max_workers=self.num_threads) as executor:
             for batch in self.launch_order:
-                futures = [executor.submit(self._execute, stack, *args)
-                           for stack in batch]
+                futures = [
+                    executor.submit(self._execute, stack, *args) for stack in batch
+                ]
 
                 for future in as_completed(futures):
                     stack, status = future.result()

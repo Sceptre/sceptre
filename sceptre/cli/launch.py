@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 import click
 from click import Context
@@ -22,11 +22,18 @@ logger = logging.getLogger(__name__)
     "-p",
     "--prune",
     is_flag=True,
-    help="If set, will delete all stacks in the command path marked as obsolete."
+    help="If set, will delete all stacks in the command path marked as obsolete.",
+)
+@click.option(
+    "--disable-rollback/--enable-rollback",
+    default=None,
+    help="Disable or enable the cloudformation automatic rollback",
 )
 @click.pass_context
 @catch_exceptions
-def launch_command(ctx: Context, path: str, yes: bool, prune: bool):
+def launch_command(
+    ctx: Context, path: str, yes: bool, prune: bool, disable_rollback: Optional[bool]
+):
     """
     Launch a Stack or StackGroup for a given config PATH. This command is intended as a catch-all
     command that will apply any changes from Stack Configs indicated via the path.
@@ -36,15 +43,16 @@ def launch_command(ctx: Context, path: str, yes: bool, prune: bool):
     * Any stacks that already exist will be updated (if there are any changes)
     * If any stacks are marked with "ignore: True", those stacks will neither be created nor updated
     * If any stacks are marked with "obsolete: True", those stacks will neither be created nor updated.
-      Furthermore, if the "-p"/"--prune" flag is used, these stacks will be deleted prior to any
+    * Furthermore, if the "-p"/"--prune" flag is used, these stacks will be deleted prior to any
       other launch commands
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
     )
     launcher = Launcher(context)
     launcher.print_operations(prune)
@@ -61,7 +69,10 @@ class Launcher:
     :param context: The Sceptre context to use for launching
     :param plan_factory: A callable with the signature of (SceptreContext) -> SceptrePlan
     """
-    def __init__(self, context: SceptreContext, plan_factory=SceptrePlan, pruner_factory=Pruner):
+
+    def __init__(
+        self, context: SceptreContext, plan_factory=SceptrePlan, pruner_factory=Pruner
+    ):
         self._context = context
         self._make_plan = plan_factory
         self._make_pruner = pruner_factory
@@ -103,16 +114,24 @@ class Launcher:
         return self._plan
 
     def _get_stacks_to_skip(self, deploy_plan: SceptrePlan, prune: bool) -> List[Stack]:
-        return [stack for stack in deploy_plan if stack.ignore or (stack.obsolete and not prune)]
+        return [
+            stack
+            for stack in deploy_plan
+            if stack.ignore or (stack.obsolete and not prune)
+        ]
 
-    def _get_stacks_to_prune(self, deploy_plan: SceptrePlan, prune: bool) -> List[Stack]:
+    def _get_stacks_to_prune(
+        self, deploy_plan: SceptrePlan, prune: bool
+    ) -> List[Stack]:
         return [stack for stack in deploy_plan if prune and stack.obsolete]
 
     def _exclude_stacks_from_plan(self, deployment_plan: SceptrePlan, *stacks: Stack):
         for stack in stacks:
             deployment_plan.remove_stack_from_plan(stack)
 
-    def _validate_launch_for_missing_dependencies(self, deploy_plan: SceptrePlan, prune: bool):
+    def _validate_launch_for_missing_dependencies(
+        self, deploy_plan: SceptrePlan, prune: bool
+    ):
         validated_stacks = set()
         skipped_dependencies = set()
 
@@ -151,7 +170,7 @@ class Launcher:
         if not len(stacks):
             return
 
-        message = f'* {message}\n'
+        message = f"* {message}\n"
         for stack in stacks:
             message += f"{Fore.YELLOW}{stack.name}{Style.RESET_ALL}\n"
 

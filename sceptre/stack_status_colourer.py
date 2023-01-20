@@ -14,6 +14,8 @@ from colorama import Fore, Style
 class StackStatusColourer(object):
     """
     StackStatusColourer adds colours to stack statuses.
+    These are documented here:
+    https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-describing-stacks.html
     """
 
     STACK_STATUS_CODES = {
@@ -24,6 +26,12 @@ class StackStatusColourer(object):
         "DELETE_COMPLETE": Fore.GREEN,
         "DELETE_FAILED": Fore.RED,
         "DELETE_IN_PROGRESS": Fore.YELLOW,
+        "IMPORT_COMPLETE": Fore.GREEN,
+        "IMPORT_IN_PROGRESS": Fore.YELLOW,
+        "IMPORT_ROLLBACK_COMPLETE": Fore.GREEN,
+        "IMPORT_ROLLBACK_FAILED": Fore.RED,
+        "IMPORT_ROLLBACK_IN_PROGRESS": Fore.YELLOW,
+        "REVIEW_IN_PROGRESS": Fore.YELLOW,
         "ROLLBACK_COMPLETE": Fore.RED,
         "ROLLBACK_FAILED": Fore.RED,
         "ROLLBACK_IN_PROGRESS": Fore.YELLOW,
@@ -34,12 +42,10 @@ class StackStatusColourer(object):
         "UPDATE_ROLLBACK_COMPLETE": Fore.GREEN,
         "UPDATE_ROLLBACK_COMPLETE_CLEANUP_IN_PROGRESS": Fore.YELLOW,
         "UPDATE_ROLLBACK_FAILED": Fore.RED,
-        "UPDATE_ROLLBACK_IN_PROGRESS": Fore.YELLOW
+        "UPDATE_ROLLBACK_IN_PROGRESS": Fore.YELLOW,
     }
 
-    STACK_STATUS_PATTERN = re.compile(
-        r"\b({0})\b".format("|".join(STACK_STATUS_CODES))
-    )
+    STACK_STATUS_PATTERN = re.compile(r"\b({0})\b".format("|".join(STACK_STATUS_CODES)))
 
     def colour(self, string):
         """
@@ -60,6 +66,6 @@ class StackStatusColourer(object):
                 "{0}{1}{2}".format(
                     self.STACK_STATUS_CODES[status], status, Style.RESET_ALL
                 ),
-                string
+                string,
             )
         return string

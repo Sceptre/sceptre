@@ -11,10 +11,8 @@ class MockTemplateHandler(TemplateHandler):
     def schema(self):
         return {
             "type": "object",
-            "properties": {
-                "argument": {"type": "string"}
-            },
-            "required": ["argument"]
+            "properties": {"argument": {"type": "string"}},
+            "required": ["argument"],
         }
 
     def handle(self):
@@ -28,5 +26,7 @@ class TestTemplateHandlers(object):
 
     def test_template_handler_errors_when_arguments_invalid(self):
         with pytest.raises(TemplateHandlerArgumentsInvalidError):
-            handler = MockTemplateHandler(name="mock", arguments={"non-existent": "test"})
+            handler = MockTemplateHandler(
+                name="mock", arguments={"non-existent": "test"}
+            )
             handler.validate()

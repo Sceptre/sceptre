@@ -21,10 +21,10 @@ def list_join(a, b):
     :rtype: list
     """
     if a and not isinstance(a, list):
-        raise TypeError('{} is not a list'.format(a))
+        raise TypeError("{} is not a list".format(a))
 
     if b and not isinstance(b, list):
-        raise TypeError('{} is not a list'.format(b))
+        raise TypeError("{} is not a list".format(b))
 
     if a is None:
         return deepcopy(b)
@@ -47,9 +47,9 @@ def dict_merge(a, b):
     :rtype: dict
     """
     if a and not isinstance(a, dict):
-        raise TypeError('{} is not a dict'.format(a))
+        raise TypeError("{} is not a dict".format(a))
     if b and not isinstance(b, dict):
-        raise TypeError('{} is not a dict'.format(b))
+        raise TypeError("{} is not a dict".format(b))
 
     if a is None:
         return deepcopy(b)

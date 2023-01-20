@@ -297,6 +297,12 @@ This resolver can be used in a Stack config file with the following syntax:
    parameters:
      param1: !<custom_resolver_command_name> <value> <optional-aws-profile>
 
+Calling AWS services in your custom resolver
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For details on calling AWS services or invoking AWS-related third party tools in your resolver, see
+:ref:`using_connection_manager`
+
 
 Resolver arguments
 ^^^^^^^^^^^^^^^^^^

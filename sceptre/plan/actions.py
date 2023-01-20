@@ -14,7 +14,7 @@ import typing
 import urllib
 from datetime import datetime, timedelta
 from os import path
-from typing import Union, Optional, Tuple, Dict
+from typing import Dict, Optional, Tuple, Union
 
 import botocore
 from dateutil.tz import tzutc
@@ -26,9 +26,9 @@ from sceptre.exceptions import (
     ProtectedStackError,
     StackDoesNotExistError,
     UnknownStackChangeSetStatusError,
-    UnknownStackStatusError
+    UnknownStackStatusError,
 )
-from sceptre.helpers import normalise_path
+from sceptre.helpers import extract_datetime_from_aws_response_headers, normalise_path
 from sceptre.hooks import add_stack_hooks
 from sceptre.stack import Stack
 from sceptre.stack_status import StackChangeSetStatus, StackStatus
@@ -51,9 +51,11 @@ class StackActions(object):
         self.name = self.stack.name
         self.logger = logging.getLogger(__name__)
         self.connection_manager = ConnectionManager(
-            self.stack.region, self.stack.profile,
-            self.stack.external_name, self.stack.iam_role,
-            self.stack.iam_role_session_duration
+            self.stack.region,
+            self.stack.profile,
+            self.stack.external_name,
+            self.stack.iam_role,
+            self.stack.iam_role_session_duration,
         )
 
     @add_stack_hooks
@@ -69,18 +71,24 @@ class StackActions(object):
         create_stack_kwargs = {
             "StackName": self.stack.external_name,
             "Parameters": self._format_parameters(self.stack.parameters),
-            "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'],
+            "Capabilities": [
+                "CAPABILITY_IAM",
+                "CAPABILITY_NAMED_IAM",
+                "CAPABILITY_AUTO_EXPAND",
+            ],
             "NotificationARNs": self.stack.notifications,
             "Tags": [
-                {"Key": str(k), "Value": str(v)}
-                for k, v in self.stack.tags.items()
-            ]
+                {"Key": str(k), "Value": str(v)} for k, v in self.stack.tags.items()
+            ],
         }
 
-        if self.stack.on_failure:
+        # can specify either DisableRollback or OnFailure , but not both
+        if self.stack.disable_rollback:
+            create_stack_kwargs.update({"DisableRollback": self.stack.disable_rollback})
+        elif self.stack.on_failure:
             create_stack_kwargs.update({"OnFailure": self.stack.on_failure})
-        create_stack_kwargs.update(
-            self.stack.template.get_boto_call_parameter())
+
+        create_stack_kwargs.update(self.stack.template.get_boto_call_parameter())
         create_stack_kwargs.update(self._get_role_arn())
         create_stack_kwargs.update(self._get_stack_timeout())
 
@@ -88,19 +96,17 @@ class StackActions(object):
             response = self.connection_manager.call(
                 service="cloudformation",
                 command="create_stack",
-                kwargs=create_stack_kwargs
+                kwargs=create_stack_kwargs,
             )
 
             self.logger.debug(
                 "%s - Create stack response: %s", self.stack.name, response
             )
 
-            status = self._wait_for_completion()
+            status = self._wait_for_completion(boto_response=response)
         except botocore.exceptions.ClientError as exp:
             if exp.response["Error"]["Code"] == "AlreadyExistsException":
-                self.logger.info(
-                    "%s - Stack already exists", self.stack.name
-                )
+                self.logger.info("%s - Stack already exists", self.stack.name)
 
                 status = StackStatus.COMPLETE
             else:
@@ -123,25 +129,25 @@ class StackActions(object):
                 "StackName": self.stack.external_name,
                 "Parameters": self._format_parameters(self.stack.parameters),
                 "Capabilities": [
-                    'CAPABILITY_IAM',
-                    'CAPABILITY_NAMED_IAM',
-                    'CAPABILITY_AUTO_EXPAND'
+                    "CAPABILITY_IAM",
+                    "CAPABILITY_NAMED_IAM",
+                    "CAPABILITY_AUTO_EXPAND",
                 ],
                 "NotificationARNs": self.stack.notifications,
                 "Tags": [
-                    {"Key": str(k), "Value": str(v)}
-                    for k, v in self.stack.tags.items()
-                ]
+                    {"Key": str(k), "Value": str(v)} for k, v in self.stack.tags.items()
+                ],
             }
-            update_stack_kwargs.update(
-                self.stack.template.get_boto_call_parameter())
+            update_stack_kwargs.update(self.stack.template.get_boto_call_parameter())
             update_stack_kwargs.update(self._get_role_arn())
             response = self.connection_manager.call(
                 service="cloudformation",
                 command="update_stack",
-                kwargs=update_stack_kwargs
+                kwargs=update_stack_kwargs,
             )
-            status = self._wait_for_completion(self.stack.stack_timeout)
+            status = self._wait_for_completion(
+                self.stack.stack_timeout, boto_response=response
+            )
             self.logger.debug(
                 "%s - Update Stack response: %s", self.stack.name, response
             )
@@ -154,9 +160,7 @@ class StackActions(object):
         except botocore.exceptions.ClientError as exp:
             error_message = exp.response["Error"]["Message"]
             if error_message == "No updates are to be performed.":
-                self.logger.info(
-                    "%s - No updates to perform.", self.stack.name
-                )
+                self.logger.info("%s - No updates to perform.", self.stack.name)
                 return StackStatus.COMPLETE
             else:
                 raise
@@ -169,18 +173,17 @@ class StackActions(object):
         :rtype: sceptre.stack_status.StackStatus
         """
         self.logger.warning(
-            "%s - Update Stack time exceeded the specified timeout",
-            self.stack.name
+            "%s - Update Stack time exceeded the specified timeout", self.stack.name
         )
         response = self.connection_manager.call(
             service="cloudformation",
             command="cancel_update_stack",
-            kwargs={"StackName": self.stack.external_name}
+            kwargs={"StackName": self.stack.external_name},
         )
         self.logger.debug(
             "%s - Cancel update Stack response: %s", self.stack.name, response
         )
-        return self._wait_for_completion()
+        return self._wait_for_completion(boto_response=response)
 
     @add_stack_hooks
     def launch(self) -> StackStatus:
@@ -216,7 +219,8 @@ class StackActions(object):
         elif existing_status.endswith("IN_PROGRESS"):
             self.logger.info(
                 "%s - Stack action is already in progress state and cannot "
-                "be updated", self.stack.name
+                "be updated",
+                self.stack.name,
             )
             status = StackStatus.IN_PROGRESS
         elif existing_status.endswith("FAILED"):
@@ -226,9 +230,7 @@ class StackActions(object):
                 )
             )
         else:
-            raise UnknownStackStatusError(
-                "{0} is unknown".format(existing_status)
-            )
+            raise UnknownStackStatusError("{0} is unknown".format(existing_status))
         return status
 
     @add_stack_hooks
@@ -251,14 +253,12 @@ class StackActions(object):
 
         delete_stack_kwargs = {"StackName": self.stack.external_name}
         delete_stack_kwargs.update(self._get_role_arn())
-        self.connection_manager.call(
-            service="cloudformation",
-            command="delete_stack",
-            kwargs=delete_stack_kwargs
+        response = self.connection_manager.call(
+            service="cloudformation", command="delete_stack", kwargs=delete_stack_kwargs
         )
 
         try:
-            status = self._wait_for_completion()
+            status = self._wait_for_completion(boto_response=response)
         except StackDoesNotExistError:
             status = StackStatus.COMPLETE
         except botocore.exceptions.ClientError as error:
@@ -277,7 +277,7 @@ class StackActions(object):
             # need to get to the base install path. __file__ will take us into
             # sceptre/actions so need to walk up the path.
             path.abspath(path.join(__file__, "..", "..")),
-            "stack_policies/lock.json"
+            "stack_policies/lock.json",
         )
         self.set_policy(policy_path)
         self.logger.info("%s - Successfully locked Stack", self.stack.name)
@@ -290,7 +290,7 @@ class StackActions(object):
             # need to get to the base install path. __file__ will take us into
             # sceptre/actions so need to walk up the path.
             path.abspath(path.join(__file__, "..", "..")),
-            "stack_policies/unlock.json"
+            "stack_policies/unlock.json",
         )
         self.set_policy(policy_path)
         self.logger.info("%s - Successfully unlocked Stack", self.stack.name)
@@ -306,7 +306,7 @@ class StackActions(object):
             return self.connection_manager.call(
                 service="cloudformation",
                 command="describe_stacks",
-                kwargs={"StackName": self.stack.external_name}
+                kwargs={"StackName": self.stack.external_name},
             )
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Message"].endswith("does not exist"):
@@ -323,7 +323,7 @@ class StackActions(object):
         return self.connection_manager.call(
             service="cloudformation",
             command="describe_stack_events",
-            kwargs={"StackName": self.stack.external_name}
+            kwargs={"StackName": self.stack.external_name},
         )
 
     def describe_resources(self):
@@ -338,7 +338,7 @@ class StackActions(object):
             response = self.connection_manager.call(
                 service="cloudformation",
                 command="describe_stack_resources",
-                kwargs={"StackName": self.stack.external_name}
+                kwargs={"StackName": self.stack.external_name},
             )
         except botocore.exceptions.ClientError as e:
             if e.response["Error"]["Message"].endswith("does not exist"):
@@ -346,17 +346,17 @@ class StackActions(object):
             raise
 
         self.logger.debug(
-            "%s - Describe Stack resource response: %s",
-            self.stack.name,
-            response
+            "%s - Describe Stack resource response: %s", self.stack.name, response
         )
 
         desired_properties = ["LogicalResourceId", "PhysicalResourceId"]
 
-        formatted_response = {self.stack.name: [
-            {k: v for k, v in item.items() if k in desired_properties}
-            for item in response["StackResources"]
-        ]}
+        formatted_response = {
+            self.stack.name: [
+                {k: v for k, v in item.items() if k in desired_properties}
+                for item in response["StackResources"]
+            ]
+        }
         return formatted_response
 
     def describe_outputs(self):
@@ -381,18 +381,16 @@ class StackActions(object):
         UPDATE_ROLLBACK_COMPLETE.
         """
         self.logger.debug("%s - Continuing update rollback", self.stack.name)
-        continue_update_rollback_kwargs = {
-            "StackName": self.stack.external_name
-        }
+        continue_update_rollback_kwargs = {"StackName": self.stack.external_name}
         continue_update_rollback_kwargs.update(self._get_role_arn())
         self.connection_manager.call(
             service="cloudformation",
             command="continue_update_rollback",
-            kwargs=continue_update_rollback_kwargs
+            kwargs=continue_update_rollback_kwargs,
         )
         self.logger.info(
             "%s - Successfully initiated continuation of update rollback",
-            self.stack.name
+            self.stack.name,
         )
 
     def set_policy(self, policy_path):
@@ -406,19 +404,12 @@ class StackActions(object):
         with open(policy_path) as f:
             policy = f.read()
 
-        self.logger.debug(
-            "%s - Setting Stack policy: \n%s",
-            self.stack.name,
-            policy
-        )
+        self.logger.debug("%s - Setting Stack policy: \n%s", self.stack.name, policy)
 
         self.connection_manager.call(
             service="cloudformation",
             command="set_stack_policy",
-            kwargs={
-                "StackName": self.stack.external_name,
-                "StackPolicyBody": policy
-            }
+            kwargs={"StackName": self.stack.external_name, "StackPolicyBody": policy},
         )
         self.logger.info("%s - Successfully set Stack Policy", self.stack.name)
 
@@ -433,12 +424,11 @@ class StackActions(object):
         response = self.connection_manager.call(
             service="cloudformation",
             command="get_stack_policy",
-            kwargs={
-                "StackName": self.stack.external_name
-            }
+            kwargs={"StackName": self.stack.external_name},
         )
-        json_formatting = json.loads(response.get(
-            "StackPolicyBody", json.dumps("No Policy Information")))
+        json_formatting = json.loads(
+            response.get("StackPolicyBody", json.dumps("No Policy Information"))
+        )
         return {self.stack.name: json_formatting}
 
     @add_stack_hooks
@@ -452,17 +442,18 @@ class StackActions(object):
         create_change_set_kwargs = {
             "StackName": self.stack.external_name,
             "Parameters": self._format_parameters(self.stack.parameters),
-            "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'],
+            "Capabilities": [
+                "CAPABILITY_IAM",
+                "CAPABILITY_NAMED_IAM",
+                "CAPABILITY_AUTO_EXPAND",
+            ],
             "ChangeSetName": change_set_name,
             "NotificationARNs": self.stack.notifications,
             "Tags": [
-                {"Key": str(k), "Value": str(v)}
-                for k, v in self.stack.tags.items()
-            ]
+                {"Key": str(k), "Value": str(v)} for k, v in self.stack.tags.items()
+            ],
         }
-        create_change_set_kwargs.update(
-            self.stack.template.get_boto_call_parameter()
-        )
+        create_change_set_kwargs.update(self.stack.template.get_boto_call_parameter())
         create_change_set_kwargs.update(self._get_role_arn())
         self.logger.debug(
             "%s - Creating Change Set '%s'", self.stack.name, change_set_name
@@ -470,13 +461,14 @@ class StackActions(object):
         self.connection_manager.call(
             service="cloudformation",
             command="create_change_set",
-            kwargs=create_change_set_kwargs
+            kwargs=create_change_set_kwargs,
         )
         # After the call successfully completes, AWS CloudFormation
         # starts creating the Change Set.
         self.logger.info(
             "%s - Successfully initiated creation of Change Set '%s'",
-            self.stack.name, change_set_name
+            self.stack.name,
+            change_set_name,
         )
 
     def delete_change_set(self, change_set_name):
@@ -494,14 +486,15 @@ class StackActions(object):
             command="delete_change_set",
             kwargs={
                 "ChangeSetName": change_set_name,
-                "StackName": self.stack.external_name
-            }
+                "StackName": self.stack.external_name,
+            },
         )
         # If the call successfully completes, AWS CloudFormation
         # successfully deleted the Change Set.
         self.logger.info(
             "%s - Successfully deleted Change Set '%s'",
-            self.stack.name, change_set_name
+            self.stack.name,
+            change_set_name,
         )
 
     def describe_change_set(self, change_set_name):
@@ -521,8 +514,8 @@ class StackActions(object):
             command="describe_change_set",
             kwargs={
                 "ChangeSetName": change_set_name,
-                "StackName": self.stack.external_name
-            }
+                "StackName": self.stack.external_name,
+            },
         )
 
     def execute_change_set(self, change_set_name):
@@ -538,27 +531,28 @@ class StackActions(object):
         change_set = self.describe_change_set(change_set_name)
         status = change_set.get("Status")
         reason = change_set.get("StatusReason")
-        if status == "FAILED" and self.change_set_creation_failed_due_to_no_changes(reason):
+        if status == "FAILED" and self.change_set_creation_failed_due_to_no_changes(
+            reason
+        ):
             self.logger.info(
-                    "Skipping ChangeSet on Stack: {} - there are no changes".format(
-                        change_set.get("StackName")
-                        )
+                "Skipping ChangeSet on Stack: {} - there are no changes".format(
+                    change_set.get("StackName")
+                )
             )
             return 0
 
         self.logger.debug(
             "%s - Executing Change Set '%s'", self.stack.name, change_set_name
         )
-        self.connection_manager.call(
+        response = self.connection_manager.call(
             service="cloudformation",
             command="execute_change_set",
             kwargs={
                 "ChangeSetName": change_set_name,
-                "StackName": self.stack.external_name
-            }
+                "StackName": self.stack.external_name,
+            },
         )
-
-        status = self._wait_for_completion()
+        status = self._wait_for_completion(boto_response=response)
         return status
 
     def change_set_creation_failed_due_to_no_changes(self, reason: str) -> bool:
@@ -570,7 +564,7 @@ class StackActions(object):
         reason = reason.lower()
         no_change_substrings = (
             "submitted information didn't contain changes",
-            "no updates are to be performed"  # The reason returned for SAM templates
+            "no updates are to be performed",  # The reason returned for SAM templates
         )
 
         for substring in no_change_substrings:
@@ -602,9 +596,7 @@ class StackActions(object):
             return self.connection_manager.call(
                 service="cloudformation",
                 command="list_change_sets",
-                kwargs={
-                    "StackName": self.stack.external_name
-                }
+                kwargs={"StackName": self.stack.external_name},
             )
         except botocore.exceptions.ClientError:
             return []
@@ -621,10 +613,9 @@ class StackActions(object):
             change_set_id = summary["ChangeSetId"]
 
             region = self.stack.region
-            encoded = urllib.parse.urlencode({
-                "stackId": stack_id,
-                "changeSetId": change_set_id
-            })
+            encoded = urllib.parse.urlencode(
+                {"stackId": stack_id, "changeSetId": change_set_id}
+            )
 
             new_summaries.append(
                 f"https://{region}.console.aws.amazon.com/cloudformation/home?"
@@ -655,7 +646,7 @@ class StackActions(object):
         response = self.connection_manager.call(
             service="cloudformation",
             command="validate_template",
-            kwargs=self.stack.template.get_boto_call_parameter()
+            kwargs=self.stack.template.get_boto_call_parameter(),
         )
         self.logger.debug(
             "%s - Validate Template response: %s", self.stack.name, response
@@ -673,17 +664,15 @@ class StackActions(object):
         self.logger.debug("%s - Estimating template cost", self.stack.name)
 
         parameters = [
-            {'ParameterKey': key, 'ParameterValue': value}
+            {"ParameterKey": key, "ParameterValue": value}
             for key, value in self.stack.parameters.items()
         ]
 
         kwargs = self.stack.template.get_boto_call_parameter()
-        kwargs.update({'Parameters': parameters})
+        kwargs.update({"Parameters": parameters})
 
         response = self.connection_manager.call(
-            service="cloudformation",
-            command="estimate_template_cost",
-            kwargs=kwargs
+            service="cloudformation", command="estimate_template_cost", kwargs=kwargs
         )
         self.logger.debug(
             "%s - Estimate Stack cost response: %s", self.stack.name, response
@@ -717,10 +706,7 @@ class StackActions(object):
                 continue
             if isinstance(value, list):
                 value = ",".join(value)
-            formatted_parameters.append({
-                "ParameterKey": name,
-                "ParameterValue": value
-            })
+            formatted_parameters.append({"ParameterKey": name, "ParameterValue": value})
 
         return formatted_parameters
 
@@ -734,9 +720,7 @@ class StackActions(object):
         :rtype: dict
         """
         if self.stack.role_arn:
-            return {
-                "RoleARN": self.stack.role_arn
-            }
+            return {"RoleARN": self.stack.role_arn}
         else:
             return {}
 
@@ -749,9 +733,7 @@ class StackActions(object):
         :rtype: dict
         """
         if self.stack.stack_timeout:
-            return {
-                "TimeoutInMinutes": self.stack.stack_timeout
-            }
+            return {"TimeoutInMinutes": self.stack.stack_timeout}
         else:
             return {}
 
@@ -767,15 +749,17 @@ class StackActions(object):
                 "currently enabled".format(self.stack.name)
             )
 
-    def _wait_for_completion(self, timeout=0):
+    def _wait_for_completion(
+        self, timeout=0, boto_response: Optional[dict] = None
+    ) -> StackStatus:
         """
         Waits for a Stack operation to finish. Prints CloudFormation events
         while it waits.
 
         :param timeout: Timeout before returning, in minutes.
+        :param boto_response: Response from the boto call which initiated the stack change.
 
         :returns: The final Stack status.
-        :rtype: sceptre.stack_status.StackStatus
         """
         timeout = 60 * timeout
 
@@ -784,13 +768,16 @@ class StackActions(object):
 
         status = StackStatus.IN_PROGRESS
 
-        self.most_recent_event_datetime = (
-            datetime.now(tzutc()) - timedelta(seconds=3)
-        )
+        most_recent_event_datetime = extract_datetime_from_aws_response_headers(
+            boto_response
+        ) or (datetime.now(tzutc()) - timedelta(seconds=3))
+
         elapsed = 0
         while status == StackStatus.IN_PROGRESS and not timed_out(elapsed):
             status = self._get_simplified_status(self._get_status())
-            self._log_new_events()
+            most_recent_event_datetime = self._log_new_events(
+                most_recent_event_datetime
+            )
             time.sleep(4)
             elapsed += 4
 
@@ -800,7 +787,7 @@ class StackActions(object):
         return self.connection_manager.call(
             service="cloudformation",
             command="describe_stacks",
-            kwargs={"StackName": self.stack.external_name}
+            kwargs={"StackName": self.stack.external_name},
         )
 
     def _get_status(self):
@@ -839,29 +826,32 @@ class StackActions(object):
         elif status.endswith("_FAILED"):
             return StackStatus.FAILED
         else:
-            raise UnknownStackStatusError(
-                "{0} is unknown".format(status)
-            )
+            raise UnknownStackStatusError("{0} is unknown".format(status))
 
-    def _log_new_events(self):
+    def _log_new_events(self, after_datetime: datetime) -> datetime:
         """
         Log the latest Stack events while the Stack is being built.
+
+        :param after_datetime: Only events after this datetime will be logged.
+        :returns: The datetime of the last logged event or after_datetime if no events were logged.
         """
         events = self.describe_events()["StackEvents"]
         events.reverse()
-        new_events = [
-            event for event in events
-            if event["Timestamp"] > self.most_recent_event_datetime
-        ]
+        new_events = [event for event in events if event["Timestamp"] > after_datetime]
         for event in new_events:
-            self.logger.info(" ".join([
-                self.stack.name,
-                event["LogicalResourceId"],
-                event["ResourceType"],
-                event["ResourceStatus"],
-                event.get("ResourceStatusReason", "")
-            ]))
-            self.most_recent_event_datetime = event["Timestamp"]
+            self.logger.info(
+                " ".join(
+                    [
+                        self.stack.name,
+                        event["LogicalResourceId"],
+                        event["ResourceType"],
+                        event["ResourceStatus"],
+                        event.get("ResourceStatusReason", ""),
+                    ]
+                )
+            )
+            after_datetime = event["Timestamp"]
+        return after_datetime
 
     def wait_for_cs_completion(self, change_set_name):
         """
@@ -894,12 +884,19 @@ class StackActions(object):
         cs_status = cs_description["Status"]
         cs_exec_status = cs_description["ExecutionStatus"]
         possible_statuses = [
-            "CREATE_PENDING", "CREATE_IN_PROGRESS",
-            "CREATE_COMPLETE", "DELETE_COMPLETE", "FAILED"
+            "CREATE_PENDING",
+            "CREATE_IN_PROGRESS",
+            "CREATE_COMPLETE",
+            "DELETE_COMPLETE",
+            "FAILED",
         ]
         possible_execution_statuses = [
-            "UNAVAILABLE", "AVAILABLE", "EXECUTE_IN_PROGRESS",
-            "EXECUTE_COMPLETE", "EXECUTE_FAILED", "OBSOLETE"
+            "UNAVAILABLE",
+            "AVAILABLE",
+            "EXECUTE_IN_PROGRESS",
+            "EXECUTE_COMPLETE",
+            "EXECUTE_FAILED",
+            "OBSOLETE",
         ]
 
         if cs_status not in possible_statuses:
@@ -911,25 +908,20 @@ class StackActions(object):
                 "ExecutionStatus {0} is unknown".format(cs_status)
             )
 
-        if (
-                cs_status == "CREATE_COMPLETE" and
-                cs_exec_status == "AVAILABLE"
-        ):
+        if cs_status == "CREATE_COMPLETE" and cs_exec_status == "AVAILABLE":
             return StackChangeSetStatus.READY
-        elif (
-                cs_status in [
-                    "CREATE_PENDING", "CREATE_IN_PROGRESS", "CREATE_COMPLETE"
-                ] and
-                cs_exec_status in ["UNAVAILABLE", "AVAILABLE"]
-        ):
+        elif cs_status in [
+            "CREATE_PENDING",
+            "CREATE_IN_PROGRESS",
+            "CREATE_COMPLETE",
+        ] and cs_exec_status in ["UNAVAILABLE", "AVAILABLE"]:
             return StackChangeSetStatus.PENDING
-        elif (
-                cs_status in ["DELETE_COMPLETE", "FAILED"] or
-                cs_exec_status in [
-                    "EXECUTE_IN_PROGRESS", "EXECUTE_COMPLETE",
-                    "EXECUTE_FAILED", "OBSOLETE"
-                ]
-        ):
+        elif cs_status in ["DELETE_COMPLETE", "FAILED"] or cs_exec_status in [
+            "EXECUTE_IN_PROGRESS",
+            "EXECUTE_COMPLETE",
+            "EXECUTE_FAILED",
+            "OBSOLETE",
+        ]:
             return StackChangeSetStatus.DEFUNCT
         else:  # pragma: no cover
             raise Exception("This else should not be reachable.")
@@ -960,14 +952,14 @@ class StackActions(object):
                 command="get_template",
                 kwargs={
                     "StackName": self.stack.external_name,
-                    "TemplateStage": 'Original'
-                }
+                    "TemplateStage": "Original",
+                },
             )
-            return response['TemplateBody']
+            return response["TemplateBody"]
             # Sometimes boto returns a string, sometimes a dictionary
         except botocore.exceptions.ClientError as e:
             # AWS returns a ValidationError if the stack doesn't exist
-            if e.response['Error']['Code'] == 'ValidationError':
+            if e.response["Error"]["Code"] == "ValidationError":
                 return None
             raise
 
@@ -981,16 +973,14 @@ class StackActions(object):
     def _get_template_summary(self, **kwargs) -> Optional[dict]:
         try:
             template_summary = self.connection_manager.call(
-                service='cloudformation',
-                command='get_template_summary',
-                kwargs=kwargs
+                service="cloudformation", command="get_template_summary", kwargs=kwargs
             )
             return template_summary
         except botocore.exceptions.ClientError as e:
-            error_response = e.response['Error']
+            error_response = e.response["Error"]
             if (
-                error_response['Code'] == 'ValidationError'
-                and 'does not exist' in error_response['Message']
+                error_response["Code"] == "ValidationError"
+                and "does not exist" in error_response["Message"]
             ):
                 return None
             raise
@@ -1023,7 +1013,7 @@ class StackActions(object):
             self.logger.info(f"{self.stack.name} - Does not exist.")
             return {
                 "DetectionStatus": "STACK_DOES_NOT_EXIST",
-                "StackDriftStatus": "STACK_DOES_NOT_EXIST"
+                "StackDriftStatus": "STACK_DOES_NOT_EXIST",
             }
 
         response = self._detect_stack_drift()
@@ -1033,10 +1023,7 @@ class StackActions(object):
             response = self._wait_for_drift_status(detection_id)
         except TimeoutError as exc:
             self.logger.info(f"{self.stack.name} - {exc}")
-            response = {
-                "DetectionStatus": "TIMED_OUT",
-                "StackDriftStatus": "TIMED_OUT"
-            }
+            response = {"DetectionStatus": "TIMED_OUT", "StackDriftStatus": "TIMED_OUT"}
 
         return response
 
@@ -1097,14 +1084,12 @@ class StackActions(object):
             "StackDriftDetectionId",
             "DetectionStatus",
             "DetectionStatusReason",
-            "StackDriftStatus"
+            "StackDriftStatus",
         ]
 
         for key in keys:
             if key in response:
-                self.logger.debug(
-                    f"{self.stack.name} - {key} - {response[key]}"
-                )
+                self.logger.debug(f"{self.stack.name} - {key} - {response[key]}")
 
     def _detect_stack_drift(self) -> dict:
         """
@@ -1115,9 +1100,7 @@ class StackActions(object):
         return self.connection_manager.call(
             service="cloudformation",
             command="detect_stack_drift",
-            kwargs={
-                "StackName": self.stack.external_name
-            }
+            kwargs={"StackName": self.stack.external_name},
         )
 
     def _describe_stack_drift_detection_status(self, detection_id: str) -> dict:
@@ -1129,9 +1112,7 @@ class StackActions(object):
         return self.connection_manager.call(
             service="cloudformation",
             command="describe_stack_drift_detection_status",
-            kwargs={
-                "StackDriftDetectionId": detection_id
-            }
+            kwargs={"StackDriftDetectionId": detection_id},
         )
 
     def _describe_stack_resource_drifts(self) -> dict:
@@ -1143,9 +1124,7 @@ class StackActions(object):
         return self.connection_manager.call(
             service="cloudformation",
             command="describe_stack_resource_drifts",
-            kwargs={
-                "StackName": self.stack.external_name
-            }
+            kwargs={"StackName": self.stack.external_name},
         )
 
     def _filter_drifts(self, response: dict, drifted: bool) -> dict:

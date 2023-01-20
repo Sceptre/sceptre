@@ -2,10 +2,7 @@ import logging
 import click
 
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import (
-    catch_exceptions,
-    write
-)
+from sceptre.cli.helpers import catch_exceptions, write
 from sceptre.plan.plan import SceptrePlan
 
 logger = logging.getLogger(__name__)
@@ -32,11 +29,12 @@ def dump_config(ctx, path):
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         output_format=ctx.obj.get("output_format"),
         options=ctx.obj.get("options"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
     )
     plan = SceptrePlan(context)
     responses = plan.dump_config()

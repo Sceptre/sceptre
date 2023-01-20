@@ -1,11 +1,7 @@
 import click
 
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import (
-    catch_exceptions,
-    simplify_change_set_description,
-    write
-)
+from sceptre.cli.helpers import catch_exceptions, simplify_change_set_description, write
 from sceptre.plan.plan import SceptrePlan
 
 
@@ -21,9 +17,7 @@ def describe_group(ctx):
 @describe_group.command(name="change-set")
 @click.argument("path")
 @click.argument("change-set-name")
-@click.option(
-    "-v", "--verbose", is_flag=True, help="Display verbose output."
-)
+@click.option("-v", "--verbose", is_flag=True, help="Display verbose output.")
 @click.pass_context
 @catch_exceptions
 def describe_change_set(ctx, path, change_set_name, verbose):
@@ -40,12 +34,13 @@ def describe_change_set(ctx, path, change_set_name, verbose):
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         output_format=ctx.obj.get("output_format"),
         no_colour=ctx.obj.get("no_colour"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
     )
 
     plan = SceptrePlan(context)
@@ -72,19 +67,16 @@ def describe_policy(ctx, path):
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         output_format=ctx.obj.get("output_format"),
         no_colour=ctx.obj.get("no_colour"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
     )
 
     plan = SceptrePlan(context)
     responses = plan.get_policy()
     for response in responses.values():
-        write(
-            response,
-            context.output_format,
-            context.no_colour
-        )
+        write(response, context.output_format, context.no_colour)

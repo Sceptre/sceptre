@@ -52,13 +52,13 @@ def main():
             if item.is_dir() and VERSION_REGEX.match(item.name)
         ),
         reverse=True,
-        key=attrgetter("name")
+        key=attrgetter("name"),
     )
 
     active_versions = (
-            ["latest", "dev"]
-            + [item.name for item in documentation_directories[:NUMBER_OF_VERSIONS_TO_KEEP]]
-            + KEEP_VERSIONS
+        ["latest", "dev"]
+        + [item.name for item in documentation_directories[:NUMBER_OF_VERSIONS_TO_KEEP]]
+        + KEEP_VERSIONS
     )
     versions_to_remove = (
         item.path

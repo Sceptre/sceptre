@@ -4,7 +4,6 @@ from sceptre.context import SceptreContext
 
 
 class TestSceptreContext(object):
-
     def setup_method(self, test_method):
         self.templates_path = "templates"
         self.config_path = "config"
@@ -14,25 +13,27 @@ class TestSceptreContext(object):
         self.context = SceptreContext(
             project_path="project_path/to/sceptre",
             command_path="command-path",
+            command_params=sentinel.command_params,
             user_variables=sentinel.user_variables,
             options=sentinel.options,
             output_format=sentinel.output_format,
             no_colour=sentinel.no_colour,
-            ignore_dependencies=sentinel.ignore_dependencies
+            ignore_dependencies=sentinel.ignore_dependencies,
         )
 
         sentinel.project_path = "project_path/to/sceptre"
-        assert self.context.project_path.replace(path.sep, '/') == sentinel.project_path
+        assert self.context.project_path.replace(path.sep, "/") == sentinel.project_path
 
     def test_full_config_path_returns_correct_path(self):
         context = SceptreContext(
             project_path="project_path",
             command_path="command-path",
+            command_params=sentinel.command_params,
             user_variables=sentinel.user_variables,
             options=sentinel.options,
             output_format=sentinel.output_format,
             no_colour=sentinel.no_colour,
-            ignore_dependencies=sentinel.ignore_dependencies
+            ignore_dependencies=sentinel.ignore_dependencies,
         )
 
         full_config_path = path.join("project_path", self.config_path)
@@ -42,15 +43,14 @@ class TestSceptreContext(object):
         context = SceptreContext(
             project_path="project_path",
             command_path="command",
+            command_params=sentinel.command_params,
             user_variables=sentinel.user_variables,
             options=sentinel.options,
             output_format=sentinel.output_format,
             no_colour=sentinel.no_colour,
-            ignore_dependencies=sentinel.ignore_dependencies
+            ignore_dependencies=sentinel.ignore_dependencies,
         )
-        full_command_path = path.join("project_path",
-                                      self.config_path,
-                                      "command")
+        full_command_path = path.join("project_path", self.config_path, "command")
 
         assert context.full_command_path() == full_command_path
 
@@ -58,11 +58,12 @@ class TestSceptreContext(object):
         context = SceptreContext(
             project_path="project_path",
             command_path="command",
+            command_params=sentinel.command_params,
             user_variables=sentinel.user_variables,
             options=sentinel.options,
             output_format=sentinel.output_format,
             no_colour=sentinel.no_colour,
-            ignore_dependencies=sentinel.ignore_dependencies
+            ignore_dependencies=sentinel.ignore_dependencies,
         )
         full_templates_path = path.join("project_path", self.templates_path)
         assert context.full_templates_path() == full_templates_path
@@ -71,11 +72,12 @@ class TestSceptreContext(object):
         context = SceptreContext(
             project_path="project_path",
             command_path="command",
+            command_params={"params": "variables"},
             user_variables={"user": "variables"},
             options={"hello": "there"},
             output_format=sentinel.output_format,
             no_colour=sentinel.no_colour,
-            ignore_dependencies=sentinel.ignore_dependencies
+            ignore_dependencies=sentinel.ignore_dependencies,
         )
         clone = context.clone()
         assert clone is not context
