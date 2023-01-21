@@ -13,7 +13,7 @@ class TestSceptrePlan(object):
         self.stack = Stack(
             name="dev/app/stack",
             project_code=sentinel.project_code,
-            template_path=sentinel.template_path,
+            template_handler_config={},
             region=sentinel.region,
             profile=sentinel.profile,
             parameters={"key1": "val1"},

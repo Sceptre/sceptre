@@ -61,7 +61,6 @@ CONFIG_MERGE_STRATEGIES = {
     "stack_timeout": strategies.child_wins,
     "template_bucket_name": strategies.child_wins,
     "template_key_value": strategies.child_wins,
-    "template_path": strategies.child_wins,
     "template": strategies.child_wins,
     "ignore": strategies.child_wins,
     "obsolete": strategies.child_wins,
@@ -80,7 +79,6 @@ STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
 STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
     {},
     {
-        "template_path",
         "template",
         "dependencies",
         "hooks",
@@ -578,14 +576,17 @@ class ConfigReader(object):
         stack = Stack(
             name=stack_name,
             project_code=config["project_code"],
-            template_path=config.get("template_path"),
             template_handler_config=config.get("template"),
             region=config["region"],
             template_bucket_name=config.get("template_bucket_name"),
             template_key_prefix=config.get("template_key_prefix"),
             required_version=config.get("required_version"),
+            sceptre_role=config.get("sceptre_role"),
             iam_role=config.get("iam_role"),
-            iam_role_session_duration=config.get("iam_role_session_duration"),
+            sceptre_role_session_duration=config.get(
+                "sceptre_role_session_duration", 0
+            ),
+            iam_role_session_duration=config.get("iam_role_session_duration", 0),
             profile=config.get("profile"),
             parameters=config.get("parameters", {}),
             sceptre_user_data=config.get("sceptre_user_data", {}),
@@ -593,6 +594,7 @@ class ConfigReader(object):
             s3_details=s3_details,
             dependencies=config.get("dependencies", []),
             role_arn=config.get("role_arn"),
+            cloudformation_service_role=config.get("cloudformation_service_role"),
             protected=config.get("protect", False),
             tags=config.get("stack_tags", {}),
             external_name=config.get("stack_name"),
