@@ -16,7 +16,6 @@ class NullHandler(logging.Handler):  # pragma: no cover
         pass
 
 
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("default", category=DeprecationWarning, module="sceptre")
 
 logging.getLogger("sceptre").addHandler(NullHandler())

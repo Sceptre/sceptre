@@ -5,8 +5,10 @@ from os import sep
 from typing import Optional, Any, List
 
 import dateutil.parser
+import deprecation
 
 from sceptre.exceptions import PathConversionError
+from sceptre import __version__
 
 
 def get_external_stack_name(project_code, stack_name):
@@ -152,3 +154,33 @@ def gen_repr(instance: Any, class_label: str = None, attributes: List[str] = [])
         [f"{a}={repr(instance.__getattribute__(a))}" for a in attributes]
     )
     return f"{class_label}({attr_str})"
+
+
+def create_deprecated_alias_property(
+    alias_from: str, alias_to: str, deprecated_in: str, removed_in: str
+):
+    def getter(self):
+        return getattr(self, alias_to)
+
+    getter.__name__ = alias_from
+
+    def setter(self, value):
+        setattr(self, alias_to, value)
+
+    setter.__name__ = alias_from
+
+    deprecation_kwargs = dict(
+        deprecated_in=deprecated_in,
+        removed_in=removed_in,
+        current_version=__version__,
+        details=(
+            f'It is being renamed to "{alias_to}". You should migrate all uses of "{alias_from}" to '
+            f"that in order to avoid future breakage."
+        ),
+    )
+
+    deprecated_getter = deprecation.deprecated(**deprecation_kwargs)(getter)
+    deprecated_setter = deprecation.deprecated(**deprecation_kwargs)(setter)
+
+    deprecated_property = property(deprecated_getter, deprecated_setter)
+    return deprecated_property
