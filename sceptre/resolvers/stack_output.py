@@ -138,7 +138,7 @@ class StackOutput(StackOutputBase):
             self.output_key,
             profile=stack.profile,
             region=stack.region,
-            iam_role=stack.iam_role,
+            iam_role=stack.sceptre_role,
         )
 
 

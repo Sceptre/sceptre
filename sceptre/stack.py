@@ -10,6 +10,9 @@ This module implements a Stack class, which stores a Stack's data.
 import logging
 from typing import List, Any
 
+import deprecation
+
+from sceptre import __version__
 from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.helpers import (
@@ -36,9 +39,13 @@ class Stack:
     :param project_code: A code which is prepended to the Stack names\
             of all Stacks built by Sceptre.
 
+    :param template_path: The relative path to the CloudFormation, Jinja2\
+            or Python template to build the Stack from. If this is filled,
+            `template_handler_config` should not be filled.
+
     :param template_handler_config: Configuration for a Template Handler that can resolve
             its arguments to a template string. Should contain the `type` property to specify
-            the type of template handler to load.
+            the type of template handler to load. Conflicts with `template_path`.
 
     :param region: The AWS region to build Stacks in.
 
@@ -140,6 +147,7 @@ class Stack:
     role_arn = create_deprecated_alias_property(
         "role_arn", "cloudformation_service_role", "4.0.0", "5.0.0"
     )
+    sceptre_role_session_duration = 0
     iam_role_session_duration = create_deprecated_alias_property(
         "iam_role_session_duration", "sceptre_role_session_duration", "4.0.0", "5.0.0"
     )
@@ -149,7 +157,8 @@ class Stack:
         name: str,
         project_code: str,
         region: str,
-        template_handler_config: dict,
+        template_path: str = None,
+        template_handler_config: dict = None,
         template_bucket_name: str = None,
         template_key_prefix: str = None,
         required_version: str = None,
@@ -220,7 +229,15 @@ class Stack:
             role_arn,
         )
         self.template_bucket_name = template_bucket_name
-        self.template_handler_config = template_handler_config
+        self._set_field_with_deprecated_alias(
+            "template_handler_config",
+            template_handler_config,
+            "template_path",
+            template_path,
+            required=True,
+            preferred_config_name="template",
+        )
+
         self.s3_details = s3_details
         self.parameters = parameters or {}
         self.sceptre_user_data = sceptre_user_data or {}
@@ -278,6 +295,7 @@ class Stack:
             self.name == stack.name
             and self.external_name == stack.external_name
             and self.project_code == stack.project_code
+            and self.template_path == stack.template_path
             and self.region == stack.region
             and self.template_key_prefix == stack.template_key_prefix
             and self.required_version == stack.required_version
@@ -354,21 +372,48 @@ class Stack:
             )
         return self._template
 
+    @property
+    @deprecation.deprecated(
+        "4.0.0", "5.0.0", __version__, "Use the template Stack Config key instead."
+    )
+    def template_path(self):
+        return self.template_handler_config["path"]
+
+    @template_path.setter
+    @deprecation.deprecated(
+        "4.0.0", "5.0.0", __version__, "Use the template Stack Config key instead."
+    )
+    def template_path(self, value):
+        self.template_handler_config = {"type": "file", "path": value}
+
     def _set_field_with_deprecated_alias(
         self,
         preferred_attribute_name,
         preferred_value,
         deprecated_attribute_name,
         deprecated_value,
+        *,
+        required=False,
+        preferred_config_name=None,
+        deprecated_config_name=None,
     ):
+        # This is a generic truthiness check. All current default values are falsy, so this should work.
+        # If we ever use this function where the default value is NOT falsy, this will be a problem.
+        preferred_config_name = preferred_config_name or preferred_attribute_name
+        deprecated_config_name = deprecated_config_name or deprecated_attribute_name
+
         if preferred_value and deprecated_value:
             raise InvalidConfigFileError(
-                f"Both '{preferred_attribute_name}' and '{deprecated_attribute_name}' are set; You should only set a "
-                f"value for {preferred_attribute_name} because {deprecated_attribute_name} is deprecated."
+                f"Both '{preferred_config_name}' and '{deprecated_config_name}' are set; You should only set a "
+                f"value for {preferred_config_name} because {deprecated_config_name} is deprecated."
             )
         elif preferred_value:
             setattr(self, preferred_attribute_name, preferred_value)
         elif deprecated_value:
             setattr(self, deprecated_attribute_name, deprecated_value)
+        elif required:
+            raise InvalidConfigFileError(
+                f"{preferred_config_name} is a required Stack Config."
+            )
         else:  # In case they're both falsy, we should just set the value using the preferred value.
             setattr(self, preferred_attribute_name, preferred_value)

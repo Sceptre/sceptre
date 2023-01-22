@@ -62,6 +62,7 @@ CONFIG_MERGE_STRATEGIES = {
     "template_bucket_name": strategies.child_wins,
     "template_key_value": strategies.child_wins,
     "template": strategies.child_wins,
+    "template_path": strategies.child_wins,
     "ignore": strategies.child_wins,
     "obsolete": strategies.child_wins,
 }
@@ -79,6 +80,7 @@ STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
 STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
     {},
     {
+        "template_path",
         "template",
         "dependencies",
         "hooks",
