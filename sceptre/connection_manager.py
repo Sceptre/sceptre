@@ -265,7 +265,7 @@ class ConnectionManager(object):
         region: Optional[str],
         sceptre_role: Optional[str],
         *,
-        iam_role: Optional[str],
+        iam_role: Optional[str] = None,
     ) -> boto3.Session:
         if iam_role is not None:
             self._emit_iam_role_deprecation_warning()
