@@ -315,8 +315,9 @@ role_arn
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
-This field is deprecated as of v4.0.0 and will be removed in v5.0.0. It has been renamed to
-`cloudformation_service_role`_ as a clearer name for its purpose.
+.. warning::
+   This field is deprecated as of v4.0.0 and will be removed in v5.0.0. It has been renamed to
+   `cloudformation_service_role`_ as a clearer name for its purpose.
 
 cloudformation_service_role
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -334,8 +335,9 @@ iam_role
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
-This field is deprecated as of v4.0.0 and will be removed in v5.0.0. It has been renamed to
-`sceptre_role`_ as a clearer name for its purpose.
+.. warning::
+   This field is deprecated as of v4.0.0 and will be removed in v5.0.0. It has been renamed to
+   `sceptre_role`_ as a clearer name for its purpose.
 
 sceptre_role
 ~~~~~~~~~~~~
@@ -366,8 +368,9 @@ iam_role_session_duration
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
-This field is deprecated as of v4.0.0 and will be removed in v5.0.0. It has been renamed to
-`sceptre_role_session_duration`_ as a clearer name for its purpose.
+.. warning::
+   This field is deprecated as of v4.0.0 and will be removed in v5.0.0. It has been renamed to
+   `sceptre_role_session_duration`_ as a clearer name for its purpose.
 
 sceptre_role_session_duration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -383,9 +386,6 @@ executing any actions on the Stack.
    If you set the value of ``sceptre_role_session_duration`` to a number that *GREATER* than 3600, you
    will need to make sure that the ``sceptre_role`` has a configuration of ``MaxSessionDuration``, and
    its value is *GREATER* than or equal to the value of ``sceptre_role_session_duration``.
-
-For more information on this configuration, its implications, and its uses, see
-:ref:`Sceptre and IAM: sceptre_role_session_duration <sceptre_role_permissions>`.
 
 sceptre_user_data
 ~~~~~~~~~~~~~~~~~

@@ -27,7 +27,7 @@ basis or can be applied broadly to a whole StackGroup.
 .. _cloudformation_service_role_permissions:
 
 cloudformation_service_role
-^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This is the **CloudFormation service role** that will be attached to a given CloudFormation stack.
 This IAM role needs to be able to be assumed by **CloudFormation**, and must provide all the
 necessary permissions for all create/read/update/delete operations for all resources defined in that
@@ -60,7 +60,7 @@ ARN, and then reference it using `!stack_output`.
 .. _sceptre_role_permissions:
 
 sceptre_role
-^^^^^^^^
+^^^^^^^^^^^^
 
 This is a **role that Sceptre will assume** when taking any actions on the Stack. It is not a service
 role for CloudFormation. Instead, this is simply a role that the current user assumes to execute
