@@ -67,7 +67,7 @@ class TestDiffWriter:
             parameters={},
             stack_tags={},
             notifications=[],
-            role_arn=None,
+            cloudformation_service_role=None,
         )
 
     @property
@@ -211,7 +211,7 @@ class TestDeepDiffWriter:
             parameters={},
             stack_tags={},
             notifications=[],
-            role_arn=None,
+            cloudformation_service_role=None,
         )
 
         self.config2 = deepcopy(self.config1)
@@ -339,7 +339,7 @@ class TestDiffLibWriter:
             parameters={},
             stack_tags={},
             notifications=[],
-            role_arn=None,
+            cloudformation_service_role=None,
         )
 
         self.config2 = deepcopy(self.config1)
@@ -414,7 +414,7 @@ class TestColouredDiffLibWriter:
             parameters={},
             stack_tags={},
             notifications=[],
-            role_arn=None,
+            cloudformation_service_role=None,
         )
 
         self.template1 = "foo"

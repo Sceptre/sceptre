@@ -37,7 +37,7 @@ class TestStackActions(object):
             hooks={},
             s3_details=None,
             dependencies=sentinel.dependencies,
-            role_arn=sentinel.role_arn,
+            cloudformation_service_role=sentinel.cloudformation_service_role,
             protected=False,
             tags={"tag1": "val1"},
             external_name=sentinel.external_name,
@@ -121,7 +121,7 @@ class TestStackActions(object):
                     "CAPABILITY_NAMED_IAM",
                     "CAPABILITY_AUTO_EXPAND",
                 ],
-                "RoleARN": sentinel.role_arn,
+                "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [sentinel.notification],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
                 "OnFailure": sentinel.on_failure,
@@ -154,7 +154,7 @@ class TestStackActions(object):
                     "CAPABILITY_NAMED_IAM",
                     "CAPABILITY_AUTO_EXPAND",
                 ],
-                "RoleARN": sentinel.role_arn,
+                "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [sentinel.notification],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
                 "DisableRollback": True,
@@ -186,7 +186,7 @@ class TestStackActions(object):
                     "CAPABILITY_NAMED_IAM",
                     "CAPABILITY_AUTO_EXPAND",
                 ],
-                "RoleARN": sentinel.role_arn,
+                "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
                 "OnFailure": sentinel.on_failure,
@@ -217,7 +217,7 @@ class TestStackActions(object):
                     "CAPABILITY_NAMED_IAM",
                     "CAPABILITY_AUTO_EXPAND",
                 ],
-                "RoleARN": sentinel.role_arn,
+                "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [sentinel.notification],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
             },
@@ -265,7 +265,7 @@ class TestStackActions(object):
                     "CAPABILITY_NAMED_IAM",
                     "CAPABILITY_AUTO_EXPAND",
                 ],
-                "RoleARN": sentinel.role_arn,
+                "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [sentinel.notification],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
             },
@@ -296,7 +296,7 @@ class TestStackActions(object):
                         "CAPABILITY_NAMED_IAM",
                         "CAPABILITY_AUTO_EXPAND",
                     ],
-                    "RoleARN": sentinel.role_arn,
+                    "RoleARN": sentinel.cloudformation_service_role,
                     "NotificationARNs": [sentinel.notification],
                     "Tags": [{"Key": "tag1", "Value": "val1"}],
                 },
@@ -335,7 +335,7 @@ class TestStackActions(object):
                     "CAPABILITY_NAMED_IAM",
                     "CAPABILITY_AUTO_EXPAND",
                 ],
-                "RoleARN": sentinel.role_arn,
+                "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
             },
@@ -458,7 +458,10 @@ class TestStackActions(object):
         self.actions.connection_manager.call.assert_called_with(
             service="cloudformation",
             command="delete_stack",
-            kwargs={"StackName": sentinel.external_name, "RoleARN": sentinel.role_arn},
+            kwargs={
+                "StackName": sentinel.external_name,
+                "RoleARN": sentinel.cloudformation_service_role,
+            },
         )
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
@@ -570,7 +573,10 @@ class TestStackActions(object):
         self.actions.connection_manager.call.assert_called_with(
             service="cloudformation",
             command="continue_update_rollback",
-            kwargs={"StackName": sentinel.external_name, "RoleARN": sentinel.role_arn},
+            kwargs={
+                "StackName": sentinel.external_name,
+                "RoleARN": sentinel.cloudformation_service_role,
+            },
         )
 
     def test_set_stack_policy_sends_correct_request(self):
@@ -624,7 +630,7 @@ class TestStackActions(object):
                     "CAPABILITY_AUTO_EXPAND",
                 ],
                 "ChangeSetName": sentinel.change_set_name,
-                "RoleARN": sentinel.role_arn,
+                "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [sentinel.notification],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
             },
@@ -651,7 +657,7 @@ class TestStackActions(object):
                     "CAPABILITY_AUTO_EXPAND",
                 ],
                 "ChangeSetName": sentinel.change_set_name,
-                "RoleARN": sentinel.role_arn,
+                "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
             },
@@ -913,12 +919,14 @@ class TestStackActions(object):
         with pytest.raises(ClientError):
             self.actions.get_status()
 
-    def test_get_role_arn_without_role(self):
-        self.actions.stack.role_arn = None
+    def test_get_cloudformation_service_role_without_role(self):
+        self.actions.stack.cloudformation_service_role = None
         assert self.actions._get_role_arn() == {}
 
     def test_get_role_arn_with_role(self):
-        assert self.actions._get_role_arn() == {"RoleARN": sentinel.role_arn}
+        assert self.actions._get_role_arn() == {
+            "RoleARN": sentinel.cloudformation_service_role
+        }
 
     def test_protect_execution_without_protection(self):
         # Function should do nothing if protect == False

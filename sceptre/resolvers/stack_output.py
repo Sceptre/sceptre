@@ -26,7 +26,7 @@ class StackOutputBase(Resolver):
         super(StackOutputBase, self).__init__(*args, **kwargs)
 
     def _get_output_value(
-        self, stack_name, output_key, profile=None, region=None, iam_role=None
+        self, stack_name, output_key, profile=None, region=None, sceptre_role=None
     ):
         """
         Attempts to get the Stack output named by ``output_key``
@@ -39,7 +39,7 @@ class StackOutputBase(Resolver):
         :rtype: str
         :raises: sceptre.exceptions.DependencyStackMissingOutputError
         """
-        outputs = self._get_stack_outputs(stack_name, profile, region, iam_role)
+        outputs = self._get_stack_outputs(stack_name, profile, region, sceptre_role)
 
         try:
             return outputs[output_key]
@@ -50,7 +50,9 @@ class StackOutputBase(Resolver):
                 )
             )
 
-    def _get_stack_outputs(self, stack_name, profile=None, region=None, iam_role=None):
+    def _get_stack_outputs(
+        self, stack_name, profile=None, region=None, sceptre_role=None
+    ):
         """
         Communicates with AWS CloudFormation to fetch outputs from a specific
         Stack.
@@ -72,7 +74,7 @@ class StackOutputBase(Resolver):
                 profile=profile,
                 region=region,
                 stack_name=stack_name,
-                iam_role=iam_role,
+                sceptre_role=sceptre_role,
             )
         except ClientError as e:
             if "does not exist" in e.response["Error"]["Message"]:
@@ -138,7 +140,7 @@ class StackOutput(StackOutputBase):
             self.output_key,
             profile=stack.profile,
             region=stack.region,
-            iam_role=stack.sceptre_role,
+            sceptre_role=stack.sceptre_role,
         )
 
 
@@ -165,13 +167,13 @@ class StackOutputExternal(StackOutputBase):
 
         profile = None
         region = None
-        iam_role = None
+        sceptre_role = None
         arguments = shlex.split(self.argument)
 
         stack_argument = arguments[0]
         if len(arguments) > 1:
             extra_args = arguments[1].split("::", 2)
-            profile, region, iam_role = extra_args + (3 - len(extra_args)) * [None]
+            profile, region, sceptre_role = extra_args + (3 - len(extra_args)) * [None]
 
         dependency_stack_name, output_key = stack_argument.split("::")
         return self._get_output_value(
@@ -179,5 +181,5 @@ class StackOutputExternal(StackOutputBase):
             output_key,
             profile or None,
             region or None,
-            iam_role or None,
+            sceptre_role or None,
         )
