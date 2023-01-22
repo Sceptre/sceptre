@@ -29,7 +29,7 @@ class TestStackOutputResolver(object):
         dependency.name = "account/dev/vpc"
         dependency.profile = "dependency_profile"
         dependency.region = "dependency_region"
-        dependency.iam_role = "dependency_iam_role"
+        dependency.sceptre_role = "dependency_sceptre_role"
 
         mock_get_output_value.return_value = "output_value"
 
@@ -46,7 +46,7 @@ class TestStackOutputResolver(object):
             "VpcId",
             profile="dependency_profile",
             region="dependency_region",
-            iam_role="dependency_iam_role",
+            sceptre_role="dependency_sceptre_role",
         )
 
     @patch("sceptre.resolvers.stack_output.StackOutput._get_output_value")
@@ -61,7 +61,7 @@ class TestStackOutputResolver(object):
         dependency.name = "account/dev/vpc"
         dependency.profile = "dependency_profile"
         dependency.region = "dependency_region"
-        dependency.iam_role = "dependency_iam_role"
+        dependency.sceptre_role = "dependency_sceptre_role"
 
         mock_get_output_value.return_value = "output_value"
 
@@ -78,7 +78,7 @@ class TestStackOutputResolver(object):
             "VpcId",
             profile="dependency_profile",
             region="dependency_region",
-            iam_role="dependency_iam_role",
+            sceptre_role="dependency_sceptre_role",
         )
 
     @patch("sceptre.resolvers.stack_output.StackOutput._get_output_value")
@@ -94,7 +94,7 @@ class TestStackOutputResolver(object):
         dependency.name = "account/dev/vpc"
         dependency.profile = "dependency_profile"
         dependency.region = "dependency_region"
-        dependency.iam_role = "dependency_iam_role"
+        dependency.sceptre_role = "dependency_sceptre_role"
 
         mock_get_output_value.return_value = "output_value"
 
@@ -111,7 +111,7 @@ class TestStackOutputResolver(object):
             "VpcId",
             profile="dependency_profile",
             region="dependency_region",
-            iam_role="dependency_iam_role",
+            sceptre_role="dependency_sceptre_role",
         )
 
     @patch("sceptre.resolvers.stack_output.StackOutput._get_output_value")
@@ -129,7 +129,7 @@ class TestStackOutputResolver(object):
         dependency.name = "vpc"
         dependency.profile = "dependency_profile"
         dependency.region = "dependency_region"
-        dependency.iam_role = "dependency_iam_role"
+        dependency.sceptre_role = "dependency_sceptre_role"
 
         mock_get_output_value.return_value = "output_value"
 
@@ -146,7 +146,7 @@ class TestStackOutputResolver(object):
             "VpcId",
             profile="dependency_profile",
             region="dependency_region",
-            iam_role="dependency_iam_role",
+            sceptre_role="dependency_sceptre_role",
         )
 
 
@@ -172,12 +172,12 @@ class TestStackOutputExternalResolver(object):
         stack.dependencies = []
         stack._connection_manager = MagicMock(spec=ConnectionManager)
         stack_output_external_resolver = StackOutputExternal(
-            "another/account-vpc::VpcId region::profile::iam_role", stack
+            "another/account-vpc::VpcId region::profile::sceptre_role", stack
         )
         mock_get_output_value.return_value = "output_value"
         stack_output_external_resolver.resolve()
         mock_get_output_value.assert_called_once_with(
-            "another/account-vpc", "VpcId", "region", "profile", "iam_role"
+            "another/account-vpc", "VpcId", "region", "profile", "sceptre_role"
         )
         assert stack.dependencies == []
 

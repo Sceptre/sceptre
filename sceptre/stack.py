@@ -8,7 +8,7 @@ This module implements a Stack class, which stores a Stack's data.
 """
 
 import logging
-from typing import List, Any
+from typing import List, Any, Optional
 
 import deprecation
 
@@ -190,8 +190,8 @@ class Stack:
         disable_rollback=False,
         profile: str = None,
         stack_timeout: int = 0,
-        sceptre_role_session_duration: int = 0,
-        iam_role_session_duration: int = 0,
+        sceptre_role_session_duration: Optional[int] = None,
+        iam_role_session_duration: Optional[int] = None,
         ignore=False,
         obsolete=False,
         stack_group_config: dict = {},

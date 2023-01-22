@@ -588,10 +588,8 @@ class ConfigReader(object):
             required_version=config.get("required_version"),
             sceptre_role=config.get("sceptre_role"),
             iam_role=config.get("iam_role"),
-            sceptre_role_session_duration=config.get(
-                "sceptre_role_session_duration", 0
-            ),
-            iam_role_session_duration=config.get("iam_role_session_duration", 0),
+            sceptre_role_session_duration=config.get("sceptre_role_session_duration"),
+            iam_role_session_duration=config.get("iam_role_session_duration"),
             profile=config.get("profile"),
             parameters=config.get("parameters", {}),
             sceptre_user_data=config.get("sceptre_user_data", {}),

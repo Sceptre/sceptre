@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 """
 sceptre.connection_manager
 
@@ -13,9 +12,11 @@ import os
 import random
 import threading
 import time
+import warnings
 from typing import Optional, Dict
 
 import boto3
+import deprecation
 from botocore.credentials import Credentials
 from botocore.exceptions import ClientError
 
@@ -145,6 +146,8 @@ class ConnectionManager(object):
         profile: Optional[str] = STACK_DEFAULT,
         region: Optional[str] = STACK_DEFAULT,
         sceptre_role: Optional[str] = STACK_DEFAULT,
+        *,
+        iam_role: Optional[str] = STACK_DEFAULT,
     ) -> boto3.Session:
         """
         Returns a boto3 session for the targeted profile, region, and sceptre_role.
@@ -161,6 +164,8 @@ class ConnectionManager(object):
         :param sceptre_role: The IAM role ARN that is assumed using STS to create the session. Passing
             None will result in no IAM role being assumed. Defaults to the ConnectionManager's
             configured sceptre_role (if there is one).
+        :param iam_role: An alias for sceptre_role; Deprecated in v4.0.0 and will be removed in
+            v5.0.0.
 
         :returns: The Boto3 session.
         :raises: botocore.exceptions.ClientError
@@ -170,7 +175,20 @@ class ConnectionManager(object):
         sceptre_role = (
             self.sceptre_role if sceptre_role == STACK_DEFAULT else sceptre_role
         )
+        if sceptre_role == STACK_DEFAULT and iam_role != STACK_DEFAULT:
+            self._emit_iam_role_deprecation_warning()
+            sceptre_role = iam_role
+
         return self._get_session(profile, region, sceptre_role)
+
+    def _emit_iam_role_deprecation_warning(self):
+        warnings.warn(
+            deprecation.DeprecatedWarning(
+                "The iam_role parameter", "4.0.0", "5.0.0", "Use sceptre_role instead"
+            ),
+            DeprecationWarning,
+            stacklevel=3,
+        )
 
     def create_session_environment_variables(
         self,
@@ -242,8 +260,17 @@ class ConnectionManager(object):
         return envs
 
     def _get_session(
-        self, profile: Optional[str], region: Optional[str], sceptre_role: Optional[str]
+        self,
+        profile: Optional[str],
+        region: Optional[str],
+        sceptre_role: Optional[str],
+        *,
+        iam_role: Optional[str],
     ) -> boto3.Session:
+        if iam_role is not None:
+            self._emit_iam_role_deprecation_warning()
+            sceptre_role = iam_role
+
         with self._session_lock:
             self.logger.debug("Getting Boto3 session")
             key = (region, profile, sceptre_role)
@@ -350,6 +377,8 @@ class ConnectionManager(object):
         region=None,
         stack_name=None,
         sceptre_role=None,
+        *,
+        iam_role=None,
     ):
         """
         Makes a thread-safe Boto3 client call.
@@ -363,8 +392,11 @@ class ConnectionManager(object):
         :param kwargs: The keyword arguments to supply to <command>.
         :type kwargs: dict
         :returns: The response from the Boto3 call.
-        :rtype: dict
         """
+        if iam_role is not None:
+            self._emit_iam_role_deprecation_warning()
+            sceptre_role = iam_role
+
         if region is None and profile is None and sceptre_role is None:
             if stack_name and stack_name in self._stack_keys:
                 region, profile, sceptre_role = self._stack_keys[stack_name]
