@@ -158,7 +158,17 @@ def gen_repr(instance: Any, class_label: str = None, attributes: List[str] = [])
 
 def create_deprecated_alias_property(
     alias_from: str, alias_to: str, deprecated_in: str, removed_in: str
-):
+) -> property:
+    """Creates a property object with a deprecated getter and a deprecated setter that emit warnings
+    when used, aliasing to their renamed property names.
+
+    :param alias_from: The name of the attribute that is deprecated and that needs to be aliased
+    :param alias_to: The name of the attribute to alias the deprecated field to.
+    :param deprecated_in: The version in which the property is deprecated.
+    :param removed_in: The version when it will be removed, after which the alias will no longer work.
+    :return: A property object to be assigned directly onto a class.
+    """
+
     def getter(self):
         return getattr(self, alias_to)
 
