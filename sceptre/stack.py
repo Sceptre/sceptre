@@ -386,7 +386,7 @@ class Stack:
     @deprecation.deprecated(
         "4.0.0", "5.0.0", __version__, "Use the template Stack Config key instead."
     )
-    def template_path(self):
+    def template_path(self) -> str:
         """The path argument from the template_handler config. This field is deprecated as of v4.0.0
         and will be removed in v5.0.0.
         """
@@ -396,7 +396,7 @@ class Stack:
     @deprecation.deprecated(
         "4.0.0", "5.0.0", __version__, "Use the template Stack Config key instead."
     )
-    def template_path(self, value):
+    def template_path(self, value: str):
         self.template_handler_config = {"type": "file", "path": value}
 
     def _set_field_with_deprecated_alias(
