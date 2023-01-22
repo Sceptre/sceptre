@@ -123,7 +123,6 @@ class Stack:
            If not supplied, Sceptre uses default value (3600 seconds)
 
     :param stack_group_config: The StackGroup config for the Stack
-
     """
 
     parameters = ResolvableContainerProperty("parameters")
@@ -158,7 +157,7 @@ class Stack:
     role_arn = create_deprecated_alias_property(
         "role_arn", "cloudformation_service_role", "4.0.0", "5.0.0"
     )
-    sceptre_role_session_duration = 0
+    sceptre_role_session_duration = None
     iam_role_session_duration = create_deprecated_alias_property(
         "iam_role_session_duration", "sceptre_role_session_duration", "4.0.0", "5.0.0"
     )
@@ -388,6 +387,9 @@ class Stack:
         "4.0.0", "5.0.0", __version__, "Use the template Stack Config key instead."
     )
     def template_path(self):
+        """The path argument from the template_handler config. This field is deprecated as of v4.0.0
+        and will be removed in v5.0.0.
+        """
         return self.template_handler_config["path"]
 
     @template_path.setter
