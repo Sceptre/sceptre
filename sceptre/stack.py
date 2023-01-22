@@ -39,9 +39,10 @@ class Stack:
     :param project_code: A code which is prepended to the Stack names\
             of all Stacks built by Sceptre.
 
-    :param template_path: The relative path to the CloudFormation, Jinja2\
+    :param template_path: The relative path to the CloudFormation, Jinja2,
             or Python template to build the Stack from. If this is filled,
-            `template_handler_config` should not be filled.
+            `template_handler_config` should not be filled. This field has been deprecated since
+            version 4.0.0 and will be removed in version 5.0.0.
 
     :param template_handler_config: Configuration for a Template Handler that can resolve
             its arguments to a template string. Should contain the `type` property to specify
@@ -67,7 +68,7 @@ class Stack:
     :param hooks: A list of arbitrary shell or python commands or scripts to\
             run.
 
-    :param s3_details:
+    :param s3_details: Details used for uploading templates to S3.
 
     :param dependencies: The relative path to the Stack, including the file\
             extension of the Stack.
@@ -79,7 +80,7 @@ class Stack:
 
     :param tags: CloudFormation Tags to be applied to the Stack.
 
-    :param external_name:
+    :param external_name: The real stack name used for CloudFormation
 
     :param notifications: SNS topic ARNs to publish Stack related events to.\
             A maximum of 5 ARNs can be specified per Stack.
@@ -89,9 +90,19 @@ class Stack:
 
     :param disable_rollback: If True, cloudformation will not rollback on deployment failures
 
+    :param iam_role: The ARN of a role for Sceptre to assume before interacting
+            with the environment. If not supplied, Sceptre uses the user's AWS CLI
+            credentials. This field has been deprecated since version 4.0.0 and will be removed in
+            version 5.0.0.
+
     :param sceptre_role: The ARN of a role for Sceptre to assume before interacting\
             with the environment. If not supplied, Sceptre uses the user's AWS CLI\
             credentials.
+
+    :param iam_role_session_duration: The duration in seconds of the assumed IAM role session.
+            This field has been deprecated since version 4.0.0 and will be removed in version 5.0.0.
+
+    :param sceptre_role_session_duration: The duration in seconds of the assumed IAM role session.
 
     :param profile: The name of the profile as defined in ~/.aws/config and\
             ~/.aws/credentials.
