@@ -26,6 +26,7 @@ from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
 from sceptre import __version__
+from sceptre.exceptions import SceptreException
 from sceptre.exceptions import DependencyDoesNotExistError
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.exceptions import InvalidSceptreDirectoryError
@@ -436,13 +437,26 @@ class ConfigReader(object):
                 stack_group_config.get("j2_environment", {}),
             )
             j2_environment = Environment(**j2_environment_config)
-            template = j2_environment.get_template(basename)
+
+            try:
+                template = j2_environment.get_template(basename)
+            except Exception as err:
+                raise SceptreException(
+                    f"{Path(directory_path, basename).as_posix()} - {err}"
+                ) from err
+
             self.templating_vars.update(stack_group_config)
-            rendered_template = template.render(
-                self.templating_vars,
-                command_path=self.context.command_path.split(path.sep),
-                environment_variable=environ,
-            )
+
+            try:
+                rendered_template = template.render(
+                    self.templating_vars,
+                    command_path=self.context.command_path.split(path.sep),
+                    environment_variable=environ,
+                )
+            except Exception as err:
+                raise SceptreException(
+                    f"{Path(directory_path, basename).as_posix()} - {err}"
+                ) from err
 
             try:
                 config = yaml.safe_load(rendered_template)
