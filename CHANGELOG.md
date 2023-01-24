@@ -12,6 +12,8 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
  - [Resolves #1271] Extend stack colourer to include "IMPORT" states (#1272)
  - [Resolves #1179] cloudformation disable-rollback option (#1282)
    - Allow user to disable a cloudformation rollback on a sceptre deployment.
+ - [Resolve #1283] Introducing `sceptre_role`, `cloudformation_service_role` (#1295)
+   - These are just iam_role and role_arn renamed to be a lot clearer. See "Deprecations" below.
 
 
 ### Changed
@@ -24,6 +26,8 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
      "create_session_environment_variables()" methods to make AWS interactions
      easier and more consistent with individual stack configurations for
      iam_role, profile, and region configurations.
+ - [Resolve #1293] Improve the Stack Config Jinja Syntax Error Message to include the Stack Name (#1294)
+ - [Resolves #1267] Improve the Stack Config Jinja Error Message to include the Stack Name (#1269)
 
 #### _Potentially_ Breaking Changes
  - The !cmd hook now invokes the passed command using the AWS environment
@@ -38,6 +42,15 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
    `export AWS_SESSION_TOKEN={{environment_variable.AWS_SESSION_TOKEN}} &&` (or
    whatever other environment variable(s) you need to explicitly set).
 
+### Deprecations
+ - [Resolve #1283] Deprecating `iam_role`, `role_arn`, and `template_path` (#1295)
+   - `iam_role` and `role_arn` have been aliased to `sceptre_role` and
+      `cloudformation_service_role`. Using these fields will result in a
+      DeprecationWarning.
+   - `template_path` has actually been slated for removal since v2.7. `template`
+      should be used instead. Using `template_path` will result in a
+      DeprecationWarning.
+   - All three deprecated StackConfig fields will be removed in v5.0.0.
 
 
 ### Fixed
