@@ -88,7 +88,7 @@ def diff_command(
     \b
       * parameters
       * notifications
-      * role_arn
+      * cloudformation_service_role
       * stack_tags
 
     Important: There are resolvers (notably !stack_output) that rely on other stacks
@@ -111,6 +111,7 @@ def diff_command(
 
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),

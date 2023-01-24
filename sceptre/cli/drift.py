@@ -37,6 +37,7 @@ def drift_detect(ctx: Context, path: str):
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
@@ -84,6 +85,7 @@ def drift_show(ctx, path, drifted):
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),

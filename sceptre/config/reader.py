@@ -26,6 +26,7 @@ from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
 from sceptre import __version__
+from sceptre.exceptions import SceptreException
 from sceptre.exceptions import DependencyDoesNotExistError
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.exceptions import InvalidSceptreDirectoryError
@@ -41,7 +42,9 @@ CONFIG_MERGE_STRATEGIES = {
     "dependencies": strategies.list_join,
     "hooks": strategies.child_wins,
     "iam_role": strategies.child_wins,
+    "sceptre_role": strategies.child_wins,
     "iam_role_session_duration": strategies.child_wins,
+    "sceptre_role_session_duration": strategies.child_wins,
     "notifications": strategies.child_wins,
     "on_failure": strategies.child_wins,
     "parameters": strategies.child_wins,
@@ -51,14 +54,15 @@ CONFIG_MERGE_STRATEGIES = {
     "region": strategies.child_wins,
     "required_version": strategies.child_wins,
     "role_arn": strategies.child_wins,
+    "cloudformation_service_role": strategies.child_wins,
     "sceptre_user_data": strategies.child_wins,
     "stack_name": strategies.child_wins,
     "stack_tags": strategies.child_wins,
     "stack_timeout": strategies.child_wins,
     "template_bucket_name": strategies.child_wins,
     "template_key_value": strategies.child_wins,
-    "template_path": strategies.child_wins,
     "template": strategies.child_wins,
+    "template_path": strategies.child_wins,
     "ignore": strategies.child_wins,
     "obsolete": strategies.child_wins,
 }
@@ -81,13 +85,16 @@ STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
         "dependencies",
         "hooks",
         "iam_role",
+        "sceptre_role",
         "iam_role_session_duration",
+        "sceptre_role_session_duration",
         "notifications",
         "on_failure",
         "parameters",
         "profile",
         "protect",
         "role_arn",
+        "cloudformation_service_role",
         "sceptre_user_data",
         "stack_name",
         "stack_tags",
@@ -436,13 +443,26 @@ class ConfigReader(object):
                 stack_group_config.get("j2_environment", {}),
             )
             j2_environment = Environment(**j2_environment_config)
-            template = j2_environment.get_template(basename)
+
+            try:
+                template = j2_environment.get_template(basename)
+            except Exception as err:
+                raise SceptreException(
+                    f"{Path(directory_path, basename).as_posix()} - {err}"
+                ) from err
+
             self.templating_vars.update(stack_group_config)
-            rendered_template = template.render(
-                self.templating_vars,
-                command_path=self.context.command_path.split(path.sep),
-                environment_variable=environ,
-            )
+
+            try:
+                rendered_template = template.render(
+                    self.templating_vars,
+                    command_path=self.context.command_path.split(path.sep),
+                    environment_variable=environ,
+                )
+            except Exception as err:
+                raise SceptreException(
+                    f"{Path(directory_path, basename).as_posix()} - {err}"
+                ) from err
 
             try:
                 config = yaml.safe_load(rendered_template)
@@ -552,6 +572,11 @@ class ConfigReader(object):
                 )
 
         s3_details = self._collect_s3_details(stack_name, config)
+        # If disable/enable rollback was specified on the command line, use that. Otherwise,
+        # fall back to the stack config.
+        disable_rollback = self.context.command_params.get("disable_rollback")
+        if disable_rollback is None:
+            disable_rollback = config.get("disable_rollback", False)
 
         stack = Stack(
             name=stack_name,
@@ -562,7 +587,9 @@ class ConfigReader(object):
             template_bucket_name=config.get("template_bucket_name"),
             template_key_prefix=config.get("template_key_prefix"),
             required_version=config.get("required_version"),
+            sceptre_role=config.get("sceptre_role"),
             iam_role=config.get("iam_role"),
+            sceptre_role_session_duration=config.get("sceptre_role_session_duration"),
             iam_role_session_duration=config.get("iam_role_session_duration"),
             profile=config.get("profile"),
             parameters=config.get("parameters", {}),
@@ -571,11 +598,13 @@ class ConfigReader(object):
             s3_details=s3_details,
             dependencies=config.get("dependencies", []),
             role_arn=config.get("role_arn"),
+            cloudformation_service_role=config.get("cloudformation_service_role"),
             protected=config.get("protect", False),
             tags=config.get("stack_tags", {}),
             external_name=config.get("stack_name"),
             notifications=config.get("notifications"),
             on_failure=config.get("on_failure"),
+            disable_rollback=disable_rollback,
             stack_timeout=config.get("stack_timeout", 0),
             ignore=config.get("ignore", False),
             obsolete=config.get("obsolete", False),

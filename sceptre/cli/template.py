@@ -32,6 +32,7 @@ def validate_command(ctx, no_placeholders, path):
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
@@ -74,6 +75,7 @@ def generate_command(ctx, no_placeholders, path):
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
@@ -109,6 +111,7 @@ def estimate_cost_command(ctx, path):
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
@@ -142,6 +145,7 @@ def fetch_remote_template_command(ctx, path):
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),

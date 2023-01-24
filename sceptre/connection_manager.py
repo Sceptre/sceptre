@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 """
 sceptre.connection_manager
 
@@ -9,16 +8,20 @@ Boto3 calls.
 
 import functools
 import logging
+import os
 import random
 import threading
 import time
-import boto3
+import warnings
+from typing import Optional, Dict
 
-from os import environ
+import boto3
+import deprecation
+from botocore.credentials import Credentials
 from botocore.exceptions import ClientError
 
-from sceptre.helpers import mask_key
 from sceptre.exceptions import InvalidAWSCredentialsError, RetryLimitExceededError
+from sceptre.helpers import mask_key, create_deprecated_alias_property
 
 
 def _retry_boto_call(func):
@@ -69,19 +72,21 @@ def _retry_boto_call(func):
     return decorated
 
 
+# STACK_DEFAULT is a sentinel value meaning "default to the stack's configuration". This is in
+# contrast with passing None, which would mean "use no value".
+STACK_DEFAULT = "[STACK DEFAULT]"
+
+
 class ConnectionManager(object):
     """
     The Connection Manager is used to create boto3 clients for
     the various AWS services that Sceptre needs to interact with.
 
     :param profile: The AWS credentials profile that should be used.
-    :type profile: str
-    :param iam_role: The iam_role that should be assumed in the account.
-    :type iam_role: str
+    :param sceptre_role: The sceptre_role that should be assumed in the account.
     :param stack_name: The CloudFormation stack name for this connection.
-    :type stack_name: str
     :param region: The region to use.
-    :type region: str
+    :param sceptre_role_session_duration: The duration to assume the specified sceptre_role per session.
     """
 
     _session_lock = threading.Lock()
@@ -90,13 +95,24 @@ class ConnectionManager(object):
     _clients = {}
     _stack_keys = {}
 
+    iam_role = create_deprecated_alias_property(
+        "iam_role", "sceptre_role", "4.0.0", "5.0.0"
+    )
+    sceptre_role_session_duration = 0
+    iam_role_session_duration = create_deprecated_alias_property(
+        "iam_role_session_duration", "sceptre_role_session_duration", "4.0.0", "5.0.0"
+    )
+
     def __init__(
         self,
-        region,
-        profile=None,
-        stack_name=None,
-        iam_role=None,
-        iam_role_session_duration=None,
+        region: str,
+        profile: Optional[str] = None,
+        stack_name: Optional[str] = None,
+        sceptre_role: Optional[str] = None,
+        sceptre_role_session_duration: Optional[int] = None,
+        *,
+        session_class=boto3.Session,
+        get_envs_func=lambda: os.environ,
     ):
 
         self.logger = logging.getLogger(__name__)
@@ -104,45 +120,165 @@ class ConnectionManager(object):
         self.region = region
         self.profile = profile
         self.stack_name = stack_name
-        self.iam_role = iam_role
-        self.iam_role_session_duration = iam_role_session_duration
+        self.sceptre_role = sceptre_role
+        self.sceptre_role_session_duration = sceptre_role_session_duration
 
         if stack_name:
-            self._stack_keys[stack_name] = (region, profile, iam_role)
+            self._stack_keys[stack_name] = (region, profile, sceptre_role)
+
+        self._session_class = session_class
+        self._get_envs = get_envs_func
 
     def __repr__(self):
         return (
             "sceptre.connection_manager.ConnectionManager(region='{0}', "
-            "profile='{1}', stack_name='{2}', iam_role='{3}', iam_role_session_duration='{4}')".format(
+            "profile='{1}', stack_name='{2}', sceptre_role='{3}', sceptre_role_session_duration='{4}')".format(
                 self.region,
                 self.profile,
                 self.stack_name,
-                self.iam_role,
-                self.iam_role_session_duration,
+                self.sceptre_role,
+                self.sceptre_role_session_duration,
             )
         )
 
-    def _get_session(self, profile, region, iam_role):
+    def get_session(
+        self,
+        profile: Optional[str] = STACK_DEFAULT,
+        region: Optional[str] = STACK_DEFAULT,
+        sceptre_role: Optional[str] = STACK_DEFAULT,
+        *,
+        iam_role: Optional[str] = STACK_DEFAULT,
+    ) -> boto3.Session:
         """
-        Returns a boto session in the target account.
+        Returns a boto3 session for the targeted profile, region, and sceptre_role.
 
-        If a ``profile`` is specified in ConnectionManager's initialiser,
-        then the profile is used to generate temporary credentials to create
-        the Boto session. If ``profile`` is not specified then the default
-        profile is assumed to create the boto session.
+        For each of profile, region, and sceptre_role, these values will default to the ConnectionManager's
+        configured default values (which correspond to the Stack's configuration). These values can
+        be overridden, however, by passing them explicitly.
+
+        :param profile: The name of the AWS Profile as configured in the local environment. Passing
+            None will result in no profile being specified. Defaults to the ConnectionManager's
+            configured profile (if there is one).
+        :param region: The AWS Region the session should be configured with. Defaults to the
+            ConnectionManager's configured region.
+        :param sceptre_role: The IAM role ARN that is assumed using STS to create the session. Passing
+            None will result in no IAM role being assumed. Defaults to the ConnectionManager's
+            configured sceptre_role (if there is one).
+        :param iam_role: An alias for sceptre_role; Deprecated in v4.0.0 and will be removed in
+            v5.0.0.
 
         :returns: The Boto3 session.
-        :rtype: boto3.session.Session
         :raises: botocore.exceptions.ClientError
         """
+        profile = self.profile if profile == STACK_DEFAULT else profile
+        region = self.region if region == STACK_DEFAULT else region
+        sceptre_role = (
+            self.sceptre_role if sceptre_role == STACK_DEFAULT else sceptre_role
+        )
+        if sceptre_role == STACK_DEFAULT and iam_role != STACK_DEFAULT:
+            self._emit_iam_role_deprecation_warning()
+            sceptre_role = iam_role
+
+        return self._get_session(profile, region, sceptre_role)
+
+    def _emit_iam_role_deprecation_warning(self):
+        warnings.warn(
+            deprecation.DeprecatedWarning(
+                "The iam_role parameter", "4.0.0", "5.0.0", "Use sceptre_role instead"
+            ),
+            DeprecationWarning,
+            stacklevel=3,
+        )
+
+    def create_session_environment_variables(
+        self,
+        profile: Optional[str] = STACK_DEFAULT,
+        region: Optional[str] = STACK_DEFAULT,
+        sceptre_role: Optional[str] = STACK_DEFAULT,
+        include_system_envs: bool = True,
+    ) -> Dict[str, str]:
+        """Creates the standard AWS environment variables that would need to be passed to a
+        subprocess in a hook, resolver, or template handler and allow that subprocess to work with
+        the currently configured session.
+
+        The environment variables returned by this method should be everything needed for
+        subprocesses to properly interact with AWS using the ConnectionManager's configurations for
+        profile, sceptre_role, and region. By default, they include the other process environment
+        variables, such as PATH and any others. If you do not want the other environment variables,
+        you can toggle these off via include_system_envs=False.
+
+        | Notes on including system envs:
+        |   * The AWS_DEFAULT_REGION, AWS_REGION, AWS_ACCESS_KEY_ID, and AWS_SECRET_ACCESS_KEY
+        |     environment variables (if they are set in the Sceptre process) will be overwritten in
+        |     the returned dict with the correct values from the newly created Session.
+        |   * If the AWS_SESSION_TOKEN environment variable is currently set for the process, this
+        |     will be overwritten with the new session's token (if there is one) or removed from the
+        |     returned environment variables dict (if the new session doesn't have a token).
+
+        :param profile: The name of the AWS Profile as configured in the local environment. Passing
+            None will result in no profile being specified. Defaults to the ConnectionManager's
+            configured profile (if there is one).
+        :param region: The AWS Region the session should be configured with. Defaults to the
+            ConnectionManager's configured region.
+        :param sceptre_role: The IAM role ARN that is assumed using STS to create the session. Passing
+            None will result in no IAM role being assumed. Defaults to the ConnectionManager's
+            configured sceptre_role (if there is one).
+        :param include_system_envs: If True, will return a dict with all the system environment
+            variables included. This is useful for creating a complete dict of environment variables
+            to pass to a subprocess. If set to False, this method will ONLY return the relevant AWS
+            environment variables. Defaults to True.
+
+        :returns: A dict of environment variables with the appropriate credentials available for use.
+        """
+        session = self.get_session(profile, region, sceptre_role)
+        # Set aws environment variables specific to whatever AWS configuration has been set on the
+        # stack's connection manager.
+        credentials: Credentials = session.get_credentials()
+        envs = dict(**self._get_envs()) if include_system_envs else {}
+
+        if include_system_envs:
+            # We don't want a profile specified, since that could interfere with the credentials we're
+            # about to set. Even if we're using a profile, the credentials will already reflect that
+            # profile's configurations.
+            envs.pop("AWS_PROFILE", None)
+
+        envs.update(
+            AWS_ACCESS_KEY_ID=credentials.access_key,
+            AWS_SECRET_ACCESS_KEY=credentials.secret_key,
+            # Most AWS SDKs use AWS_DEFAULT_REGION for the region; some use AWS_REGION
+            AWS_DEFAULT_REGION=session.region_name,
+            AWS_REGION=session.region_name,
+        )
+
+        if credentials.token:
+            envs["AWS_SESSION_TOKEN"] = credentials.token
+        # There might not be a session token, so if there isn't one, make sure it doesn't exist in
+        # the envs being passed to the subprocess
+        elif include_system_envs:
+            envs.pop("AWS_SESSION_TOKEN", None)
+
+        return envs
+
+    def _get_session(
+        self,
+        profile: Optional[str],
+        region: Optional[str],
+        sceptre_role: Optional[str],
+        *,
+        iam_role: Optional[str] = None,
+    ) -> boto3.Session:
+        if iam_role is not None:
+            self._emit_iam_role_deprecation_warning()
+            sceptre_role = iam_role
+
         with self._session_lock:
             self.logger.debug("Getting Boto3 session")
-            key = (region, profile, iam_role)
+            key = (region, profile, sceptre_role)
 
             if self._boto_sessions.get(key) is None:
                 self.logger.debug("No Boto3 session found, creating one...")
                 self.logger.debug("Using cli credentials...")
-
+                environ = self._get_envs()
                 # Credentials from env take priority over profile
                 config = {
                     "profile_name": profile,
@@ -152,7 +288,7 @@ class ConnectionManager(object):
                     "aws_session_token": environ.get("AWS_SESSION_TOKEN"),
                 }
 
-                session = boto3.session.Session(**config)
+                session = self._session_class(**config)
                 self._boto_sessions[key] = session
 
                 if session.get_credentials() is None:
@@ -162,22 +298,22 @@ class ConnectionManager(object):
                         )
                     )
 
-                if iam_role:
+                if sceptre_role:
                     sts_client = session.client("sts")
                     # maximum session name length is 64 chars. 56 + "-session" = 64
-                    session_name = f'{iam_role.split("/")[-1][:56]}-session'
+                    session_name = f'{sceptre_role.split("/")[-1][:56]}-session'
                     assume_role_kwargs = {
-                        "RoleArn": iam_role,
+                        "RoleArn": sceptre_role,
                         "RoleSessionName": session_name,
                     }
-                    if self.iam_role_session_duration:
+                    if self.sceptre_role_session_duration:
                         assume_role_kwargs[
                             "DurationSeconds"
-                        ] = self.iam_role_session_duration
+                        ] = self.sceptre_role_session_duration
                     sts_response = sts_client.assume_role(**assume_role_kwargs)
 
                     credentials = sts_response["Credentials"]
-                    session = boto3.session.Session(
+                    session = self._session_class(
                         aws_access_key_id=credentials["AccessKeyId"],
                         aws_secret_access_key=credentials["SecretAccessKey"],
                         aws_session_token=credentials["SessionToken"],
@@ -187,7 +323,7 @@ class ConnectionManager(object):
                     if session.get_credentials() is None:
                         raise InvalidAWSCredentialsError(
                             "Session credentials were not found. Role: {0}. Region: {1}.".format(
-                                iam_role, region
+                                sceptre_role, region
                             )
                         )
 
@@ -209,7 +345,7 @@ class ConnectionManager(object):
 
             return self._boto_sessions[key]
 
-    def _get_client(self, service, region, profile, stack_name, iam_role):
+    def _get_client(self, service, region, profile, stack_name, sceptre_role):
         """
         Returns the Boto3 client associated with <service>.
 
@@ -222,11 +358,11 @@ class ConnectionManager(object):
         :rtype: boto3.client.Client
         """
         with self._client_lock:
-            key = (service, region, profile, stack_name, iam_role)
+            key = (service, region, profile, stack_name, sceptre_role)
             if self._clients.get(key) is None:
                 self.logger.debug("No %s client found, creating one...", service)
                 self._clients[key] = self._get_session(
-                    profile, region, iam_role
+                    profile, region, sceptre_role
                 ).client(service)
 
             return self._clients[key]
@@ -240,6 +376,8 @@ class ConnectionManager(object):
         profile=None,
         region=None,
         stack_name=None,
+        sceptre_role=None,
+        *,
         iam_role=None,
     ):
         """
@@ -254,18 +392,21 @@ class ConnectionManager(object):
         :param kwargs: The keyword arguments to supply to <command>.
         :type kwargs: dict
         :returns: The response from the Boto3 call.
-        :rtype: dict
         """
-        if region is None and profile is None and iam_role is None:
+        if iam_role is not None:
+            self._emit_iam_role_deprecation_warning()
+            sceptre_role = iam_role
+
+        if region is None and profile is None and sceptre_role is None:
             if stack_name and stack_name in self._stack_keys:
-                region, profile, iam_role = self._stack_keys[stack_name]
+                region, profile, sceptre_role = self._stack_keys[stack_name]
             else:
                 region = self.region
                 profile = self.profile
-                iam_role = self.iam_role
+                sceptre_role = self.sceptre_role
 
         if kwargs is None:  # pragma: no cover
             kwargs = {}
 
-        client = self._get_client(service, region, profile, stack_name, iam_role)
+        client = self._get_client(service, region, profile, stack_name, sceptre_role)
         return getattr(client, command)(**kwargs)

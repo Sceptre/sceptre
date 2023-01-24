@@ -220,3 +220,9 @@ This template handler can be used in a Stack config file with the following synt
 .. _Custom Template Handlers: #custom-template-handlers
 .. _Boto3: https://aws.amazon.com/sdk-for-python/
 .. _http_template_handler key: stack_group_config.html#http-template-handler
+
+Calling AWS services in your custom template_handler
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For details on calling AWS services or invoking AWS-related third party tools in your
+template handler, see :ref:`using_connection_manager`

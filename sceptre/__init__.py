@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import sys
 import warnings
 
 
@@ -16,7 +17,7 @@ class NullHandler(logging.Handler):  # pragma: no cover
         pass
 
 
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
+if not sys.warnoptions:
+    warnings.filterwarnings("default", category=DeprecationWarning, module="sceptre")
 
 logging.getLogger("sceptre").addHandler(NullHandler())

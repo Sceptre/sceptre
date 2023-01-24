@@ -2,6 +2,7 @@
 
 from unittest.mock import MagicMock, sentinel
 
+import deprecation
 import pytest
 
 from sceptre.exceptions import InvalidConfigFileError
@@ -31,6 +32,7 @@ def stack_factory(**kwargs):
         "external_name": sentinel.external_name,
         "notifications": [sentinel.notification],
         "on_failure": sentinel.on_failure,
+        "disable_rollback": False,
         "stack_timeout": sentinel.stack_timeout,
         "stack_group_config": {},
     }
@@ -60,8 +62,9 @@ class TestStack(object):
             external_name=sentinel.external_name,
             notifications=[sentinel.notification],
             on_failure=sentinel.on_failure,
-            iam_role=sentinel.iam_role,
-            iam_role_session_duration=sentinel.iam_role_session_duration,
+            disable_rollback=False,
+            sceptre_role=sentinel.sceptre_role,
+            sceptre_role_session_duration=sentinel.sceptre_role_session_duration,
             stack_timeout=sentinel.stack_timeout,
             stack_group_config={},
         )
@@ -88,23 +91,31 @@ class TestStack(object):
         assert stack.parameters == {}
         assert stack.sceptre_user_data == {}
         assert stack.template_path == sentinel.template_path
-        assert stack.template_handler_config is None
+        assert stack.template_handler_config == {
+            "path": sentinel.template_path,
+            "type": "file",
+        }
         assert stack.s3_details is None
         assert stack._template is None
         assert stack.protected is False
-        assert stack.iam_role is None
+        assert stack.sceptre_role is None
         assert stack.role_arn is None
         assert stack.dependencies == []
         assert stack.tags == {}
         assert stack.notifications == []
         assert stack.on_failure is None
+        assert stack.disable_rollback is False
         assert stack.stack_group_config == {}
 
     def test_initialize_stack_with_template_handler(self):
+        expected_template_handler_config = {
+            "type": "file",
+            "path": sentinel.template_path,
+        }
         stack = Stack(
             name="dev/stack/app",
             project_code=sentinel.project_code,
-            template_handler_config=sentinel.template_handler_config,
+            template_handler_config=expected_template_handler_config,
             template_bucket_name=sentinel.template_bucket_name,
             template_key_prefix=sentinel.template_key_prefix,
             required_version=sentinel.required_version,
@@ -120,17 +131,18 @@ class TestStack(object):
         assert stack.hooks == {}
         assert stack.parameters == {}
         assert stack.sceptre_user_data == {}
-        assert stack.template_path is None
-        assert stack.template_handler_config == sentinel.template_handler_config
+        assert stack.template_path == sentinel.template_path
+        assert stack.template_handler_config == expected_template_handler_config
         assert stack.s3_details is None
         assert stack._template is None
         assert stack.protected is False
-        assert stack.iam_role is None
+        assert stack.sceptre_role is None
         assert stack.role_arn is None
         assert stack.dependencies == []
         assert stack.tags == {}
         assert stack.notifications == []
         assert stack.on_failure is None
+        assert stack.disable_rollback is False
         assert stack.stack_group_config == {}
 
     def test_raises_exception_if_path_and_handler_configured(self):
@@ -176,26 +188,26 @@ class TestStack(object):
             self.stack.__repr__() == "sceptre.stack.Stack("
             "name='dev/app/stack', "
             "project_code=sentinel.project_code, "
-            "template_path=sentinel.template_path, "
-            "template_handler_config=None, "
+            "template_handler_config={'type': 'file', 'path': sentinel.template_path}, "
             "region=sentinel.region, "
             "template_bucket_name=sentinel.template_bucket_name, "
             "template_key_prefix=sentinel.template_key_prefix, "
             "required_version=sentinel.required_version, "
-            "iam_role=sentinel.iam_role, "
-            "iam_role_session_duration=sentinel.iam_role_session_duration, "
+            "sceptre_role=sentinel.sceptre_role, "
+            "sceptre_role_session_duration=sentinel.sceptre_role_session_duration, "
             "profile=sentinel.profile, "
             "sceptre_user_data=sentinel.sceptre_user_data, "
             "parameters={'key1': 'val1'}, "
             "hooks={}, "
             "s3_details=None, "
             "dependencies=sentinel.dependencies, "
-            "role_arn=sentinel.role_arn, "
+            "cloudformation_service_role=sentinel.role_arn, "
             "protected=False, "
             "tags={'tag1': 'val1'}, "
             "external_name=sentinel.external_name, "
             "notifications=[sentinel.notification], "
             "on_failure=sentinel.on_failure, "
+            "disable_rollback=False, "
             "stack_timeout=sentinel.stack_timeout, "
             "stack_group_config={}, "
             "ignore=False, "
@@ -203,19 +215,19 @@ class TestStack(object):
             ")"
         )
 
-    def test_configuration_manager__iam_role_raises_recursive_resolve__returns_connection_manager_with_no_role(
+    def test_configuration_manager__sceptre_role_raises_recursive_resolve__returns_connection_manager_with_no_role(
         self,
     ):
         class FakeResolver(Resolver):
             def resolve(self):
-                return self.stack.iam_role
+                return self.stack.sceptre_role
 
-        self.stack.iam_role = FakeResolver()
+        self.stack.sceptre_role = FakeResolver()
 
         connection_manager = self.stack.connection_manager
-        assert connection_manager.iam_role is None
+        assert connection_manager.sceptre_role is None
 
-    def test_configuration_manager__iam_role_returns_value_second_access__returns_value_on_second_access(
+    def test_configuration_manager__sceptre_role_returns_value_second_access__returns_value_on_second_access(
         self,
     ):
         class FakeResolver(Resolver):
@@ -224,26 +236,52 @@ class TestStack(object):
             def resolve(self):
                 if self.access_count == 0:
                     self.access_count += 1
-                    return self.stack.iam_role
+                    return self.stack.sceptre_role
                 else:
                     return "role"
 
-        self.stack.iam_role = FakeResolver()
+        self.stack.sceptre_role = FakeResolver()
 
-        assert self.stack.connection_manager.iam_role is None
-        assert self.stack.connection_manager.iam_role == "role"
+        assert self.stack.connection_manager.sceptre_role is None
+        assert self.stack.connection_manager.sceptre_role == "role"
 
-    def test_configuration_manager__iam_role_returns_value__returns_connection_manager_with_that_role(
+    def test_configuration_manager__sceptre_role_returns_value__returns_connection_manager_with_that_role(
         self,
     ):
         class FakeResolver(Resolver):
             def resolve(self):
                 return "role"
 
-        self.stack.iam_role = FakeResolver()
+        self.stack.sceptre_role = FakeResolver()
 
         connection_manager = self.stack.connection_manager
-        assert connection_manager.iam_role == "role"
+        assert connection_manager.sceptre_role == "role"
+
+    @deprecation.fail_if_not_removed
+    def test_iam_role__is_removed_on_removal_version(self):
+        self.stack.iam_role
+
+    @deprecation.fail_if_not_removed
+    def test_role_arn__is_removed_on_removal_version(self):
+        self.stack.role_arn
+
+    @deprecation.fail_if_not_removed
+    def test_iam_role_session_duration__is_removed_on_removal_version(self):
+        self.stack.iam_role_session_duration
+
+    def test_init__iam_role_set_resolves_to_sceptre_role(self):
+        stack = Stack("test", "test", "test", "test", iam_role="fancy")
+        assert stack.sceptre_role == "fancy"
+
+    def test_init__role_arn_set_resolves_to_cloudformation_service_role(self):
+        stack = Stack("test", "test", "test", "test", role_arn="fancy")
+        assert stack.cloudformation_service_role == "fancy"
+
+    def test_init__iam_role_session_duration_set_resolves_to_sceptre_role_session_duration(
+        self,
+    ):
+        stack = Stack("test", "test", "test", "test", iam_role_session_duration=123456)
+        assert stack.sceptre_role_session_duration == 123456
 
 
 class TestStackSceptreUserData(object):

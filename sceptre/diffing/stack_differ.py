@@ -34,7 +34,7 @@ class StackConfiguration(NamedTuple):
     parameters: Dict[str, Union[str, List[str]]]
     stack_tags: Dict[str, str]
     notifications: List[str]
-    role_arn: Optional[str]
+    cloudformation_service_role: Optional[str]
 
 
 class StackDiff(NamedTuple):
@@ -153,7 +153,7 @@ class StackDiffer(Generic[DiffType]):
             parameters=parameters,
             stack_tags=stack.tags,
             notifications=stack.notifications,
-            role_arn=stack.role_arn,
+            cloudformation_service_role=stack.cloudformation_service_role,
         )
 
         return stack_configuration
@@ -193,7 +193,7 @@ class StackDiffer(Generic[DiffType]):
                 stack_tags={tag["Key"]: tag["Value"] for tag in stack["Tags"]},
                 stack_name=stack["StackName"],
                 notifications=stack["NotificationARNs"],
-                role_arn=stack.get("RoleARN"),
+                cloudformation_service_role=stack.get("RoleARN"),
             )
 
     def _handle_special_parameter_situations(

@@ -37,7 +37,7 @@ if typing.TYPE_CHECKING:
     from sceptre.diffing.stack_differ import StackDiff, StackDiffer
 
 
-class StackActions(object):
+class StackActions:
     """
     StackActions stores the operations a Stack can take, such as creating or
     deleting the Stack.
@@ -54,8 +54,8 @@ class StackActions(object):
             self.stack.region,
             self.stack.profile,
             self.stack.external_name,
-            self.stack.iam_role,
-            self.stack.iam_role_session_duration,
+            self.stack.sceptre_role,
+            self.stack.sceptre_role_session_duration,
         )
 
     @add_stack_hooks
@@ -82,8 +82,12 @@ class StackActions(object):
             ],
         }
 
-        if self.stack.on_failure:
+        # can specify either DisableRollback or OnFailure , but not both
+        if self.stack.disable_rollback:
+            create_stack_kwargs.update({"DisableRollback": self.stack.disable_rollback})
+        elif self.stack.on_failure:
             create_stack_kwargs.update({"OnFailure": self.stack.on_failure})
+
         create_stack_kwargs.update(self.stack.template.get_boto_call_parameter())
         create_stack_kwargs.update(self._get_role_arn())
         create_stack_kwargs.update(self._get_stack_timeout())
@@ -715,8 +719,8 @@ class StackActions(object):
         :returns: The a Role ARN
         :rtype: dict
         """
-        if self.stack.role_arn:
-            return {"RoleARN": self.stack.role_arn}
+        if self.stack.cloudformation_service_role:
+            return {"RoleARN": self.stack.cloudformation_service_role}
         else:
             return {}
 
