@@ -195,8 +195,8 @@ and concerns of the project. These include:
 * The S3 bucket where templates are uploaded to and then referenced from for stack actions (i.e. the
   ``template_bucket_name`` config key).
 * The CloudFormation service role added to the stack(s) that CloudFormation uses to execute stack
-  actions (i.e. the ``role_arn`` config key).
-* The role that Sceptre will assume to execute stack actions (i.e. the ``iam_role`` config key).
+  actions (i.e. the ``cloudformation_service_role`` config key).
+* The role that Sceptre will assume to execute stack actions (i.e. the ``sceptre_role`` config key).
 * SNS topics that cloudformation will notify with the results of stack actions (i.e. the
   ``notifications`` config key).
 
@@ -212,7 +212,7 @@ dependencies.
 .. warning::
 
    You might have already considered that this might cause a circular dependency for those
-   dependency stacks, the ones that output the template bucket name, role arn, iam_role, or topic arns.
+   dependency stacks, the ones that output the template bucket name, role arn, sceptre_role, or topic arns.
    In order to avoid the circular dependency issue, you can either:
 
    1. Set the value of those configurations to ``!no_value`` in the actual stacks that define those

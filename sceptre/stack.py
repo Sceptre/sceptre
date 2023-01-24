@@ -8,11 +8,18 @@ This module implements a Stack class, which stores a Stack's data.
 """
 
 import logging
-from typing import List, Any
+from typing import List, Any, Optional
 
+import deprecation
+
+from sceptre import __version__
 from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import InvalidConfigFileError
-from sceptre.helpers import get_external_stack_name, sceptreise_path
+from sceptre.helpers import (
+    get_external_stack_name,
+    sceptreise_path,
+    create_deprecated_alias_property,
+)
 from sceptre.hooks import Hook, HookProperty
 from sceptre.resolvers import (
     ResolvableContainerProperty,
@@ -23,7 +30,7 @@ from sceptre.resolvers import (
 from sceptre.template import Template
 
 
-class Stack(object):
+class Stack:
     """
     Stack stores information about a particular CloudFormation Stack.
 
@@ -32,9 +39,10 @@ class Stack(object):
     :param project_code: A code which is prepended to the Stack names\
             of all Stacks built by Sceptre.
 
-    :param template_path: The relative path to the CloudFormation, Jinja2\
+    :param template_path: The relative path to the CloudFormation, Jinja2,
             or Python template to build the Stack from. If this is filled,
-            `template_handler_config` should not be filled.
+            `template_handler_config` should not be filled. This field has been deprecated since
+            version 4.0.0 and will be removed in version 5.0.0.
 
     :param template_handler_config: Configuration for a Template Handler that can resolve
             its arguments to a template string. Should contain the `type` property to specify
@@ -60,19 +68,19 @@ class Stack(object):
     :param hooks: A list of arbitrary shell or python commands or scripts to\
             run.
 
-    :param s3_details:
+    :param s3_details: Details used for uploading templates to S3.
 
     :param dependencies: The relative path to the Stack, including the file\
             extension of the Stack.
 
-    :param role_arn: The ARN of a CloudFormation Service Role that is assumed\
+    :param cloudformation_service_role: The ARN of a CloudFormation Service Role that is assumed\
             by CloudFormation to create, update or delete resources.
 
     :param protected: Stack protection against execution.
 
     :param tags: CloudFormation Tags to be applied to the Stack.
 
-    :param external_name:
+    :param external_name: The real stack name used for CloudFormation
 
     :param notifications: SNS topic ARNs to publish Stack related events to.\
             A maximum of 5 ARNs can be specified per Stack.
@@ -82,9 +90,19 @@ class Stack(object):
 
     :param disable_rollback: If True, cloudformation will not rollback on deployment failures
 
-    :param iam_role: The ARN of a role for Sceptre to assume before interacting\
+    :param iam_role: The ARN of a role for Sceptre to assume before interacting
+            with the environment. If not supplied, Sceptre uses the user's AWS CLI
+            credentials. This field has been deprecated since version 4.0.0 and will be removed in
+            version 5.0.0.
+
+    :param sceptre_role: The ARN of a role for Sceptre to assume before interacting\
             with the environment. If not supplied, Sceptre uses the user's AWS CLI\
             credentials.
+
+    :param iam_role_session_duration: The duration in seconds of the assumed IAM role session.
+            This field has been deprecated since version 4.0.0 and will be removed in version 5.0.0.
+
+    :param sceptre_role_session_duration: The duration in seconds of the assumed IAM role session.
 
     :param profile: The name of the profile as defined in ~/.aws/config and\
             ~/.aws/credentials.
@@ -101,11 +119,10 @@ class Stack(object):
             also be deleted if the prune command is invoked or the --prune option is used with the
             launch command.
 
-    :param iam_role_session_duration: The session duration when Scetre assumes a role.\
+    :param sceptre_role_session_duration: The session duration when Scetre assumes a role.\
            If not supplied, Sceptre uses default value (3600 seconds)
 
     :param stack_group_config: The StackGroup config for the Stack
-
     """
 
     parameters = ResolvableContainerProperty("parameters")
@@ -126,13 +143,24 @@ class Stack(object):
     template_bucket_name = ResolvableValueProperty(
         "template_bucket_name", PlaceholderType.none
     )
-    # Similarly, the placeholder_override=None for iam_role means that actions that would otherwise
-    # use the iam_role will act as if there was no iam role when the iam_role stack has not been
+    # Similarly, the placeholder_override=None for sceptre_role means that actions that would otherwise
+    # use the sceptre_role will act as if there was no iam role when the sceptre_role stack has not been
     # deployed for commands that allow placeholders (like validate).
-    iam_role = ResolvableValueProperty("iam_role", PlaceholderType.none)
-    role_arn = ResolvableValueProperty("role_arn")
+    sceptre_role = ResolvableValueProperty("sceptre_role", PlaceholderType.none)
+    cloudformation_service_role = ResolvableValueProperty("cloudformation_service_role")
 
     hooks = HookProperty("hooks")
+
+    iam_role = create_deprecated_alias_property(
+        "iam_role", "sceptre_role", "4.0.0", "5.0.0"
+    )
+    role_arn = create_deprecated_alias_property(
+        "role_arn", "cloudformation_service_role", "4.0.0", "5.0.0"
+    )
+    sceptre_role_session_duration = None
+    iam_role_session_duration = create_deprecated_alias_property(
+        "iam_role_session_duration", "sceptre_role_session_duration", "4.0.0", "5.0.0"
+    )
 
     def __init__(
         self,
@@ -148,8 +176,10 @@ class Stack(object):
         sceptre_user_data: dict = None,
         hooks: Hook = None,
         s3_details: dict = None,
+        sceptre_role: str = None,
         iam_role: str = None,
         dependencies: List["Stack"] = None,
+        cloudformation_service_role: str = None,
         role_arn: str = None,
         protected: bool = False,
         tags: dict = None,
@@ -159,22 +189,13 @@ class Stack(object):
         disable_rollback=False,
         profile: str = None,
         stack_timeout: int = 0,
-        iam_role_session_duration: int = 0,
+        sceptre_role_session_duration: Optional[int] = None,
+        iam_role_session_duration: Optional[int] = None,
         ignore=False,
         obsolete=False,
         stack_group_config: dict = {},
     ):
         self.logger = logging.getLogger(__name__)
-
-        if template_path and template_handler_config:
-            raise InvalidConfigFileError(
-                "Both 'template_path' and 'template' are set, specify one or the other"
-            )
-
-        if not template_path and not template_handler_config:
-            raise InvalidConfigFileError(
-                "Neither 'template_path' nor 'template' is set"
-            )
 
         self.name = sceptreise_path(name)
         self.project_code = project_code
@@ -183,7 +204,6 @@ class Stack(object):
         self.external_name = external_name or get_external_stack_name(
             self.project_code, self.name
         )
-        self.template_path = template_path
         self.dependencies = dependencies or []
         self.protected = protected
         self.on_failure = on_failure
@@ -194,7 +214,12 @@ class Stack(object):
         self.stack_timeout = stack_timeout
         self.profile = profile
         self.template_key_prefix = template_key_prefix
-        self.iam_role_session_duration = iam_role_session_duration
+        self._set_field_with_deprecated_alias(
+            "sceptre_role_session_duration",
+            sceptre_role_session_duration,
+            "iam_role_session_duration",
+            iam_role_session_duration,
+        )
         self.ignore = self._ensure_boolean("ignore", ignore)
         self.obsolete = self._ensure_boolean("obsolete", obsolete)
 
@@ -203,11 +228,25 @@ class Stack(object):
 
         # Resolvers and hooks need to be assigned last
         self.s3_details = s3_details
-        self.iam_role = iam_role
+        self._set_field_with_deprecated_alias(
+            "sceptre_role", sceptre_role, "iam_role", iam_role
+        )
         self.tags = tags or {}
-        self.role_arn = role_arn
+        self._set_field_with_deprecated_alias(
+            "cloudformation_service_role",
+            cloudformation_service_role,
+            "role_arn",
+            role_arn,
+        )
         self.template_bucket_name = template_bucket_name
-        self.template_handler_config = template_handler_config
+        self._set_field_with_deprecated_alias(
+            "template_handler_config",
+            template_handler_config,
+            "template_path",
+            template_path,
+            required=True,
+            preferred_config_name="template",
+        )
 
         self.s3_details = s3_details
         self.parameters = parameters or {}
@@ -228,21 +267,20 @@ class Stack(object):
             "sceptre.stack.Stack("
             f"name='{self.name}', "
             f"project_code={self.project_code}, "
-            f"template_path={self.template_path}, "
             f"template_handler_config={self.template_handler_config}, "
             f"region={self.region}, "
             f"template_bucket_name={self.template_bucket_name}, "
             f"template_key_prefix={self.template_key_prefix}, "
             f"required_version={self.required_version}, "
-            f"iam_role={self.iam_role}, "
-            f"iam_role_session_duration={self.iam_role_session_duration}, "
+            f"sceptre_role={self.sceptre_role}, "
+            f"sceptre_role_session_duration={self.sceptre_role_session_duration}, "
             f"profile={self.profile}, "
             f"sceptre_user_data={self.sceptre_user_data}, "
             f"parameters={self.parameters}, "
             f"hooks={self.hooks}, "
             f"s3_details={self.s3_details}, "
             f"dependencies={self.dependencies}, "
-            f"role_arn={self.role_arn}, "
+            f"cloudformation_service_role={self.cloudformation_service_role}, "
             f"protected={self.protected}, "
             f"tags={self.tags}, "
             f"external_name={self.external_name}, "
@@ -271,7 +309,8 @@ class Stack(object):
             and self.region == stack.region
             and self.template_key_prefix == stack.template_key_prefix
             and self.required_version == stack.required_version
-            and self.iam_role_session_duration == stack.iam_role_session_duration
+            and self.sceptre_role_session_duration
+            == stack.sceptre_role_session_duration
             and self.profile == stack.profile
             and self.dependencies == stack.dependencies
             and self.protected == stack.protected
@@ -294,28 +333,28 @@ class Stack(object):
         if self._connection_manager is None:
             cache_connection_manager = True
             try:
-                iam_role = self.iam_role
+                sceptre_role = self.sceptre_role
             except RecursiveResolve:
-                # This would be the case when iam_role is set with a resolver (especially stack_output)
+                # This would be the case when sceptre_role is set with a resolver (especially stack_output)
                 # that uses the stack's connection manager. This creates a temporary condition where
                 # you need the iam role to get the iam role. To get around this, it will temporarily
-                # use None as the iam_role but will re-attempt to resolve the value in future accesses.
+                # use None as the sceptre_role but will re-attempt to resolve the value in future accesses.
                 # Since the Stack Output resolver (the most likely culprit) uses the target stack's
-                # iam_role rather than the current stack's one anyway, it actually doesn't matter,
-                # since the stack defining that iam_role won't actually be using that iam_role.
+                # sceptre_role rather than the current stack's one anyway, it actually doesn't matter,
+                # since the stack defining that sceptre_role won't actually be using that sceptre_role.
                 self.logger.debug(
-                    "Resolving iam_role requires the Stack connection manager. Temporarily setting "
-                    "the iam_role to None until it can be fully resolved."
+                    "Resolving sceptre_role requires the Stack connection manager. Temporarily setting "
+                    "the sceptre_role to None until it can be fully resolved."
                 )
-                iam_role = None
+                sceptre_role = None
                 cache_connection_manager = False
 
             connection_manager = ConnectionManager(
                 self.region,
                 self.profile,
                 self.external_name,
-                iam_role,
-                self.iam_role_session_duration,
+                sceptre_role,
+                self.sceptre_role_session_duration,
             )
             if cache_connection_manager:
                 self._connection_manager = connection_manager
@@ -333,17 +372,61 @@ class Stack(object):
         :rtype: Template
         """
         if self._template is None:
-            if self.template_path:
-                handler_config = {"type": "file", "path": self.template_path}
-            else:
-                handler_config = self.template_handler_config
-
             self._template = Template(
                 name=self.name,
-                handler_config=handler_config,
+                handler_config=self.template_handler_config,
                 sceptre_user_data=self.sceptre_user_data,
                 stack_group_config=self.stack_group_config,
                 s3_details=self.s3_details,
                 connection_manager=self.connection_manager,
             )
         return self._template
+
+    @property
+    @deprecation.deprecated(
+        "4.0.0", "5.0.0", __version__, "Use the template Stack Config key instead."
+    )
+    def template_path(self) -> str:
+        """The path argument from the template_handler config. This field is deprecated as of v4.0.0
+        and will be removed in v5.0.0.
+        """
+        return self.template_handler_config["path"]
+
+    @template_path.setter
+    @deprecation.deprecated(
+        "4.0.0", "5.0.0", __version__, "Use the template Stack Config key instead."
+    )
+    def template_path(self, value: str):
+        self.template_handler_config = {"type": "file", "path": value}
+
+    def _set_field_with_deprecated_alias(
+        self,
+        preferred_attribute_name,
+        preferred_value,
+        deprecated_attribute_name,
+        deprecated_value,
+        *,
+        required=False,
+        preferred_config_name=None,
+        deprecated_config_name=None,
+    ):
+        # This is a generic truthiness check. All current default values are falsy, so this should work.
+        # If we ever use this function where the default value is NOT falsy, this will be a problem.
+        preferred_config_name = preferred_config_name or preferred_attribute_name
+        deprecated_config_name = deprecated_config_name or deprecated_attribute_name
+
+        if preferred_value and deprecated_value:
+            raise InvalidConfigFileError(
+                f"Both '{preferred_config_name}' and '{deprecated_config_name}' are set; You should only set a "
+                f"value for {preferred_config_name} because {deprecated_config_name} is deprecated."
+            )
+        elif preferred_value:
+            setattr(self, preferred_attribute_name, preferred_value)
+        elif deprecated_value:
+            setattr(self, deprecated_attribute_name, deprecated_value)
+        elif required:
+            raise InvalidConfigFileError(
+                f"{preferred_config_name} is a required Stack Config."
+            )
+        else:  # In case they're both falsy, we should just set the value using the preferred value.
+            setattr(self, preferred_attribute_name, preferred_value)

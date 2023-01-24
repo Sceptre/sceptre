@@ -24,8 +24,11 @@ particular Stack. The available keys are listed below.
 -  `parameters`_ *(optional)*
 -  `protected`_ *(optional)*
 -  `role_arn`_ *(optional)*
+-  `cloudformation_service_role`_ *(optional)*
 -  `iam_role`_ *(optional)*
+-  `sceptre_role`_ (*optional)*
 -  `iam_role_session_duration`_ *(optional)*
+-  `sceptre_role_session_duration`_ *(optional)*
 -  `sceptre_user_data`_ *(optional)*
 -  `stack_name`_ *(optional)*
 -  `stack_tags`_ *(optional)*
@@ -47,7 +50,7 @@ from the Stack config filename.
 
 .. warning::
 
-   This key is deprecated in favor of the `template`_ key.
+   This key is deprecated in favor of the `template`_ key. It will be removed in version 5.0.0.
 
 template
 ~~~~~~~~
@@ -312,9 +315,19 @@ role_arn
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
+.. warning::
+   This field is deprecated as of v4.0.0 and will be removed in v5.0.0. It has been renamed to
+   `cloudformation_service_role`_ as a clearer name for its purpose.
+
+cloudformation_service_role
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Resolvable: Yes
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
 The ARN of a `CloudFormation Service Role`_ that is assumed by *CloudFormation* (not Sceptre)
 to create, update or delete resources. For more information on this configuration, its implications,
-and its uses see :ref:`Sceptre and IAM: role_arn <role_arn_permissions>`.
+and its uses see :ref:`Sceptre and IAM: cloudformation_service_role <cloudformation_service_role_permissions>`.
 
 iam_role
 ~~~~~~~~
@@ -322,21 +335,32 @@ iam_role
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
+.. warning::
+   This field is deprecated as of v4.0.0 and will be removed in v5.0.0. It has been renamed to
+   `sceptre_role`_ as a clearer name for its purpose.
+
+sceptre_role
+~~~~~~~~~~~~
+* Resolvable: Yes
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
 This is the IAM Role ARN that **Sceptre** should *assume* using AWS STS when executing any actions
 on the Stack.
 
-This is different from the ``role_arn`` option, which sets a CloudFormation service role for the
-stack. The ``iam_role`` configuration does not configure anything on the stack itself.
+This is different from the ``cloudformation_service_role`` option, which sets a CloudFormation
+service role for the stack. The ``sceptre_role`` configuration does not configure anything on the
+stack itself.
 
 .. warning::
 
-   If you set the value of ``iam_role`` with ``!stack_output``, that ``iam_role``
+   If you set the value of ``sceptre_role`` with ``!stack_output``, that ``sceptre_role``
    will not actually be used to obtain the stack_output, but it *WILL* be used for all subsequent stack
    actions. Therefore, it is important that the user executing the stack action have permissions to get
-   stack outputs for the stack outputting the ``iam_role``.
+   stack outputs for the stack outputting the ``sceptre_role``.
 
 For more information on this configuration, its implications, and its uses, see
-:ref:`Sceptre and IAM: iam_role <iam_role_permissions>`.
+:ref:`Sceptre and IAM: sceptre_role <sceptre_role_permissions>`.
 
 iam_role_session_duration
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -344,17 +368,24 @@ iam_role_session_duration
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
-This is the session duration when **Sceptre** *assumes* the **iam_role** IAM Role using AWS STS when
+.. warning::
+   This field is deprecated as of v4.0.0 and will be removed in v5.0.0. It has been renamed to
+   `sceptre_role_session_duration`_ as a clearer name for its purpose.
+
+sceptre_role_session_duration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This is the session duration when **Sceptre** *assumes* the **sceptre_role** IAM Role using AWS STS when
 executing any actions on the Stack.
 
 .. warning::
 
-   If you set the value of ``iam_role_session_duration`` to a number that *GREATER* than 3600, you
-   will need to make sure that the ``iam_role`` has a configuration of ``MaxSessionDuration``, and
-   its value is *GREATER* than or equal to the value of ``iam_role_session_duration``.
-
-For more information on this configuration, its implications, and its uses, see
-:ref:`Sceptre and IAM: iam_role_session_duration <iam_role_permissions>`.
+   If you set the value of ``sceptre_role_session_duration`` to a number that *GREATER* than 3600, you
+   will need to make sure that the ``sceptre_role`` has a configuration of ``MaxSessionDuration``, and
+   its value is *GREATER* than or equal to the value of ``sceptre_role_session_duration``.
 
 sceptre_user_data
 ~~~~~~~~~~~~~~~~~

@@ -13,7 +13,7 @@ class TestSceptrePlan(object):
         self.stack = Stack(
             name="dev/app/stack",
             project_code=sentinel.project_code,
-            template_path=sentinel.template_path,
+            template_handler_config={"path": "/path/to/thing"},
             region=sentinel.region,
             profile=sentinel.profile,
             parameters={"key1": "val1"},
@@ -21,7 +21,7 @@ class TestSceptrePlan(object):
             hooks={},
             s3_details=None,
             dependencies=sentinel.dependencies,
-            role_arn=sentinel.role_arn,
+            cloudformation_service_role=sentinel.cloudformation_service_role,
             protected=False,
             tags={"tag1": "val1"},
             external_name=sentinel.external_name,

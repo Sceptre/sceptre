@@ -117,13 +117,13 @@ nested values in dicts and lists using "." to separate key/index segments. For e
            - "some random value"
            - "the value we want to select"
 
-   iam_role: !stack_output roles.yaml::RoleArn
+   sceptre_role: !stack_output roles.yaml::RoleArn
 
    parameters:
        # This will pass the value of "the value we want to select" for my_parameter
        my_parameter: !stack_attr sceptre_user_data.key.1
        # You can also access the value of another resolvable property like this:
-       use_role_arn: !stack_attr iam_role
+       use_role: !stack_attr sceptre_role
 
 
 stack_output
@@ -325,7 +325,7 @@ Resolver arguments can be a simple string or a complex data structure.
 Resolving to nothing
 ^^^^^^^^^^^^^^^^^^^^
 When a resolver returns ``None``, this means that it resolves to "nothing". For resolvers set for
-single values (such as for ``template_bucket_name`` or ``role_arn``), this just means the value is
+single values (such as for ``template_bucket_name`` or ``cloudformation_service_role``), this just means the value is
 ``None`` and treated like those values aren't actually set. But for resolvers inside of containers
 like lists or dicts, when they resolve to "nothing", that item gets completely removed from their
 containing list or dict.
@@ -365,7 +365,7 @@ A few examples...
   "pretty" as the sort of placeholder used for stack parameters, but the use of sceptre_user_data is
   broader, so it placeholder values can only be alphanumeric to reduce chances of it breaking the
   template.
-* Resolvable properties that are *always* used when performing template operations (like ``iam_role``
+* Resolvable properties that are *always* used when performing template operations (like ``sceptre_role``
   and ``template_bucket_name``) will resolve to ``None`` and not be used for those operations if they
   cannot be resolved.
 

@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
+import warnings
 
+import deprecation
 import pytest
 
 from os.path import join, sep
 from datetime import datetime, timezone, timedelta
 
 from sceptre.exceptions import PathConversionError
-from sceptre.helpers import get_external_stack_name
+from sceptre.helpers import get_external_stack_name, create_deprecated_alias_property
 from sceptre.helpers import normalise_path
 from sceptre.helpers import sceptreise_path
 from sceptre.helpers import extract_datetime_from_aws_response_headers, gen_repr
+from sceptre import __version__
 
 
 class SomeClass(object):
@@ -112,3 +115,59 @@ class TestHelpers(object):
     def test_repr__override_label__correct_name(self):
         i = SomeClass("q", 123)
         assert gen_repr(i, class_label="My.Class") == "My.Class()"
+
+    def test_create_deprecated_alias_property__alias_getter_returns_alias_target_value(
+        self,
+    ):
+        class MyClass:
+            target = "winner"
+            alias = create_deprecated_alias_property(
+                "alias", "target", __version__, None
+            )
+
+        obj = MyClass()
+
+        assert obj.alias == obj.target
+
+    def test_create_deprecated_alias_property__alias_setter_returns_alias_target_value(
+        self,
+    ):
+        class MyClass:
+            target = "loser"
+            alias = create_deprecated_alias_property(
+                "alias", "target", __version__, None
+            )
+
+        obj = MyClass()
+        obj.alias = expected = "winner"
+        assert obj.target == expected
+
+    def test_create_deprecated_alias_property__emits_warning_when_getting_value(self):
+        class MyClass:
+            target = "winner"
+            alias = create_deprecated_alias_property(
+                "alias", "target", __version__, None
+            )
+
+        obj = MyClass()
+
+        with warnings.catch_warnings(record=True) as messages:
+            obj.alias
+
+        assert len(messages) == 1
+        assert messages[0].category == deprecation.DeprecatedWarning
+
+    def test_create_deprecated_alias_property__emits_warning_when_setting_value(self):
+        class MyClass:
+            target = "loser"
+            alias = create_deprecated_alias_property(
+                "alias", "target", __version__, None
+            )
+
+        obj = MyClass()
+
+        with warnings.catch_warnings(record=True) as messages:
+            obj.alias = "winner"
+
+        assert len(messages) == 1
+        assert messages[0].category == deprecation.DeprecatedWarning
