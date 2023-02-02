@@ -36,8 +36,8 @@ class TestSceptreContext(object):
             ignore_dependencies=sentinel.ignore_dependencies,
         )
 
-        sentinel.project_path = f"{getcwd()}/project_path/to/sceptre"
-        assert self.context.project_path.replace(path.sep, "/") == sentinel.project_path
+        expected = f"{getcwd()}/project_path/to/sceptre"
+        assert self.context.project_path.replace(path.sep, "/") == expected
 
     def test_full_config_path_returns_correct_path(self):
         context = SceptreContext(
