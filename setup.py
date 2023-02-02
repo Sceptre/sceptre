@@ -26,6 +26,7 @@ install_requirements = [
     "click>=7.0,<9.0",
     "cfn-flip>=1.2.3,<2.0",
     "deepdiff>=5.5.0,<6.0",
+    "deprecation>=2.0.0,<3.0",
     "PyYaml>=5.1,<6.0",
     "Jinja2>=3.0,<4",
     "jsonschema>=3.2,<3.3",

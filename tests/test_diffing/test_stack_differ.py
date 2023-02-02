@@ -38,7 +38,7 @@ class TestStackDiffer:
     def setup_method(self, method):
         self.name = "my/stack"
         self.external_name = "full-stack-name"
-        self.role_arn = "role_arn"
+        self.cloudformation_service_role = "cloudformation_service_role"
         self.parameters_on_stack_config = {"param": "some_value"}
         self.tags = {"tag_name": "tag_value"}
         self.notifications = ["notification_arn1"]
@@ -51,7 +51,7 @@ class TestStackDiffer:
         self.local_no_echo_parameters = []
         self.deployed_tags = dict(self.tags)
         self.deployed_notification_arns = list(self.notifications)
-        self.deployed_role_arn = self.role_arn
+        self.deployed_cloudformation_service_role = self.cloudformation_service_role
 
         self.command_capturer = Mock()
         self.differ = ImplementedStackDiffer(self.command_capturer)
@@ -74,7 +74,7 @@ class TestStackDiffer:
                 spec=Stack,
                 external_name=self.external_name,
                 _parameters=self.parameters_on_stack,
-                role_arn=self.role_arn,
+                cloudformation_service_role=self.cloudformation_service_role,
                 tags=self.tags,
                 notifications=self.notifications,
                 __sceptre_user_data=self.sceptre_user_data,
@@ -114,7 +114,7 @@ class TestStackDiffer:
                     ],
                     "StackStatus": self.stack_status,
                     "NotificationARNs": self.deployed_notification_arns,
-                    "RoleARN": self.deployed_role_arn,
+                    "RoleARN": self.deployed_cloudformation_service_role,
                     "Tags": [
                         {"Key": key, "Value": value}
                         for key, value in self.deployed_tags.items()
@@ -161,7 +161,7 @@ class TestStackDiffer:
             parameters=self.parameters_on_stack_config,
             stack_tags=deepcopy(self.tags),
             notifications=deepcopy(self.notifications),
-            role_arn=self.role_arn,
+            cloudformation_service_role=self.cloudformation_service_role,
         )
 
     @property
@@ -171,7 +171,7 @@ class TestStackDiffer:
             parameters=self.deployed_parameters,
             stack_tags=deepcopy(self.deployed_tags),
             notifications=deepcopy(self.deployed_notification_arns),
-            role_arn=self.deployed_role_arn,
+            cloudformation_service_role=self.deployed_cloudformation_service_role,
         )
 
     def test_diff__compares_deployed_template_to_generated_template(self):
@@ -444,7 +444,7 @@ class TestDeepDiffStackDiffer:
             parameters={"pk1": "pv1"},
             stack_tags={"tk1": "tv1"},
             notifications=["notification"],
-            role_arn=None,
+            cloudformation_service_role=None,
         )
 
         self.config2 = StackConfiguration(
@@ -452,7 +452,7 @@ class TestDeepDiffStackDiffer:
             parameters={"pk1": "pv1", "pk2": "pv2"},
             stack_tags={"tk1": "tv1"},
             notifications=["notification"],
-            role_arn="new_role",
+            cloudformation_service_role="new_role",
         )
 
         self.template_dict_1 = {
@@ -544,7 +544,7 @@ class TestDifflibStackDiffer:
             parameters={"pk1": "pv1"},
             stack_tags={"tk1": "tv1"},
             notifications=["notification"],
-            role_arn=None,
+            cloudformation_service_role=None,
         )
 
         self.config2 = StackConfiguration(
@@ -552,7 +552,7 @@ class TestDifflibStackDiffer:
             parameters={"pk1": "pv1", "pk2": "pv2"},
             stack_tags={"tk1": "tv1"},
             notifications=["notification"],
-            role_arn="new_role",
+            cloudformation_service_role="new_role",
         )
 
         self.template_dict_1 = {
@@ -632,7 +632,7 @@ class TestDifflibStackDiffer:
             parameters={},
             stack_tags={},
             notifications=[],
-            role_arn=None,
+            cloudformation_service_role=None,
         )
         comparison = self.differ.compare_stack_configurations(None, empty_config)
 

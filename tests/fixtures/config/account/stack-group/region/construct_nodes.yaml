@@ -1,4 +1,5 @@
-template_path: path/to/template
+template:
+  path: path/to/template
 parameters:
   param1: !environment_variable example
   param2:

@@ -283,8 +283,8 @@ class TestConfigReader(object):
         mock_Stack.assert_any_call(
             name="account/stack-group/region/vpc",
             project_code="account_project_code",
-            template_path="path/to/template",
-            template_handler_config=None,
+            template_path=None,
+            template_handler_config={"path": "path/to/template"},
             region="region_region",
             profile="account_profile",
             parameters={"param1": "val1"},
@@ -293,8 +293,11 @@ class TestConfigReader(object):
             s3_details=sentinel.s3_details,
             dependencies=["child/level", "top/level"],
             iam_role=None,
+            sceptre_role=None,
             iam_role_session_duration=None,
+            sceptre_role_session_duration=None,
             role_arn=None,
+            cloudformation_service_role=None,
             protected=False,
             tags={},
             external_name=None,
@@ -381,7 +384,9 @@ class TestConfigReader(object):
             config = {
                 "region": "region",
                 "project_code": "project_code",
-                "template_path": rel_path,
+                "template": {
+                    "path": rel_path,
+                },
             }
 
             abs_path = os.path.join(config_dir, rel_path)
@@ -402,7 +407,7 @@ class TestConfigReader(object):
         config = {
             "region": "region",
             "project_code": "project_code",
-            "template_path": rel_path,
+            "template": {"path": rel_path},
         }
 
         abs_path = os.path.join(config_dir, rel_path)
@@ -420,7 +425,7 @@ class TestConfigReader(object):
         config = {
             "region": "region",
             "project_code": "project_code",
-            "template_path": rel_path,
+            "template": {"path": rel_path},
             "disable_rollback": True,
         }
 
@@ -481,7 +486,7 @@ class TestConfigReader(object):
             config = {
                 "project_code": "project_code",
                 "region": "region",
-                "template_path": rel_path,
+                "template": {"path": rel_path},
                 "dependencies": [dependency],
             }
 
@@ -512,7 +517,7 @@ class TestConfigReader(object):
             config = {
                 "project_code": "project_code",
                 "region": "region",
-                "template_path": rel_path,
+                "template": {"path": rel_path},
                 "dependencies": [dependency],
             }
 
@@ -551,7 +556,7 @@ class TestConfigReader(object):
             config = {
                 "project_code": "project_code",
                 "region": "region",
-                "template_path": rel_path,
+                "template": {"path": rel_path},
             }
 
             abs_path = os.path.join(config_dir, rel_path)

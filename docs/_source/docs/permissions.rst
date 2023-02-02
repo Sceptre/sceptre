@@ -20,14 +20,14 @@ Permissions Configurations
 --------------------------
 
 There are three main configurations for Sceptre that can modify default permissions behavior to
-provide more flexibility, control, and safety within an organization: **role_arn**, **iam_role**, and
-**profile**. These can be applied in a very targeted way, on a stack by stack basis or can be applied
-broadly to a whole StackGroup.
+provide more flexibility, control, and safety within an organization: **cloudformation_service_role**,
+**sceptre_role**, and **profile**. These can be applied in a very targeted way, on a stack by stack
+basis or can be applied broadly to a whole StackGroup.
 
-.. _role_arn_permissions:
+.. _cloudformation_service_role_permissions:
 
-role_arn
-^^^^^^^^
+cloudformation_service_role
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 This is the **CloudFormation service role** that will be attached to a given CloudFormation stack.
 This IAM role needs to be able to be assumed by **CloudFormation**, and must provide all the
 necessary permissions for all create/read/update/delete operations for all resources defined in that
@@ -53,14 +53,14 @@ the use case.
 For more information on using CloudFormation service roles, see the `AWS documentation <https://docs.aws
 .amazon.com/AWSCloudFormation/latest/UserGuide/using-iam-servicerole.html>`_.
 
-As a resolvable property, Sceptre allows you to use a resolver to populate the ``role_arn`` for a
+As a resolvable property, Sceptre allows you to use a resolver to populate the ``cloudformation_service_role`` for a
 Stack or StackGroup Config. This means you could define that role within your project, output its
 ARN, and then reference it using `!stack_output`.
 
-.. _iam_role_permissions:
+.. _sceptre_role_permissions:
 
-iam_role
-^^^^^^^^
+sceptre_role
+^^^^^^^^^^^^
 
 This is a **role that Sceptre will assume** when taking any actions on the Stack. It is not a service
 role for CloudFormation. Instead, this is simply a role that the current user assumes to execute
@@ -69,20 +69,20 @@ any Sceptre actions on that stack. This has some benefits over a CloudFormation 
 * This is not permanently attached to the Stack after you've used it once. If you ever *don't* want
   to assume this role, you could comment it out or remove it from the Stack Config and Sceptre simply
   won't use it. This is useful if the user executing Sceptre already has the right permissions to
-  take those actions. In other words, it doesn't lock you in (unlike using ``role_arn``).
+  take those actions. In other words, it doesn't lock you in (unlike using ``cloudformation_service_role``).
 * CloudFormation can continue to use it's default behavior of executing Stack actions with the
-  permissions of the current user, but it interprets the current user to hold the indicated ``iam_role``,
+  permissions of the current user, but it interprets the current user to hold the indicated ``sceptre_role``,
   which could grant additional permissions.
 
-Using the ``iam_role`` configuration on a Stack or StackGroup Config allows the user to *temporarily*
+Using the ``sceptre_role`` configuration on a Stack or StackGroup Config allows the user to *temporarily*
 "step into" a different set of permissions in order to execute Sceptre actions on Stack(s) in the
 project without having to permanently hold those permissions.
 
-In order to use an ``iam_role`` on a Sceptre Stack Config, that role needs to have an
+In order to use an ``sceptre_role`` on a Sceptre Stack Config, that role needs to have an
 AssumeRolePolicyDocument that allows the current user to assume it and permissions to perform all
 deployment actions on the stack and all its resources.
 
-As a resolvable property, Sceptre allows you to use a resolver to populate the ``iam_role`` for a
+As a resolvable property, Sceptre allows you to use a resolver to populate the ``sceptre_role`` for a
 Stack or StackGroup Config. This means you could define that role within your project, output its
 ARN, and then reference it using `!stack_output`.
 
@@ -91,7 +91,7 @@ ARN, and then reference it using `!stack_output`.
 profile
 ^^^^^^^
 
-This is different from ``role_arn`` and ``iam_role``, as both of those cause CloudFormation or
+This is different from ``cloudformation_service_role`` and ``sceptre_role``, as both of those cause CloudFormation or
 Sceptre to *assume* a different role with different permissions than the permissions the current
 user has.
 
@@ -107,7 +107,7 @@ Tips for working with Sceptre, IAM, and a CI/CD system
 
 * Rather than giving your CI/CD system blanket, admin-level permissions, you can define an IAM role
   with Sceptre to use for deploying the rest of your infrastructure, outputing its ARN in the template.
-  Then, in the rest of your project's stacks, you can set the ``iam_role`` using ``!stack_output``
+  Then, in the rest of your project's stacks, you can set the ``sceptre_role`` using ``!stack_output``
   to get that role's arn. This will mean your CI/CD system will temporarily "step into" that role
   when using Sceptre to interact with those specific stacks. It will also establish a dependency on
   your deployment role stack with every other stack in your project.
@@ -131,7 +131,7 @@ Tips for working with Sceptre, IAM, and a CI/CD system
     condition applied.
 
 * If you define your deployment role (and any other related resources) using Sceptre and then
-  reference it on all *other* stacks using ``iam_role: !stack_output ...``, this means that your
+  reference it on all *other* stacks using ``sceptre_role: !stack_output ...``, this means that your
   CI/CD system will not be able to deploy changes to the deployment role or its resources, but that
   every deployment will depend on those. This is good! It means that, so long as those resources
   remain unchanged, automated deployment can proceed without issue. It also means that the scope of

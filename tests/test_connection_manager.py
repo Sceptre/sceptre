@@ -3,6 +3,7 @@
 from typing import Union
 from unittest.mock import Mock, patch, sentinel, create_autospec
 
+import deprecation
 import pytest
 from boto3.session import Session
 from botocore.exceptions import ClientError
@@ -20,8 +21,8 @@ class TestConnectionManager(object):
     def setup_method(self, test_method):
         self.stack_name = None
         self.profile = None
-        self.iam_role = None
-        self.iam_role_session_duration = 3600
+        self.sceptre_role = None
+        self.sceptre_role_session_duration = 3600
         self.region = "eu-west-1"
 
         self.environment_variables = {
@@ -39,7 +40,7 @@ class TestConnectionManager(object):
             region=self.region,
             stack_name=self.stack_name,
             profile=self.profile,
-            iam_role=self.iam_role,
+            sceptre_role=self.sceptre_role,
             session_class=self.session_class,
             get_envs_func=lambda: self.environment_variables,
         )
@@ -59,44 +60,44 @@ class TestConnectionManager(object):
             region=self.region,
             stack_name="stack",
             profile="profile",
-            iam_role="iam_role",
-            iam_role_session_duration=21600,
+            sceptre_role="sceptre_role",
+            sceptre_role_session_duration=21600,
         )
 
         assert connection_manager.stack_name == "stack"
         assert connection_manager.profile == "profile"
-        assert connection_manager.iam_role == "iam_role"
-        assert connection_manager.iam_role_session_duration == 21600
+        assert connection_manager.sceptre_role == "sceptre_role"
+        assert connection_manager.sceptre_role_session_duration == 21600
         assert connection_manager.region == self.region
         assert connection_manager._boto_sessions == {}
         assert connection_manager._clients == {}
         assert connection_manager._stack_keys == {
-            "stack": (self.region, "profile", "iam_role")
+            "stack": (self.region, "profile", "sceptre_role")
         }
 
     def test_repr(self):
         self.connection_manager.stack_name = "stack"
         self.connection_manager.profile = "profile"
         self.connection_manager.region = "region"
-        self.connection_manager.iam_role = "iam_role"
+        self.connection_manager.sceptre_role = "sceptre_role"
         response = self.connection_manager.__repr__()
         assert (
             response == "sceptre.connection_manager.ConnectionManager("
             "region='region', profile='profile', stack_name='stack', "
-            "iam_role='iam_role', iam_role_session_duration='None')"
+            "sceptre_role='sceptre_role', sceptre_role_session_duration='None')"
         )
 
-    def test_repr_with_iam_role_session_duration(self):
+    def test_repr_with_sceptre_role_session_duration(self):
         self.connection_manager.stack_name = "stack"
         self.connection_manager.profile = "profile"
         self.connection_manager.region = "region"
-        self.connection_manager.iam_role = "iam_role"
-        self.connection_manager.iam_role_session_duration = 21600
+        self.connection_manager.sceptre_role = "sceptre_role"
+        self.connection_manager.sceptre_role_session_duration = 21600
         response = self.connection_manager.__repr__()
         assert (
             response == "sceptre.connection_manager.ConnectionManager("
             "region='region', profile='profile', stack_name='stack', "
-            "iam_role='iam_role', iam_role_session_duration='21600')"
+            "sceptre_role='sceptre_role', sceptre_role_session_duration='21600')"
         )
 
     def test_boto_session_with_cache(self):
@@ -107,7 +108,7 @@ class TestConnectionManager(object):
 
     def test__get_session__no_args__no_defaults__makes_boto_session_with_defaults(self):
         self.connection_manager.profile = None
-        self.connection_manager.iam_role = None
+        self.connection_manager.sceptre_role = None
 
         boto_session = self.connection_manager.get_session()
 
@@ -122,7 +123,7 @@ class TestConnectionManager(object):
 
     def test_get_session__no_args__connection_manager_has_profile__uses_profile(self):
         self.connection_manager.profile = "fancy"
-        self.connection_manager.iam_role = None
+        self.connection_manager.sceptre_role = None
 
         boto_session = self.connection_manager.get_session()
 
@@ -167,19 +168,21 @@ class TestConnectionManager(object):
         )
         assert boto_session == self.mock_session
 
-    def test_get_session__no_iam_role_passed__no_iam_role_on_connection_manager__does_not_assume_role(
+    def test_get_session__no_sceptre_role_passed__no_sceptre_role_on_connection_manager__does_not_assume_role(
         self,
     ):
-        self.connection_manager.iam_role = None
+        self.connection_manager.sceptre_role = None
 
         self.connection_manager.get_session()
         self.mock_session.client.assert_not_called()
 
-    def test_get_session__none_passed_for_iam_role__iam_role_on_connection_manager__does_not_assume_role(
+    def test_get_session__none_passed_for_sceptre_role__sceptre_role_on_connection_manager__does_not_assume_role(
         self,
     ):
-        self.connection_manager.iam_role = "arn:aws:iam::123456:role/my-path/other-role"
-        self.connection_manager.get_session(iam_role=None)
+        self.connection_manager.sceptre_role = (
+            "arn:aws:iam::123456:role/my-path/other-role"
+        )
+        self.connection_manager.get_session(sceptre_role=None)
 
         self.mock_session.client.assert_not_called()
 
@@ -198,12 +201,14 @@ class TestConnectionManager(object):
             ),
         ],
     )
-    def test_get_session__iam_role__assumes_that_role(self, connection_manager, arg):
-        self.connection_manager.iam_role = connection_manager
+    def test_get_session__sceptre_role__assumes_that_role(
+        self, connection_manager, arg
+    ):
+        self.connection_manager.sceptre_role = connection_manager
 
         kwargs = {}
         if arg != STACK_DEFAULT:
-            kwargs["iam_role"] = arg
+            kwargs["sceptre_role"] = arg
 
         self.connection_manager.get_session(**kwargs)
 
@@ -222,44 +227,44 @@ class TestConnectionManager(object):
             aws_session_token=credentials["SessionToken"],
         )
 
-    def test_get_session__iam_role_and_session_duration_on_connection_manager__uses_session_duration(
+    def test_get_session__sceptre_role_and_session_duration_on_connection_manager__uses_session_duration(
         self,
     ):
-        self.connection_manager.iam_role = "iam_role"
-        self.connection_manager.iam_role_session_duration = 21600
+        self.connection_manager.sceptre_role = "sceptre_role"
+        self.connection_manager.sceptre_role_session_duration = 21600
 
         self.connection_manager.get_session()
 
         self.mock_session.client.return_value.assume_role.assert_called_once_with(
-            RoleArn=self.connection_manager.iam_role,
+            RoleArn=self.connection_manager.sceptre_role,
             RoleSessionName="{0}-session".format(
-                self.connection_manager.iam_role.split("/")[-1]
+                self.connection_manager.sceptre_role.split("/")[-1]
             ),
             DurationSeconds=21600,
         )
 
-    def test_get_session__with_iam_role__returning_empty_credentials__raises_invalid_aws_credentials_error(
+    def test_get_session__with_sceptre_role__returning_empty_credentials__raises_invalid_aws_credentials_error(
         self,
     ):
         self.connection_manager._boto_sessions = {}
-        self.connection_manager.iam_role = "iam_role"
+        self.connection_manager.sceptre_role = "sceptre_role"
 
         self.mock_session.get_credentials.return_value = None
 
         with pytest.raises(InvalidAWSCredentialsError):
             self.connection_manager.get_session(
-                self.profile, self.region, self.connection_manager.iam_role
+                self.profile, self.region, self.connection_manager.sceptre_role
             )
 
     def test_get_client_with_no_pre_existing_clients(self):
         service = "s3"
         region = "eu-west-1"
         profile = None
-        iam_role = None
+        sceptre_role = None
         stack = self.stack_name
 
         client = self.connection_manager._get_client(
-            service, region, profile, stack, iam_role
+            service, region, profile, stack, sceptre_role
         )
         expected_client = self.mock_session.client.return_value
         assert client == expected_client
@@ -268,15 +273,15 @@ class TestConnectionManager(object):
     def test_get_client_with_existing_client(self):
         service = "cloudformation"
         region = "eu-west-1"
-        iam_role = None
+        sceptre_role = None
         profile = None
         stack = self.stack_name
 
         client_1 = self.connection_manager._get_client(
-            service, region, profile, stack, iam_role
+            service, region, profile, stack, sceptre_role
         )
         client_2 = self.connection_manager._get_client(
-            service, region, profile, stack, iam_role
+            service, region, profile, stack, sceptre_role
         )
         assert client_1 == client_2
         assert self.mock_session.client.call_count == 1
@@ -287,16 +292,16 @@ class TestConnectionManager(object):
     ):
         service = "cloudformation"
         region = "eu-west-1"
-        iam_role = None
+        sceptre_role = None
         profile = None
         stack = self.stack_name
 
         self.connection_manager.profile = None
         client_1 = self.connection_manager._get_client(
-            service, region, profile, stack, iam_role
+            service, region, profile, stack, sceptre_role
         )
         client_2 = self.connection_manager._get_client(
-            service, region, profile, stack, iam_role
+            service, region, profile, stack, sceptre_role
         )
         assert client_1 == client_2
 
@@ -418,6 +423,23 @@ class TestConnectionManager(object):
             "AWS_REGION": "us-west-2",
         }
         assert expected == result
+
+    @deprecation.fail_if_not_removed
+    def test_iam_role__is_removed_on_removal_version(self):
+        self.connection_manager.iam_role
+
+    @deprecation.fail_if_not_removed
+    def test_iam_role_session_duration__is_removed_on_removal_version(self):
+        self.connection_manager.iam_role_session_duration
+
+    def test_init__iam_role_fields_resolve_to_sceptre_role_fields(self):
+        connection_manager = ConnectionManager(
+            region="us-west-2",
+            sceptre_role="sceptre_role",
+            sceptre_role_session_duration=123456,
+        )
+        assert connection_manager.iam_role == "sceptre_role"
+        assert connection_manager.iam_role_session_duration == 123456
 
 
 class TestRetry:

@@ -1,2 +1,3 @@
-template_path: dependencies/independent_template.json
+template:
+  path: dependencies/independent_template.json
 region: eu-west-1
