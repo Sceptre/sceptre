@@ -8,34 +8,31 @@ This module implements Sceptre's CLI, and should not be directly imported.
 
 import os
 
-import warnings
-
 import click
 import colorama
 
 from sceptre import __version__
-from sceptre.cli.new import new_group
 from sceptre.cli.create import create_command
-from sceptre.cli.prune import prune_command
-from sceptre.cli.update import update_command
 from sceptre.cli.delete import delete_command
-from sceptre.cli.launch import launch_command
+from sceptre.cli.describe import describe_group
 from sceptre.cli.diff import diff_command
 from sceptre.cli.drift import drift_group
-from sceptre.cli.execute import execute_command
-from sceptre.cli.describe import describe_group
-from sceptre.cli.list import list_group
 from sceptre.cli.dump import dump_group
-from sceptre.cli.policy import set_policy_command
-from sceptre.cli.status import status_command
+from sceptre.cli.execute import execute_command
 from sceptre.cli.helpers import catch_exceptions, setup_vars
-
+from sceptre.cli.launch import launch_command
+from sceptre.cli.list import list_group
+from sceptre.cli.new import new_group
+from sceptre.cli.policy import set_policy_command
+from sceptre.cli.prune import prune_command
+from sceptre.cli.status import status_command
 from sceptre.cli.template import (
     validate_command,
     generate_command,
     estimate_cost_command,
     fetch_remote_template_command,
 )
+from sceptre.cli.update import update_command
 
 
 @click.group()
@@ -88,8 +85,6 @@ def cli(
     Sceptre is a tool to manage your cloud native infrastructure deployments.
     """
     colorama.init()
-    # Enable deprecation warnings
-    warnings.simplefilter("always", DeprecationWarning)
     ctx.obj = {
         "user_variables": setup_vars(var_file, var, merge_vars, debug, no_colour),
         "output_format": output,
