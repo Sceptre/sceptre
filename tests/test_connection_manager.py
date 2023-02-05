@@ -13,7 +13,6 @@ from moto import mock_s3
 from sceptre.connection_manager import (
     ConnectionManager,
     _retry_boto_call,
-    STACK_DEFAULT,
 )
 from sceptre.exceptions import RetryLimitExceededError, InvalidAWSCredentialsError
 
@@ -192,7 +191,7 @@ class TestConnectionManager(object):
         [
             pytest.param(
                 "arn:aws:iam::123456:role/my-path/my-role",
-                STACK_DEFAULT,
+                ConnectionManager.STACK_DEFAULT,
                 id="role on connection manager",
             ),
             pytest.param(
@@ -208,13 +207,15 @@ class TestConnectionManager(object):
         self.connection_manager.sceptre_role = connection_manager
 
         kwargs = {}
-        if arg != STACK_DEFAULT:
+        if arg != self.connection_manager.STACK_DEFAULT:
             kwargs["sceptre_role"] = arg
 
         self.connection_manager.get_session(**kwargs)
 
         self.mock_session.client.assert_called_once_with("sts")
-        expected_role = arg if arg != STACK_DEFAULT else connection_manager
+        expected_role = (
+            arg if arg != self.connection_manager.STACK_DEFAULT else connection_manager
+        )
         self.mock_session.client.return_value.assume_role.assert_called_once_with(
             RoleArn=expected_role, RoleSessionName="my-role-session"
         )

@@ -72,11 +72,6 @@ def _retry_boto_call(func):
     return decorated
 
 
-# STACK_DEFAULT is a sentinel value meaning "default to the stack's configuration". This is in
-# contrast with passing None, which would mean "use no value".
-STACK_DEFAULT = "[STACK DEFAULT]"
-
-
 class ConnectionManager(object):
     """
     The Connection Manager is used to create boto3 clients for
@@ -89,7 +84,9 @@ class ConnectionManager(object):
     :param sceptre_role_session_duration: The duration to assume the specified sceptre_role per session.
     """
 
-    STACK_DEFAULT = STACK_DEFAULT
+    # STACK_DEFAULT is a sentinel value meaning "default to the stack's configuration". This is in
+    # contrast with passing None, which would mean "use no value".
+    STACK_DEFAULT = "[STACK DEFAULT]"
 
     _session_lock = threading.Lock()
     _client_lock = threading.Lock()
@@ -181,11 +178,11 @@ class ConnectionManager(object):
     def _determine_session_args(
         self, profile: str, region: str, sceptre_role: str, iam_role: str
     ) -> Tuple[str, str, str]:
-        profile = self.profile if profile == STACK_DEFAULT else profile
-        region = self.region if region == STACK_DEFAULT else region
+        profile = self.profile if profile == self.STACK_DEFAULT else profile
+        region = self.region if region == self.STACK_DEFAULT else region
         sceptre_role = self._coalesce_sceptre_role(iam_role, sceptre_role)
         sceptre_role = (
-            self.sceptre_role if sceptre_role == STACK_DEFAULT else sceptre_role
+            self.sceptre_role if sceptre_role == self.STACK_DEFAULT else sceptre_role
         )
 
         return profile, region, sceptre_role
@@ -443,11 +440,11 @@ class ConnectionManager(object):
             # In every other circumstance, we will interpret each parameter individually according
             # to the way described in the docstring.
             else:
-                region = stack_region if region == STACK_DEFAULT else region
-                profile = stack_profile if profile == STACK_DEFAULT else profile
+                region = stack_region if region == self.STACK_DEFAULT else region
+                profile = stack_profile if profile == self.STACK_DEFAULT else profile
                 sceptre_role = (
                     stack_sceptre_role
-                    if sceptre_role == STACK_DEFAULT
+                    if sceptre_role == self.STACK_DEFAULT
                     else sceptre_role
                 )
         # In most cases, we won't be targeting another stack's configurations. Instead, we'll want
@@ -467,7 +464,7 @@ class ConnectionManager(object):
         """Evaluates the iam_role and sceptre_role parameters as passed to determine which value to
         use.
         """
-        if sceptre_role == STACK_DEFAULT and iam_role != STACK_DEFAULT:
+        if sceptre_role == self.STACK_DEFAULT and iam_role != self.STACK_DEFAULT:
             self._emit_iam_role_deprecation_warning()
             sceptre_role = iam_role
         return sceptre_role
