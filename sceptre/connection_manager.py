@@ -89,6 +89,8 @@ class ConnectionManager(object):
     :param sceptre_role_session_duration: The duration to assume the specified sceptre_role per session.
     """
 
+    STACK_DEFAULT = STACK_DEFAULT
+
     _session_lock = threading.Lock()
     _client_lock = threading.Lock()
     _boto_sessions = {}
