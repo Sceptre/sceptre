@@ -28,6 +28,7 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
      iam_role, profile, and region configurations.
  - [Resolve #1293] Improve the Stack Config Jinja Syntax Error Message to include the Stack Name (#1294)
  - [Resolves #1267] Improve the Stack Config Jinja Error Message to include the Stack Name (#1269)
+ - Preventing Duplicate Deprecation Warnings from being emitted
 
 #### _Potentially_ Breaking Changes
  - The !cmd hook now invokes the passed command using the AWS environment
