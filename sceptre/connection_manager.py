@@ -392,15 +392,15 @@ class ConnectionManager(object):
 
         Equivalent to ``boto3.client(<service>).<command>(**kwargs)``.
 
-        Note regarding the profile, region, and sceptre_role parameters:
-            We will interpret each parameter individually this way:
-              * If the value passed is the STACK_DEFAULT constant, we'll assume it to mean we ought
-                to use the target stack's value of that parameter.
-              * If the value passed is None, we will interpret that as an explicit request to nullify
-                the target stack's setting. Note: While this is valid for profile and sceptre_role,
-                it will likely blow up if doing this for region, since AWS almost always requires that.
-              * Otherwise, any value that has been specified will override the target stack's
-                configuration, regardless of what has been passed for other parameters.
+        | Note regarding the profile, region, and sceptre_role parameters:
+        |    We will interpret each parameter individually this way:
+        |      * If the value passed is the STACK_DEFAULT constant, we'll assume it to mean we ought
+        |        to use the target stack's value of that parameter.
+        |      * If the value passed is None, we will interpret that as an explicit request to nullify
+        |        the target stack's setting. Note: While this is valid for profile and sceptre_role,
+        |        it will likely blow up if doing this for region, since AWS almost always requires that.
+        |      * Otherwise, any value that has been specified will override the target stack's
+        |        configuration, regardless of what has been passed for other parameters.
 
         :param service: The Boto3 service to return a client for.
         :param command: The Boto3 command to call.
@@ -462,6 +462,9 @@ class ConnectionManager(object):
         return getattr(client, command)(**kwargs)
 
     def _coalesce_sceptre_role(self, iam_role: str, sceptre_role: str) -> str:
+        """Evaluates the iam_role and sceptre_role parameters as passed to determine which value to
+        use.
+        """
         if sceptre_role == STACK_DEFAULT and iam_role != STACK_DEFAULT:
             self._emit_iam_role_deprecation_warning()
             sceptre_role = iam_role
