@@ -181,12 +181,11 @@ class ConnectionManager(object):
     ) -> Tuple[str, str, str]:
         profile = self.profile if profile == STACK_DEFAULT else profile
         region = self.region if region == STACK_DEFAULT else region
+        sceptre_role = self._coalesce_sceptre_role(iam_role, sceptre_role)
         sceptre_role = (
             self.sceptre_role if sceptre_role == STACK_DEFAULT else sceptre_role
         )
-        if sceptre_role == STACK_DEFAULT and iam_role != STACK_DEFAULT:
-            self._emit_iam_role_deprecation_warning()
-            sceptre_role = iam_role
+
         return profile, region, sceptre_role
 
     def _emit_iam_role_deprecation_warning(self):
@@ -425,6 +424,7 @@ class ConnectionManager(object):
             stack_region, stack_profile, stack_sceptre_role = self._stack_keys[
                 stack_name
             ]
+            sceptre_role = self._coalesce_sceptre_role(iam_role, sceptre_role)
             # For historical/legacy purposes, if `None` is explicitly passed for all three parameters,
             # this will be interpreted to mean we're going to use the profile/region/role configuration
             # of the stack name. This could potentially interfere with an explicit attempt to nullify
@@ -444,7 +444,9 @@ class ConnectionManager(object):
                 region = stack_region if region == STACK_DEFAULT else region
                 profile = stack_profile if profile == STACK_DEFAULT else profile
                 sceptre_role = (
-                    stack_sceptre_role if sceptre_role == STACK_DEFAULT else profile
+                    stack_sceptre_role
+                    if sceptre_role == STACK_DEFAULT
+                    else sceptre_role
                 )
         # In most cases, we won't be targeting another stack's configurations. Instead, we'll want
         # to be using the configurations of the CURRENT stack.
@@ -458,3 +460,9 @@ class ConnectionManager(object):
 
         client = self._get_client(service, region, profile, stack_name, sceptre_role)
         return getattr(client, command)(**kwargs)
+
+    def _coalesce_sceptre_role(self, iam_role: str, sceptre_role: str) -> str:
+        if sceptre_role == STACK_DEFAULT and iam_role != STACK_DEFAULT:
+            self._emit_iam_role_deprecation_warning()
+            sceptre_role = iam_role
+        return sceptre_role
