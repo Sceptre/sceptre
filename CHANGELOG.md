@@ -4,6 +4,49 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 3.3.0 (2023.02.06)
+
+### Added
+ - [Resolve #1261] Add coloured differ (#1260)
+   - Implements coloured diffs for the diff (difflib) command. Responds to --no-color.
+ - [Resolves #1271] Extend stack colourer to include "IMPORT" states (#1272)
+ - [Resolves #1179] cloudformation disable-rollback option (#1282)
+   - Allow user to disable a cloudformation rollback on a sceptre deployment.
+
+### Changed
+ - [Resolve #1098] Deploy docker container to sceptreorg repo (#1265)
+   - Deploy sceptre docker images to dockerhub sceptreorg repo instead of cloudreach repo
+ - Updating Setuptools and wheel versions to avert security issues
+ - [Resolve #1293] Improve the Stack Config Jinja Syntax Error Message to include the Stack Name (#1294)
+ - [Resolves #1267] Improve the Stack Config Jinja Error Message to include the Stack Name (#1269)
+
+### Fixed
+ - [Resolve #1273] Events start from response time (#1275)
+   - Resolves #1273 by starting event filtering from the timestamp returned in
+     the AWS response headers rather than relying on the workstation clock.
+ - [Resolve #1253] Failed downloads raise error (#1277)
+   - Throwing an informative error when the template fails to download instead
+     of passing the error message to CloudFormation.
+ - [Resolves #1179] Changed disable-rollback default to None (#1288)
+   - We want the default value to be None to represent "Do whatever's configured
+     in the StackConfig" and True/False will override the StackConfig.
+
+### Nonfunctional
+ - Add tweet-release to CircleCI config (#1259)
+ - [Resolves #1276] Adopt Black Auto-formatter (#1278)
+   - Reformatting all Python files using the Black code formatter. This also
+     delivers a new function for generating `__repr__` methods which was needed
+     to deal with a line-too-long issue in Template. Per discussion in #1276 this
+     PR also disables E203 in flake8.
+ - Update sceptre-circleci docker image (#1284)
+   - Update to build and test with a docker image that's based on the official
+     circleci python docker image.
+ - [Resolve #1264] Updating the CDK docs to point to the new sceptre-cdk-handler
+   (#1285)
+   - This updates our docs to no longer reference the old CDK approach (which
+     didn't work with CDK assets). In its place, it references the new
+     sceptre-cdk-handler package that covers that functionality.
+
 ## 3.2.0 (2022.09.20)
 
 ### Added
