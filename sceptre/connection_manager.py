@@ -98,7 +98,6 @@ class ConnectionManager(object):
         iam_role=None,
         iam_role_session_duration=None,
     ):
-
         self.logger = logging.getLogger(__name__)
 
         self.region = region
