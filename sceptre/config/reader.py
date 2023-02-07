@@ -181,6 +181,7 @@ class ConfigReader(object):
             :returns: Class initialiser.
             :rtype: func
             """
+
             # This function signture is required by PyYAML
             def class_constructor(loader, node):
                 return node_class(
@@ -190,7 +191,6 @@ class ConfigReader(object):
             return class_constructor
 
         for group in entry_point_groups:
-
             for entry_point in self._iterate_entry_points(group):
                 # Retrieve name and class from entry point
                 node_tag = "!" + entry_point.name
