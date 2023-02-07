@@ -380,7 +380,6 @@ class TestConfigReader(object):
         project_path, config_dir = self.create_project()
 
         for rel_path in filepaths:
-
             config = {
                 "region": "region",
                 "project_code": "project_code",
@@ -447,7 +446,6 @@ class TestConfigReader(object):
         project_path, config_dir = self.create_project()
 
         for rel_path in filepaths:
-
             config = {
                 "project_code": "project_code",
                 "region": "region",

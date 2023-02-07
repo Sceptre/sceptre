@@ -114,7 +114,6 @@ class ConnectionManager(object):
         session_class=boto3.Session,
         get_envs_func=lambda: os.environ,
     ):
-
         self.logger = logging.getLogger(__name__)
 
         self.region = region
