@@ -4,31 +4,24 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
-## 4.0.0 (2023.01.19)
+## 4.0.0 (2023.02.08)
 
 ### Added
- - [Resolve #1261] Add coloured differ (#1260)
-   - Implements coloured diffs for the diff (difflib) command. Responds to --no-color.
- - [Resolves #1271] Extend stack colourer to include "IMPORT" states (#1272)
- - [Resolves #1179] cloudformation disable-rollback option (#1282)
-   - Allow user to disable a cloudformation rollback on a sceptre deployment.
  - [Resolve #1283] Introducing `sceptre_role`, `cloudformation_service_role` (#1295)
    - These are just iam_role and role_arn renamed to be a lot clearer. See "Deprecations" below.
 
 
 ### Changed
- - [Resolve #1098] Deploy docker container to sceptreorg repo (#1265)
-   - Deploy sceptre docker images to dockerhub sceptreorg repo instead of cloudreach repo
- - Updating Setuptools and wheel versions to avert security issues
- - Making the ConnectionManager a more "friendly" interface for hooks, resolvers,
-   and template handlers (#1287)
-   - This creates adds the public "get_session()" and
-     "create_session_environment_variables()" methods to make AWS interactions
+ - [Resolve #1299] Making the ConnectionManager a more "friendly" interface for hooks, resolvers,
+   and template handlers (#1287, #1300)
+   - This creates adds the public `get_session()` and
+     `create_session_environment_variables()` methods to make AWS interactions
      easier and more consistent with individual stack configurations for
      iam_role, profile, and region configurations.
- - [Resolve #1293] Improve the Stack Config Jinja Syntax Error Message to include the Stack Name (#1294)
- - [Resolves #1267] Improve the Stack Config Jinja Error Message to include the Stack Name (#1269)
- - Preventing Duplicate Deprecation Warnings from being emitted
+   - The `call()` method now properly distinguishes between default stack
+     configurations for profile, region, and `sceptre_role` and setting those to
+     `None` to nullify them.
+ - Preventing Duplicate Deprecation Warnings from being emitted (#1297)
 
 #### _Potentially_ Breaking Changes
  - The !cmd hook now invokes the passed command using the AWS environment
@@ -53,6 +46,21 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
       DeprecationWarning.
    - All three deprecated StackConfig fields will be removed in v5.0.0.
 
+## 3.3.0 (2023.02.06)
+
+### Added
+ - [Resolve #1261] Add coloured differ (#1260)
+   - Implements coloured diffs for the diff (difflib) command. Responds to --no-color.
+ - [Resolves #1271] Extend stack colourer to include "IMPORT" states (#1272)
+ - [Resolves #1179] cloudformation disable-rollback option (#1282)
+   - Allow user to disable a cloudformation rollback on a sceptre deployment.
+
+### Changed
+ - [Resolve #1098] Deploy docker container to sceptreorg repo (#1265)
+   - Deploy sceptre docker images to dockerhub sceptreorg repo instead of cloudreach repo
+ - Updating Setuptools and wheel versions to avert security issues
+ - [Resolve #1293] Improve the Stack Config Jinja Syntax Error Message to include the Stack Name (#1294)
+ - [Resolves #1267] Improve the Stack Config Jinja Error Message to include the Stack Name (#1269)
 
 ### Fixed
  - [Resolve #1273] Events start from response time (#1275)
@@ -80,7 +88,6 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
    - This updates our docs to no longer reference the old CDK approach (which
      didn't work with CDK assets). In its place, it references the new
      sceptre-cdk-handler package that covers that functionality.
-
 
 ## 3.2.0 (2022.09.20)
 
