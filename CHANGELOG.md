@@ -4,6 +4,11 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 4.0.1 (2023.02.12)
+
+### Changed
+ - Supporting `!rcmd` resolver up to v2
+
 ## 4.0.0 (2023.02.08)
 
 ### Added
