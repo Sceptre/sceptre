@@ -64,8 +64,7 @@ class Resolver(abc.ABC):
 
         :param stack: The stack to set on the cloned resolver
         """
-        clone = type(self)(self.argument, stack)
-        return clone
+        return type(self)(self.argument, stack)
 
 
 class ResolvableProperty(abc.ABC):
