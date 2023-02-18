@@ -3,21 +3,23 @@ import logging
 from functools import wraps
 
 from sceptre.helpers import _call_func_on_values
+from sceptre.logging import StackLoggerAdapter
+
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from sceptre.stack import Stack
 
 
-class Hook(object):
+class Hook(abc.ABC):
     """
     Hook is an abstract base class that should be inherited by all hooks.
 
     :param argument: The argument of the hook.
-    :type argument: str
     :param stack: The associated stack of the hook.
-    :type stack: sceptre.stack.Stack
     """
 
-    __metaclass__ = abc.ABCMeta
-
-    def __init__(self, argument=None, stack=None):
+    def __init__(self, argument: Any = None, stack: "Stack" = None):
         self.logger = logging.getLogger(__name__)
         self.argument = argument
         self.stack = stack
@@ -61,15 +63,16 @@ class HookProperty(object):
         """
         return getattr(instance, self.name)
 
-    def __set__(self, instance, value):
+    def __set__(self, instance: "Stack", value):
         """
         Attribute setter which adds a stack reference to any hooks in the
         data structure `value` and calls the setup method.
 
         """
 
-        def setup(attr, key, value):
+        def setup(attr, key, value: Hook):
             value.stack = instance
+            value.logger = StackLoggerAdapter(value.logger, instance.name)
             value.setup()
 
         _call_func_on_values(setup, value, Hook)

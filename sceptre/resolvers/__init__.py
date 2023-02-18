@@ -6,6 +6,7 @@ from threading import RLock
 from typing import Any, TYPE_CHECKING, Type, Union, TypeVar
 
 from sceptre.helpers import _call_func_on_values
+from sceptre.logging import StackLoggerAdapter
 from sceptre.resolvers.placeholders import (
     create_placeholder_value,
     are_placeholders_enabled,
@@ -60,7 +61,9 @@ class Resolver(abc.ABC):
 
         :param stack: The stack to set on the cloned resolver
         """
-        return type(self)(self.argument, stack)
+        clone = type(self)(self.argument, stack)
+        clone.logger = StackLoggerAdapter(clone.logger, stack.name)
+        return clone
 
 
 class ResolvableProperty(abc.ABC):
