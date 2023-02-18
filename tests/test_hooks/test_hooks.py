@@ -71,6 +71,7 @@ class TestHook(object):
 class MockClass(object):
     hook_property = HookProperty("hook_property")
     config = MagicMock()
+    name = "my/stack.yaml"
 
 
 class TestHookPropertyDescriptor(object):
@@ -81,7 +82,7 @@ class TestHookPropertyDescriptor(object):
         mock_hook = MagicMock(spec=MockHook)
 
         self.mock_object.hook_property = [mock_hook]
-        assert self.mock_object._hook_property == [mock_hook]
+        assert self.mock_object._hook_property == [mock_hook.clone.return_value]
 
     def test_getting_hook_property(self):
         self.mock_object._hook_property = self.mock_object

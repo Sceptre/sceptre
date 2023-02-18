@@ -41,6 +41,8 @@ class MockClass(object):
     )
     config = MagicMock()
 
+    name = "my/stack"
+
 
 class TestResolver(object):
     def setup_method(self, test_method):
