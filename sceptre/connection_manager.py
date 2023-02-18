@@ -183,6 +183,10 @@ class ConnectionManager(object):
         sceptre_role = (
             self.sceptre_role if sceptre_role == self.STACK_DEFAULT else sceptre_role
         )
+        # For historical reasons, if all three values are "None", that means we default to the
+        # Stack's configuration.
+        if (profile, region, sceptre_role) == (None, None, None):
+            profile, region, sceptre_role = self.profile, self.region, self.sceptre_role
 
         return profile, region, sceptre_role
 
