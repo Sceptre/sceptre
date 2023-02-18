@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import logging
+from unittest import TestCase
 from unittest.mock import call, Mock
 
 import pytest
@@ -44,8 +46,8 @@ class MockClass(object):
     name = "my/stack"
 
 
-class TestResolver(object):
-    def setup_method(self, test_method):
+class TestResolver(TestCase):
+    def setUp(self):
         self.mock_resolver = MockResolver(
             argument=sentinel.argument, stack=sentinel.stack
         )
@@ -53,6 +55,12 @@ class TestResolver(object):
     def test_init(self):
         assert self.mock_resolver.stack == sentinel.stack
         assert self.mock_resolver.argument == sentinel.argument
+
+    def test_logger__logs_have_stack_name_prefix(self):
+        with self.assertLogs(self.mock_resolver.logger.name, logging.INFO) as handler:
+            self.mock_resolver.logger.info("Bonjour")
+
+        assert handler.records[0].message == f"{sentinel.stack.name} - Bonjour"
 
 
 class TestResolvableContainerPropertyDescriptor:
