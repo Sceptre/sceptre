@@ -4,6 +4,10 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 4.0.2 (2023.02.20)
+### Fixed
+ - [Resolve #1307] Fixing Connection Manager bug (#1308)
+
 ## 4.0.1 (2023.02.12)
 
 ### Changed
