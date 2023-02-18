@@ -21,6 +21,10 @@ class Hook(abc.ABC):
 
     def __init__(self, argument: Any = None, stack: "Stack" = None):
         self.logger = logging.getLogger(__name__)
+
+        if stack is not None:
+            self.logger = StackLoggerAdapter(self.logger, stack.name)
+
         self.argument = argument
         self.stack = stack
 
@@ -38,6 +42,15 @@ class Hook(abc.ABC):
         inheriting classes. Run should execute the logic of the hook.
         """
         pass  # pragma: no cover
+
+    def clone(self, stack: "Stack") -> "Hook":
+        """
+        Produces a "fresh" copy of the Hook, with the specified stack.
+
+        :param stack: The stack to set on the cloned resolver
+        """
+        clone = type(self)(self.argument, stack)
+        return clone
 
 
 class HookProperty(object):
@@ -71,9 +84,8 @@ class HookProperty(object):
         """
 
         def setup(attr, key, value: Hook):
-            value.stack = instance
-            value.logger = StackLoggerAdapter(value.logger, instance.name)
-            value.setup()
+            attr[key] = clone = value.clone(instance)
+            clone.setup()
 
         _call_func_on_values(setup, value, Hook)
         setattr(instance, self.name, value)

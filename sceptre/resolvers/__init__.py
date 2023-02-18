@@ -34,6 +34,9 @@ class Resolver(abc.ABC):
 
     def __init__(self, argument: Any = None, stack: "stack.Stack" = None):
         self.logger = logging.getLogger(__name__)
+        if stack is not None:
+            self.logger = StackLoggerAdapter(self.logger, stack.name)
+
         self.argument = argument
         self.stack = stack
 
@@ -62,7 +65,6 @@ class Resolver(abc.ABC):
         :param stack: The stack to set on the cloned resolver
         """
         clone = type(self)(self.argument, stack)
-        clone.logger = StackLoggerAdapter(clone.logger, stack.name)
         return clone
 
 
