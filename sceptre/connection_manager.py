@@ -183,6 +183,10 @@ class ConnectionManager(object):
         sceptre_role = (
             self.sceptre_role if sceptre_role == self.STACK_DEFAULT else sceptre_role
         )
+        # For historical reasons, if all three values are "None", that means we default to the
+        # Stack's configuration.
+        if (profile, region, sceptre_role) == (None, None, None):
+            profile, region, sceptre_role = self.profile, self.region, self.sceptre_role
 
         return profile, region, sceptre_role
 
@@ -399,6 +403,9 @@ class ConnectionManager(object):
         |        it will likely blow up if doing this for region, since AWS almost always requires that.
         |      * Otherwise, any value that has been specified will override the target stack's
         |        configuration, regardless of what has been passed for other parameters.
+        |      * In the case that `None` has been specified for all parameters, that will be
+        |        interpreted as using the target stack's values for all three, falling back to the
+        |        current stack.
 
         :param service: The Boto3 service to return a client for.
         :param command: The Boto3 command to call.

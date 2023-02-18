@@ -405,7 +405,7 @@ class TestConnectionManager(object):
         )
         expected_client.list_buckets.assert_any_call()
 
-    def test_call__stack_name_set__profile_region_and_role_are_stack_default__uses_target_stack_settings(
+    def test_call__stack_name_set_and_cached__profile_region_and_role_are_stack_default__uses_target_stack_settings(
         self,
     ):
         service = "s3"
@@ -432,7 +432,28 @@ class TestConnectionManager(object):
         )
         expected_client.list_buckets.assert_any_call()
 
-    def test_call__stack_name_set__profile_region_and_role_are_none__uses_target_stack_settings(
+    def test_call__stack_name_set_not_cached__profile_region_and_role_are_stack_default__uses_target_stack_settings(
+        self,
+    ):
+        service = "s3"
+        command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = "target"
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+
+        expected_client = self.set_up_expected_client(
+            service, stack_name, instance_profile, self.region, instance_role
+        )
+
+        self.connection_manager.call(
+            service,
+            command,
+            stack_name=stack_name,
+        )
+        expected_client.list_buckets.assert_any_call()
+
+    def test_call__stack_name_set_and_cached__profile_region_and_role_are_none__uses_current_stack_settings(
         self,
     ):
         service = "s3"
@@ -462,7 +483,31 @@ class TestConnectionManager(object):
         )
         expected_client.list_buckets.assert_any_call()
 
-    def test_call__stack_name_set__profile_and_region_are_stack_default_and_role_is_none__nullifies_role(
+    def test_call__stack_name_set_not_cached__profile_region_and_role_are_none__uses_current_stack_settings(
+        self,
+    ):
+        service = "s3"
+        command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = "target"
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+
+        expected_client = self.set_up_expected_client(
+            service, stack_name, instance_profile, self.region, instance_role
+        )
+
+        self.connection_manager.call(
+            service,
+            command,
+            stack_name=stack_name,
+            profile=None,
+            region=None,
+            sceptre_role=None,
+        )
+        expected_client.list_buckets.assert_any_call()
+
+    def test_call__stack_name_set_and_cached__profile_and_region_are_stack_default_and_role_is_none__nullifies_role(
         self,
     ):
         service = "s3"
@@ -491,6 +536,28 @@ class TestConnectionManager(object):
         )
         expected_client.list_buckets.assert_any_call()
 
+    def test_call__stack_name_set_not_cached__profile_and_region_are_stack_default_and_role_is_none__nullifies_role(
+        self,
+    ):
+        service = "s3"
+        command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = "target"
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+
+        expected_client = self.set_up_expected_client(
+            service, stack_name, instance_profile, self.region, None
+        )
+
+        self.connection_manager.call(
+            service,
+            command,
+            stack_name=stack_name,
+            sceptre_role=None,
+        )
+        expected_client.list_buckets.assert_any_call()
+
     def test_call__invoked_with_iam_role_kwarg__emits_deprecation_warning(self):
         service = "s3"
         command = "list_buckets"
@@ -508,7 +575,7 @@ class TestConnectionManager(object):
         assert len(recorded) == 1
         assert issubclass(recorded[0].category, DeprecationWarning)
 
-    def test_call__stack_name_set__invoked_with_iam_role_kwarg__emits_deprecation_warning(
+    def test_call__stack_name_set_and_cached__invoked_with_iam_role_kwarg__emits_deprecation_warning(
         self,
     ):
         service = "s3"
@@ -540,6 +607,32 @@ class TestConnectionManager(object):
         assert len(recorded) == 1
         assert issubclass(recorded[0].category, DeprecationWarning)
 
+    def test_call__stack_name_set_not_cached__invoked_with_iam_role_kwarg__emits_deprecation_warning(
+        self,
+    ):
+        service = "s3"
+        command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = "target"
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+
+        self.set_up_expected_client(
+            service, stack_name, instance_profile, self.region, instance_role
+        )
+        with warnings.catch_warnings(record=True) as recorded:
+            self.connection_manager.call(
+                service,
+                command,
+                stack_name=stack_name,
+                profile=None,
+                region=None,
+                iam_role=None,
+            )
+
+        assert len(recorded) == 1
+        assert issubclass(recorded[0].category, DeprecationWarning)
+
     def test_call__invoked_with_iam_role__uses_that_as_sceptre_role(self):
         service = "s3"
         command = "list_buckets"
@@ -557,7 +650,7 @@ class TestConnectionManager(object):
 
         expected_client.list_buckets.assert_any_call()
 
-    def test_call__stack_name_set__invoked_with_iam_role__uses_that_as_sceptre_role(
+    def test_call__stack_name_set_and_cached__invoked_with_iam_role__uses_that_as_sceptre_role(
         self,
     ):
         service = "s3"
@@ -577,6 +670,30 @@ class TestConnectionManager(object):
         expected_role = "new role"
         expected_client = self.set_up_expected_client(
             service, stack_name, target_profile, target_region, expected_role
+        )
+
+        with warnings.catch_warnings():
+            self.connection_manager.call(
+                service,
+                command,
+                stack_name=stack_name,
+                iam_role=expected_role,
+            )
+        expected_client.list_buckets.assert_any_call()
+
+    def test_call__stack_name_set_not_cached__invoked_with_iam_role__uses_that_as_sceptre_role(
+        self,
+    ):
+        service = "s3"
+        command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = "target"
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+
+        expected_role = "new role"
+        expected_client = self.set_up_expected_client(
+            service, stack_name, instance_profile, self.region, expected_role
         )
 
         with warnings.catch_warnings():
