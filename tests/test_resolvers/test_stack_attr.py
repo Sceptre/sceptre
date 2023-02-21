@@ -10,6 +10,7 @@ class TestResolver(object):
     def setup_method(self, test_method):
         self.stack_group_config = {}
         self.stack = Mock(spec=Stack, stack_group_config=self.stack_group_config)
+        self.stack.name = "my/stack.yaml"
 
         self.resolver = StackAttr(stack=self.stack)
 

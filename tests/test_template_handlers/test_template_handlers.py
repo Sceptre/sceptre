@@ -1,3 +1,6 @@
+import logging
+from unittest import TestCase
+
 import pytest
 
 from sceptre.exceptions import TemplateHandlerArgumentsInvalidError
@@ -19,7 +22,7 @@ class MockTemplateHandler(TemplateHandler):
         return "TestTemplateHandler"
 
 
-class TestTemplateHandlers(object):
+class TestTemplateHandlers(TestCase):
     def test_template_handler_validates_schema(self):
         handler = MockTemplateHandler(name="mock", arguments={"argument": "test"})
         handler.validate()
@@ -30,3 +33,12 @@ class TestTemplateHandlers(object):
                 name="mock", arguments={"non-existent": "test"}
             )
             handler.validate()
+
+    def test_logger__logs_have_stack_name_prefix(self):
+        template_handler = MockTemplateHandler(
+            name="mock", arguments={"argument": "test"}
+        )
+        with self.assertLogs(template_handler.logger.name, logging.INFO) as handler:
+            template_handler.logger.info("Bonjour")
+
+        assert handler.records[0].message == f"{template_handler.name} - Bonjour"

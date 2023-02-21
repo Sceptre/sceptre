@@ -6,6 +6,7 @@ import six
 from jsonschema import validate, ValidationError
 
 from sceptre.exceptions import TemplateHandlerArgumentsInvalidError
+from sceptre.logging import StackLoggerAdapter
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -49,7 +50,7 @@ class TemplateHandler:
         connection_manager=None,
         stack_group_config=None,
     ):
-        self.logger = logging.getLogger(__name__)
+        self.logger = StackLoggerAdapter(logging.getLogger(__name__), name)
         self.name = name
         self.arguments = arguments
         self.sceptre_user_data = sceptre_user_data
