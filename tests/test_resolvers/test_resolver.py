@@ -131,16 +131,45 @@ class TestNestableResolver(TestCase):
         resolver.setup()
         self.assertTrue(resolver.argument["greetings"]["French"].setup_has_been_called)
 
-    def test_argument__no_stack_on_resolver__does_not_resolve_resolver(self):
+    def test_argument__not_cloned__does_not_resolve_resolver(self):
         arg = {"greetings": {"French": NestedResolver("bonjour")}}
         resolver = MyNestableResolver(arg)
         expected = {"greetings": {"French": arg["greetings"]["French"]}}
         self.assertEqual(expected, resolver.argument)
 
-    def test_argument__stack_on_resolver__resolves_arg_resolver(self):
+    def test_argument__cloned__resolves_arg_resolver(self):
         arg = {"greetings": {"French": NestedResolver("bonjour")}}
-        resolver = MyNestableResolver(arg, self.stack)
+        resolver = MyNestableResolver(arg).clone(self.stack)
         expected = {"greetings": {"French": "bonjour"}}
+        self.assertEqual(expected, resolver.argument)
+
+    def test_argument__argument_is_resolver__resolves_it(self):
+        arg = NestedResolver("hi")
+        resolver = MyNestableResolver(arg).clone(self.stack)
+        expected = "hi"
+        self.assertEqual(expected, resolver.argument)
+
+    def test_argument__cloned__nested_argument_in_dict_resolves_to_nothing__removes_it_from_argument(
+        self,
+    ):
+        arg = {"greetings": {"French": NestedResolver(None)}}
+        resolver = MyNestableResolver(arg).clone(self.stack)
+        expected = {"greetings": {}}
+        self.assertEqual(expected, resolver.argument)
+
+    def test_argument__nested_argument_in_list_resolves_to_nothing__removes_it_from_argument(
+        self,
+    ):
+        arg = {
+            "greetings": [
+                NestedResolver(None),
+                "Hello",
+                NestedResolver(None),
+                "Bonjour",
+            ]
+        }
+        resolver = MyNestableResolver(arg).clone(self.stack)
+        expected = {"greetings": ["Hello", "Bonjour"]}
         self.assertEqual(expected, resolver.argument)
 
 

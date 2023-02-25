@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from threading import RLock
 from typing import Any, TYPE_CHECKING, Type, Union, TypeVar
 
-from sceptre.helpers import _call_func_on_values
+from sceptre.helpers import _call_func_on_values, delete_keys_from_containers
 from sceptre.logging import StackLoggerAdapter
 from sceptre.resolvers.placeholders import (
     create_placeholder_value,
@@ -76,15 +76,28 @@ class NestableResolver(Resolver):
         VpcId: !my_custom_resolver
             my_parameter: !stack_output my_special_stack::MyStackOutput
 
-    Using the Resolver base class, this wouldn't actually work. However, in this
+    Using the Resolver base class, this wouldn't actually work. However, if you subclass,
+    NestableResolver, accessing the "argument" property will automatically resolve the resolvers in
+    the arguments.
     """
 
     _argument = None
+    _has_been_cloned = False
     _is_resolved = False
 
     @property
-    def argument(self):
-        if self.stack is not None and not self._is_resolved:
+    def argument(self) -> Any:
+        """This property will resolve all resolvers inside the argument, but only if this resolver
+        has been cloned with a Stack.
+
+        Resolving nested resolvers will result in their values being replaced in the dict/list they
+        were in with their resolved value, so we won't have to resolve them again.
+
+        If this property is accessed BEFORE the resolver has been cloned with a stack, it will return
+        the raw argument value. This is to safeguard any subclass's setup() or __init__() behaviors
+        from triggering resolution prematurely.
+        """
+        if self._has_been_cloned and self.stack is not None and not self._is_resolved:
             self._resolve_argument()
 
         return self._argument
@@ -93,7 +106,7 @@ class NestableResolver(Resolver):
     def argument(self, value):
         self._argument = value
 
-    def clone(self, stack: "stack.Stack") -> Resolver:
+    def clone(self, stack: "stack.Stack") -> "NestableResolver":
         def recurse(obj):
             if isinstance(obj, Resolver):
                 return obj.clone(stack)
@@ -104,7 +117,9 @@ class NestableResolver(Resolver):
             return obj
 
         argument = recurse(self._argument)
-        return type(self)(argument, stack)
+        clone = type(self)(argument, stack)
+        clone._has_been_cloned = True
+        return clone
 
     def setup(self):
         def setup_nested(attr, key, obj: Resolver):
@@ -113,10 +128,21 @@ class NestableResolver(Resolver):
         _call_func_on_values(setup_nested, self._argument, Resolver)
 
     def _resolve_argument(self):
-        def resolve(attr, key, obj: Resolver):
-            attr[key] = obj.resolve()
+        if isinstance(self._argument, Resolver):
+            self._argument = self._argument.resolve()
+        else:
+            keys_to_delete = []
 
-        _call_func_on_values(resolve, self._argument, Resolver)
+            def resolve(attr, key, obj: Resolver):
+                result = obj.resolve()
+                if result is None:
+                    keys_to_delete.append((attr, key))
+                else:
+                    attr[key] = result
+
+            _call_func_on_values(resolve, self._argument, Resolver)
+            delete_keys_from_containers(keys_to_delete)
+
         self._is_resolved = True
 
 
@@ -307,20 +333,7 @@ class ResolvableContainerProperty(ResolvableProperty):
 
         container = getattr(stack, self.name)
         _call_func_on_values(resolve, container, Resolver)
-        # Remove keys and indexes from their containers that had resolvers resolve to None.
-        list_items_to_delete = []
-        for attr, key in keys_to_delete:
-            if isinstance(attr, list):
-                # If it's a list, we want to gather up the items to remove from the list.
-                # We don't want to modify the list length yet.
-                # Since removals will change all the other list indexes,
-                # we don't wan't to modify lists yet.
-                list_items_to_delete.append((attr, attr[key]))
-            else:
-                del attr[key]
-
-        for containing_list, item in list_items_to_delete:
-            containing_list.remove(item)
+        delete_keys_from_containers(keys_to_delete)
 
         return container
 
