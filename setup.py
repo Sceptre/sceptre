@@ -72,6 +72,9 @@ setup(
             "sceptre.resolvers.stack_output:StackOutputExternal",
             "no_value = sceptre.resolvers.no_value:NoValue",
             "stack_attr = sceptre.resolvers.stack_attr:StackAttr",
+            "substitute = sceptre.resolvers.substitute:Substitute",
+            "split = sceptre.resolvers.split:Split",
+            "join = sceptre.resolvers.join:Join",
         ],
         "sceptre.template_handlers": [
             "file = sceptre.template_handlers.file:File",

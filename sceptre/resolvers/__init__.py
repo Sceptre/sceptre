@@ -87,7 +87,7 @@ class NestableResolver(Resolver):
 
         _call_func_on_values(setup_nested, self.argument, Resolver)
 
-    def resolve(self):
+    def resolve_argument(self):
         def resolve(attr, key, obj: Resolver):
             attr[key] = obj.resolve()
 

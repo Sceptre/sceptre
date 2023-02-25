@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
 import logging
 from unittest import TestCase
-from unittest.mock import call, Mock
+from unittest.mock import call, Mock, sentinel, MagicMock
 
 import pytest
-from unittest.mock import sentinel, MagicMock
 
 from sceptre.resolvers import (
     Resolver,
     ResolvableContainerProperty,
     ResolvableValueProperty,
     RecursiveResolve,
+    NestableResolver,
 )
 from sceptre.resolvers.placeholders import (
     use_resolver_placeholders_on_error,
     create_placeholder_value,
     PlaceholderType,
 )
+from sceptre.stack import Stack
 
 
 class MockResolver(Resolver):
@@ -61,6 +62,80 @@ class TestResolver(TestCase):
             self.mock_resolver.logger.info("Bonjour")
 
         assert handler.records[0].message == f"{sentinel.stack.name} - Bonjour"
+
+
+class NestedResolver(Resolver):
+    setup_has_been_called = False
+
+    def setup(self):
+        self.setup_has_been_called = True
+
+    def resolve(self):
+        return self.argument
+
+
+class MyNestableResolver(NestableResolver):
+    def resolve(self):
+        pass
+
+
+class TestNestableResolver(TestCase):
+    def setUp(self):
+        self.stack = Mock(Stack)
+        self.stack.name = "MyStack"
+
+    def test_clone__dict_argument_is_cloned(self):
+        arg = {"greeting": "hello"}
+        resolver = MyNestableResolver(arg)
+        clone = resolver.clone(self.stack)
+        self.assertIsNot(clone.argument, arg)
+
+    def test_clone__list_argument_is_cloned(self):
+        arg = ["hello"]
+        resolver = MyNestableResolver(arg)
+        clone = resolver.clone(self.stack)
+        self.assertIsNot(clone.argument, arg)
+
+    def test_clone__resolver_argument_is_cloned(self):
+        arg = NestedResolver("hank")
+        resolver = MyNestableResolver(arg)
+        clone = resolver.clone(self.stack)
+        self.assertIsNot(clone.argument, arg)
+        self.assertIs(self.stack, clone.argument.stack)
+
+    def test_clone__nested_dict_argument_is_cloned(self):
+        arg = {"greetings": {"French": "bonjour"}}
+        resolver = MyNestableResolver(arg)
+        clone = resolver.clone(self.stack)
+        self.assertIsNot(clone.argument["greetings"], arg["greetings"])
+
+    def test_clone__nested_list_argument_is_cloned(self):
+        arg = [{"French": "bonjour"}]
+        resolver = MyNestableResolver(arg)
+        clone = resolver.clone(self.stack)
+        self.assertIsNot(clone.argument[0], arg[0])
+
+    def test_clone__nested_resolvers_are_cloned(self):
+        arg = {"greetings": {"French": NestedResolver("bonjour")}}
+        resolver = MyNestableResolver(arg)
+        clone = resolver.clone(self.stack)
+        self.assertIsNot(
+            clone.argument["greetings"]["French"], arg["greetings"]["French"]
+        )
+        self.assertIs(self.stack, clone.argument["greetings"]["French"].stack)
+
+    def test_setup__nested_resolvers_are_setup(self):
+        arg = {"greetings": {"French": NestedResolver("bonjour")}}
+        resolver = MyNestableResolver(arg)
+        resolver.setup()
+        self.assertTrue(resolver.argument["greetings"]["French"].setup_has_been_called)
+
+    def test_resolve_argument__resolvers_in_argument_are_resolved(self):
+        arg = {"greetings": {"French": NestedResolver("bonjour")}}
+        resolver = MyNestableResolver(arg)
+        resolver.resolve_argument()
+        expected = {"greetings": {"French": "bonjour"}}
+        self.assertEqual(expected, resolver.argument)
 
 
 class TestResolvableContainerPropertyDescriptor:
