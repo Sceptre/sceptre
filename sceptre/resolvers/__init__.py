@@ -37,57 +37,17 @@ class Resolver(abc.ABC):
         if stack is not None:
             self.logger = StackLoggerAdapter(self.logger, stack.name)
 
-        self.argument = argument
         self.stack = stack
 
-    def setup(self):
-        """
-        This method is called at during stack initialisation.
-        Implementation of this method in subclasses can be used to do any
-        initial setup of the object.
-        """
-        pass  # pragma: no cover
-
-    @abc.abstractmethod
-    def resolve(self):
-        """
-        An abstract method which must be overwritten by all inheriting classes.
-        This method is called to retrieve the final desired value.
-        Implementation of this method in subclasses must return a suitable
-        object or primitive type.
-        """
-        pass  # pragma: no cover
-
-    def clone(self, stack: "stack.Stack") -> "Resolver":
-        """
-        Produces a "fresh" copy of the Resolver, with the specified stack.
-
-        :param stack: The stack to set on the cloned resolver
-        """
-        return type(self)(self.argument, stack)
-
-
-class NestableResolver(Resolver):
-    """NestableResolver is a type of resolver that supports having resolvers in its arguments.
-
-    For example, you could make a resolver that can be used like this:
-
-    parameters:
-        VpcId: !my_custom_resolver
-            my_parameter: !stack_output my_special_stack::MyStackOutput
-
-    Using the Resolver base class, this wouldn't actually work. However, if you subclass,
-    NestableResolver, accessing the "argument" property will automatically resolve the resolvers in
-    the arguments.
-    """
-
-    _argument = None
-    _has_been_cloned = False
-    _is_resolved = False
+        self._argument = argument
+        self._has_been_cloned = False
+        self._is_resolved = False
 
     @property
     def argument(self) -> Any:
-        """This property will resolve all resolvers inside the argument, but only if this resolver
+        """This is the resolver's argument.
+
+        This property will resolve all nested resolvers inside the argument, but only if this resolver
         has been cloned with a Stack.
 
         Resolving nested resolvers will result in their values being replaced in the dict/list they
@@ -105,47 +65,6 @@ class NestableResolver(Resolver):
     @argument.setter
     def argument(self, value):
         self._argument = value
-
-    def clone(self, stack: "stack.Stack") -> "NestableResolver":
-        """Recursively clones the resolver and its arguments.
-
-        The returned resolver will have an identical argument that is a different memory reference,
-        so that resolvers inherited from a stack group and applied across multiple stacks are
-        independent of each other.
-
-        Furthermore, all nested resolvers in this resolver's argument will also be cloned to ensure
-        they themselves are also independent and fully configured for the current stack.
-        """
-
-        def recurse(obj):
-            if isinstance(obj, Resolver):
-                return obj.clone(stack)
-            if isinstance(obj, list):
-                return [recurse(item) for item in obj]
-            elif isinstance(obj, dict):
-                return {key: recurse(val) for key, val in obj.items()}
-            return obj
-
-        argument = recurse(self._argument)
-        clone = type(self)(argument, stack)
-        clone._has_been_cloned = True
-        return clone
-
-    def setup(self):
-        """Ensures all nested resolvers in this resolver's argument are also setup when this
-        resolver's setup method is called.
-
-        IMPORTANT: If a subclass overrides this method, it must call super().setup() in order for
-        nested resolvers to be properly setup.
-        """
-        if isinstance(self._argument, Resolver):
-            self._argument.setup()
-            return
-
-        def setup_nested(attr, key, obj: Resolver):
-            obj.setup()
-
-        _call_func_on_values(setup_nested, self._argument, Resolver)
 
     def _resolve_argument(self):
         """Resolves all argument resolvers recursively."""
@@ -165,6 +84,71 @@ class NestableResolver(Resolver):
             delete_keys_from_containers(keys_to_delete)
 
         self._is_resolved = True
+
+    def _setup_nested_resolvers(self):
+        """Ensures all nested resolvers in this resolver's argument are also setup when this
+        resolver's setup method is called.
+        """
+        if isinstance(self._argument, Resolver):
+            self._argument.setup()
+            return
+
+        def setup_nested(attr, key, obj: Resolver):
+            obj.setup()
+
+        _call_func_on_values(setup_nested, self._argument, Resolver)
+
+    def _clone(self, stack: "stack.Stack") -> "Resolver":
+        """Recursively clones the resolver and its arguments.
+
+        The returned resolver will have an identical argument that is a different memory reference,
+        so that resolvers inherited from a stack group and applied across multiple stacks are
+        independent of each other.
+
+        Furthermore, all nested resolvers in this resolver's argument will also be cloned to ensure
+        they themselves are also independent and fully configured for the current stack.
+        """
+
+        def recursively_clone(obj):
+            if isinstance(obj, Resolver):
+                return obj._clone(stack)
+            if isinstance(obj, list):
+                return [recursively_clone(item) for item in obj]
+            elif isinstance(obj, dict):
+                return {key: recursively_clone(val) for key, val in obj.items()}
+            return obj
+
+        argument = recursively_clone(self._argument)
+        clone = type(self)(argument, stack)
+        clone._has_been_cloned = True
+        return clone
+
+    def connect_to_stack(self, stack: "stack.Stack") -> "Resolver":
+        """Obtains a clone of the current resolver, setup and ready for use for a given Stack
+        instance.
+        """
+        clone = self._clone(stack)
+        clone._setup_nested_resolvers()
+        clone.setup()
+        return clone
+
+    @abc.abstractmethod
+    def resolve(self):
+        """
+        An abstract method which must be overwritten by all inheriting classes.
+        This method is called to retrieve the final desired value.
+        Implementation of this method in subclasses must return a suitable
+        object or primitive type.
+        """
+        pass  # pragma: no cover
+
+    def setup(self):
+        """
+        This method is called at during stack initialisation.
+        Implementation of this method in subclasses can be used to do any
+        initial setup of the object.
+        """
+        pass  # pragma: no cover
 
 
 class ResolvableProperty(abc.ABC):
@@ -226,23 +210,6 @@ class ResolvableProperty(abc.ABC):
             yield
         finally:
             setattr(stack, get_status_name, False)
-
-    def get_setup_resolver_for_stack(
-        self, stack: "stack.Stack", resolver: Resolver
-    ) -> Resolver:
-        """Obtains a clone of the resolver with the stack set on it and the setup method having
-        been called on it.
-
-        :param stack: The stack to set on the Resolver
-        :param resolver: The Resolver to clone and set up
-        :return: The cloned resolver.
-        """
-        # We clone the resolver when we assign the value so that every stack gets its own resolver
-        # rather than potentially having one resolver instance shared in memory across multiple
-        # stacks.
-        clone = resolver.clone(stack)
-        clone.setup()
-        return clone
 
     @abc.abstractmethod
     def get_resolved_value(
@@ -381,7 +348,7 @@ class ResolvableContainerProperty(ResolvableProperty):
 
         def recurse(obj):
             if isinstance(obj, Resolver):
-                return self.get_setup_resolver_for_stack(stack, obj)
+                return obj.connect_to_stack(stack)
             if isinstance(obj, list):
                 return [recurse(item) for item in obj]
             elif isinstance(obj, dict):
@@ -476,5 +443,5 @@ class ResolvableValueProperty(ResolvableProperty):
         :param value: The value to set
         """
         if isinstance(value, Resolver):
-            value = self.get_setup_resolver_for_stack(stack, value)
+            value = value.connect_to_stack(stack)
         setattr(stack, self.name, value)
