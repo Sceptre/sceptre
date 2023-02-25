@@ -1,21 +1,18 @@
 # -*- coding: utf-8 -*-
 
-import abc
-import six
+import functools
 import logging
 import shlex
 
 from botocore.exceptions import ClientError
 
+from sceptre.exceptions import DependencyStackMissingOutputError, StackDoesNotExistError
 from sceptre.helpers import normalise_path, sceptreise_path
 from sceptre.resolvers import Resolver
-from sceptre.exceptions import DependencyStackMissingOutputError
-from sceptre.exceptions import StackDoesNotExistError
 
 TEMPLATE_EXTENSION = ".yaml"
 
 
-@six.add_metaclass(abc.ABCMeta)
 class StackOutputBase(Resolver):
     """
     A abstract base class which provides methods for getting Stack outputs.
@@ -50,6 +47,7 @@ class StackOutputBase(Resolver):
                 )
             )
 
+    @functools.lru_cache(maxsize=4096)
     def _get_stack_outputs(
         self, stack_name, profile=None, region=None, sceptre_role=None
     ):
