@@ -131,6 +131,12 @@ class TestNestableResolver(TestCase):
         resolver.setup()
         self.assertTrue(resolver.argument["greetings"]["French"].setup_has_been_called)
 
+    def test_setup__argument_is_resolver__invokes_argument_setup(self):
+        arg = NestedResolver("hi")
+        resolver = MyNestableResolver(arg)
+        resolver.setup()
+        self.assertTrue(arg.setup_has_been_called)
+
     def test_argument__not_cloned__does_not_resolve_resolver(self):
         arg = {"greetings": {"French": NestedResolver("bonjour")}}
         resolver = MyNestableResolver(arg)

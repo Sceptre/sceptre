@@ -107,6 +107,16 @@ class NestableResolver(Resolver):
         self._argument = value
 
     def clone(self, stack: "stack.Stack") -> "NestableResolver":
+        """Recursively clones the resolver and its arguments.
+
+        The returned resolver will have an identical argument that is a different memory reference,
+        so that resolvers inherited from a stack group and applied across multiple stacks are
+        independent of each other.
+
+        Furthermore, all nested resolvers in this resolver's argument will also be cloned to ensure
+        they themselves are also independent and fully configured for the current stack.
+        """
+
         def recurse(obj):
             if isinstance(obj, Resolver):
                 return obj.clone(stack)
@@ -122,12 +132,23 @@ class NestableResolver(Resolver):
         return clone
 
     def setup(self):
+        """Ensures all nested resolvers in this resolver's argument are also setup when this
+        resolver's setup method is called.
+
+        IMPORTANT: If a subclass overrides this method, it must call super().setup() in order for
+        nested resolvers to be properly setup.
+        """
+        if isinstance(self._argument, Resolver):
+            self._argument.setup()
+            return
+
         def setup_nested(attr, key, obj: Resolver):
             obj.setup()
 
         _call_func_on_values(setup_nested, self._argument, Resolver)
 
     def _resolve_argument(self):
+        """Resolves all argument resolvers recursively."""
         if isinstance(self._argument, Resolver):
             self._argument = self._argument.resolve()
         else:
