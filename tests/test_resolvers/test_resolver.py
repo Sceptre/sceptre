@@ -66,11 +66,13 @@ class TestResolver(TestCase):
 
 class NestedResolver(Resolver):
     setup_has_been_called = False
+    resolve_count = 0
 
     def setup(self):
         self.setup_has_been_called = True
 
     def resolve(self):
+        self.resolve_count += 1
         return self.argument
 
 
@@ -101,7 +103,6 @@ class TestNestableResolver(TestCase):
         resolver = MyNestableResolver(arg)
         clone = resolver.clone(self.stack)
         self.assertIsNot(clone.argument, arg)
-        self.assertIs(self.stack, clone.argument.stack)
 
     def test_clone__nested_dict_argument_is_cloned(self):
         arg = {"greetings": {"French": "bonjour"}}
@@ -118,11 +119,11 @@ class TestNestableResolver(TestCase):
     def test_clone__nested_resolvers_are_cloned(self):
         arg = {"greetings": {"French": NestedResolver("bonjour")}}
         resolver = MyNestableResolver(arg)
-        clone = resolver.clone(self.stack)
+        # I'm passing None here so the argument property doesn't actually resolve
+        clone = resolver.clone(None)
         self.assertIsNot(
             clone.argument["greetings"]["French"], arg["greetings"]["French"]
         )
-        self.assertIs(self.stack, clone.argument["greetings"]["French"].stack)
 
     def test_setup__nested_resolvers_are_setup(self):
         arg = {"greetings": {"French": NestedResolver("bonjour")}}
@@ -130,10 +131,15 @@ class TestNestableResolver(TestCase):
         resolver.setup()
         self.assertTrue(resolver.argument["greetings"]["French"].setup_has_been_called)
 
-    def test_resolve_argument__resolvers_in_argument_are_resolved(self):
+    def test_argument__no_stack_on_resolver__does_not_resolve_resolver(self):
         arg = {"greetings": {"French": NestedResolver("bonjour")}}
         resolver = MyNestableResolver(arg)
-        resolver.resolve_argument()
+        expected = {"greetings": {"French": arg["greetings"]["French"]}}
+        self.assertEqual(expected, resolver.argument)
+
+    def test_argument__stack_on_resolver__resolves_arg_resolver(self):
+        arg = {"greetings": {"French": NestedResolver("bonjour")}}
+        resolver = MyNestableResolver(arg, self.stack)
         expected = {"greetings": {"French": "bonjour"}}
         self.assertEqual(expected, resolver.argument)
 

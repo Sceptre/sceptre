@@ -68,6 +68,31 @@ class Resolver(abc.ABC):
 
 
 class NestableResolver(Resolver):
+    """NestableResolver is a type of resolver that supports having resolvers in its arguments.
+
+    For example, you could make a resolver that can be used like this:
+
+    parameters:
+        VpcId: !my_custom_resolver
+            my_parameter: !stack_output my_special_stack::MyStackOutput
+
+    Using the Resolver base class, this wouldn't actually work. However, in this
+    """
+
+    _argument = None
+    _is_resolved = False
+
+    @property
+    def argument(self):
+        if self.stack is not None and not self._is_resolved:
+            self._resolve_argument()
+
+        return self._argument
+
+    @argument.setter
+    def argument(self, value):
+        self._argument = value
+
     def clone(self, stack: "stack.Stack") -> Resolver:
         def recurse(obj):
             if isinstance(obj, Resolver):
@@ -78,20 +103,21 @@ class NestableResolver(Resolver):
                 return {key: recurse(val) for key, val in obj.items()}
             return obj
 
-        argument = recurse(self.argument)
+        argument = recurse(self._argument)
         return type(self)(argument, stack)
 
     def setup(self):
         def setup_nested(attr, key, obj: Resolver):
             obj.setup()
 
-        _call_func_on_values(setup_nested, self.argument, Resolver)
+        _call_func_on_values(setup_nested, self._argument, Resolver)
 
-    def resolve_argument(self):
+    def _resolve_argument(self):
         def resolve(attr, key, obj: Resolver):
             attr[key] = obj.resolve()
 
-        _call_func_on_values(resolve, self.argument, Resolver)
+        _call_func_on_values(resolve, self._argument, Resolver)
+        self._is_resolved = True
 
 
 class ResolvableProperty(abc.ABC):
