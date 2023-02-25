@@ -67,6 +67,33 @@ class Resolver(abc.ABC):
         return type(self)(self.argument, stack)
 
 
+class NestableResolver(Resolver):
+    def clone(self, stack: "stack.Stack") -> Resolver:
+        def recurse(obj):
+            if isinstance(obj, Resolver):
+                return obj.clone(stack)
+            if isinstance(obj, list):
+                return [recurse(item) for item in obj]
+            elif isinstance(obj, dict):
+                return {key: recurse(val) for key, val in obj.items()}
+            return obj
+
+        argument = recurse(self.argument)
+        return type(self)(argument, stack)
+
+    def setup(self):
+        def setup_nested(attr, key, obj: Resolver):
+            obj.setup()
+
+        _call_func_on_values(setup_nested, self.argument, Resolver)
+
+    def resolve(self):
+        def resolve(attr, key, obj: Resolver):
+            attr[key] = obj.resolve()
+
+        _call_func_on_values(resolve, self.argument, Resolver)
+
+
 class ResolvableProperty(abc.ABC):
     """
     This is an abstract base class for a descriptor used to store an attribute that have values
