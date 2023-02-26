@@ -414,7 +414,7 @@ arguments when they're passed in lists and dicts.)
      Param3: !ssm
        name: "/dev/DbPassword"
      Param4: !ssm
-       name: !stack_output my/other/stack.yaml::MyOutputName
+       name: !stack_output my/other/stack.yaml::MySsmName
 
 .. _Custom Resolvers: #custom-resolvers
 .. _this is great place to start: https://docs.python.org/3/distributing/
