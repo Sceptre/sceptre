@@ -24,8 +24,34 @@ class RecursiveResolve(Exception):
     pass
 
 
-class ResolvableArgumentBase:
+class CustomYamlTagBase:
+    """A base class for custom Yaml Elements (i.e. hooks and resolvers).
+
+    This base class takes care of common functionality needed by subclasses:
+    * logging setup (associated with stacks)
+    * Creating unique clones associated with individual stacks (applied recursively down to all
+        resolvers in the argument)
+    * On-connect setup that might be needed once connected to a Stack (applied recursively down to
+        all resolvers in the argument)
+    * Resolving resolvers in argument when accessing self.argument
+    """
+
+    logger = logging.getLogger(__name__)
+
     def __init__(self, argument: Any = None, stack: "stack.Stack" = None):
+        """Initializes a custom yaml tag object.
+
+        :param argument: The argument passed to the yaml tag. This could be a string, number, list,
+            or dict. Resolvers are supported in the argument, but they must be in either list or dict
+            arguments.
+        :param stack: The stack object associated with this instance. NOTE: When first instantiated
+            from loading the YAML, there will be no Stack. A Stack instance will only be passed into
+            the instance when "clone_for_stack" is invoked when the tag is associated with a specific
+            stack.
+        """
+        if stack is not None:
+            self.logger = StackLoggerAdapter(self.logger, stack.name)
+
         self.stack = stack
 
         self._argument = argument
@@ -33,19 +59,21 @@ class ResolvableArgumentBase:
 
     @property
     def argument(self) -> Any:
-        """This is the resolver's argument.
+        """This is the resolver or hook's argument.
 
-        This property will resolve all nested resolvers inside the argument, but only if this resolver
-        has a Stack.
+        This property will resolve all nested resolvers inside the argument, but only if this
+        instance has been associated with a Stack.
 
         Resolving nested resolvers will result in their values being replaced in the dict/list they
         were in with their resolved value, so we won't have to resolve them again.
 
-        If this property is accessed BEFORE the resolver has a stack, it will return
+        If this property is accessed BEFORE the instance has a stack, it will return
         the raw argument value. This is to safeguard any __init__() behaviors from triggering
         resolution prematurely.
         """
         if self.stack is not None and not self._argument_is_resolved:
+            # Since resolving the argument updates the argument list or dict so that there aren't
+            # resolvers in it any more, we only need to do this resolution once per instance.
             self._resolve_argument()
 
         return self._argument
@@ -73,7 +101,7 @@ class ResolvableArgumentBase:
 
     def _setup_nested_resolvers(self):
         """Ensures all nested resolvers in this resolver's argument are also setup when this
-        resolver's setup method is called.
+        instance's setup method is called.
         """
 
         def setup_nested(attr, key, obj: Resolver):
@@ -82,10 +110,10 @@ class ResolvableArgumentBase:
         _call_func_on_values(setup_nested, self._argument, Resolver)
 
     def _clone(self: Self, stack: "stack.Stack") -> Self:
-        """Recursively clones the resolver and its arguments.
+        """Recursively clones the instance and its arguments.
 
-        The returned resolver will have an identical argument that is a different memory reference,
-        so that resolvers inherited from a stack group and applied across multiple stacks are
+        The returned instance will have an identical argument that is a different memory reference,
+        so that instances inherited from a stack group and applied across multiple stacks are
         independent of each other.
 
         Furthermore, all nested resolvers in this resolver's argument will also be cloned to ensure
@@ -106,8 +134,8 @@ class ResolvableArgumentBase:
         return clone
 
     def clone_for_stack(self: Self, stack: "stack.Stack") -> Self:
-        """Obtains a clone of the current object, setup and ready for use for a given Stack
-        instance.
+        """
+        Obtains a clone of the current object, setup and ready for use for a given Stack instance.
         """
         clone = self._clone(stack)
         clone._setup_nested_resolvers()
@@ -116,28 +144,17 @@ class ResolvableArgumentBase:
 
     def setup(self):
         """
-        This method is called at during stack initialisation.
+        This method is called when the object is connected to a Stack instance.
         Implementation of this method in subclasses can be used to do any
         initial setup of the object.
         """
         pass  # pragma: no cover
 
 
-class Resolver(ResolvableArgumentBase, metaclass=abc.ABCMeta):
+class Resolver(CustomYamlTagBase, metaclass=abc.ABCMeta):
     """
-    Resolver is an abstract base class that should be inherited by all
-    Resolvers.
-
-    :param argument: The argument of the resolver.
-    :param stack: The associated stack of the resolver.
+    Resolver is an abstract base class that should be subclassed by all Resolvers.
     """
-
-    def __init__(self, argument: Any = None, stack: "stack.Stack" = None):
-        super().__init__(argument, stack)
-
-        self.logger = logging.getLogger(__name__)
-        if stack is not None:
-            self.logger = StackLoggerAdapter(self.logger, stack.name)
 
     @abc.abstractmethod
     def resolve(self):

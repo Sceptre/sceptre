@@ -1,32 +1,21 @@
 import abc
 import logging
 from functools import wraps
+from typing import TYPE_CHECKING
 
 from sceptre.helpers import _call_func_on_values
-from sceptre.logging import StackLoggerAdapter
-
-from typing import TYPE_CHECKING, Any
-
-from sceptre.resolvers import ResolvableArgumentBase
+from sceptre.resolvers import CustomYamlTagBase
 
 if TYPE_CHECKING:
     from sceptre.stack import Stack
 
 
-class Hook(ResolvableArgumentBase, metaclass=abc.ABCMeta):
+class Hook(CustomYamlTagBase, metaclass=abc.ABCMeta):
     """
-    Hook is an abstract base class that should be inherited by all hooks.
-
-    :param argument: The argument of the hook.
-    :param stack: The associated stack of the hook.
+    Hook is an abstract base class that should be subclassed by all hooks.
     """
 
-    def __init__(self, argument: Any = None, stack: "Stack" = None):
-        super().__init__(argument, stack)
-        self.logger = logging.getLogger(__name__)
-
-        if stack is not None:
-            self.logger = StackLoggerAdapter(self.logger, stack.name)
+    logger = logging.getLogger(__name__)
 
     @abc.abstractmethod
     def run(self):

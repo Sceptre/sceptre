@@ -81,7 +81,7 @@ class TestResolver(TestCase):
         assert handler.records[0].message == f"{sentinel.stack.name} - Bonjour"
 
 
-class TestResolvableArgumentBase(TestCase):
+class TestCustomYamlTagBase(TestCase):
     def setUp(self):
         self.stack = Mock()
         self.stack.name = "My Stack"
