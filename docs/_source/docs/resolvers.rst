@@ -5,6 +5,9 @@ Sceptre implements resolvers, which can be used to resolve a value of a
 CloudFormation ``parameter`` or ``sceptre_user_data`` value at runtime. This is
 most commonly used to chain the outputs of one Stack to the inputs of another.
 
+You can use resolvers with any resolvable property on a StackConfig, as well as in the arguments
+of hooks and other resolvers.
+
 If required, users can create their own resolvers, as described in the section
 on `Custom Resolvers`_.
 
@@ -52,6 +55,27 @@ file_contents
 
 **deprecated**: Consider using the `file`_ resolver instead.
 
+join
+~~~~
+
+This resolver allows you to join multiple strings together to form a single string. This is great
+for combining the outputs of multiple resolvers. This resolver works just like CloudFormation's
+``!Join`` intrinsic function.
+
+The argument for this resolver should be a list with two elements: (1) A string to join the elements
+on and (2) a list of items to join.
+
+Example:
+
+.. code-block:: yaml
+
+   parameters:
+     BaseUrl: !join
+       - ":"
+       - - !stack_output my/app/stack.yaml::HostName
+         - !stack_output my/other/stack.yaml::Port
+
+
 no_value
 ~~~~~~~~
 
@@ -80,6 +104,49 @@ A resolver to execute any shell command.
 Refer to `sceptre-resolver-cmd <https://github.com/Sceptre/sceptre-resolver-cmd/>`_ for documentation.
 
 .. _stack_attr_resolver:
+
+select
+~~~~~~
+
+This resolver allows you to select a specific index of a list of items. This is great for combining
+with the ``!split`` resolver to obtain part of a string. This function works almost the same as
+CloudFormation's ``!Select`` intrinsic function, **except you can use this with negative indexes to
+select with a reverse index**.
+
+The argument for this resolver should be a list with two elements: (1) A numerical index and (2) a
+list of items to select out of. If the index is negative, it will select from the end of the list.
+For example, "-1" would select the last element and "-2" would select the second-to-last element.
+
+Example:
+
+.. code-block:: yaml
+
+   parameters:
+     # This selects the last element after you split the connection string on "/"
+     DatabaseName: !select
+       - -1
+       - !split ["/", !stack_output my/database/stack.yaml::ConnectionString]
+
+split
+~~~~~
+
+This resolver will split a value on a given delimiter string. This is great when combining with the
+``!select`` resolver. This function works the same as CloudFormation's ``!Split`` intrinsic function.
+
+Note: The return value of this resolver is a *list*, not a string. This will not work to set Stack
+configurations that expect strings, but it WILL work to set Stack configurations that expect lists.
+
+The argument for this resolver should be a list with two elements: (1) The delimiter to split on and
+(2) a string to split.
+
+Example:
+
+.. code-block:: yaml
+
+   notifications: !split
+     - ";"
+     - !stack_output my/sns/topics.yaml::SemicolonDelimitedArns
+
 
 stack_attr
 ~~~~~~~~~~
@@ -180,6 +247,32 @@ Example:
 
    parameters:
      VpcIdParameter: !stack_output_external prj-network-vpc::VpcIdOutput prod
+
+
+substitute
+~~~~~~~~~~
+
+This resolver allows you to create a string using Python string format syntax. This functions as a
+great way to combine together a number of resolver outputs into a single string. This functions very
+similarly to Cloudformation's ``!Sub`` intrinsic function.
+
+The argument to this resolver should be a two-element list: (1) Is the format string, using
+curly-brace templates to indicate variables, and (2) a dictionary where the keys are the format
+string's variable names and the values are the variable values.
+
+Example:
+
+.. code-block:: yaml
+
+   parameters:
+     ConnectionString: !substitute
+       - "postgres://{username}:{password}@{hostname}:{port}/{database}"
+       - username: {{ var.username }}
+         password: !ssm /my/ssm/password
+         hostname: !stack_output my/database/stack.yaml::HostName
+         port: !stack_output my/database/stack.yaml::Port
+         database: {{var.database}}
+
 
 Custom Resolvers
 ----------------
@@ -306,18 +399,22 @@ For details on calling AWS services or invoking AWS-related third party tools in
 
 Resolver arguments
 ^^^^^^^^^^^^^^^^^^
-Resolver arguments can be a simple string or a complex data structure.
+Resolver arguments can be a simple string or a complex data structure. You can even use
+other resolvers in the arguments to resolvers! (Note: Other resolvers can only be passed in
+arguments when they're passed in lists and dicts.)
 
 .. code-block:: yaml
 
    template:
      path: <...>
      type: <...>
-    parameters:
-      Param1: !ssm "/dev/DbPassword"
-      Param2: !ssm {"name": "/dev/DbPassword"}
-      Param3: !ssm
-        name: "/dev/DbPassword"
+   parameters:
+     Param1: !ssm "/dev/DbPassword"
+     Param2: !ssm {"name": "/dev/DbPassword"}
+     Param3: !ssm
+       name: "/dev/DbPassword"
+     Param4:
+       name: !stack_output my/other/stack.yaml::MyOutputName
 
 .. _Custom Resolvers: #custom-resolvers
 .. _this is great place to start: https://docs.python.org/3/distributing/

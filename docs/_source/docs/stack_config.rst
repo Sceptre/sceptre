@@ -99,7 +99,7 @@ and that Stack need not be added as an explicit dependency.
 
 hooks
 ~~~~~
-* Resolvable: No
+* Resolvable: No (but you can use resolvers in hook arguments!)
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
