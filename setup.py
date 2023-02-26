@@ -71,6 +71,7 @@ setup(
             "stack_output_external ="
             "sceptre.resolvers.stack_output:StackOutputExternal",
             "no_value = sceptre.resolvers.no_value:NoValue",
+            "select = scpetre.resolvers.select:Select",
             "stack_attr = sceptre.resolvers.stack_attr:StackAttr",
             "substitute = sceptre.resolvers.substitute:Substitute",
             "split = sceptre.resolvers.split:Split",
