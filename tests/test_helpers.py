@@ -8,7 +8,11 @@ from os.path import join, sep
 from datetime import datetime, timezone, timedelta
 
 from sceptre.exceptions import PathConversionError
-from sceptre.helpers import get_external_stack_name, create_deprecated_alias_property
+from sceptre.helpers import (
+    get_external_stack_name,
+    create_deprecated_alias_property,
+    delete_keys_from_containers,
+)
 from sceptre.helpers import normalise_path
 from sceptre.helpers import sceptreise_path
 from sceptre.helpers import extract_datetime_from_aws_response_headers, gen_repr
@@ -171,3 +175,22 @@ class TestHelpers(object):
 
         assert len(messages) == 1
         assert messages[0].category == deprecation.DeprecatedWarning
+
+    def test_delete_keys_from_containers__removes_keys_from_dicts(self):
+        a = {"keep": "me", "kill": "me"}
+        b = {"keep": "me", "take": "me out"}
+        c = {"keep": "me", "destroy": "me"}
+
+        arg = [(a, "kill"), (b, "take"), (c, "destroy")]
+        delete_keys_from_containers(arg)
+        expected = {"keep": "me"}
+        assert a == b == c == expected
+
+    def test_delete_keys_from_containers__removes_indexes_from_lists(self):
+        a = ["keep me", "kill me", "keep me", "destroy me"]
+        b = ["take me out", "keep me", "send me the true death", "keep me"]
+
+        arg = [(a, 1), (a, 3), (b, 0), (b, 2)]
+        delete_keys_from_containers(arg)
+        expected = ["keep me", "keep me"]
+        assert a == b == expected
