@@ -1,7 +1,7 @@
-from sceptre.resolvers import NestableResolver
+from sceptre.resolvers import Resolver
 
 
-class Split(NestableResolver):
+class Split(Resolver):
     def resolve(self):
         split_on, split_string = self.argument
         return split_string.split(split_on)

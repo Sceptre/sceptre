@@ -40,7 +40,6 @@ class Resolver(abc.ABC):
         self.stack = stack
 
         self._argument = argument
-        self._has_been_cloned = False
         self._is_resolved = False
 
     @property
@@ -48,16 +47,16 @@ class Resolver(abc.ABC):
         """This is the resolver's argument.
 
         This property will resolve all nested resolvers inside the argument, but only if this resolver
-        has been cloned with a Stack.
+        has a Stack.
 
         Resolving nested resolvers will result in their values being replaced in the dict/list they
         were in with their resolved value, so we won't have to resolve them again.
 
-        If this property is accessed BEFORE the resolver has been cloned with a stack, it will return
-        the raw argument value. This is to safeguard any subclass's setup() or __init__() behaviors
-        from triggering resolution prematurely.
+        If this property is accessed BEFORE the resolver has a stack, it will return
+        the raw argument value. This is to safeguard any __init__() behaviors from triggering
+        resolution prematurely.
         """
-        if self._has_been_cloned and self.stack is not None and not self._is_resolved:
+        if self.stack is not None and not self._is_resolved:
             self._resolve_argument()
 
         return self._argument
@@ -68,20 +67,18 @@ class Resolver(abc.ABC):
 
     def _resolve_argument(self):
         """Resolves all argument resolvers recursively."""
-        if isinstance(self._argument, Resolver):
-            self._argument = self._argument.resolve()
-        else:
-            keys_to_delete = []
 
-            def resolve(attr, key, obj: Resolver):
-                result = obj.resolve()
-                if result is None:
-                    keys_to_delete.append((attr, key))
-                else:
-                    attr[key] = result
+        keys_to_delete = []
 
-            _call_func_on_values(resolve, self._argument, Resolver)
-            delete_keys_from_containers(keys_to_delete)
+        def resolve(attr, key, obj: Resolver):
+            result = obj.resolve()
+            if result is None:
+                keys_to_delete.append((attr, key))
+            else:
+                attr[key] = result
+
+        _call_func_on_values(resolve, self._argument, Resolver)
+        delete_keys_from_containers(keys_to_delete)
 
         self._is_resolved = True
 
@@ -89,9 +86,6 @@ class Resolver(abc.ABC):
         """Ensures all nested resolvers in this resolver's argument are also setup when this
         resolver's setup method is called.
         """
-        if isinstance(self._argument, Resolver):
-            self._argument.setup()
-            return
 
         def setup_nested(attr, key, obj: Resolver):
             obj.setup()
@@ -120,10 +114,9 @@ class Resolver(abc.ABC):
 
         argument = recursively_clone(self._argument)
         clone = type(self)(argument, stack)
-        clone._has_been_cloned = True
         return clone
 
-    def connect_to_stack(self, stack: "stack.Stack") -> "Resolver":
+    def clone_for_stack(self, stack: "stack.Stack") -> "Resolver":
         """Obtains a clone of the current resolver, setup and ready for use for a given Stack
         instance.
         """
@@ -348,7 +341,7 @@ class ResolvableContainerProperty(ResolvableProperty):
 
         def recurse(obj):
             if isinstance(obj, Resolver):
-                return obj.connect_to_stack(stack)
+                return obj.clone_for_stack(stack)
             if isinstance(obj, list):
                 return [recurse(item) for item in obj]
             elif isinstance(obj, dict):
@@ -443,5 +436,5 @@ class ResolvableValueProperty(ResolvableProperty):
         :param value: The value to set
         """
         if isinstance(value, Resolver):
-            value = value.connect_to_stack(stack)
+            value = value.clone_for_stack(stack)
         setattr(stack, self.name, value)

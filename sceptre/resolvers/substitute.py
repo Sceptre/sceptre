@@ -1,7 +1,7 @@
-from sceptre.resolvers import NestableResolver
+from sceptre.resolvers import Resolver
 
 
-class Substitute(NestableResolver):
+class Substitute(Resolver):
     def resolve(self):
         template, variables = self.argument
         return template.format(**variables)
