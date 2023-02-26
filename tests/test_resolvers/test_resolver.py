@@ -101,19 +101,19 @@ class TestCustomYamlTagBase(TestCase):
     def test_clone_for_stack__nested_dict_argument_is_cloned(self):
         arg = {"greetings": {"French": "bonjour"}}
         resolver = MockResolver(arg)
-        clone = resolver.clone_for_stack(self.stack)
+        clone = resolver.clone_for_stack(None)
         self.assertIsNot(clone.argument["greetings"], arg["greetings"])
 
     def test_clone_for_stack__nested_list_argument_is_cloned(self):
         arg = [{"French": "bonjour"}]
         resolver = MockResolver(arg)
-        clone = resolver.clone_for_stack(self.stack)
+        clone = resolver.clone_for_stack(None)
         self.assertIsNot(clone.argument[0], arg[0])
 
     def test_clone_for_stack__nested_resolvers_are_cloned(self):
         arg = {"greetings": {"French": NestedResolver("bonjour")}}
         resolver = MockResolver(arg)
-        clone = resolver.clone_for_stack(self.stack)
+        clone = resolver.clone_for_stack(None)
         self.assertIsNot(
             clone.argument["greetings"]["French"], arg["greetings"]["French"]
         )
@@ -133,6 +133,37 @@ class TestCustomYamlTagBase(TestCase):
 
         self.assertTrue(clone.argument["greetings"]["French"].setup_has_been_called)
 
+    def test_clone_for_stack__resolvers_inside_resolvers_are_cloned(self):
+        arg = {
+            "greetings": {
+                "French": NestedResolver({"informal": NestedResolver("salut")})
+            }
+        }
+        resolver = MockResolver(arg)
+        # Passing None here will mean that the argument won't actually be resolved, so it lets us
+        # access the actual resolver instance.
+        clone = resolver.clone_for_stack(None)
+        self.assertIsNot(
+            clone.argument["greetings"]["French"].argument["informal"],
+            arg["greetings"]["French"].argument["informal"],
+        )
+
+    def test_clone_for_stack__resolvers_inside_resolvers_are_setup(self):
+        arg = {
+            "greetings": {
+                "French": NestedResolver({"informal": NestedResolver("salut")})
+            }
+        }
+        resolver = MockResolver(arg)
+        # Passing None here will mean that the argument won't actually be resolved, so it lets us
+        # access the actual resolver instance.
+        clone = resolver.clone_for_stack(None)
+        self.assertTrue(
+            clone.argument["greetings"]["French"]
+            .argument["informal"]
+            .setup_has_been_called
+        )
+
     def test_argument__has_stack__arg_is_string__resolves_to_string(self):
         arg = "hello"
         resolver = MockResolver(arg)
@@ -144,6 +175,18 @@ class TestCustomYamlTagBase(TestCase):
         arg = {"greetings": {"French": NestedResolver("bonjour")}}
         resolver = MockResolver(arg).clone_for_stack(self.stack)
         expected = {"greetings": {"French": "bonjour"}}
+        self.assertEqual(expected, resolver.argument)
+
+    def test_argument__cloned_for_stack__nested_argument_in_nested_argument__results_all_resolvers(
+        self,
+    ):
+        arg = {
+            "greetings": {
+                "French": NestedResolver({"informal": NestedResolver("salut")})
+            }
+        }
+        resolver = MockResolver(arg).clone_for_stack(self.stack)
+        expected = {"greetings": {"French": {"informal": "salut"}}}
         self.assertEqual(expected, resolver.argument)
 
     def test_argument__cloned_for_stack__nested_argument_in_dict_resolves_to_nothing__removes_it_from_argument(

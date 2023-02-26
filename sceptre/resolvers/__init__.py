@@ -99,17 +99,18 @@ class CustomYamlTagBase:
 
         self._argument_is_resolved = True
 
-    def _setup_nested_resolvers(self):
+    def _recursively_setup(self):
         """Ensures all nested resolvers in this resolver's argument are also setup when this
         instance's setup method is called.
         """
+        self.setup()
 
         def setup_nested(attr, key, obj: Resolver):
-            obj.setup()
+            obj._recursively_setup()
 
         _call_func_on_values(setup_nested, self._argument, Resolver)
 
-    def _clone(self: Self, stack: "stack.Stack") -> Self:
+    def _recursively_clone(self: Self, stack: "stack.Stack") -> Self:
         """Recursively clones the instance and its arguments.
 
         The returned instance will have an identical argument that is a different memory reference,
@@ -120,16 +121,18 @@ class CustomYamlTagBase:
         they themselves are also independent and fully configured for the current stack.
         """
 
-        def recursively_clone(obj):
+        def recursively_clone_arguments(obj):
             if isinstance(obj, Resolver):
-                return obj._clone(stack)
+                return obj._recursively_clone(stack)
             if isinstance(obj, list):
-                return [recursively_clone(item) for item in obj]
+                return [recursively_clone_arguments(item) for item in obj]
             elif isinstance(obj, dict):
-                return {key: recursively_clone(val) for key, val in obj.items()}
+                return {
+                    key: recursively_clone_arguments(val) for key, val in obj.items()
+                }
             return obj
 
-        argument = recursively_clone(self._argument)
+        argument = recursively_clone_arguments(self._argument)
         clone = type(self)(argument, stack)
         return clone
 
@@ -137,9 +140,8 @@ class CustomYamlTagBase:
         """
         Obtains a clone of the current object, setup and ready for use for a given Stack instance.
         """
-        clone = self._clone(stack)
-        clone._setup_nested_resolvers()
-        clone.setup()
+        clone = self._recursively_clone(stack)
+        clone._recursively_setup()
         return clone
 
     def setup(self):
