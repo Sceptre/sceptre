@@ -413,7 +413,7 @@ arguments when they're passed in lists and dicts.)
      Param2: !ssm {"name": "/dev/DbPassword"}
      Param3: !ssm
        name: "/dev/DbPassword"
-     Param4:
+     Param4: !ssm
        name: !stack_output my/other/stack.yaml::MyOutputName
 
 .. _Custom Resolvers: #custom-resolvers
