@@ -80,6 +80,12 @@ class TestResolver(TestCase):
 
         assert handler.records[0].message == f"{sentinel.stack.name} - Bonjour"
 
+
+class TestResolvableArgumentBase(TestCase):
+    def setUp(self):
+        self.stack = Mock()
+        self.stack.name = "My Stack"
+
     def test_clone_for_stack__dict_argument_is_cloned(self):
         arg = {"greeting": "hello"}
         resolver = MockResolver(arg)
@@ -126,6 +132,13 @@ class TestResolver(TestCase):
         clone = resolver.clone_for_stack(None)
 
         self.assertTrue(clone.argument["greetings"]["French"].setup_has_been_called)
+
+    def test_argument__has_stack__arg_is_string__resolves_to_string(self):
+        arg = "hello"
+        resolver = MockResolver(arg)
+        clone = resolver.clone_for_stack(self.stack)
+
+        self.assertEqual("hello", clone.argument)
 
     def test_argument__cloned_for_stack__resolves_arg_resolver(self):
         arg = {"greetings": {"French": NestedResolver("bonjour")}}

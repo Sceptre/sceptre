@@ -17,30 +17,19 @@ if TYPE_CHECKING:
     from sceptre import stack
 
 T_Container = TypeVar("T_Container", bound=Union[dict, list])
+Self = TypeVar("Self")
 
 
 class RecursiveResolve(Exception):
     pass
 
 
-class Resolver(abc.ABC):
-    """
-    Resolver is an abstract base class that should be inherited by all
-    Resolvers.
-
-    :param argument: The argument of the resolver.
-    :param stack: The associated stack of the resolver.
-    """
-
+class ResolvableArgumentBase:
     def __init__(self, argument: Any = None, stack: "stack.Stack" = None):
-        self.logger = logging.getLogger(__name__)
-        if stack is not None:
-            self.logger = StackLoggerAdapter(self.logger, stack.name)
-
         self.stack = stack
 
         self._argument = argument
-        self._is_resolved = False
+        self._argument_is_resolved = False
 
     @property
     def argument(self) -> Any:
@@ -56,7 +45,7 @@ class Resolver(abc.ABC):
         the raw argument value. This is to safeguard any __init__() behaviors from triggering
         resolution prematurely.
         """
-        if self.stack is not None and not self._is_resolved:
+        if self.stack is not None and not self._argument_is_resolved:
             self._resolve_argument()
 
         return self._argument
@@ -80,7 +69,7 @@ class Resolver(abc.ABC):
         _call_func_on_values(resolve, self._argument, Resolver)
         delete_keys_from_containers(keys_to_delete)
 
-        self._is_resolved = True
+        self._argument_is_resolved = True
 
     def _setup_nested_resolvers(self):
         """Ensures all nested resolvers in this resolver's argument are also setup when this
@@ -92,7 +81,7 @@ class Resolver(abc.ABC):
 
         _call_func_on_values(setup_nested, self._argument, Resolver)
 
-    def _clone(self, stack: "stack.Stack") -> "Resolver":
+    def _clone(self: Self, stack: "stack.Stack") -> Self:
         """Recursively clones the resolver and its arguments.
 
         The returned resolver will have an identical argument that is a different memory reference,
@@ -116,14 +105,39 @@ class Resolver(abc.ABC):
         clone = type(self)(argument, stack)
         return clone
 
-    def clone_for_stack(self, stack: "stack.Stack") -> "Resolver":
-        """Obtains a clone of the current resolver, setup and ready for use for a given Stack
+    def clone_for_stack(self: Self, stack: "stack.Stack") -> Self:
+        """Obtains a clone of the current object, setup and ready for use for a given Stack
         instance.
         """
         clone = self._clone(stack)
         clone._setup_nested_resolvers()
         clone.setup()
         return clone
+
+    def setup(self):
+        """
+        This method is called at during stack initialisation.
+        Implementation of this method in subclasses can be used to do any
+        initial setup of the object.
+        """
+        pass  # pragma: no cover
+
+
+class Resolver(ResolvableArgumentBase, metaclass=abc.ABCMeta):
+    """
+    Resolver is an abstract base class that should be inherited by all
+    Resolvers.
+
+    :param argument: The argument of the resolver.
+    :param stack: The associated stack of the resolver.
+    """
+
+    def __init__(self, argument: Any = None, stack: "stack.Stack" = None):
+        super().__init__(argument, stack)
+
+        self.logger = logging.getLogger(__name__)
+        if stack is not None:
+            self.logger = StackLoggerAdapter(self.logger, stack.name)
 
     @abc.abstractmethod
     def resolve(self):
@@ -132,14 +146,6 @@ class Resolver(abc.ABC):
         This method is called to retrieve the final desired value.
         Implementation of this method in subclasses must return a suitable
         object or primitive type.
-        """
-        pass  # pragma: no cover
-
-    def setup(self):
-        """
-        This method is called at during stack initialisation.
-        Implementation of this method in subclasses can be used to do any
-        initial setup of the object.
         """
         pass  # pragma: no cover
 
