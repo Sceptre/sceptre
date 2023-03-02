@@ -1,0 +1,6 @@
+template:
+  path: dependencies/dependent_template_local_export.json
+
+
+parameters:
+  DependentStackName: !stack_output_external "{{project_code}}-external-stack-output-outputter::StackName {{environment_variable.AWS_PROFILE|default('default')}}::eu-west-1"

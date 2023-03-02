@@ -15,6 +15,7 @@ import sys
 import sceptre.helpers
 
 from sceptre.exceptions import TemplateHandlerNotFoundError
+from sceptre.logging import StackLoggerAdapter
 
 
 class Template(object):
@@ -54,8 +55,7 @@ class Template(object):
         connection_manager=None,
         s3_details=None,
     ):
-        self.logger = logging.getLogger(__name__)
-
+        self.logger = StackLoggerAdapter(logging.getLogger(__name__), name)
         self.name = name
         self.handler_config = handler_config
         if self.handler_config is not None and self.handler_config.get("type") is None:

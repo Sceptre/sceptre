@@ -92,5 +92,5 @@ class S3(TemplateHandler):
             )
             return response["Body"].read()
         except Exception as e:
-            self.logger.fatal(e)
+            self.logger.critical(e)
             raise e

@@ -6,6 +6,7 @@ from threading import RLock
 from typing import Any, TYPE_CHECKING, Type, Union, TypeVar
 
 from sceptre.helpers import _call_func_on_values
+from sceptre.logging import StackLoggerAdapter
 from sceptre.resolvers.placeholders import (
     create_placeholder_value,
     are_placeholders_enabled,
@@ -33,6 +34,9 @@ class Resolver(abc.ABC):
 
     def __init__(self, argument: Any = None, stack: "stack.Stack" = None):
         self.logger = logging.getLogger(__name__)
+        if stack is not None:
+            self.logger = StackLoggerAdapter(self.logger, stack.name)
+
         self.argument = argument
         self.stack = stack
 

@@ -14,6 +14,7 @@ from sceptre.stack import Stack
 class TestASGScalingProcesses(object):
     def setup_method(self, test_method):
         self.stack = MagicMock(spec=Stack)
+        self.stack.name = "my/stack.yaml"
         self.stack.connection_manager = MagicMock(spec=ConnectionManager)
         self.stack.external_name = "external_name"
         self.asg_scaling_processes = ASGScalingProcesses(None, self.stack)

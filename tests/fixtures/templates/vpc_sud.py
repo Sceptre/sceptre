@@ -6,7 +6,6 @@ from troposphere.ec2 import VPC, InternetGateway, VPCGatewayAttachment
 
 
 def sceptre_handler(sceptre_user_data):
-
     t = Template()
 
     vpc = t.add_resource(

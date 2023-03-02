@@ -12,6 +12,7 @@ from sceptre.stack import Stack
 class TestCmd(object):
     def setup_method(self, test_method):
         self.stack = Mock(Stack)
+        self.stack.name = "my/stack.yaml"
         self.cmd = Cmd(stack=self.stack)
 
     def test_run_with_non_str_argument(self):
