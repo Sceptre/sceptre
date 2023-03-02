@@ -9,7 +9,7 @@ class TestSceptreContext(object):
         self.config_path = "config"
         self.config_file = "config.yaml"
 
-    def test_context_with_path(self):
+    def test_context_with_path_in_cwd(self):
         self.context = SceptreContext(
             project_path="project_path/to/sceptre",
             command_path="command-path",
@@ -27,6 +27,21 @@ class TestSceptreContext(object):
     def test_context_with_relative_path(self):
         self.context = SceptreContext(
             project_path="./project_path/to/sceptre",
+            command_path="command-path",
+            command_params=sentinel.command_params,
+            user_variables=sentinel.user_variables,
+            options=sentinel.options,
+            output_format=sentinel.output_format,
+            no_colour=sentinel.no_colour,
+            ignore_dependencies=sentinel.ignore_dependencies,
+        )
+
+        expected = f"{getcwd()}/project_path/to/sceptre"
+        assert self.context.project_path.replace(path.sep, "/") == expected
+
+    def test_context_with_absolute_path(self):
+        self.context = SceptreContext(
+            project_path=f"{getcwd()}/project_path/to/sceptre",
             command_path="command-path",
             command_params=sentinel.command_params,
             user_variables=sentinel.user_variables,
