@@ -156,6 +156,13 @@ class CustomYamlTagBase:
         """
         pass  # pragma: no cover
 
+    def __str__(self):
+        as_str = f"!{self.__class__.__name__}"
+        if self._argument is not None:
+            as_str += f"({self._argument})"
+
+        return as_str
+
 
 class Resolver(CustomYamlTagBase, metaclass=abc.ABCMeta):
     """
