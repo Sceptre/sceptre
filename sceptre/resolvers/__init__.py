@@ -156,7 +156,18 @@ class CustomYamlTagBase:
         """
         pass  # pragma: no cover
 
-    def __str__(self):
+    def __repr__(self) -> str:
+        """Returns a string representation of the resolver.
+
+        This is mostly used for resolver placeholders. In cases where we cannot resolve a resolver
+        YET, such as when we're generating a template or diff and there's a dependency on a stack
+        output of a stack that hasn't been deployed yet, placeholders need to render the resolver
+        in a way that is useful.
+
+        We use self._argument instead of self.argument because if there are resolvers nested in this
+        resolver's argument and one of those cannot be resolved, we'll need those resolvers to also
+        be converted to useful placeholder values.
+        """
         as_str = f"!{self.__class__.__name__}"
         if self._argument is not None:
             as_str += f"({self._argument})"
