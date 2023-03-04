@@ -33,7 +33,7 @@ class CustomYamlTagBase:
         resolvers in the argument)
     * On-stack-connect setup that might be needed once connected to a Stack (applied recursively down to
         all resolvers in the argument)
-    * Resolving resolvers in argument when accessing self.argument
+    * Automatically resolving resolvers in the argument when accessing self.argument
     """
 
     logger = logging.getLogger(__name__)
