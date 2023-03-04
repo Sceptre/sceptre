@@ -67,6 +67,9 @@ class CustomYamlTagBase:
         Resolving nested resolvers will result in their values being replaced in the dict/list they
         were in with their resolved value, so we won't have to resolve them again.
 
+        Any resolvers that "resolve to nothing" (i.e. return None) will be removed from the dict/list
+        they were in.
+
         If this property is accessed BEFORE the instance has a stack, it will return
         the raw argument value. This is to safeguard any __init__() behaviors from triggering
         resolution prematurely.
@@ -87,12 +90,13 @@ class CustomYamlTagBase:
 
         keys_to_delete = []
 
-        def resolve(attr, key, obj: Resolver):
+        def resolve(containing_list_or_dict, key, obj: Resolver):
             result = obj.resolve()
+            # If the resolver "resolves to nothing", then it should get deleted out of its container.
             if result is None:
-                keys_to_delete.append((attr, key))
+                keys_to_delete.append((containing_list_or_dict, key))
             else:
-                attr[key] = result
+                containing_list_or_dict[key] = result
 
         _call_func_on_values(resolve, self._argument, Resolver)
         delete_keys_from_containers(keys_to_delete)
@@ -105,7 +109,7 @@ class CustomYamlTagBase:
         """
         self.setup()
 
-        def setup_nested(attr, key, obj: Resolver):
+        def setup_nested(containing_list_or_dict, key, obj: Resolver):
             obj._recursively_setup()
 
         _call_func_on_values(setup_nested, self._argument, Resolver)
