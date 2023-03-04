@@ -31,7 +31,7 @@ class CustomYamlTagBase:
     * logging setup (associated with stacks)
     * Creating unique clones associated with individual stacks (applied recursively down to all
         resolvers in the argument)
-    * On-connect setup that might be needed once connected to a Stack (applied recursively down to
+    * On-stack-connect setup that might be needed once connected to a Stack (applied recursively down to
         all resolvers in the argument)
     * Resolving resolvers in argument when accessing self.argument
     """
