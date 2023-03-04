@@ -121,7 +121,7 @@ Example:
 
 .. code-block:: yaml
 
-   parameters:
+   sceptre_user_data:
      # This selects the last element after you split the connection string on "/"
      DatabaseName: !select
        - -1
