@@ -557,7 +557,7 @@ A common point of confusion tends to be around the distinction between **"render
 Jinja logic is applied) and **"resolve time"** (phase 6, when resolvers are resolved). You cannot use
 a resolver via Jinja during "render time", since the resolver won't exist or be ready to use yet. You can,
 however, use Jinja logic to indicate *whether*, *which*, or *how* a resolver is configured. You can
-also use resolvers like ``!substitute`` to interpolate resolved values when Jinja isn't available.
+also use resolvers like ``!sub`` to interpolate resolved values when Jinja isn't available.
 
 For example, you **can** do something like this:
 
@@ -567,8 +567,8 @@ For example, you **can** do something like this:
      {% if var.use_my_parameter %}
        my_parameter: !stack_output {{ var.stack_name }}::{{ var.output_name }}
      {% endif %}
-       # !substitute will let you combine outputs of multiple resolvers into a single string
-       my_combined_parameter: !substitute
+       # !sub will let you combine outputs of multiple resolvers into a single string
+       my_combined_parameter: !sub
          - "{fist_part} - {second_part}"
          - first_part: !stack_output my/stack/name.yaml::Output
          - second_part: {{ var.second_part }}

@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 
 from sceptre.resolvers import Resolver
-from sceptre.resolvers.substitute import Substitute
+from sceptre.resolvers.sub import Sub
 
 
 class FirstResolver(Resolver):
@@ -14,7 +14,7 @@ class SecondResolver(Resolver):
         return "second"
 
 
-class TestSubstitute:
+class TestSub:
     def test_resolve__combines_resolvers_into_single_string(self):
         argument = [
             "{first} is {first_value}; {second} is {second_value}",
@@ -25,7 +25,7 @@ class TestSubstitute:
                 "second_value": 456,
             },
         ]
-        sub = Substitute(argument, Mock())
+        sub = Sub(argument, Mock())
         resolved = sub.resolve()
         expected = "first is 123; second is 456"
         assert expected == resolved

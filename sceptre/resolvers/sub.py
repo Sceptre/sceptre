@@ -1,7 +1,7 @@
 from sceptre.resolvers import Resolver
 
 
-class Substitute(Resolver):
+class Sub(Resolver):
     """This resolver allows you to create a string using Python string format syntax. This is a
     great way to combine together a number of resolver outputs into a single string. This functions
     very similarly to Cloudformation's ``!Sub`` intrinsic function.
@@ -13,7 +13,7 @@ class Substitute(Resolver):
     Example:
 
        parameters:
-         ConnectionString: !substitute
+         ConnectionString: !sub
            - "postgres://{username}:{password}@{hostname}:{port}/{database}"
            - username: {{ var.username }}
              password: !ssm /my/ssm/password

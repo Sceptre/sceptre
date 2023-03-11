@@ -249,7 +249,7 @@ Example:
      VpcIdParameter: !stack_output_external prj-network-vpc::VpcIdOutput prod
 
 
-substitute
+sub
 ~~~~~~~~~~
 
 This resolver allows you to create a string using Python string format syntax. This functions as a
@@ -265,7 +265,7 @@ Example:
 .. code-block:: yaml
 
    parameters:
-     ConnectionString: !substitute
+     ConnectionString: !sub
        - "postgres://{username}:{password}@{hostname}:{port}/{database}"
        - username: {{ var.username }}
          password: !ssm /my/ssm/password
