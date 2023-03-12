@@ -253,7 +253,7 @@ sub
 ~~~~~~~~~~
 
 This resolver allows you to create a string using Python string format syntax. This functions as a
-great way to combine together a number of resolver outputs into a single string. This functions very
+great way to combine together a number of resolver outputs into a single string. This functions
 similarly to Cloudformation's ``!Sub`` intrinsic function.
 
 The argument to this resolver should be a two-element list: (1) Is the format string, using
