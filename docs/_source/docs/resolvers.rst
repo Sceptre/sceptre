@@ -249,7 +249,7 @@ Example:
 
 
 sub
-~~~~~~~~~~
+~~~
 
 This resolver allows you to create a string using Python string format syntax. This functions as a
 great way to combine together a number of resolver outputs into a single string. This functions
