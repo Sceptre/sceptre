@@ -28,12 +28,13 @@ class CustomYamlTagBase:
     """A base class for custom Yaml Elements (i.e. hooks and resolvers).
 
     This base class takes care of common functionality needed by subclasses:
-    * logging setup (associated with stacks)
-    * Creating unique clones associated with individual stacks (applied recursively down to all
-        resolvers in the argument)
-    * On-stack-connect setup that might be needed once connected to a Stack (applied recursively down to
-        all resolvers in the argument)
-    * Automatically resolving resolvers in the argument when accessing self.argument
+    | * logging setup (associated with stacks)
+    | * Creating unique clones associated with individual stacks (applied recursively down to all
+    |   resolvers in the argument)
+    | * On-stack-connect setup that might be needed once connected to a Stack (applied recursively down to
+    |   all resolvers in the argument)
+    | * Automatically resolving resolvers in the argument when accessing self.argument
+
     """
 
     logger = logging.getLogger(__name__)

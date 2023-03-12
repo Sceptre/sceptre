@@ -103,8 +103,6 @@ A resolver to execute any shell command.
 
 Refer to `sceptre-resolver-cmd <https://github.com/Sceptre/sceptre-resolver-cmd/>`_ for documentation.
 
-.. _stack_attr_resolver:
-
 select
 ~~~~~~
 
@@ -147,6 +145,7 @@ Example:
      - ";"
      - !stack_output my/sns/topics.yaml::SemicolonDelimitedArns
 
+.. _stack_attr_resolver:
 
 stack_attr
 ~~~~~~~~~~
@@ -256,6 +255,13 @@ This resolver allows you to create a string using Python string format syntax. T
 great way to combine together a number of resolver outputs into a single string. This functions
 similarly to Cloudformation's ``!Sub`` intrinsic function.
 
+It should be noted that Jinja2 syntax is far more capable of interpolating values than this resolver,
+so you should use Jinja2 if all you need is to interpolate raw values from environment variables,
+variables from stack group configs, var files, and ``--var`` arguments. **The one thing that Jinja2
+interpolation can't do is interpolate resolver arguments into a string.** And that's what ``!sub``
+can do. For more information on why Jinja2 can't reference resolvers directly, see
+:ref:`resolution_order`.
+
 The argument to this resolver should be a two-element list: (1) Is the format string, using
 curly-brace templates to indicate variables, and (2) a dictionary where the keys are the format
 string's variable names and the values are the variable values.
@@ -267,12 +273,40 @@ Example:
    parameters:
      ConnectionString: !sub
        - "postgres://{username}:{password}@{hostname}:{port}/{database}"
+       # Notice how we're interpolating a username and database via Jinja2? Technically it's not
+       # necessary to pass them this way. They could be interpolated directly. But it might be
+       # easier to read this way if you pass them explicitly like this. See example below for the
+       # other way this can be done.
        - username: {{ var.username }}
          password: !ssm /my/ssm/password
          hostname: !stack_output my/database/stack.yaml::HostName
          port: !stack_output my/database/stack.yaml::Port
          database: {{var.database}}
 
+
+It's relevant to note that this functions similarly to the *more verbose* form of CloudFormation's
+``!Sub`` intrinsic function, where you use a list argument and supply the interpolated values as a
+second list item in a dictionary. **Important**: Sceptre's ``!sub`` resolver will not work without
+a list argument. It does **not** directly reference variables without you directly passing them
+in the second list item in its argument.
+
+You *can* combine Jinja2 syntax with this resolver if you want to interpolate in other variables
+that Jinja2 has access to.
+
+Example:
+
+.. code-block:: yaml
+
+   parameters:
+     ConnectionString: !sub
+       # Notice the double-curly braces. That's Jinja2 syntax. Jinja2 will render the username into
+       # the string even before the yaml is loaded. If you use Jinja2 to interpolate the value, then
+       # it's not a template string variable you need to pass in the second list item passed to
+       # !sub.
+       - "postgres://{{ var.username }}:{password}@{hostname}:{port}/{{ stack_group_config.database }}"
+       - password: !ssm /my/ssm/password
+         hostname: !stack_output my/database/stack.yaml::HostName
+         port: !stack_output my/database/stack.yaml::Port
 
 Custom Resolvers
 ----------------
