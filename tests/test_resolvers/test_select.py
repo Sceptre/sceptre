@@ -14,7 +14,7 @@ class ItemResolver(Resolver):
         return self.argument
 
 
-class TestSplit:
+class TestSelect:
     def test_resolve__second_arg_is_list_resolver__selects_item_at_list_index(self):
         argument = [1, MyListResolver()]
         select = Select(argument, Mock())
