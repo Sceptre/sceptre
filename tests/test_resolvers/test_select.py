@@ -31,3 +31,17 @@ class TestSelect:
         resolved = select.resolve()
         expected = "second"
         assert expected == resolved
+
+    def test_resolve__negative_index__selects_in_reverse(self):
+        argument = [-1, MyListResolver()]
+        select = Select(argument, Mock())
+        resolved = select.resolve()
+        expected = "third"
+        assert expected == resolved
+
+    def test_resolve__can_select_key_from_dict(self):
+        argument = ["something", ItemResolver({"something": 123})]
+        select = Select(argument, Mock())
+        resolved = select.resolve()
+        expected = 123
+        assert expected == resolved
