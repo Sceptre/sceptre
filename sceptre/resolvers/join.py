@@ -21,5 +21,6 @@ class Join(Resolver):
 
     def resolve(self):
         delimiter, items_list = self.argument
-        joined = delimiter.join(items_list)
+        string_items = map(str, items_list)
+        joined = delimiter.join(string_items)
         return joined
