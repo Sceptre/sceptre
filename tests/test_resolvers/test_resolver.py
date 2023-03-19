@@ -5,6 +5,7 @@ from unittest.mock import call, Mock, sentinel, MagicMock
 
 import pytest
 
+from sceptre.exceptions import InvalidResolverArgumentError
 from sceptre.resolvers import (
     Resolver,
     ResolvableContainerProperty,
@@ -67,8 +68,6 @@ class TestResolver(TestCase):
         self.mock_resolver = MockResolver(
             argument=sentinel.argument, stack=sentinel.stack
         )
-        self.stack = Mock()
-        self.stack.name = "My Stack"
 
     def test_init(self):
         assert self.mock_resolver.stack == sentinel.stack
@@ -79,6 +78,14 @@ class TestResolver(TestCase):
             self.mock_resolver.logger.info("Bonjour")
 
         assert handler.records[0].message == f"{sentinel.stack.name} - Bonjour"
+
+    def test_invalid_argument_error__raises_invalid_argument_error_with_stack_name_prefix(
+        self,
+    ):
+        with pytest.raises(
+            InvalidResolverArgumentError, match=f"{sentinel.stack.name} - danger"
+        ):
+            self.mock_resolver.raise_invalid_argument_error("danger")
 
 
 class TestCustomYamlTagBase(TestCase):
