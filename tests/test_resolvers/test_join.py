@@ -1,5 +1,8 @@
 from unittest.mock import Mock
 
+import pytest
+
+from sceptre.exceptions import InvalidResolverArgumentError
 from sceptre.resolvers import Resolver
 from sceptre.resolvers.join import Join
 
@@ -50,3 +53,18 @@ class TestJoin:
         resolved = join.resolve()
         expected = "first/last"
         assert expected == resolved
+
+    @pytest.mark.parametrize(
+        "bad_argument",
+        [
+            pytest.param("just a string", id="just a string"),
+            pytest.param([123, ["something"]], id="non-string delimiter"),
+            pytest.param(
+                ["join", "not list to join"], id="second argument is not list"
+            ),
+        ],
+    )
+    def test_resolve__invalid_arguments_passed(self, bad_argument):
+        join = Join(bad_argument, Mock())
+        with pytest.raises(InvalidResolverArgumentError):
+            join.resolve()

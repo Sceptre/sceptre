@@ -20,7 +20,17 @@ class Join(Resolver):
     """
 
     def resolve(self):
+        error_message = (
+            "The argument to !join must be a 2-element list, where the first element is the join "
+            "string and the second is a list of items to join."
+        )
+        if not isinstance(self.argument, list):
+            self.raise_invalid_argument_error(error_message)
+
         delimiter, items_list = self.argument
+        if not isinstance(delimiter, str) or not isinstance(items_list, list):
+            self.raise_invalid_argument_error(error_message)
+
         string_items = map(str, items_list)
         joined = delimiter.join(string_items)
         return joined

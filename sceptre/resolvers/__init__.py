@@ -5,6 +5,7 @@ from contextlib import contextmanager
 from threading import RLock
 from typing import Any, TYPE_CHECKING, Type, Union, TypeVar
 
+from sceptre.exceptions import InvalidResolverArgumentError
 from sceptre.helpers import _call_func_on_values, delete_keys_from_containers
 from sceptre.logging import StackLoggerAdapter
 from sceptre.resolvers.placeholders import (
@@ -190,6 +191,10 @@ class Resolver(CustomYamlTagBase, metaclass=abc.ABCMeta):
         object or primitive type.
         """
         pass  # pragma: no cover
+
+    def raise_invalid_argument_error(self, message):
+        error_message = f"{self.stack.name} - {message}"
+        raise InvalidResolverArgumentError(error_message)
 
 
 class ResolvableProperty(abc.ABC):
