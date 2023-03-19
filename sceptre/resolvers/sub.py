@@ -23,5 +23,20 @@ class Sub(Resolver):
     """
 
     def resolve(self):
+        error_message = (
+            "The argument to !sub must be a two-element list, where the first element is the "
+            "a format string and the second element is a dict of values to interpolate into it."
+        )
+        if not isinstance(self.argument, list) or len(self.argument) != 2:
+            self.raise_invalid_argument_error(error_message)
+
         template, variables = self.argument
-        return template.format(**variables)
+        if not isinstance(template, str) or not isinstance(variables, dict):
+            self.raise_invalid_argument_error(error_message)
+
+        try:
+            return template.format(**variables)
+        except KeyError as e:
+            self.raise_invalid_argument_error(
+                f"Could not find !sub argument for {e}", e
+            )

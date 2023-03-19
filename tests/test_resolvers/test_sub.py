@@ -1,5 +1,8 @@
 from unittest.mock import Mock
 
+import pytest
+
+from sceptre.exceptions import InvalidResolverArgumentError
 from sceptre.resolvers import Resolver
 from sceptre.resolvers.sub import Sub
 
@@ -29,3 +32,22 @@ class TestSub:
         resolved = sub.resolve()
         expected = "first is 123; second is 456"
         assert expected == resolved
+
+    @pytest.mark.parametrize(
+        "bad_argument",
+        [
+            pytest.param("just a string", id="just a string"),
+            pytest.param([123, {"something": "else"}], id="first item is not string"),
+            pytest.param(["123", "hello"], id="second item is not a dict"),
+            pytest.param(
+                ["{this}", {"that": "hi"}], id="format string requires key not in dict"
+            ),
+            pytest.param(["first", ["second"], "third"], id="too many items"),
+        ],
+    )
+    def test_resolve__invalid_arguments__raises_invalid_resolver_argument_error(
+        self, bad_argument
+    ):
+        sub = Sub(bad_argument, Mock())
+        with pytest.raises(InvalidResolverArgumentError):
+            sub.resolve()

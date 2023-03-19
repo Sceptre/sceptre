@@ -18,5 +18,16 @@ class Split(Resolver):
     """
 
     def resolve(self):
+        error_message = (
+            "The argument to !split must be a two-element list, where the first element is the "
+            "string to split on and the second element string to split."
+        )
+        if (
+            not isinstance(self.argument, list)
+            or len(self.argument) != 2
+            or not all(isinstance(a, str) for a in self.argument)
+        ):
+            self.raise_invalid_argument_error(error_message)
+
         split_on, split_string = self.argument
         return split_string.split(split_on)
