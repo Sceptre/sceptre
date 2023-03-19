@@ -24,7 +24,7 @@ class Join(Resolver):
             "The argument to !join must be a 2-element list, where the first element is the join "
             "string and the second is a list of items to join."
         )
-        if not isinstance(self.argument, list):
+        if not isinstance(self.argument, list) or len(self.argument) != 2:
             self.raise_invalid_argument_error(error_message)
 
         delimiter, items_list = self.argument

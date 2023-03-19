@@ -192,8 +192,10 @@ class Resolver(CustomYamlTagBase, metaclass=abc.ABCMeta):
         """
         pass  # pragma: no cover
 
-    def raise_invalid_argument_error(self, message):
+    def raise_invalid_argument_error(self, message, from_: Exception = None):
         error_message = f"{self.stack.name} - {message}"
+        if from_:
+            raise InvalidResolverArgumentError(error_message) from from_
         raise InvalidResolverArgumentError(error_message)
 
 

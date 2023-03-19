@@ -62,9 +62,12 @@ class TestJoin:
             pytest.param(
                 ["join", "not list to join"], id="second argument is not list"
             ),
+            pytest.param(["first", ["second"], "third"], id="too many items"),
         ],
     )
-    def test_resolve__invalid_arguments_passed(self, bad_argument):
+    def test_resolve__invalid_arguments_passed__raises_invalid_resolver_argument_error(
+        self, bad_argument
+    ):
         join = Join(bad_argument, Mock())
         with pytest.raises(InvalidResolverArgumentError):
             join.resolve()
