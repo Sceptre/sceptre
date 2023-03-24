@@ -25,7 +25,7 @@ class TestSplit:
         [
             pytest.param("just a string", id="just a string"),
             pytest.param([123, "something"], id="first item is not string"),
-            pytest.param(["something", 123], id="first item is not string"),
+            pytest.param(["something", 123], id="second item is not string"),
         ],
     )
     def test_resolve__invalid_arguments__raises_invalid_resolver_argument_error(
