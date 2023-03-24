@@ -219,3 +219,9 @@ class CannotPruneStackError(SceptreException):
     Error raised when an obsolete stack cannot be pruned because another stack depends on it that is
     not itself obsolete.
     """
+
+
+class InvalidResolverArgumentError(SceptreException):
+    """
+    Indicates a resolver argument is invalid in some way.
+    """

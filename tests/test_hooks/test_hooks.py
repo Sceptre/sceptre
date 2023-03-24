@@ -3,14 +3,12 @@ from unittest import TestCase
 from unittest.mock import MagicMock, Mock
 
 from sceptre.hooks import Hook, HookProperty, add_stack_hooks, execute_hooks
+from sceptre.resolvers import Resolver
 from sceptre.stack import Stack
 import logging
 
 
 class MockHook(Hook):
-    def __init__(self, *args, **kwargs):
-        super(MockHook, self).__init__(*args, **kwargs)
-
     def run(self):
         pass
 
@@ -63,6 +61,11 @@ class TestHooksFunctions(object):
         hook_2.run.called_once_with()
 
 
+class MyResolver(Resolver):
+    def resolve(self):
+        return self.argument
+
+
 class TestHook(TestCase):
     def setUp(self):
         self.stack = Mock(Stack)
@@ -74,6 +77,11 @@ class TestHook(TestCase):
             self.hook.logger.info("Bonjour")
 
         assert handler.records[0].message == f"{self.stack.name} - Bonjour"
+
+    def test_argument__supports_resolvers_in_arguments(self):
+        arg = [MyResolver("hello")]
+        hook = MockHook(arg, self.stack)
+        self.assertEqual(["hello"], hook.argument)
 
 
 class MockClass(object):
@@ -90,7 +98,9 @@ class TestHookPropertyDescriptor(object):
         mock_hook = MagicMock(spec=MockHook)
 
         self.mock_object.hook_property = [mock_hook]
-        assert self.mock_object._hook_property == [mock_hook.clone.return_value]
+        assert self.mock_object._hook_property == [
+            mock_hook.clone_for_stack.return_value
+        ]
 
     def test_getting_hook_property(self):
         self.mock_object._hook_property = self.mock_object
