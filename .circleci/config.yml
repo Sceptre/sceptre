@@ -20,7 +20,7 @@ aliases:
     steps:
       - checkout
       - restore_cache:
-          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
+          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum ".pre-commit-config.yaml" }}-{{ checksum "tox.ini" }}
       - add_ssh_keys:
           fingerprints:
             - '80:24:c0:40:28:36:f1:80:7f:fd:15:c3:09:cf:86:fc'
@@ -41,26 +41,22 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
-      - restore_cache:
-          key: sceptre-v1-{{ checksum ".pre-commit-config.yaml" }}
+          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum ".pre-commit-config.yaml" }}-{{ checksum "tox.ini" }}
       - run:
           name: 'Installing Dependencies'
           command: poetry install --all-extras -v
-      - save_cache:
-          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
-          paths:
-            - '~/.cache/pypoetry'
       - run:
           name: Run pre-commit
           command: poetry run pre-commit run --all-files --show-diff-on-failure
-      - save_cache:
-          key: sceptre-v1-{{ checksum ".pre-commit-config.yaml" }}
-          paths:
-            - '~/.cache/pre-commit'
       - run:
           name: Build package
           command: poetry build
+      - save_cache:
+          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum ".pre-commit-config.yaml" }}-{{ checksum "tox.ini" }}
+          paths:
+            - '~/.cache/pypoetry'
+            - '~/.cache/pre-commit'
+            - '.tox'
 
   unit-tests:
     docker:
@@ -68,21 +64,21 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
-      - restore_cache:
-          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum "tox.ini" }}
+          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum ".pre-commit-config.yaml" }}-{{ checksum "tox.ini" }}
       - run:
           name: Unit Tests
           command: poetry run tox
-      - save_cache:
-          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum "tox.ini" }}
-          paths:
-            - '.tox'
       - store_test_results:
           path: test-reports
       - store_artifacts:
           path: htmlcov
           destination: coverage-reports
+      - save_cache:
+          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum ".pre-commit-config.yaml" }}-{{ checksum "tox.ini" }}
+          paths:
+            - '~/.cache/pypoetry'
+            - '~/.cache/pre-commit'
+            - '.tox'
 
   integration-tests:
     parallelism: 2
@@ -93,7 +89,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
+          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum ".pre-commit-config.yaml" }}-{{ checksum "tox.ini" }}
       - run:
           name: 'Integration Testing'
           command: |
@@ -138,8 +134,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key:
-            v1-dependency-cache-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
+          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum ".pre-commit-config.yaml" }}-{{ checksum "tox.ini" }}
       - run:
           name: Test upload to PyPi
           command: |
@@ -152,8 +147,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key:
-            v1-dependency-cache-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
+          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum ".pre-commit-config.yaml" }}-{{ checksum "tox.ini" }}
       - run:
           name: Upload to PyPi
           command: poetry publish --build -u $PYPI_PROD_USER -p $PYPI_PROD_PASSWORD
