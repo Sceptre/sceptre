@@ -1722,4 +1722,4 @@ runtime = ["troposphere"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.12"
-content-hash = "26ff7b39153df2ae206c48bc8fb71ba4cc57b4030b447c4b015c9e3b57968d18"
+content-hash = "ff446b6bcfb6f5edfd25ca299f3283ea1877a0ebcfe31c08dc36052b9382b702"
