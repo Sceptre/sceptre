@@ -38,6 +38,8 @@ jobs:
       - image: sceptreorg/sceptre-circleci:2.0.0
     steps:
       - checkout
+      - restore_cache:
+          key: sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
       - run:
           name: 'Installing Dependencies'
           command: poetry install --all-extras -v
@@ -63,7 +65,7 @@ jobs:
             - sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum "tox.ini" }}
       - run:
           name: Unit Tests
-          command: poetry run tox --parallel=auto
+          command: poetry run tox
       - store_test_results:
           path: test-reports
       - store_artifacts:
