@@ -235,7 +235,7 @@ workflows:
       - deploy-test:
           context: sceptre-core
           requires:
-            - unit-tests:
+            - unit-tests
           filters:
             tags:
               only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
