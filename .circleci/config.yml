@@ -39,9 +39,9 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys:
-            - sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
-            - sceptre-v1-{{ checksum ".pre-commit-config.yaml" }}
+          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
+      - restore_cache:
+          key: sceptre-v1-{{ checksum ".pre-commit-config.yaml" }}
       - run:
           name: 'Installing Dependencies'
           command: poetry install --all-extras -v
@@ -66,9 +66,9 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          keys:
-            - sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
-            - sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum "tox.ini" }}
+          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
+      - restore_cache:
+          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum "tox.ini" }}
       - run:
           name: Unit Tests
           command: poetry run tox
