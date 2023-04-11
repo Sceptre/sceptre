@@ -3,11 +3,12 @@
 import logging
 import sys
 import warnings
+import importlib.metadata
 
 
-__author__ = "Cloudreach"
-__email__ = "sceptre@cloudreach.com"
-__version__ = "4.0.2"
+__author__ = "SceptreOrg"
+__email__ = "sceptreorg@gmail.com"
+__version__ = importlib.metadata.version(__package__ or __name__)
 
 
 # Set up logging to ``/dev/null`` like a library is supposed to.

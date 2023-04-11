@@ -39,69 +39,35 @@ jobs:
     steps:
       - checkout
       - run:
-          name: 'Creating Virtualenv'
-          command: |
-            pyenv virtualenv 3.9.4 venv
-      - restore_cache:
-          key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-dependencies-{{ arch }}-{{
-            checksum "requirements/prod.txt" }}-{{ checksum
-            "requirements/dev.txt" }}
-      - run:
           name: 'Installing Dependencies'
-          command: |
-            pyenv global venv
-            make install-dev
+          command: poetry install -v
       - save_cache:
-          key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-dependencies-{{ arch }}-{{
-            checksum "requirements/prod.txt" }}-{{ checksum
-            "requirements/dev.txt" }}
+          key: sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
           paths:
-            - ../.pyenv/versions/3.9.4/envs/venv
+            - '~/.cache/pypoetry'
       - run:
-          name: 'Installing Sceptre'
-          command: |
-            pyenv global venv
-            pip install .
-      - persist_to_workspace:
-          root: /home/circleci
-          paths:
-            - project
-            - .pyenv
+          name: Run pre-commit
+          command: poetry run pre-commit run --all-files --show-diff-on-failure
+      - run:
+          name: Build package
+          command: poetry build
 
-  lint-and-unit-tests:
+  unit-tests:
     docker:
       - image: sceptreorg/sceptre-circleci:2.0.0
     steps:
-      - attach_workspace:
-          at: /home/circleci
+      - checkout
       - restore_cache:
           keys:
-            - sceptre-{{ .Environment.CACHE_VERSION }}-dependencies-{{ arch }}-{{
-              checksum "requirements/prod.txt" }}-{{ checksum "requirements/dev.txt" }}
-            - sceptre-{{ .Environment.CACHE_VERSION }}-dependencies-{{ arch }}-{{
-              checksum "requirements/prod.txt" }}-{{ checksum
-              "requirements/dev.txt" }}-{{ checksum "tox.ini" }}
+            - sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
+            - sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum "tox.ini" }}
       - run:
-          name: 'Linting'
-          command: |
-            pyenv global venv
-            make lint
-      - run:
-          name: 'Unit Test'
-          command: |
-            pyenv global venv
-            make test-all
-      - save_cache:
-          key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-{{ arch
-            }}-{{ checksum "requirements/prod.txt" }}-{{ checksum
-            "requirements/dev.txt" }}-{{ checksum "tox.ini" }}
-          paths:
-            - .tox
+          name: Unit Tests
+          command: poetry run tox
       - store_test_results:
-          path: coverage.xml
+          path: test-reports
+      - store_artifacts:
+          path: htmlcov
           destination: coverage-reports
 
   integration-tests:
@@ -111,23 +77,19 @@ jobs:
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
-      - attach_workspace:
-          at: /home/circleci
+      - checkout
       - restore_cache:
-          key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-dependencies-{{ arch }}-{{
-            checksum "requirements/prod.txt" }}-{{ checksum
-            "requirements/dev.txt" }}
+          key: sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
       - run:
           name: 'Integration Testing'
           command: |
-            pyenv global venv
             mkdir -p ~/.aws
             echo -e "[default]\nregion=eu-west-1\nsource_profile=default\nrole_arn=arn:aws:iam::743644221192:role/sceptre-integration-test-ServiceRole-1SHK9LY0T6P3F" > ~/.aws/config
             echo -e "[default]\nregion=eu-west-1\naws_access_key_id=$CI_SERVICE_AWS_ACCESS_KEY_ID\naws_secret_access_key=$CI_SERVICE_AWS_SECRET_ACCESS_KEY" > ~/.aws/credentials
-            behave --junit \
-                   --junit-directory build/behave \
-                   $(circleci tests glob "integration-tests/features/*.feature" | circleci tests split --split-by=timings)
+            poetry run behave \
+                      --junit \
+                      --junit-directory build/behave \
+                      $(circleci tests glob "integration-tests/features/*.feature" | circleci tests split --split-by=timings)
       - store_test_results:
           path: build/behave
           destination: build/behave
@@ -156,32 +118,33 @@ jobs:
 
   deploy-docs-tag: *docs-job
 
-  deploy-pypi:
+  deploy-test:
     docker:
       - image: sceptreorg/sceptre-circleci:2.0.0
+
     steps:
-      - attach_workspace:
-          at: /home/circleci
+      - checkout
       - restore_cache:
           key:
-            sceptre-{{ .Environment.CACHE_VERSION }}-dependencies-{{ arch }}-{{
-            checksum "requirements/prod.txt" }}-{{ checksum
-            "requirements/dev.txt" }}
+            v1-dependency-cache-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
       - run:
-          name: 'Installing Dependencies'
+          name: Test upload to PyPi
           command: |
-            pyenv global venv
-            make install-dev
+            poetry config repositories.test-pypi "https://test.pypi.org/legacy/"
+            poetry publish --build -r test-pypi -u $PYPI_TEST_USER -p $PYPI_TEST_PASSWORD
+
+  deploy-prod:
+    docker:
+      - image: sceptreorg/sceptre-circleci:2.0.0
+
+    steps:
+      - checkout
+      - restore_cache:
+          key:
+            v1-dependency-cache-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
       - run:
-          name: 'Create Distributions'
-          command: |
-            pyenv global venv
-            make dist
-      - run:
-          name: 'Upload Distributions'
-          command: |
-            pyenv global venv
-            twine upload -u $PYPI_USERNAME -p $PYPI_PASSWORD dist/*
+          name: Upload to PyPi
+          command: poetry publish --build -u $PYPI_PROD_USER -p $PYPI_PROD_PASSWORD
 
   deploy-latest-dockerhub:
     executor: docker-publisher
@@ -237,7 +200,7 @@ workflows:
           filters:
             branches:
               only: /^pull\/.*/
-      - lint-and-unit-tests:
+      - unit-tests:
           requires:
             - build
           filters:
@@ -245,7 +208,7 @@ workflows:
               only: /^pull\/.*/
       - build-docker-image:
           requires:
-            - lint-and-unit-tests
+            - build
           filters:
             branches:
               only: /^pull\/.*/
@@ -256,7 +219,7 @@ workflows:
           filters:
             branches:
               ignore: /^pull\/.*/
-      - lint-and-unit-tests:
+      - unit-tests:
           requires:
             - build
           filters:
@@ -269,24 +232,33 @@ workflows:
           filters:
             branches:
               ignore: /^pull\/.*/
+      - deploy-test:
+          context: sceptre-core
+          requires:
+            - unit-tests:
+          filters:
+            tags:
+              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
+            branches:
+              ignore: /.*/
       - deploy-docs-branch:
           context: sceptre-core
           requires:
-            - lint-and-unit-tests
+            - unit-tests
             - integration-tests
           filters:
             branches:
               ignore: /^pull\/.*/
       - build-docker-image:
           requires:
-            - lint-and-unit-tests
-            - integration-tests
+            - unit-tests
           filters:
             branches:
               ignore: /^pull\/.*/
       - deploy-latest-dockerhub:
           context: sceptreorg-dockerhub
           requires:
+            - integration-tests
             - build-docker-image
           filters:
             branches:
@@ -294,16 +266,10 @@ workflows:
 
   publish:
     jobs:
-      - build:
-          filters:
-            tags:
-              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
-            branches:
-              ignore: /.*/
-      - deploy-pypi:
+      - deploy-prod:
           context: sceptre-core
           requires:
-            - build
+            - deploy-test
           filters:
             tags:
               only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
@@ -312,7 +278,7 @@ workflows:
       - deploy-docs-tag:
           context: sceptre-core
           requires:
-            - deploy-pypi
+            - deploy-prod
           filters:
             tags:
               only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
@@ -320,7 +286,7 @@ workflows:
               ignore: /.*/
       - build-docker-image:
           requires:
-            - deploy-pypi
+            - deploy-prod
           filters:
             tags:
               only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
@@ -338,6 +304,8 @@ workflows:
       - tweet-release:
           context: sceptreorg-twitter
           requires:
+            - deploy-prod
+            - deploy-docs-tag
             - deploy-dockerhub-tagged
           filters:
             tags:
