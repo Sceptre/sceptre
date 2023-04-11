@@ -39,7 +39,9 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
+          keys:
+            - sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
+            - sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum ".pre-commit-config.yaml" }}
       - run:
           name: 'Installing Dependencies'
           command: poetry install --all-extras -v
@@ -50,6 +52,10 @@ jobs:
       - run:
           name: Run pre-commit
           command: poetry run pre-commit run --all-files --show-diff-on-failure
+      - save_cache:
+          key: sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum ".pre-commit-config.yaml" }}
+          paths:
+            - '~/.cache/pre-commit'
       - run:
           name: Build package
           command: poetry build
