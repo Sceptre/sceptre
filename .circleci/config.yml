@@ -63,7 +63,7 @@ jobs:
             - sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum "tox.ini" }}
       - run:
           name: Unit Tests
-          command: poetry run tox
+          command: poetry run tox --parallel=auto
       - store_test_results:
           path: test-reports
       - store_artifacts:
