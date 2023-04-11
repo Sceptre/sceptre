@@ -72,6 +72,10 @@ jobs:
       - run:
           name: Unit Tests
           command: poetry run tox
+      - save_cache:
+          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum "tox.ini" }}
+          paths:
+            - '.tox'
       - store_test_results:
           path: test-reports
       - store_artifacts:
