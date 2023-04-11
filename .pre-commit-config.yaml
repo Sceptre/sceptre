@@ -44,3 +44,7 @@ repos:
         # pre-commit's default_language_version, see
         # https://pre-commit.com/#top_level-default_language_version
         language_version: python3.10
+  - repo: https://github.com/AleksaC/circleci-cli-py
+    rev: v0.1.25638
+    hooks:
+      - id: circle-ci-validator
