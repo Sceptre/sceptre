@@ -40,20 +40,20 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
-            - sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum ".pre-commit-config.yaml" }}
+            - sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
+            - sceptre-v1-{{ checksum ".pre-commit-config.yaml" }}
       - run:
           name: 'Installing Dependencies'
           command: poetry install --all-extras -v
       - save_cache:
-          key: sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
+          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
           paths:
             - '~/.cache/pypoetry'
       - run:
           name: Run pre-commit
           command: poetry run pre-commit run --all-files --show-diff-on-failure
       - save_cache:
-          key: sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum ".pre-commit-config.yaml" }}
+          key: sceptre-v1-{{ checksum ".pre-commit-config.yaml" }}
           paths:
             - '~/.cache/pre-commit'
       - run:
@@ -67,8 +67,8 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
-            - sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum "tox.ini" }}
+            - sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
+            - sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum "tox.ini" }}
       - run:
           name: Unit Tests
           command: poetry run tox
@@ -87,7 +87,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
+          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
       - run:
           name: 'Integration Testing'
           command: |
