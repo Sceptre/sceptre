@@ -18,6 +18,9 @@ aliases:
           REPOSITORY_PATH: '/home/circleci/docs'
           DEPLOYMENT_GIT_SSH: 'git@github.com:Sceptre/sceptre.github.io.git'
     steps:
+      - checkout
+      - restore_cache:
+          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
       - add_ssh_keys:
           fingerprints:
             - '80:24:c0:40:28:36:f1:80:7f:fd:15:c3:09:cf:86:fc'
@@ -27,10 +30,9 @@ aliases:
           name: 'Build and deploy docs'
           command: |
             chmod +x .circleci/add-known-hosts.sh
-            ./.circleci/add-known-hosts.sh
-            pyenv global venv
+            poetry run ./.circleci/add-known-hosts.sh
             chmod +x .circleci/github-pages.sh
-            ./.circleci/github-pages.sh
+            poetry run ./.circleci/github-pages.sh
 
 jobs:
   build:
@@ -130,10 +132,9 @@ jobs:
 
   deploy-docs-tag: *docs-job
 
-  deploy-test:
+  deploy-pypi-test:
     docker:
       - image: sceptreorg/sceptre-circleci:2.0.0
-
     steps:
       - checkout
       - restore_cache:
@@ -145,10 +146,9 @@ jobs:
             poetry config repositories.test-pypi "https://test.pypi.org/legacy/"
             poetry publish --build -r test-pypi -u $PYPI_TEST_USER -p $PYPI_TEST_PASSWORD
 
-  deploy-prod:
+  deploy-pypi-prod:
     docker:
       - image: sceptreorg/sceptre-circleci:2.0.0
-
     steps:
       - checkout
       - restore_cache:
@@ -244,7 +244,7 @@ workflows:
           filters:
             branches:
               ignore: /^pull\/.*/
-      - deploy-test:
+      - deploy-pypi-test:
           context: sceptre-core
           requires:
             - unit-tests
@@ -278,7 +278,7 @@ workflows:
 
   publish:
     jobs:
-      - deploy-prod:
+      - deploy-pypi-prod:
           context: sceptre-core
           filters:
             tags:
@@ -288,7 +288,7 @@ workflows:
       - deploy-docs-tag:
           context: sceptre-core
           requires:
-            - deploy-prod
+            - deploy-pypi-prod
           filters:
             tags:
               only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
@@ -296,7 +296,7 @@ workflows:
               ignore: /.*/
       - build-docker-image:
           requires:
-            - deploy-prod
+            - deploy-pypi-prod
           filters:
             tags:
               only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
@@ -314,7 +314,7 @@ workflows:
       - tweet-release:
           context: sceptreorg-twitter
           requires:
-            - deploy-prod
+            - deploy-pypi-prod
             - deploy-docs-tag
             - deploy-dockerhub-tagged
           filters:
