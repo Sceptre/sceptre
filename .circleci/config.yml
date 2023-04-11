@@ -40,7 +40,7 @@ jobs:
       - checkout
       - run:
           name: 'Installing Dependencies'
-          command: poetry install -v
+          command: poetry install --all-extras -v
       - save_cache:
           key: sceptre-{{ .Environment.CACHE_VERSION }}-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}
           paths:
