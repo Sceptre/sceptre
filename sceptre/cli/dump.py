@@ -52,11 +52,16 @@ def dump_config(ctx, path):
 
     output_format = "json" if context.output_format == "json" else "yaml"
 
+    def process_config(config):
+        stack_name = list(config.keys())[0]
+        file_path = Path(f".dump/{stack_name}/config.yaml")
+        write(config[stack_name], output_format, no_colour=True, file_path=file_path)
+
     if len(output) == 1:
-        write(output[0][stack.external_name], output_format)
+        process_config(output[0])
     else:
         for config in output:
-            write(config, output_format)
+            process_config(config)
 
 
 @dump_group.command(name="template")
@@ -106,7 +111,7 @@ def dump_template(ctx, no_placeholders, path):
 
     def process_template(template):
         stack_name = list(template.keys())[0]
-        file_path = Path(f".dump/template/{stack_name}/template.yaml")
+        file_path = Path(f".dump/{stack_name}/template.yaml")
         write(template[stack_name], output_format, no_colour=True, file_path=file_path)
 
     if len(output) == 1:
