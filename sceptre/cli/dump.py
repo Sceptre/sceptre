@@ -91,7 +91,19 @@ def dump_template(ctx, no_placeholders, path):
         null_context() if no_placeholders else use_resolver_placeholders_on_error()
     )
     with execution_context:
-        responses = plan.generate()
+        responses = plan.dump_template()
 
-    output = [template for template in responses.values()]
-    write(output, context.output_format)
+    output = []
+    for stack, template in responses.items():
+        if template is None:
+            logger.warning(f"{stack.external_name} does not exist")
+        else:
+            output.append({stack.external_name: template})
+
+    output_format = "json" if context.output_format == "json" else "yaml"
+
+    if len(output) == 1:
+        write(output[0][stack.external_name], output_format)
+    else:
+        for template in output:
+            write(template, output_format)

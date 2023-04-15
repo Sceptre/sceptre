@@ -1152,3 +1152,10 @@ class StackActions:
         """
         stack_path = normalise_path(self.stack.name + ".yaml")
         return config_reader.read(stack_path)
+
+    @add_stack_hooks
+    def dump_template(self):
+        """
+        Returns the Template for the Stack
+        """
+        return self.stack.template.body
