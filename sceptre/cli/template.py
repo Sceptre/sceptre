@@ -2,7 +2,9 @@ import logging
 import webbrowser
 
 import click
+import deprecation
 
+from sceptre import __version__
 from sceptre.cli.helpers import catch_exceptions, write
 from sceptre.context import SceptreContext
 from sceptre.helpers import null_context
@@ -55,6 +57,7 @@ def validate_command(ctx, no_placeholders, path):
         write(response, context.output_format)
 
 
+@deprecation.deprecated("4.0.0", "5.0.0", __version__, "Use dump template instead.")
 @click.command(name="generate", short_help="Prints the template.")
 @click.option(
     "-n",
