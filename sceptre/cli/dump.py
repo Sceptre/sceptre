@@ -7,6 +7,8 @@ from sceptre.plan.plan import SceptrePlan
 from sceptre.helpers import null_context
 from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error
 
+from pathlib import Path
+
 logger = logging.getLogger(__name__)
 
 
@@ -102,8 +104,13 @@ def dump_template(ctx, no_placeholders, path):
 
     output_format = "json" if context.output_format == "json" else "yaml"
 
+    def process_template(template):
+        stack_name = list(template.keys())[0]
+        file_path = Path(f".dump/template/{stack_name}/template.yaml")
+        write(template[stack_name], output_format, no_colour=True, file_path=file_path)
+
     if len(output) == 1:
-        write(output[0][stack.external_name], output_format)
+        process_template(output[0])
     else:
         for template in output:
-            write(template, output_format)
+            process_template(template)
