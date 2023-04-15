@@ -14,7 +14,6 @@ import fnmatch
 import logging
 import sys
 import yaml
-import tempfile
 
 from os import environ, path, walk
 from typing import Set, Tuple
@@ -414,16 +413,6 @@ class ConfigReader(object):
 
         return config
 
-    def _write_debug_file(self, content):
-        with tempfile.NamedTemporaryFile(
-            mode="w", delete=False, prefix="rendered_"
-        ) as temp_file:
-            temp_file.write(content)
-            temp_file.flush()
-
-        print(f"Debug file location: {temp_file.name}")
-        return temp_file.name
-
     def _render(self, directory_path, basename, stack_group_config):
         """
         Reads a configuration file, loads the config file as a template
@@ -478,11 +467,8 @@ class ConfigReader(object):
             try:
                 config = yaml.safe_load(rendered_template)
             except Exception as err:
-                debug_file_path = self._write_debug_file(rendered_template)
-
                 raise ValueError(
-                    f"Error parsing {abs_directory_path}:\n{err}\n"
-                    f"Rendered template saved to: {debug_file_path}"
+                    "Error parsing {}:\n{}".format(abs_directory_path, err)
                 )
 
             return config
