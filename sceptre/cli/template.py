@@ -55,7 +55,6 @@ def validate_command(ctx, no_placeholders, path):
         write(response, context.output_format)
 
 
-@deprecation.deprecated("4.0.0", "5.0.0", __version__, "Use dump template instead.")
 @click.command(name="generate", short_help="Prints the template.")
 @click.option(
     "-n",
