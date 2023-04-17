@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-from unittest.mock import MagicMock
+from unittest import TestCase
+from unittest.mock import MagicMock, Mock
 
 from sceptre.hooks import Hook, HookProperty, add_stack_hooks, execute_hooks
+from sceptre.resolvers import Resolver
+from sceptre.stack import Stack
+import logging
 
 
 class MockHook(Hook):
-    def __init__(self, *args, **kwargs):
-        super(MockHook, self).__init__(*args, **kwargs)
-
     def run(self):
         pass
 
@@ -60,17 +61,33 @@ class TestHooksFunctions(object):
         hook_2.run.called_once_with()
 
 
-class TestHook(object):
-    def setup_method(self, test_method):
-        self.hook = MockHook()
+class MyResolver(Resolver):
+    def resolve(self):
+        return self.argument
 
-    def test_hook_inheritance(self):
-        assert isinstance(self.hook, Hook)
+
+class TestHook(TestCase):
+    def setUp(self):
+        self.stack = Mock(Stack)
+        self.stack.name = "my/stack"
+        self.hook = MockHook(stack=self.stack)
+
+    def test_logger__logs_have_stack_name_prefix(self):
+        with self.assertLogs(self.hook.logger.name, logging.INFO) as handler:
+            self.hook.logger.info("Bonjour")
+
+        assert handler.records[0].message == f"{self.stack.name} - Bonjour"
+
+    def test_argument__supports_resolvers_in_arguments(self):
+        arg = [MyResolver("hello")]
+        hook = MockHook(arg, self.stack)
+        self.assertEqual(["hello"], hook.argument)
 
 
 class MockClass(object):
     hook_property = HookProperty("hook_property")
     config = MagicMock()
+    name = "my/stack.yaml"
 
 
 class TestHookPropertyDescriptor(object):
@@ -81,7 +98,9 @@ class TestHookPropertyDescriptor(object):
         mock_hook = MagicMock(spec=MockHook)
 
         self.mock_object.hook_property = [mock_hook]
-        assert self.mock_object._hook_property == [mock_hook]
+        assert self.mock_object._hook_property == [
+            mock_hook.clone_for_stack.return_value
+        ]
 
     def test_getting_hook_property(self):
         self.mock_object._hook_property = self.mock_object

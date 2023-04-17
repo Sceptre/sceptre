@@ -207,7 +207,9 @@ This hook can be used in a Stack config file with the following syntax:
 
 hook arguments
 ^^^^^^^^^^^^^^
-Hook arguments can be a simple string or a complex data structure.
+Hook arguments can be a simple string or a complex data structure. You can even use resolvers in
+hook arguments, so long as they're nested in a list or a dict.
+
 Assume a Sceptre `copy` hook that calls the `cp command`_:
 
 .. code-block:: yaml
@@ -224,7 +226,7 @@ Assume a Sceptre `copy` hook that calls the `cp command`_:
        - !copy
            options: "-r"
            source: "from_dir"
-           destination: "to_dir"
+           destination: !stack_output my/other/stack::CopyDestination
 
 .. _Custom Hooks: #custom-hooks
 .. _subprocess documentation: https://docs.python.org/3/library/subprocess.html
