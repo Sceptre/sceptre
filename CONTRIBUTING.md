@@ -77,10 +77,11 @@ $ git clone git@github.org:<github_username>/sceptre.git
 3. Install Sceptre for development (we recommend you use a
    [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/))
 
-A convenient script is also provided:
 ```bash
-$ cd sceptre
-$ source venv.sh
+   $ cd sceptre/
+   $ pip install -r requirements/prod.txt
+   $ pip install -r requirements/dev.txt
+   $ pip install -e .
 ```
 
 4. Create a branch for local development:
