@@ -66,7 +66,7 @@ def confirmation(command, ignore, command_path, change_set=None):
         click.confirm(msg, abort=True)
 
 
-def write(var, output_format="json", no_colour=True):
+def write(var, output_format="json", no_colour=True, file_path=None):
     """
     Writes ``var`` to stdout. If output_format is set to "json" or "yaml",
     write ``var`` as a JSON or YAML string.
@@ -78,6 +78,8 @@ def write(var, output_format="json", no_colour=True):
     :type output_format: str
     :param no_colour: Whether to colour stack statuses
     :type no_colour: bool
+    :param file_path: Optional path to a file to save the output
+    :type file_path: str, optional
     """
     output = var
 
@@ -92,6 +94,13 @@ def write(var, output_format="json", no_colour=True):
         output = stack_status_colourer.colour(str(output))
 
     click.echo(output)
+
+    if file_path:
+        dir_path = file_path.parent
+        dir_path.mkdir(parents=True, exist_ok=True)
+
+        with open(file_path, "w") as f:
+            f.write(output)
 
 
 def _generate_json(stream):
