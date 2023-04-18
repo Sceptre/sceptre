@@ -67,7 +67,10 @@ jobs:
           key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum ".pre-commit-config.yaml" }}-{{ checksum "tox.ini" }}
       - run:
           name: Unit Tests
-          command: poetry run tox
+          command: |
+            poetry run tox -e clean
+            poetry run tox --parallel=auto
+            poetry run tox -e report
       - store_test_results:
           path: test-reports
       - store_artifacts:

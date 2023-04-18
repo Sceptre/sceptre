@@ -15,6 +15,7 @@ classifiers = [
   "Intended Audience :: Developers",
   "Natural Language :: English",
   "Environment :: Console",
+  "Programming Language :: Python :: 3.7",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
@@ -61,9 +62,21 @@ sceptre-cmd-resolver = "^2.0"
 sceptre-file-resolver = "^1.0"
 colorama = ">=0.2.5,<0.4.4"
 troposphere = { version = "^4", optional = true }
+sphinx = { version = ">=1.6.5,<=5.1.1", optional = true }
+sphinx-click = { version = ">=2.0.1,<4.0.0", optional = true }
+sphinx-rtd-theme = { version = "0.5.2", optional = true }
+sphinx-autodoc-typehints = { version = "1.19.2", optional = true }
+docutils = { version = "<0.17", optional = true } # temporary fix for sphinx-rtd-theme==0.5.2, it depends on docutils<0.17
 
 [tool.poetry.extras]
 troposphere = ["troposphere"]
+docs = [
+  "sphinx",
+  "sphinx-click",
+  "sphinx-rtd-theme",
+  "sphinx-autodoc-typehints",
+  "docutils"
+]
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^2.21.0"
@@ -76,11 +89,6 @@ pytest-cov = "^2.11.1"
 pytest-sugar = "^0.9.4"
 readme-renderer = "^24.0"
 requests-mock = "^1.9.3"
-sphinx = ">=1.6.5,<=5.1.1"
-sphinx-click = ">=2.0.1,<4.0.0"
-sphinx-rtd-theme = "0.5.2"
-sphinx-autodoc-typehints = "1.19.2"
-docutils = "<0.17"
 tox = "^3.23.0"
 troposphere = "^4"
 
