@@ -60,10 +60,10 @@ pyyaml = "^5.1"
 sceptre-cmd-resolver = "^2.0"
 sceptre-file-resolver = "^1.0"
 colorama = ">=0.2.5,<0.4.4"
-troposphere = { version = ">4,<5", optional = true }
+troposphere = { version = "^4", optional = true }
 
 [tool.poetry.extras]
-runtime = ["troposphere"]
+troposphere = ["troposphere"]
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^2.21.0"
@@ -82,6 +82,7 @@ sphinx-rtd-theme = "0.5.2"
 sphinx-autodoc-typehints = "1.19.2"
 docutils = "<0.17"
 tox = "^3.23.0"
+troposphere = "^4"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
