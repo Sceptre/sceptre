@@ -4,6 +4,16 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 4.1.0 (2023.04.17)
+### Added
+ - [Resolve #1304] Adding StackLoggerAdapter to hooks, resolvers, and template handler
+ - [Resolve #1263] Stack output caching
+ - [Resolve #1252] Supporting resolvers in Hook and Resolver arguments, with new
+   !substitute, !join, !split, and !select resolvers!
+
+### Nonfunctional
+ - add a pre-commit linter to validate circleci configs
+
 ## 4.0.2 (2023.02.20)
 ### Fixed
  - [Resolve #1307] Fixing Connection Manager bug (#1308)
