@@ -182,6 +182,27 @@ class TestConfigReader(object):
                 "base_config": "base_config",
             }
 
+    def test_read_reads_config_file_with_no_base_config(self):
+        with self.runner.isolated_filesystem():
+            project_path = os.path.abspath("./example")
+            config_dir = os.path.join(project_path, "config")
+            stack_group_dir = os.path.join(config_dir, "A")
+
+            os.makedirs(stack_group_dir)
+
+            config = {"config": "config"}
+            with open(os.path.join(stack_group_dir, "stack.yaml"), "w") as config_file:
+                yaml.safe_dump(config, stream=config_file, default_flow_style=False)
+
+            self.context.project_path = project_path
+            config = ConfigReader(self.context).read("A/stack.yaml", None)
+
+            assert config == {
+                "project_path": project_path,
+                "stack_group_path": "A",
+                "config": "config",
+            }
+
     def test_read_with_nonexistant_filepath(self):
         project_path, config_dir = self.create_project()
         self.context.project_path = project_path

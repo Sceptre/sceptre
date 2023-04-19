@@ -150,7 +150,7 @@ class ConfigReader(object):
         :returns: The stack_group_config for the given directory.
         :rtype: dict
         """
-        if directory_path == "":
+        if not directory_path:
             return {}
 
         parent_directory, _ = path.split(directory_path)
