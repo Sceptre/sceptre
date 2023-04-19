@@ -69,7 +69,7 @@ jobs:
           name: Unit Tests
           command: |
             poetry run tox -e clean
-            poetry run tox --parallel=auto
+            poetry run tox
             poetry run tox -e report
       - store_test_results:
           path: test-reports
