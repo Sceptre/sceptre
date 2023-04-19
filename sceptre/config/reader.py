@@ -141,6 +141,24 @@ class ConfigReader(object):
 
         self.templating_vars = {"var": self.context.user_variables}
 
+    def _fetch_stack_group_config(self, directory_path):
+        """
+        Fetches the stack_group_config for the given directory.
+
+        :param directory_path: The directory path to fetch the stack_group_config for.
+        :type directory_path: str
+        :returns: The stack_group_config for the given directory.
+        :rtype: dict
+        """
+        if directory_path == "":
+            return {}
+
+        parent_directory, _ = path.split(directory_path)
+        stack_group_config_path = path.join(parent_directory, self.context.config_file)
+        stack_group_config = self.read(stack_group_config_path)
+
+        return stack_group_config
+
     @staticmethod
     def _iterate_entry_points(group):
         """
@@ -346,7 +364,10 @@ class ConfigReader(object):
         }
 
         # Adding defaults from base config.
-        if base_config:
+        if base_config is None:
+            directory, _ = path.split(directory_path)
+            base_config = self._fetch_stack_group_config(directory)
+        elif base_config:
             config.update(base_config)
 
         # Check if file exists, but ignore config.yaml as can be inherited.
