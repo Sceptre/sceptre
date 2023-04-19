@@ -16,7 +16,7 @@ import sys
 import yaml
 
 from os import environ, path, walk
-from typing import Set, Tuple
+from typing import Set, Tuple, Dict, Any
 from pathlib import Path
 from jinja2 import Environment
 from jinja2 import StrictUndefined
@@ -141,7 +141,7 @@ class ConfigReader(object):
 
         self.templating_vars = {"var": self.context.user_variables}
 
-    def _fetch_stack_group_config(self, directory_path):
+    def _fetch_stack_group_config(self, directory_path: str) -> Dict[str, Any]:
         """
         Fetches the stack_group_config for the given directory.
 
