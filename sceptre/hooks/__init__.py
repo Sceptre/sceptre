@@ -1,39 +1,21 @@
 import abc
 import logging
 from functools import wraps
+from typing import TYPE_CHECKING
 
 from sceptre.helpers import _call_func_on_values
-from sceptre.logging import StackLoggerAdapter
-
-from typing import TYPE_CHECKING, Any
+from sceptre.resolvers import CustomYamlTagBase
 
 if TYPE_CHECKING:
     from sceptre.stack import Stack
 
 
-class Hook(abc.ABC):
+class Hook(CustomYamlTagBase, metaclass=abc.ABCMeta):
     """
-    Hook is an abstract base class that should be inherited by all hooks.
-
-    :param argument: The argument of the hook.
-    :param stack: The associated stack of the hook.
+    Hook is an abstract base class that should be subclassed by all hooks.
     """
 
-    def __init__(self, argument: Any = None, stack: "Stack" = None):
-        self.logger = logging.getLogger(__name__)
-
-        if stack is not None:
-            self.logger = StackLoggerAdapter(self.logger, stack.name)
-
-        self.argument = argument
-        self.stack = stack
-
-    def setup(self):
-        """
-        setup is a method that may be overwritten by inheriting classes. Allows
-        hooks to run so initalisation steps when config is first read.
-        """
-        pass  # pragma: no cover
+    logger = logging.getLogger(__name__)
 
     @abc.abstractmethod
     def run(self):
@@ -42,15 +24,6 @@ class Hook(abc.ABC):
         inheriting classes. Run should execute the logic of the hook.
         """
         pass  # pragma: no cover
-
-    def clone(self, stack: "Stack") -> "Hook":
-        """
-        Produces a "fresh" copy of the Hook, with the specified stack.
-
-        :param stack: The stack to set on the cloned resolver
-        """
-        clone = type(self)(self.argument, stack)
-        return clone
 
 
 class HookProperty(object):
@@ -84,7 +57,7 @@ class HookProperty(object):
         """
 
         def setup(attr, key, value: Hook):
-            attr[key] = clone = value.clone(instance)
+            attr[key] = clone = value.clone_for_stack(instance)
             clone.setup()
 
         _call_func_on_values(setup, value, Hook)

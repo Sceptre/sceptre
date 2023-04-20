@@ -182,7 +182,7 @@ class ConfigReader(object):
             :rtype: func
             """
 
-            # This function signture is required by PyYAML
+            # This function signature is required by PyYAML
             def class_constructor(loader, node):
                 return node_class(
                     loader.construct_object(self.resolve_node_tag(loader, node))

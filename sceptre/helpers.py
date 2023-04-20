@@ -2,7 +2,7 @@
 from contextlib import contextmanager
 from datetime import datetime
 from os import sep
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Tuple, Union
 
 import dateutil.parser
 import deprecation
@@ -66,6 +66,28 @@ def _call_func_on_values(func, attr, cls):
         for index, value in enumerate(attr):
             func_on_instance(index)
     return attr
+
+
+Container = Union[list, dict]
+Key = Union[str, int]
+
+
+def delete_keys_from_containers(keys_to_delete: List[Tuple[Container, Key]]):
+    """Removes the indicated keys/indexes from their paired containers."""
+    list_items_to_delete = []
+    for container, key in keys_to_delete:
+        if isinstance(container, list):
+            # If it's a list, we want to gather up the items to remove from the list.
+            # We don't want to modify the list length yet, since removals will change all the other
+            # list indexes. Instead, we'll get the actual items at those indexes to remove later.
+            list_items_to_delete.append((container, container[key]))
+        else:
+            del container[key]
+
+    # Finally, now that we have all the items we want to remove the lists, we'll remove those
+    # items specifically from the lists.
+    for containing_list, item in list_items_to_delete:
+        containing_list.remove(item)
 
 
 def normalise_path(path):

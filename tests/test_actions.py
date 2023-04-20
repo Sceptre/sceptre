@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import json
+import sys
 from unittest.mock import patch, sentinel, Mock, call, ANY
 
 import pytest
@@ -950,7 +951,13 @@ class TestStackActions(object):
 
         self.actions._wait_for_completion()
         mock_log_new_events.assert_called_once()
-        assert type(mock_log_new_events.mock_calls[0].args[0]) is datetime.datetime
+
+        if sys.version_info < (3, 8):
+            mock_call_type = mock_log_new_events.mock_calls[0][1][0]
+        else:
+            mock_call_type = mock_log_new_events.mock_calls[0].args[0]
+
+        assert type(mock_call_type) is datetime.datetime
 
     @pytest.mark.parametrize(
         "test_input,expected",

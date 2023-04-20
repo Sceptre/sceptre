@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import sys
 import warnings
+import sys
 
+if sys.version_info < (3, 8):
+    from importlib_metadata import version
+else:
+    from importlib.metadata import version
 
-__author__ = "Cloudreach"
-__email__ = "sceptre@cloudreach.com"
-__version__ = "4.0.2"
+__author__ = "SceptreOrg"
+__email__ = "sceptreorg@gmail.com"
+__version__ = version(__package__ or __name__)
 
 
 # Set up logging to ``/dev/null`` like a library is supposed to.

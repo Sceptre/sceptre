@@ -5,7 +5,8 @@ from contextlib import contextmanager
 from threading import RLock
 from typing import Any, TYPE_CHECKING, Type, Union, TypeVar
 
-from sceptre.helpers import _call_func_on_values
+from sceptre.exceptions import InvalidResolverArgumentError
+from sceptre.helpers import _call_func_on_values, delete_keys_from_containers
 from sceptre.logging import StackLoggerAdapter
 from sceptre.resolvers.placeholders import (
     create_placeholder_value,
@@ -17,36 +18,169 @@ if TYPE_CHECKING:
     from sceptre import stack
 
 T_Container = TypeVar("T_Container", bound=Union[dict, list])
+Self = TypeVar("Self")
 
 
 class RecursiveResolve(Exception):
     pass
 
 
-class Resolver(abc.ABC):
-    """
-    Resolver is an abstract base class that should be inherited by all
-    Resolvers.
+class CustomYamlTagBase:
+    """A base class for custom Yaml Elements (i.e. hooks and resolvers).
 
-    :param argument: The argument of the resolver.
-    :param stack: The associated stack of the resolver.
+    This base class takes care of common functionality needed by subclasses:
+    | * logging setup (associated with stacks)
+    | * Creating unique clones associated with individual stacks (applied recursively down to all
+    |   resolvers in the argument)
+    | * On-stack-connect setup that might be needed once connected to a Stack (applied recursively down to
+    |   all resolvers in the argument)
+    | * Automatically resolving resolvers in the argument when accessing self.argument
+
     """
+
+    logger = logging.getLogger(__name__)
 
     def __init__(self, argument: Any = None, stack: "stack.Stack" = None):
-        self.logger = logging.getLogger(__name__)
+        """Initializes a custom yaml tag object.
+
+        :param argument: The argument passed to the yaml tag. This could be a string, number, list,
+            or dict. Resolvers are supported in the argument, but they must be in either list or dict
+            arguments.
+        :param stack: The stack object associated with this instance. NOTE: When first instantiated
+            from loading the YAML, there will be no Stack. A Stack instance will only be passed into
+            the instance when "clone_for_stack" is invoked when the tag is associated with a specific
+            stack.
+        """
         if stack is not None:
             self.logger = StackLoggerAdapter(self.logger, stack.name)
 
-        self.argument = argument
         self.stack = stack
+
+        self._argument = argument
+        self._argument_is_resolved = False
+
+    @property
+    def argument(self) -> Any:
+        """This is the resolver or hook's argument.
+
+        This property will resolve all nested resolvers inside the argument, but only if this
+        instance has been associated with a Stack.
+
+        Resolving nested resolvers will result in their values being replaced in the dict/list they
+        were in with their resolved value, so we won't have to resolve them again.
+
+        Any resolvers that "resolve to nothing" (i.e. return None) will be removed from the dict/list
+        they were in.
+
+        If this property is accessed BEFORE the instance has a stack, it will return
+        the raw argument value. This is to safeguard any __init__() behaviors from triggering
+        resolution prematurely.
+        """
+        if self.stack is not None and not self._argument_is_resolved:
+            # Since resolving the argument updates the argument list or dict so that there aren't
+            # resolvers in it any more, we only need to do this resolution once per instance.
+            self._resolve_argument()
+
+        return self._argument
+
+    @argument.setter
+    def argument(self, value):
+        self._argument = value
+
+    def _resolve_argument(self):
+        """Resolves all argument resolvers recursively."""
+
+        keys_to_delete = []
+
+        def resolve(containing_list_or_dict, key, obj: Resolver):
+            result = obj.resolve()
+            # If the resolver "resolves to nothing", then it should get deleted out of its container.
+            if result is None:
+                keys_to_delete.append((containing_list_or_dict, key))
+            else:
+                containing_list_or_dict[key] = result
+
+        _call_func_on_values(resolve, self._argument, Resolver)
+        delete_keys_from_containers(keys_to_delete)
+
+        self._argument_is_resolved = True
+
+    def _recursively_setup(self):
+        """Ensures all nested resolvers in this resolver's argument are also setup when this
+        instance's setup method is called.
+        """
+        self.setup()
+
+        def setup_nested(containing_list_or_dict, key, obj: Resolver):
+            obj._recursively_setup()
+
+        _call_func_on_values(setup_nested, self._argument, Resolver)
+
+    def _recursively_clone(self: Self, stack: "stack.Stack") -> Self:
+        """Recursively clones the instance and its arguments.
+
+        The returned instance will have an identical argument that is a different memory reference,
+        so that instances inherited from a stack group and applied across multiple stacks are
+        independent of each other.
+
+        Furthermore, all nested resolvers in this resolver's argument will also be cloned to ensure
+        they themselves are also independent and fully configured for the current stack.
+        """
+
+        def recursively_clone_arguments(obj):
+            if isinstance(obj, Resolver):
+                return obj._recursively_clone(stack)
+            if isinstance(obj, list):
+                return [recursively_clone_arguments(item) for item in obj]
+            elif isinstance(obj, dict):
+                return {
+                    key: recursively_clone_arguments(val) for key, val in obj.items()
+                }
+            return obj
+
+        argument = recursively_clone_arguments(self._argument)
+        clone = type(self)(argument, stack)
+        return clone
+
+    def clone_for_stack(self: Self, stack: "stack.Stack") -> Self:
+        """
+        Obtains a clone of the current object, setup and ready for use for a given Stack instance.
+        """
+        clone = self._recursively_clone(stack)
+        clone._recursively_setup()
+        return clone
 
     def setup(self):
         """
-        This method is called at during stack initialisation.
+        This method is called when the object is connected to a Stack instance.
         Implementation of this method in subclasses can be used to do any
         initial setup of the object.
         """
         pass  # pragma: no cover
+
+    def __repr__(self) -> str:
+        """Returns a string representation of the resolver.
+
+        This is mostly used for resolver placeholders. In cases where we cannot resolve a resolver
+        YET, such as when we're generating a template or diff and there's a dependency on a stack
+        output of a stack that hasn't been deployed yet, placeholders need to render the resolver
+        in a way that is useful.
+
+        We use self._argument instead of self.argument because if there are resolvers nested in this
+        resolver's argument and one of those cannot be resolved, we'll need those resolvers to also
+        be converted to useful placeholder values.
+        """
+        as_str = f"!{self.__class__.__name__}"
+        if self._argument is not None:
+            as_str += f"({self._argument})"
+
+        return as_str
+
+
+class Resolver(CustomYamlTagBase, metaclass=abc.ABCMeta):
+    """
+    Resolver is an abstract base class that should be subclassed by all Resolvers.
+    """
 
     @abc.abstractmethod
     def resolve(self):
@@ -58,13 +192,11 @@ class Resolver(abc.ABC):
         """
         pass  # pragma: no cover
 
-    def clone(self, stack: "stack.Stack") -> "Resolver":
-        """
-        Produces a "fresh" copy of the Resolver, with the specified stack.
-
-        :param stack: The stack to set on the cloned resolver
-        """
-        return type(self)(self.argument, stack)
+    def raise_invalid_argument_error(self, message, from_: Exception = None):
+        error_message = f"{self.stack.name} - {message}"
+        if from_:
+            raise InvalidResolverArgumentError(error_message) from from_
+        raise InvalidResolverArgumentError(error_message)
 
 
 class ResolvableProperty(abc.ABC):
@@ -126,23 +258,6 @@ class ResolvableProperty(abc.ABC):
             yield
         finally:
             setattr(stack, get_status_name, False)
-
-    def get_setup_resolver_for_stack(
-        self, stack: "stack.Stack", resolver: Resolver
-    ) -> Resolver:
-        """Obtains a clone of the resolver with the stack set on it and the setup method having
-        been called on it.
-
-        :param stack: The stack to set on the Resolver
-        :param resolver: The Resolver to clone and set up
-        :return: The cloned resolver.
-        """
-        # We clone the resolver when we assign the value so that every stack gets its own resolver
-        # rather than potentially having one resolver instance shared in memory across multiple
-        # stacks.
-        clone = resolver.clone(stack)
-        clone.setup()
-        return clone
 
     @abc.abstractmethod
     def get_resolved_value(
@@ -254,20 +369,7 @@ class ResolvableContainerProperty(ResolvableProperty):
 
         container = getattr(stack, self.name)
         _call_func_on_values(resolve, container, Resolver)
-        # Remove keys and indexes from their containers that had resolvers resolve to None.
-        list_items_to_delete = []
-        for attr, key in keys_to_delete:
-            if isinstance(attr, list):
-                # If it's a list, we want to gather up the items to remove from the list.
-                # We don't want to modify the list length yet.
-                # Since removals will change all the other list indexes,
-                # we don't wan't to modify lists yet.
-                list_items_to_delete.append((attr, attr[key]))
-            else:
-                del attr[key]
-
-        for containing_list, item in list_items_to_delete:
-            containing_list.remove(item)
+        delete_keys_from_containers(keys_to_delete)
 
         return container
 
@@ -294,7 +396,7 @@ class ResolvableContainerProperty(ResolvableProperty):
 
         def recurse(obj):
             if isinstance(obj, Resolver):
-                return self.get_setup_resolver_for_stack(stack, obj)
+                return obj.clone_for_stack(stack)
             if isinstance(obj, list):
                 return [recurse(item) for item in obj]
             elif isinstance(obj, dict):
@@ -389,5 +491,5 @@ class ResolvableValueProperty(ResolvableProperty):
         :param value: The value to set
         """
         if isinstance(value, Resolver):
-            value = self.get_setup_resolver_for_stack(stack, value)
+            value = value.clone_for_stack(stack)
         setattr(stack, self.name, value)
