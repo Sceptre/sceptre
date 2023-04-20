@@ -65,7 +65,7 @@ test-integration: install
 docs:
 	rm -f docs/sceptre.rst
 	rm -f docs/modules.rst
-	poetry run make docs
+	poetry run sphinx-apidoc -o docs/ sceptre
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
