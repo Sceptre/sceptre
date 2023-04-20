@@ -2,7 +2,7 @@
 
 import errno
 import os
-from unittest.mock import patch, sentinel, MagicMock
+from unittest.mock import patch, sentinel, MagicMock, ANY
 
 import pytest
 import yaml
@@ -283,7 +283,7 @@ class TestConfigReader(object):
             ignore=False,
             obsolete=False,
             stack_group_config={
-                "project_path": "/Users/alexharvey/git/fox/sceptre/tests/fixtures-vpc",
+                "project_path": ANY,
                 "profile": "account_profile",
                 "project_code": "account_project_code",
                 "region": "region_region",
