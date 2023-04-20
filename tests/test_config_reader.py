@@ -291,7 +291,7 @@ class TestConfigReader(object):
                 "template_bucket_name": "stack_group_template_bucket_name",
                 "custom_key": "custom_value",
                 "dependencies": ["top/level"],
-            }
+            },
         )
 
         assert stacks == ({sentinel.stack}, {sentinel.stack})
