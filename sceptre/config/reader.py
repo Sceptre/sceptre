@@ -373,9 +373,7 @@ class ConfigReader(object):
         self.logger.debug("Config: %s", config)
         return config
 
-    def _recursive_read(
-        self, directory_path: str, filename: str, config: dict
-    ) -> dict:
+    def _recursive_read(self, directory_path: str, filename: str, config: dict) -> dict:
         """
         Traverses the directory_path, from top to bottom, reading in all
         relevant config files. If config attributes are encountered further
@@ -394,9 +392,7 @@ class ConfigReader(object):
         new_config = {}
 
         if directory_path:
-            new_config = self._recursive_read(
-                parent_directory, filename, config
-            )
+            new_config = self._recursive_read(parent_directory, filename, config)
 
         # Combine the config with the nested config dict
         config_group = config.copy()
