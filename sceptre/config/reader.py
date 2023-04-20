@@ -374,7 +374,7 @@ class ConfigReader(object):
         return config
 
     def _recursive_read(
-        self, directory_path: str, filename: str, config: dict
+        self, directory_path: str, filename: str, work_in_progress_config: dict
     ) -> dict:
         """
         Traverses the directory_path, from top to bottom, reading in all
@@ -384,7 +384,7 @@ class ConfigReader(object):
 
         :param directory_path: Relative directory path to config to read.
         :param filename: File name for the config to read.
-        :param config: The loaded config file for the StackGroup
+        :param work_in_progress_config: The loaded config file for the StackGroup
         :returns: Representation of inherited config.
         """
 
@@ -395,11 +395,11 @@ class ConfigReader(object):
 
         if directory_path:
             config = self._recursive_read(
-                parent_directory, filename, config
+                parent_directory, filename, work_in_progress_config
             )
 
-        # Combine the config with the nested config dict
-        config_group = config.copy()
+        # Combine the work_in_progress_config with the nested config dict
+        config_group = work_in_progress_config.copy()
         config_group.update(config)
 
         # Read config file and overwrite inherited properties
@@ -412,6 +412,7 @@ class ConfigReader(object):
                 child_config[config_key] = value
 
         config.update(child_config)
+
         return config
 
     def _render(self, directory_path, basename, config_group):
