@@ -102,14 +102,6 @@ STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
     },
 )
 
-INTERNAL_CONFIG_ATTRIBUTES = ConfigAttributes(
-    {
-        "project_path",
-        "stack_group_path",
-    },
-    {},
-)
-
 REQUIRED_KEYS = STACK_GROUP_CONFIG_ATTRIBUTES.required.union(
     STACK_CONFIG_ATTRIBUTES.required
 )
@@ -145,6 +137,37 @@ class ConfigReader(object):
         self.root = self.context.full_command_path()
         if self.context.full_scan:
             self.root = self.context.full_config_path()
+
+        # Set up todo list. The set of abs paths to process.
+        if path.isfile(self.root):
+            self.todo = {self.root}
+        else:
+            self.todo = set()
+            for directory_name, sub_directories, files in walk(
+                self.root, followlinks=True
+            ):
+                for filename in fnmatch.filter(files, "*.yaml"):
+                    if filename.startswith("config."):
+                        continue
+
+                    self.todo.add(path.join(directory_name, filename))
+
+        todo = self.todo.copy()
+
+        # Set up initial stack_group_config
+        self.stack_group_config = self.stack_group_configs = {}
+
+        while todo:
+            abs_path = todo.pop()
+            rel_path = path.relpath(abs_path, start=self.context.full_config_path())
+            directory, filename = path.split(rel_path)
+
+            if directory in self.stack_group_configs:
+                self.stack_group_config = self.stack_group_configs[directory]
+            else:
+                self.stack_group_config = self.stack_group_configs[
+                    directory
+                ] = self.read(path.join(directory, self.context.config_file))
 
     @staticmethod
     def _iterate_entry_points(group):
@@ -228,35 +251,15 @@ class ConfigReader(object):
         stack_map = {}
         command_stacks = set()
 
-        if path.isfile(self.root):
-            todo = {self.root}
-        else:
-            todo = set()
-            for directory_name, sub_directories, files in walk(self.root, followlinks=True):
-                for filename in fnmatch.filter(files, "*.yaml"):
-                    if filename.startswith("config."):
-                        continue
-
-                    todo.add(path.join(directory_name, filename))
-
-        stack_group_configs = {}
-        full_todo = todo.copy()
+        todo = full_todo = self.todo.copy()
         deps_todo = set()
 
         while todo:
             abs_path = todo.pop()
             rel_path = path.relpath(abs_path, start=self.context.full_config_path())
-            directory, filename = path.split(rel_path)
 
-            if directory in stack_group_configs:
-                stack_group_config = stack_group_configs[directory]
-            else:
-                stack_group_config = stack_group_configs[directory] = self.read(
-                    path.join(directory, self.context.config_file),
-                    internal_call=True
-                )
+            stack = self._construct_stack(rel_path)
 
-            stack = self._construct_stack(rel_path, stack_group_config)
             for dep in stack.dependencies:
                 full_dep = str(Path(self.context.full_config_path(), dep))
                 if not path.exists(full_dep):
@@ -324,7 +327,7 @@ class ConfigReader(object):
             stacks.add(stack)
         return stacks
 
-    def read(self, rel_path, base_config=None, internal_call=False):
+    def read(self, rel_path):
         """
         Reads in configuration from one or more YAML files
         within the Sceptre project folder.
@@ -337,19 +340,16 @@ class ConfigReader(object):
         :rtype: dict
         """
         self.logger.debug("Reading in '%s' files...", rel_path)
-        print(f"Called with {rel_path} and {base_config}")
         directory_path, filename = path.split(rel_path)
         abs_path = path.join(self.full_config_path, rel_path)
 
         # Adding properties from class
         config = {
             "project_path": self.context.project_path,
-            "stack_group_path": directory_path,
         }
 
         # Adding defaults from base config.
-        if base_config:
-            config.update(base_config)
+        config.update(self.stack_group_config)
 
         # Check if file exists, but ignore config.yaml as can be inherited.
         if not path.isfile(abs_path) and not filename.endswith(
@@ -374,7 +374,7 @@ class ConfigReader(object):
         return config
 
     def _recursive_read(
-        self, directory_path: str, filename: str, stack_group_config: dict
+        self, directory_path: str, filename: str, work_in_progress_config: dict
     ) -> dict:
         """
         Traverses the directory_path, from top to bottom, reading in all
@@ -384,7 +384,7 @@ class ConfigReader(object):
 
         :param directory_path: Relative directory path to config to read.
         :param filename: File name for the config to read.
-        :param stack_group_config: The loaded config file for the StackGroup
+        :param work_in_progress_config: The loaded config file for the StackGroup
         :returns: Representation of inherited config.
         """
 
@@ -395,11 +395,11 @@ class ConfigReader(object):
 
         if directory_path:
             config = self._recursive_read(
-                parent_directory, filename, stack_group_config
+                parent_directory, filename, work_in_progress_config
             )
 
-        # Combine the stack_group_config with the nested config dict
-        config_group = stack_group_config.copy()
+        # Combine the work_in_progress_config with the nested config dict
+        config_group = work_in_progress_config.copy()
         config_group.update(config)
 
         # Read config file and overwrite inherited properties
@@ -415,7 +415,7 @@ class ConfigReader(object):
 
         return config
 
-    def _render(self, directory_path, basename, stack_group_config):
+    def _render(self, directory_path, basename, config_group):
         """
         Reads a configuration file, loads the config file as a template
         and returns config loaded from the file.
@@ -424,8 +424,8 @@ class ConfigReader(object):
         :type directory_path: str
         :param basename: The filename of the config file
         :type basename: str
-        :param stack_group_config: The loaded config file for the StackGroup
-        :type stack_group_config: dict
+        :param config_group: The loaded config file for the StackGroup
+        :type config_group: dict
         :returns: rendered template of config file.
         :rtype: dict
         """
@@ -442,7 +442,7 @@ class ConfigReader(object):
             }
             j2_environment_config = strategies.dict_merge(
                 default_j2_environment_config,
-                stack_group_config.get("j2_environment", {}),
+                config_group.get("j2_environment", {}),
             )
             j2_environment = Environment(**j2_environment_config)
 
@@ -453,7 +453,7 @@ class ConfigReader(object):
                     f"{Path(directory_path, basename).as_posix()} - {err}"
                 ) from err
 
-            self.templating_vars.update(stack_group_config)
+            self.templating_vars.update(config_group)
 
             try:
                 rendered_template = template.render(
@@ -542,15 +542,13 @@ class ConfigReader(object):
             }
         return s3_details
 
-    def _construct_stack(self, rel_path, stack_group_config=None):
+    def _construct_stack(self, rel_path):
         """
         Constructs an individual Stack object from a config path and a
         base config.
 
         :param rel_path: A relative config file path.
         :type rel_path: str
-        :param stack_group_config: The Stack group config to use as defaults.
-        :type stack_group_config: dict
         :returns: Stack object
         :rtype: sceptre.stack.Stack
         """
@@ -559,9 +557,8 @@ class ConfigReader(object):
         if filename == self.context.config_file:
             pass
 
-        self.templating_vars["stack_group_config"] = stack_group_config
-        parsed_stack_group_config = self._parsed_stack_group_config(stack_group_config)
-        config = self.read(rel_path, stack_group_config, internal_call=True)
+        self.templating_vars["stack_group_config"] = self.stack_group_config
+        config = self.read(rel_path)
         stack_name = path.splitext(rel_path)[0]
 
         # Check for missing mandatory attributes
@@ -610,21 +607,8 @@ class ConfigReader(object):
             stack_timeout=config.get("stack_timeout", 0),
             ignore=config.get("ignore", False),
             obsolete=config.get("obsolete", False),
-            stack_group_config=parsed_stack_group_config,
+            stack_group_config=self.stack_group_config,
         )
 
         del self.templating_vars["stack_group_config"]
         return stack
-
-    def _parsed_stack_group_config(self, stack_group_config):
-        """
-        Remove all config items that are supported by Sceptre and
-        remove the `project_path` and `stack_group_path` added by `read()`.
-        Return a dictionary that has only user-specified config items.
-        """
-        parsed_config = {
-            key: stack_group_config[key]
-            for key in set(stack_group_config) - set(CONFIG_MERGE_STRATEGIES)
-        }
-        parsed_config.pop("stack_group_path")
-        return parsed_config

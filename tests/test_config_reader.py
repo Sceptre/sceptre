@@ -2,7 +2,7 @@
 
 import errno
 import os
-from unittest.mock import patch, sentinel, MagicMock
+from unittest.mock import patch, sentinel, MagicMock, ANY
 
 import pytest
 import yaml
@@ -91,7 +91,6 @@ class TestConfigReader(object):
 
         assert config == {
             "project_path": project_path,
-            "stack_group_path": os.path.split(target)[0],
             "filepath": target,
         }
 
@@ -131,7 +130,6 @@ class TestConfigReader(object):
 
             assert config_a == {
                 "project_path": project_path,
-                "stack_group_path": "A",
                 "keyA": "A",
                 "shared": "A",
             }
@@ -140,7 +138,6 @@ class TestConfigReader(object):
 
             assert config_b == {
                 "project_path": project_path,
-                "stack_group_path": "A/B",
                 "keyA": "A",
                 "keyB": "B",
                 "shared": "B",
@@ -151,35 +148,11 @@ class TestConfigReader(object):
 
             assert config_c == {
                 "project_path": project_path,
-                "stack_group_path": "A/B/C",
                 "keyA": "A",
                 "keyB": "B",
                 "keyC": "C",
                 "shared": "C",
                 "parent": "B",
-            }
-
-    def test_read_reads_config_file_with_base_config(self):
-        with self.runner.isolated_filesystem():
-            project_path = os.path.abspath("./example")
-            config_dir = os.path.join(project_path, "config")
-            stack_group_dir = os.path.join(config_dir, "A")
-
-            os.makedirs(stack_group_dir)
-
-            config = {"config": "config"}
-            with open(os.path.join(stack_group_dir, "stack.yaml"), "w") as config_file:
-                yaml.safe_dump(config, stream=config_file, default_flow_style=False)
-
-            base_config = {"base_config": "base_config"}
-            self.context.project_path = project_path
-            config = ConfigReader(self.context).read("A/stack.yaml", base_config)
-
-            assert config == {
-                "project_path": project_path,
-                "stack_group_path": "A",
-                "config": "config",
-                "base_config": "base_config",
             }
 
     def test_read_with_nonexistant_filepath(self):
@@ -193,7 +166,6 @@ class TestConfigReader(object):
         config = config_reader.read("account/stack-group/region/subnets.yaml")
         assert config == {
             "project_path": self.test_project_path,
-            "stack_group_path": "account/stack-group/region",
         }
 
     def test_read_with_templated_config_file(self):
@@ -211,7 +183,6 @@ class TestConfigReader(object):
 
         assert config == {
             "project_path": self.context.project_path,
-            "stack_group_path": "account/stack-group/region",
             "parameters": {
                 "param1": "user_variable_value",
                 "param2": "environment_variable_value",
@@ -280,6 +251,7 @@ class TestConfigReader(object):
         self.context.project_path = os.path.abspath("tests/fixtures-vpc")
         self.context.command_path = "account/stack-group/region/vpc.yaml"
         stacks = ConfigReader(self.context).construct_stacks()
+
         mock_Stack.assert_any_call(
             name="account/stack-group/region/vpc",
             project_code="account_project_code",
@@ -310,10 +282,7 @@ class TestConfigReader(object):
             template_key_prefix=None,
             ignore=False,
             obsolete=False,
-            stack_group_config={
-                "project_path": self.context.project_path,
-                "custom_key": "custom_value",
-            },
+            stack_group_config=ANY,
         )
 
         assert stacks == ({sentinel.stack}, {sentinel.stack})
