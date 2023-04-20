@@ -629,7 +629,7 @@ class StackActions:
         """
         Returns the Template for the Stack
         """
-        return self.stack.template.body
+        return self.dump_template()
 
     @add_stack_hooks
     def validate(self):

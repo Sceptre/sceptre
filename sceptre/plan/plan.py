@@ -448,5 +448,5 @@ class SceptrePlan(object):
         :returns: A dictionary of Stacks and their template body.
         :rtype: dict
         """
-        self.resolve(command=self.generate.__name__)
+        self.resolve(command=self.dump_template.__name__)
         return self._execute(*args)
