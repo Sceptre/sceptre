@@ -141,6 +141,11 @@ class ConfigReader(object):
 
         self.templating_vars = {"var": self.context.user_variables}
 
+        # Set up root
+        self.root = self.context.full_command_path()
+        if self.context.full_scan:
+            self.root = self.context.full_config_path()
+
     @staticmethod
     def _iterate_entry_points(group):
         """
@@ -223,16 +228,11 @@ class ConfigReader(object):
         stack_map = {}
         command_stacks = set()
 
-        root = self.context.full_command_path()
-
-        if self.context.full_scan:
-            root = self.context.full_config_path()
-
-        if path.isfile(root):
-            todo = {root}
+        if path.isfile(self.root):
+            todo = {self.root}
         else:
             todo = set()
-            for directory_name, sub_directories, files in walk(root, followlinks=True):
+            for directory_name, sub_directories, files in walk(self.root, followlinks=True):
                 for filename in fnmatch.filter(files, "*.yaml"):
                     if filename.startswith("config."):
                         continue
@@ -252,7 +252,8 @@ class ConfigReader(object):
                 stack_group_config = stack_group_configs[directory]
             else:
                 stack_group_config = stack_group_configs[directory] = self.read(
-                    path.join(directory, self.context.config_file)
+                    path.join(directory, self.context.config_file),
+                    internal_call=True
                 )
 
             stack = self._construct_stack(rel_path, stack_group_config)
@@ -323,7 +324,7 @@ class ConfigReader(object):
             stacks.add(stack)
         return stacks
 
-    def read(self, rel_path, base_config=None):
+    def read(self, rel_path, base_config=None, internal_call=False):
         """
         Reads in configuration from one or more YAML files
         within the Sceptre project folder.
@@ -336,6 +337,7 @@ class ConfigReader(object):
         :rtype: dict
         """
         self.logger.debug("Reading in '%s' files...", rel_path)
+        print(f"Called with {rel_path} and {base_config}")
         directory_path, filename = path.split(rel_path)
         abs_path = path.join(self.full_config_path, rel_path)
 
@@ -559,7 +561,7 @@ class ConfigReader(object):
 
         self.templating_vars["stack_group_config"] = stack_group_config
         parsed_stack_group_config = self._parsed_stack_group_config(stack_group_config)
-        config = self.read(rel_path, stack_group_config)
+        config = self.read(rel_path, stack_group_config, internal_call=True)
         stack_name = path.splitext(rel_path)[0]
 
         # Check for missing mandatory attributes
