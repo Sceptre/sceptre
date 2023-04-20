@@ -2,7 +2,7 @@
 
 import errno
 import os
-from unittest.mock import patch, sentinel, MagicMock, ANY
+from unittest.mock import patch, sentinel, MagicMock
 
 import pytest
 import yaml
@@ -252,7 +252,7 @@ class TestConfigReader(object):
         self.context.command_path = "account/stack-group/region/vpc.yaml"
         stacks = ConfigReader(self.context).construct_stacks()
 
-        mock_Stack.assert_any_call(
+        mock_Stack.assert_called_once_with(
             name="account/stack-group/region/vpc",
             project_code="account_project_code",
             template_path=None,
@@ -282,7 +282,16 @@ class TestConfigReader(object):
             template_key_prefix=None,
             ignore=False,
             obsolete=False,
-            stack_group_config=ANY,
+            stack_group_config={
+                "project_path": "/Users/alexharvey/git/fox/sceptre/tests/fixtures-vpc",
+                "profile": "account_profile",
+                "project_code": "account_project_code",
+                "region": "region_region",
+                "required_version": ">1.0",
+                "template_bucket_name": "stack_group_template_bucket_name",
+                "custom_key": "custom_value",
+                "dependencies": ["top/level"],
+            }
         )
 
         assert stacks == ({sentinel.stack}, {sentinel.stack})
