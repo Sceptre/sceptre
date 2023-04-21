@@ -476,7 +476,7 @@ have not yet been deployed. During normal deployment operations (using the ``lau
 ensure that order is followed, so everything works as expected.
 
 But there are other commands that will not actually deploy dependencies of a stack config before
-operating on that Stack Config. These commands include ``generate``, ``validate``, and ``diff``.
+operating on that Stack Config. These commands include ``dump template``, ``validate``, and ``diff``.
 If you have used resolvers to reverence other stacks, it is possible that a resolver might not be able
 to be resolved when performing that command's operations and will trigger an error. This is not likely
 to happen when you have only used resolvers in a stack's ``parameters``, but it is much more likely
@@ -491,7 +491,7 @@ A few examples...
   and you run the ``diff`` command before other_stack.yaml has been deployed, the diff output will
   show the value of that parameter to be ``"{ !StackOutput(other_stack.yaml::OutputName) }"``.
 * If you have a ``sceptre_user_data`` value used in a Jinja template referencing
-  ``!stack_output other_stack.yaml::OutputName`` and you run the ``generate`` command, the generated
+  ``!stack_output other_stack.yaml::OutputName`` and you run the ``dump template`` command, the generated
   template will replace that value with ``"StackOutputotherstackyamlOutputName"``. This isn't as
   "pretty" as the sort of placeholder used for stack parameters, but the use of sceptre_user_data is
   broader, so it placeholder values can only be alphanumeric to reduce chances of it breaking the
