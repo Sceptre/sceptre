@@ -4,7 +4,7 @@ import sys
 from itertools import cycle
 from functools import partial, wraps
 
-from typing import Any, Optional, Union
+from typing import Any, Optional
 from pathlib import Path
 
 import json
@@ -19,6 +19,8 @@ from jinja2.exceptions import TemplateError
 from sceptre.exceptions import SceptreException
 from sceptre.stack_status import StackStatus
 from sceptre.stack_status_colourer import StackStatusColourer
+
+logger = logging.getLogger(__name__)
 
 
 def catch_exceptions(func):
@@ -185,6 +187,23 @@ def _generate_text(stream):
             )
         return "\n".join(rows)
     return stream
+
+
+def process_template(
+    template: dict, output_format: str, type: str = "template"
+) -> None:
+    """
+    Helper to write templates and configs used in dump commands.
+
+    :param template: the template.
+    :param output_format: The format to print the output as. Allowed values: \
+    :param type: either template or config used only in the file name.
+    """
+    stack_name = list(template.keys())[0]
+    file_path = Path(".dump") / stack_name / f"{type}.{output_format}"
+    logger.info(f"{stack_name} dumping {type} to {file_path}")
+    write(template[stack_name], output_format, no_colour=True, file_path=file_path)
+    logger.info(f"{stack_name} done.")
 
 
 def setup_vars(var_file, var, merge_vars, debug, no_colour):

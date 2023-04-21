@@ -2,12 +2,10 @@ import logging
 import click
 
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import catch_exceptions, write
+from sceptre.cli.helpers import catch_exceptions, process_template
 from sceptre.plan.plan import SceptrePlan
 from sceptre.helpers import null_context
 from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error
-
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -49,13 +47,8 @@ def dump_config(ctx, path):
 
     output_format = "json" if context.output_format == "json" else "yaml"
 
-    def process_config(config):
-        stack_name = list(config.keys())[0]
-        file_path = Path(".dump") / stack_name / f"config.{output_format}"
-        write(config[stack_name], output_format, no_colour=True, file_path=file_path)
-
     for config in output:
-        process_config(config)
+        process_template(config, output_format, type="config")
 
 
 @dump_group.command(name="template")
@@ -100,13 +93,8 @@ def dump_template(ctx, no_placeholders, path):
 
     output_format = "json" if context.output_format == "json" else "yaml"
 
-    def process_template(template):
-        stack_name = list(template.keys())[0]
-        file_path = Path(".dump") / stack_name / f"template.{output_format}"
-        write(template[stack_name], output_format, no_colour=True, file_path=file_path)
-
     for template in output:
-        process_template(template)
+        process_template(template, output_format)
 
 
 @dump_group.command(name="all")
