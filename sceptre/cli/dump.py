@@ -45,10 +45,7 @@ def dump_config(ctx, path):
 
     output = []
     for stack, config in responses.items():
-        if config is None:
-            logger.warning(f"{stack.external_name} does not exist")
-        else:
-            output.append({stack.external_name: config})
+        output.append({stack.external_name: config})
 
     output_format = "json" if context.output_format == "json" else "yaml"
 
@@ -57,11 +54,8 @@ def dump_config(ctx, path):
         file_path = Path(".dump") / stack_name / f"config.{output_format}"
         write(config[stack_name], output_format, no_colour=True, file_path=file_path)
 
-    if len(output) == 1:
-        process_config(output[0])
-    else:
-        for config in output:
-            process_config(config)
+    for config in output:
+        process_config(config)
 
 
 @dump_group.command(name="template")
@@ -102,10 +96,7 @@ def dump_template(ctx, no_placeholders, path):
 
     output = []
     for stack, template in responses.items():
-        if template is None:
-            logger.warning(f"{stack.external_name} does not exist")
-        else:
-            output.append({stack.external_name: template})
+        output.append({stack.external_name: template})
 
     output_format = "json" if context.output_format == "json" else "yaml"
 
@@ -114,11 +105,8 @@ def dump_template(ctx, no_placeholders, path):
         file_path = Path(".dump") / stack_name / f"template.{output_format}"
         write(template[stack_name], output_format, no_colour=True, file_path=file_path)
 
-    if len(output) == 1:
-        process_template(output[0])
-    else:
-        for template in output:
-            process_template(template)
+    for template in output:
+        process_template(template)
 
 
 @dump_group.command(name="all")
