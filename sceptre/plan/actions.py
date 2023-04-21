@@ -12,15 +12,17 @@ import logging
 import time
 import typing
 import urllib
-from datetime import datetime, timedelta
-from os import path
-from typing import Dict, Optional, Tuple, Union
-
 import botocore
-from dateutil.tz import tzutc
+import deprecation
 
+from datetime import datetime, timedelta
+from dateutil.tz import tzutc
+from os import path
+
+from sceptre import __version__
 from sceptre.config.reader import ConfigReader
 from sceptre.connection_manager import ConnectionManager
+
 from sceptre.exceptions import (
     CannotUpdateFailedStackError,
     ProtectedStackError,
@@ -32,6 +34,8 @@ from sceptre.helpers import extract_datetime_from_aws_response_headers, normalis
 from sceptre.hooks import add_stack_hooks
 from sceptre.stack import Stack
 from sceptre.stack_status import StackChangeSetStatus, StackStatus
+
+from typing import Dict, Optional, Tuple, Union
 
 if typing.TYPE_CHECKING:
     from sceptre.diffing.stack_differ import StackDiff, StackDiffer
@@ -624,6 +628,7 @@ class StackActions:
 
         return new_summaries
 
+    @deprecation.deprecated("4.0.0", "6.0.0", __version__, "Use dump template instead.")
     @add_stack_hooks
     def generate(self):
         """
