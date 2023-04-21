@@ -54,7 +54,7 @@ def dump_config(ctx, path):
 
     def process_config(config):
         stack_name = list(config.keys())[0]
-        file_path = Path(f".dump/{stack_name}/config.yaml")
+        file_path = Path(".dump") / stack_name / f"config.{output_format}"
         write(config[stack_name], output_format, no_colour=True, file_path=file_path)
 
     if len(output) == 1:
@@ -111,7 +111,7 @@ def dump_template(ctx, no_placeholders, path):
 
     def process_template(template):
         stack_name = list(template.keys())[0]
-        file_path = Path(f".dump/{stack_name}/template.yaml")
+        file_path = Path(".dump") / stack_name / f"template.{output_format}"
         write(template[stack_name], output_format, no_colour=True, file_path=file_path)
 
     if len(output) == 1:
@@ -119,3 +119,25 @@ def dump_template(ctx, no_placeholders, path):
     else:
         for template in output:
             process_template(template)
+
+
+@dump_group.command(name="all")
+@click.argument("path")
+@click.option(
+    "-n",
+    "--no-placeholders",
+    is_flag=True,
+    help="If True, no placeholder values will be supplied for resolvers that cannot be resolved.",
+)
+@click.pass_context
+@catch_exceptions
+def dump_all(ctx, no_placeholders, path):
+    """
+    Dumps both the rendered (post-Jinja) Stack Configs and the template used for stack in PATH.
+    \f
+
+    :param path: Path to execute the command on.
+    :type path: str
+    """
+    ctx.invoke(dump_config, path=path)
+    ctx.invoke(dump_template, no_placeholders=no_placeholders, path=path)
