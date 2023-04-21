@@ -414,14 +414,19 @@ class ConfigReader(object):
 
         return config
 
-    def _write_debug_file(self, content):
+    def _write_debug_file(self, content: str) -> str:
+        """
+        Write some content to a temp file for debug purposes.
+
+        :param content: the file content to write.
+        :returns: the full path to the temp file.
+        """
         with tempfile.NamedTemporaryFile(
             mode="w", delete=False, prefix="rendered_"
         ) as temp_file:
             temp_file.write(content)
             temp_file.flush()
 
-        print(f"Debug file location: {temp_file.name}")
         return temp_file.name
 
     def _render(self, directory_path, basename, stack_group_config):
