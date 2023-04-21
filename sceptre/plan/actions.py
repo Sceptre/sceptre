@@ -19,7 +19,6 @@ from typing import Dict, Optional, Tuple, Union
 import botocore
 from dateutil.tz import tzutc
 
-from sceptre.config.reader import ConfigReader
 from sceptre.connection_manager import ConnectionManager
 from sceptre.exceptions import (
     CannotUpdateFailedStackError,
@@ -28,7 +27,7 @@ from sceptre.exceptions import (
     UnknownStackChangeSetStatusError,
     UnknownStackStatusError,
 )
-from sceptre.helpers import extract_datetime_from_aws_response_headers, normalise_path
+from sceptre.helpers import extract_datetime_from_aws_response_headers
 from sceptre.hooks import add_stack_hooks
 from sceptre.stack import Stack
 from sceptre.stack_status import StackChangeSetStatus, StackStatus
@@ -1146,9 +1145,8 @@ class StackActions:
         return result
 
     @add_stack_hooks
-    def dump_config(self, config_reader: ConfigReader):
+    def dump_config(self):
         """
         Dump the config for a stack.
         """
-        stack_path = normalise_path(self.stack.name + ".yaml")
-        return config_reader.read(stack_path)
+        return self.stack.config

@@ -102,14 +102,6 @@ STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
     },
 )
 
-INTERNAL_CONFIG_ATTRIBUTES = ConfigAttributes(
-    {
-        "project_path",
-        "stack_group_path",
-    },
-    {},
-)
-
 REQUIRED_KEYS = STACK_GROUP_CONFIG_ATTRIBUTES.required.union(
     STACK_CONFIG_ATTRIBUTES.required
 )
@@ -251,7 +243,7 @@ class ConfigReader(object):
             if directory in stack_group_configs:
                 stack_group_config = stack_group_configs[directory]
             else:
-                stack_group_config = stack_group_configs[directory] = self.read(
+                stack_group_config = stack_group_configs[directory] = self._read(
                     path.join(directory, self.context.config_file)
                 )
 
@@ -323,7 +315,7 @@ class ConfigReader(object):
             stacks.add(stack)
         return stacks
 
-    def read(self, rel_path, base_config=None):
+    def _read(self, rel_path, base_config=None):
         """
         Reads in configuration from one or more YAML files
         within the Sceptre project folder.
@@ -559,7 +551,7 @@ class ConfigReader(object):
 
         self.templating_vars["stack_group_config"] = stack_group_config
         parsed_stack_group_config = self._parsed_stack_group_config(stack_group_config)
-        config = self.read(rel_path, stack_group_config)
+        config = self._read(rel_path, stack_group_config)
         stack_name = path.splitext(rel_path)[0]
 
         # Check for missing mandatory attributes
@@ -609,6 +601,7 @@ class ConfigReader(object):
             ignore=config.get("ignore", False),
             obsolete=config.get("obsolete", False),
             stack_group_config=parsed_stack_group_config,
+            config=config,
         )
 
         del self.templating_vars["stack_group_config"]

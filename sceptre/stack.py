@@ -194,6 +194,7 @@ class Stack:
         ignore=False,
         obsolete=False,
         stack_group_config: dict = {},
+        config: dict = {},
     ):
         self.logger = logging.getLogger(__name__)
 
@@ -211,6 +212,7 @@ class Stack:
             "disable_rollback", disable_rollback
         )
         self.stack_group_config = stack_group_config or {}
+        self.config = config or {}
         self.stack_timeout = stack_timeout
         self.profile = profile
         self.template_key_prefix = template_key_prefix
