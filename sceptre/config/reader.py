@@ -486,7 +486,7 @@ class ConfigReader(object):
                 debug_file_path = self._write_debug_file(rendered_template)
 
                 raise ValueError(
-                    f"Error parsing {abs_directory_path}:\n{err}\n"
+                    f"Error parsing {abs_directory_path}{basename}:\n{err}\n"
                     f"Rendered template saved to: {debug_file_path}"
                 )
 
