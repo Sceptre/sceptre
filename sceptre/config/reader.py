@@ -602,6 +602,7 @@ class ConfigReader(object):
             obsolete=config.get("obsolete", False),
             stack_group_config=parsed_stack_group_config,
             config=config,
+            vars=self.templating_vars,
         )
 
         del self.templating_vars["stack_group_config"]

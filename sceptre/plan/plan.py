@@ -440,3 +440,10 @@ class SceptrePlan(object):
         """
         self.resolve(command=self.dump_config.__name__)
         return self._execute(*args)
+
+    def dump_vars(self, *args):
+        """
+        Dump the vars for a stack.
+        """
+        self.resolve(command=self.dump_vars.__name__)
+        return self._execute(*args)

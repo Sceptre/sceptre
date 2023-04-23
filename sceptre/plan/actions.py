@@ -1150,3 +1150,10 @@ class StackActions:
         Dump the config for a stack.
         """
         return self.stack.config
+
+    @add_stack_hooks
+    def dump_vars(self):
+        """
+        Dump the vars for a stack.
+        """
+        return self.stack.vars

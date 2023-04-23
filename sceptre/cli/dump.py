@@ -53,3 +53,36 @@ def dump_config(ctx, path):
     else:
         for config in output:
             write(config, output_format)
+
+
+@dump_group.command(name="vars")
+@click.argument("path")
+@click.pass_context
+@catch_exceptions
+def dump_config(ctx, path):
+    """
+    Dump the template vars.
+    \f
+
+    :param path: Path to execute the command on or path to stack group
+    """
+    context = SceptreContext(
+        command_path=path,
+        command_params=ctx.params,
+        project_path=ctx.obj.get("project_path"),
+        user_variables=ctx.obj.get("user_variables"),
+        output_format=ctx.obj.get("output_format"),
+        options=ctx.obj.get("options"),
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
+    )
+    plan = SceptrePlan(context)
+    responses = plan.dump_vars()
+
+    output = []
+    for stack, vars in responses.items():
+        output.append({stack.external_name: vars})
+
+    output_format = "json" if context.output_format == "json" else "yaml"
+
+    for vars in output:
+        write(vars, output_format)

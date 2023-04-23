@@ -123,6 +123,10 @@ class Stack:
            If not supplied, Sceptre uses default value (3600 seconds)
 
     :param stack_group_config: The StackGroup config for the Stack
+
+    :param config: The complete config for the stack. Used by dump config.
+
+    :param vars: The complete templating vars for the Stack. Used by dump vars.
     """
 
     parameters = ResolvableContainerProperty("parameters")
@@ -195,6 +199,7 @@ class Stack:
         obsolete=False,
         stack_group_config: dict = {},
         config: dict = {},
+        vars: dict = {},
     ):
         self.logger = logging.getLogger(__name__)
 
@@ -213,6 +218,7 @@ class Stack:
         )
         self.stack_group_config = stack_group_config or {}
         self.config = config or {}
+        self.vars = vars or {}
         self.stack_timeout = stack_timeout
         self.profile = profile
         self.template_key_prefix = template_key_prefix
