@@ -6,9 +6,18 @@ from typing import Optional, Any, List, Tuple, Union
 
 import dateutil.parser
 import deprecation
+import logging
 
 from sceptre.exceptions import PathConversionError
 from sceptre import __version__
+
+
+def logging_level():
+    """
+    Return the logging level.
+    """
+    logger = logging.getLogger(__name__)
+    return logger.getEffectiveLevel()
 
 
 def get_external_stack_name(project_code, stack_name):
