@@ -280,7 +280,7 @@ class TestConfigReader(object):
         self.context.project_path = os.path.abspath("tests/fixtures-vpc")
         self.context.command_path = "account/stack-group/region/vpc.yaml"
         stacks = ConfigReader(self.context).construct_stacks()
-        mock_Stack.assert_any_call(
+        mock_Stack.assert_called_once_with(
             name="account/stack-group/region/vpc",
             project_code="account_project_code",
             template_path=None,
@@ -314,7 +314,31 @@ class TestConfigReader(object):
                 "project_path": self.context.project_path,
                 "custom_key": "custom_value",
             },
-            config=ANY,
+            config={
+                "project_path": self.context.project_path,
+                "stack_group_path": "account/stack-group/region",
+                "profile": "account_profile",
+                "project_code": "account_project_code",
+                "region": "region_region",
+                "required_version": ">1.0",
+                "template_bucket_name": "stack_group_template_bucket_name",
+                "custom_key": "custom_value",
+                "dependencies": ["child/level",
+                "top/level"],
+                "template": {"path": "path/to/template"},
+                "parameters": {"param1": "val1"}},
+            vars={
+                "var": {},
+                "project_path": self.context.project_path,
+                "stack_group_path": "account/stack-group/region",
+                "profile": "account_profile",
+                "project_code": "account_project_code",
+                "region": "region_region",
+                "required_version": ">1.0",
+                "template_bucket_name": "stack_group_template_bucket_name",
+                "custom_key": "custom_value",
+                "dependencies": ["top/level"]
+            }
         )
 
         assert stacks == ({sentinel.stack}, {sentinel.stack})

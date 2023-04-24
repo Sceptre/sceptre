@@ -59,7 +59,7 @@ def dump_config(ctx, path):
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
-def dump_config(ctx, path):
+def dump_vars(ctx, path):
     """
     Dump the template vars.
     \f
