@@ -78,10 +78,7 @@ def dump_config(ctx, path):
     plan = SceptrePlan(context)
     responses = plan.dump_vars()
 
-    output = []
-    for stack, vars in responses.items():
-        output.append({stack.external_name: vars})
-
+    output = [vars for _, vars in responses.items()]
     output_format = "json" if context.output_format == "json" else "yaml"
 
     for vars in output:
