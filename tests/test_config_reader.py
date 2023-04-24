@@ -2,7 +2,7 @@
 
 import errno
 import os
-from unittest.mock import patch, sentinel, MagicMock, ANY
+from unittest.mock import patch, sentinel, MagicMock
 
 import pytest
 import yaml
@@ -323,10 +323,10 @@ class TestConfigReader(object):
                 "required_version": ">1.0",
                 "template_bucket_name": "stack_group_template_bucket_name",
                 "custom_key": "custom_value",
-                "dependencies": ["child/level",
-                "top/level"],
+                "dependencies": ["child/level", "top/level"],
                 "template": {"path": "path/to/template"},
-                "parameters": {"param1": "val1"}},
+                "parameters": {"param1": "val1"},
+            },
             vars={
                 "var": {},
                 "project_path": self.context.project_path,
@@ -337,8 +337,8 @@ class TestConfigReader(object):
                 "required_version": ">1.0",
                 "template_bucket_name": "stack_group_template_bucket_name",
                 "custom_key": "custom_value",
-                "dependencies": ["top/level"]
-            }
+                "dependencies": ["top/level"],
+            },
         )
 
         assert stacks == ({sentinel.stack}, {sentinel.stack})
