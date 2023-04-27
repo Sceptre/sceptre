@@ -628,8 +628,7 @@ class StackActions:
 
         return new_summaries
 
-    @deprecation.deprecated("4.0.0", "6.0.0", __version__, "Use dump template instead.")
-    @add_stack_hooks
+    @deprecation.deprecated("4.2.0", "5.0.0", __version__, "Use dump template instead.")
     def generate(self):
         """
         Returns the Template for the Stack
