@@ -2,7 +2,7 @@ import logging
 import click
 
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import catch_exceptions, process_template
+from sceptre.cli.helpers import catch_exceptions, dump_to_file
 from sceptre.plan.plan import SceptrePlan
 from sceptre.helpers import null_context
 from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error
@@ -48,7 +48,7 @@ def dump_config(ctx, path):
     output_format = "json" if context.output_format == "json" else "yaml"
 
     for config in output:
-        process_template(config, output_format, type="config")
+        dump_to_file(config, output_format, type="config")
 
 
 @dump_group.command(name="template")
@@ -94,7 +94,7 @@ def dump_template(ctx, no_placeholders, path):
     output_format = "json" if context.output_format == "json" else "yaml"
 
     for template in output:
-        process_template(template, output_format)
+        dump_to_file(template, output_format)
 
 
 @dump_group.command(name="all")
