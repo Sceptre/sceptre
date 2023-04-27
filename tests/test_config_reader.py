@@ -11,12 +11,14 @@ from freezegun import freeze_time
 
 from sceptre.config.reader import ConfigReader
 from sceptre.context import SceptreContext
+
 from sceptre.exceptions import (
     DependencyDoesNotExistError,
     VersionIncompatibleError,
     ConfigFileNotFoundError,
     InvalidSceptreDirectoryError,
     InvalidConfigFileError,
+    SceptreException,
 )
 
 
@@ -580,3 +582,82 @@ class TestConfigReader(object):
         new_node = config_reader.resolve_node_tag(mock_loader, mock_node)
 
         assert new_node.tag == "new_tag"
+
+    def test_render_missing_config_file(self):
+        config_reader = ConfigReader(self.context)
+        directory_path = "configs"
+        basename = "missing_config.yaml"
+        stack_group_config = {}
+
+        result = config_reader._render(directory_path, basename, stack_group_config)
+        assert result is None
+
+    def test_render_existing_config_file(self):
+        with self.runner.isolated_filesystem():
+            project_path = os.path.abspath("./example")
+            config_dir = os.path.join(project_path, "config")
+            directory_path = os.path.join(config_dir, "configs")
+
+            os.makedirs(directory_path)
+
+            basename = "existing_config.yaml"
+            stack_group_config = {}
+
+            test_config_path = os.path.join(directory_path, basename)
+            test_config_content = "key: value"
+
+            with open(test_config_path, "w") as file:
+                file.write(test_config_content)
+
+            self.context.project_path = project_path
+            config_reader = ConfigReader(self.context)
+
+            result = config_reader._render("configs", basename, stack_group_config)
+
+            assert result == {"key": "value"}
+
+    def test_render_invalid_jinja_template(self):
+        with self.runner.isolated_filesystem():
+            project_path = os.path.abspath("./example")
+            config_dir = os.path.join(project_path, "config")
+            directory_path = os.path.join(config_dir, "configs")
+
+            os.makedirs(directory_path)
+
+            basename = "invalid_jinja.yaml"
+            stack_group_config = {}
+
+            test_config_path = os.path.join(directory_path, basename)
+            test_config_content = "key: {{ invalid_var }}"
+
+            with open(test_config_path, "w") as file:
+                file.write(test_config_content)
+
+            self.context.project_path = project_path
+            config_reader = ConfigReader(self.context)
+
+            pattern = f"{os.path.join('configs', basename)} - .*"
+            with pytest.raises(SceptreException, match=pattern):
+                config_reader._render("configs", basename, stack_group_config)
+
+    def test_render_invalid_yaml(self):
+        with self.runner.isolated_filesystem():
+            project_path = os.path.abspath("./example")
+            config_dir = os.path.join(project_path, "config")
+            directory_path = os.path.join(config_dir, "configs")
+
+            os.makedirs(directory_path)
+
+            basename = "invalid_yaml.yaml"
+            stack_group_config = {}
+
+            test_config_path = os.path.join(directory_path, basename)
+            test_config_content = "{ key: value"
+            with open(test_config_path, "w") as file:
+                file.write(test_config_content)
+
+            self.context.project_path = project_path
+            config_reader = ConfigReader(self.context)
+
+            with pytest.raises(ValueError, match="Error parsing .*"):
+                config_reader._render("configs", basename, stack_group_config)
