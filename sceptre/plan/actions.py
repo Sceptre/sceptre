@@ -13,11 +13,11 @@ import time
 import typing
 import urllib
 import botocore
-import deprecation
 
 from datetime import datetime, timedelta
 from dateutil.tz import tzutc
 from os import path
+from deprecation import deprecated
 
 from sceptre import __version__
 from sceptre.config.reader import ConfigReader
@@ -628,7 +628,7 @@ class StackActions:
 
         return new_summaries
 
-    @deprecation.deprecated("4.2.0", "5.0.0", __version__, "Use dump template instead.")
+    @deprecated("4.2.0", "5.0.0", __version__, "Use dump template instead.")
     def generate(self):
         """
         Returns the Template for the Stack

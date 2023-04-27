@@ -8,8 +8,10 @@ nessessary information for a command to execute.
 """
 import functools
 import itertools
+
 from os import path, walk
 from typing import Dict, List, Set, Callable, Iterable, Optional
+from deprecation import deprecated
 
 from sceptre.config.graph import StackGraph
 from sceptre.config.reader import ConfigReader
@@ -19,6 +21,7 @@ from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.helpers import sceptreise_path
 from sceptre.plan.executor import SceptrePlanExecutor
 from sceptre.stack import Stack
+from sceptre import __version__
 
 
 def require_resolved(func) -> Callable:
@@ -441,6 +444,7 @@ class SceptrePlan(object):
         self.resolve(command=self.dump_config.__name__)
         return self._execute(self.config_reader, *args)
 
+    @deprecated("4.2.0", "5.0.0", __version__, "Use dump template instead.")
     def dump_template(self, *args):
         """
         Returns a generated Template for a given Stack
