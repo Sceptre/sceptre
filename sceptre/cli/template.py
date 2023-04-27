@@ -67,7 +67,7 @@ def validate_command(ctx, no_placeholders, path):
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
-@deprecation.deprecated("4.0.0", "6.0.0", __version__, "Use dump template instead.")
+@deprecation.deprecated("4.2.0", "5.0.0", __version__, "Use dump template instead.")
 def generate_command(ctx, no_placeholders, path):
     """
     Prints the template used for stack in PATH.
