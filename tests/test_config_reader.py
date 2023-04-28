@@ -6,8 +6,10 @@ from unittest.mock import patch, sentinel, MagicMock
 
 import pytest
 import yaml
+
 from click.testing import CliRunner
 from freezegun import freeze_time
+from glob import glob
 
 from sceptre.config.reader import ConfigReader
 from sceptre.context import SceptreContext
@@ -583,7 +585,7 @@ class TestConfigReader(object):
 
         assert new_node.tag == "new_tag"
 
-    def test_render_missing_config_file(self):
+    def test_render__missing_config_file__returns_none(self):
         config_reader = ConfigReader(self.context)
         directory_path = "configs"
         basename = "missing_config.yaml"
@@ -592,7 +594,7 @@ class TestConfigReader(object):
         result = config_reader._render(directory_path, basename, stack_group_config)
         assert result is None
 
-    def test_render_existing_config_file(self):
+    def test_render__existing_config_file__returns_dict(self):
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath("./example")
             config_dir = os.path.join(project_path, "config")
@@ -616,7 +618,7 @@ class TestConfigReader(object):
 
             assert result == {"key": "value"}
 
-    def test_render_invalid_jinja_template(self):
+    def test_render__invalid_jinja_template__raises_and_creates_debug_file(self):
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath("./example")
             config_dir = os.path.join(project_path, "config")
@@ -639,8 +641,9 @@ class TestConfigReader(object):
             pattern = f"{os.path.join('configs', basename)} - .*"
             with pytest.raises(SceptreException, match=pattern):
                 config_reader._render("configs", basename, stack_group_config)
+                assert len(glob("/tmp/vars_*")) == 1
 
-    def test_render_invalid_yaml(self):
+    def test_render_invalid_yaml__raises_and_creates_debug_file(self):
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath("./example")
             config_dir = os.path.join(project_path, "config")
@@ -653,6 +656,7 @@ class TestConfigReader(object):
 
             test_config_path = os.path.join(directory_path, basename)
             test_config_content = "{ key: value"
+
             with open(test_config_path, "w") as file:
                 file.write(test_config_content)
 
@@ -661,3 +665,4 @@ class TestConfigReader(object):
 
             with pytest.raises(ValueError, match="Error parsing .*"):
                 config_reader._render("configs", basename, stack_group_config)
+                assert len(glob("/tmp/rendered_*")) == 1
