@@ -169,7 +169,10 @@ class StackDiffer(Generic[DiffType]):
         for key, value in stack.parameters.items():
             if isinstance(value, list):
                 value = ",".join(item.rstrip("\n") for item in value)
-            formatted_parameters[key] = value.rstrip("\n")
+            if isinstance(value, str):
+                formatted_parameters[key] = value.rstrip("\n")
+            elif value is None:
+                formatted_parameters[key] = value
 
         return formatted_parameters
 
@@ -219,6 +222,7 @@ class StackDiffer(Generic[DiffType]):
             self._remove_deployed_default_parameters_that_arent_passed(
                 deployed_template_summary, generated_config, deployed_config
             )
+
         if not self.show_no_echo:
             # We don't actually want to show parameters Sceptre is passing that the local template
             # marks as NoEcho parameters (unless show_no_echo is set to true). Therefore those
