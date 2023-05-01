@@ -2,7 +2,7 @@
 
 import errno
 import os
-from unittest.mock import patch, sentinel, MagicMock
+from unittest.mock import patch, sentinel, MagicMock, ANY
 
 import pytest
 import yaml
@@ -87,7 +87,7 @@ class TestConfigReader(object):
             self.write_config(abs_path, config)
 
         self.context.project_path = project_path
-        config = ConfigReader(self.context).read(target)
+        config = ConfigReader(self.context)._read(target)
 
         assert config == {
             "project_path": project_path,
@@ -127,7 +127,7 @@ class TestConfigReader(object):
             self.context.project_path = project_path
             reader = ConfigReader(self.context)
 
-            config_a = reader.read("A/config.yaml")
+            config_a = reader._read("A/config.yaml")
 
             assert config_a == {
                 "project_path": project_path,
@@ -136,7 +136,7 @@ class TestConfigReader(object):
                 "shared": "A",
             }
 
-            config_b = reader.read("A/B/config.yaml")
+            config_b = reader._read("A/B/config.yaml")
 
             assert config_b == {
                 "project_path": project_path,
@@ -147,7 +147,7 @@ class TestConfigReader(object):
                 "parent": "A",
             }
 
-            config_c = reader.read("A/B/C/config.yaml")
+            config_c = reader._read("A/B/C/config.yaml")
 
             assert config_c == {
                 "project_path": project_path,
@@ -173,7 +173,7 @@ class TestConfigReader(object):
 
             base_config = {"base_config": "base_config"}
             self.context.project_path = project_path
-            config = ConfigReader(self.context).read("A/stack.yaml", base_config)
+            config = ConfigReader(self.context)._read("A/stack.yaml", base_config)
 
             assert config == {
                 "project_path": project_path,
@@ -186,11 +186,11 @@ class TestConfigReader(object):
         project_path, config_dir = self.create_project()
         self.context.project_path = project_path
         with pytest.raises(ConfigFileNotFoundError):
-            ConfigReader(self.context).read("stack.yaml")
+            ConfigReader(self.context)._read("stack.yaml")
 
     def test_read_with_empty_config_file(self):
         config_reader = ConfigReader(self.context)
-        config = config_reader.read("account/stack-group/region/subnets.yaml")
+        config = config_reader._read("account/stack-group/region/subnets.yaml")
         assert config == {
             "project_path": self.test_project_path,
             "stack_group_path": "account/stack-group/region",
@@ -207,7 +207,7 @@ class TestConfigReader(object):
             "template_bucket_name": "stack_group_template_bucket_name",
         }
         os.environ["TEST_ENV_VAR"] = "environment_variable_value"
-        config = config_reader.read("account/stack-group/region/security_groups.yaml")
+        config = config_reader._read("account/stack-group/region/security_groups.yaml")
 
         assert config == {
             "project_path": self.context.project_path,
@@ -314,6 +314,7 @@ class TestConfigReader(object):
                 "project_path": self.context.project_path,
                 "custom_key": "custom_value",
             },
+            config=ANY,
         )
 
         assert stacks == ({sentinel.stack}, {sentinel.stack})
