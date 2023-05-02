@@ -1,6 +1,8 @@
 # Sceptre release process
 
-1. Bump version in `./sceptre/__init__.py` & `./setup.cfg`
+Poetry is used to manage versions and deployments. Follow the below steps to release a version to pypi.
+
+1. Bump the package version (i.e. `poetry version minor`)
 2. Update Changelog with details from Github commit list since last release
 3. Create a PR for above changes
 4. Once PR is merged, `git pull` the changes to sync the *master* branch

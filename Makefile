@@ -48,24 +48,24 @@ clean-test:
 	rm -fr .cache/
 	rm -f .coverage
 	rm -fr htmlcov/
-	rm -f test-results.xml
+	rm -fr test-reports/
 
 lint:
-	pre-commit run --all-files --show-diff-on-failure
+	poetry run pre-commit run --all-files
 
 test:
-	pytest
+	poetry run pytest
 
 test-all:
-	tox --parallel=auto
+	poetry run tox
 
 test-integration: install
-	behave integration-tests/
+	poetry run behave integration-tests/
 
 docs:
 	rm -f docs/sceptre.rst
 	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ sceptre
+	poetry run sphinx-apidoc -o docs/ sceptre
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
@@ -101,16 +101,10 @@ docs-clean:
 	$(MAKE) -C docs clean
 
 dist: clean
-	python setup.py sdist
-	python setup.py bdist_wheel
-	twine check dist/*
-	ls -l dist
+	poetry build
 
 install: clean
-	pip install .
+	poetry install -v
 
 install-dev: clean
-	pip install -r requirements/prod.txt
-	pip install -r requirements/dev.txt
-	pip install -e .
-	@echo "To install the documentation dependencies, run:\ncd docs\nmake install"
+	poetry install --all-extras -v

@@ -123,6 +123,8 @@ class Stack:
            If not supplied, Sceptre uses default value (3600 seconds)
 
     :param stack_group_config: The StackGroup config for the Stack
+
+    :param config: The complete config for the stack. Used by dump config.
     """
 
     parameters = ResolvableContainerProperty("parameters")
@@ -193,7 +195,8 @@ class Stack:
         iam_role_session_duration: Optional[int] = None,
         ignore=False,
         obsolete=False,
-        stack_group_config: dict = {},
+        stack_group_config: dict = None,
+        config: dict = None,
     ):
         self.logger = logging.getLogger(__name__)
 
@@ -211,6 +214,7 @@ class Stack:
             "disable_rollback", disable_rollback
         )
         self.stack_group_config = stack_group_config or {}
+        self.config = config or {}
         self.stack_timeout = stack_timeout
         self.profile = profile
         self.template_key_prefix = template_key_prefix
