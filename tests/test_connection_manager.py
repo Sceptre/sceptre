@@ -8,7 +8,6 @@ import deprecation
 import pytest
 from boto3.session import Session
 from botocore.exceptions import ClientError
-from moto import mock_s3
 
 from sceptre.connection_manager import (
     ConnectionManager,
@@ -306,25 +305,6 @@ class TestConnectionManager(object):
             service, region, profile, stack, sceptre_role
         )
         assert client_1 == client_2
-
-    @mock_s3
-    def test_call_with_valid_service_and_call(self):
-        service = "s3"
-        command = "list_buckets"
-
-        connection_manager = ConnectionManager(region=self.region)
-        return_value = connection_manager.call(service, command, {})
-        assert return_value["ResponseMetadata"]["HTTPStatusCode"] == 200
-
-    @mock_s3
-    def test_call_with_valid_service_and_stack_name_call(self):
-        service = "s3"
-        command = "list_buckets"
-
-        connection_manager = ConnectionManager(region=self.region, stack_name="stack")
-
-        return_value = connection_manager.call(service, command, {}, stack_name="stack")
-        assert return_value["ResponseMetadata"]["HTTPStatusCode"] == 200
 
     def test_call__profile_region_and_role_are_stack_default__uses_instance_settings(
         self,

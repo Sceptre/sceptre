@@ -439,4 +439,4 @@ class SceptrePlan(object):
         Dump the config for a stack.
         """
         self.resolve(command=self.dump_config.__name__)
-        return self._execute(self.config_reader, *args)
+        return self._execute(*args)

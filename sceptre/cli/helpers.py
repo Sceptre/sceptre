@@ -12,6 +12,7 @@ from boto3.exceptions import Boto3Error
 from botocore.exceptions import BotoCoreError, ClientError
 from jinja2.exceptions import TemplateError
 
+from sceptre.helpers import logging_level
 from sceptre.exceptions import SceptreException
 from sceptre.stack_status import StackStatus
 from sceptre.stack_status_colourer import StackStatusColourer
@@ -27,10 +28,6 @@ def catch_exceptions(func):
         simplified.
     :returns: The decorated function.
     """
-
-    def logging_level():
-        logger = logging.getLogger(__name__)
-        return logger.getEffectiveLevel()
 
     @wraps(func)
     def decorated(*args, **kwargs):

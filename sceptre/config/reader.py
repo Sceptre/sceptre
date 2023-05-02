@@ -14,6 +14,8 @@ import fnmatch
 import logging
 import sys
 import yaml
+import json
+import tempfile
 
 from os import environ, path, walk
 from typing import Set, Tuple
@@ -32,7 +34,7 @@ from sceptre.exceptions import InvalidConfigFileError
 from sceptre.exceptions import InvalidSceptreDirectoryError
 from sceptre.exceptions import VersionIncompatibleError
 from sceptre.exceptions import ConfigFileNotFoundError
-from sceptre.helpers import sceptreise_path
+from sceptre.helpers import sceptreise_path, logging_level
 from sceptre.stack import Stack
 from sceptre.config import strategies
 
@@ -100,14 +102,6 @@ STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
         "stack_tags",
         "stack_timeout",
     },
-)
-
-INTERNAL_CONFIG_ATTRIBUTES = ConfigAttributes(
-    {
-        "project_path",
-        "stack_group_path",
-    },
-    {},
 )
 
 REQUIRED_KEYS = STACK_GROUP_CONFIG_ATTRIBUTES.required.union(
@@ -251,7 +245,7 @@ class ConfigReader(object):
             if directory in stack_group_configs:
                 stack_group_config = stack_group_configs[directory]
             else:
-                stack_group_config = stack_group_configs[directory] = self.read(
+                stack_group_config = stack_group_configs[directory] = self._read(
                     path.join(directory, self.context.config_file)
                 )
 
@@ -323,7 +317,7 @@ class ConfigReader(object):
             stacks.add(stack)
         return stacks
 
-    def read(self, rel_path, base_config=None):
+    def _read(self, rel_path, base_config=None):
         """
         Reads in configuration from one or more YAML files
         within the Sceptre project folder.
@@ -413,6 +407,21 @@ class ConfigReader(object):
 
         return config
 
+    def _write_debug_file(self, content: str, prefix: str) -> str:
+        """
+        Write some content to a temp file for debug purposes.
+
+        :param content: the file content to write.
+        :returns: the full path to the temp file.
+        """
+        with tempfile.NamedTemporaryFile(
+            mode="w", delete=False, prefix=prefix
+        ) as temp_file:
+            temp_file.write(content)
+            temp_file.flush()
+
+        return temp_file.name
+
     def _render(self, directory_path, basename, stack_group_config):
         """
         Reads a configuration file, loads the config file as a template
@@ -429,49 +438,64 @@ class ConfigReader(object):
         """
         config = {}
         abs_directory_path = path.join(self.full_config_path, directory_path)
-        if path.isfile(path.join(abs_directory_path, basename)):
-            default_j2_environment_config = {
-                "autoescape": select_autoescape(
-                    disabled_extensions=("yaml",),
-                    default=True,
-                ),
-                "loader": FileSystemLoader(abs_directory_path),
-                "undefined": StrictUndefined,
-            }
-            j2_environment_config = strategies.dict_merge(
-                default_j2_environment_config,
-                stack_group_config.get("j2_environment", {}),
+
+        if not path.isfile(path.join(abs_directory_path, basename)):
+            return
+
+        default_j2_environment_config = {
+            "autoescape": select_autoescape(
+                disabled_extensions=("yaml",),
+                default=True,
+            ),
+            "loader": FileSystemLoader(abs_directory_path),
+            "undefined": StrictUndefined,
+        }
+        j2_environment_config = strategies.dict_merge(
+            default_j2_environment_config,
+            stack_group_config.get("j2_environment", {}),
+        )
+        j2_environment = Environment(**j2_environment_config)
+
+        try:
+            template = j2_environment.get_template(basename)
+        except Exception as err:
+            raise SceptreException(
+                f"{Path(directory_path, basename).as_posix()} - {err}"
+            ) from err
+
+        self.templating_vars.update(stack_group_config)
+
+        try:
+            rendered_template = template.render(
+                self.templating_vars,
+                command_path=self.context.command_path.split(path.sep),
+                environment_variable=environ,
             )
-            j2_environment = Environment(**j2_environment_config)
+        except Exception as err:
+            message = f"{Path(directory_path, basename).as_posix()} - {err}"
 
-            try:
-                template = j2_environment.get_template(basename)
-            except Exception as err:
-                raise SceptreException(
-                    f"{Path(directory_path, basename).as_posix()} - {err}"
-                ) from err
-
-            self.templating_vars.update(stack_group_config)
-
-            try:
-                rendered_template = template.render(
-                    self.templating_vars,
-                    command_path=self.context.command_path.split(path.sep),
-                    environment_variable=environ,
+            if logging_level() == logging.DEBUG:
+                debug_file_path = self._write_debug_file(
+                    json.dumps(self.templating_vars), prefix="vars_"
                 )
-            except Exception as err:
-                raise SceptreException(
-                    f"{Path(directory_path, basename).as_posix()} - {err}"
-                ) from err
+                message += f"\nTemplating vars saved to: {debug_file_path}"
 
-            try:
-                config = yaml.safe_load(rendered_template)
-            except Exception as err:
-                raise ValueError(
-                    "Error parsing {}:\n{}".format(abs_directory_path, err)
+            raise SceptreException(message) from err
+
+        try:
+            config = yaml.safe_load(rendered_template)
+        except Exception as err:
+            message = f"Error parsing {abs_directory_path}{basename}:\n{err}"
+
+            if logging_level() == logging.DEBUG:
+                debug_file_path = self._write_debug_file(
+                    rendered_template, prefix="rendered_"
                 )
+                message += f"\nRendered template saved to: {debug_file_path}"
 
-            return config
+            raise ValueError(message)
+
+        return config
 
     @staticmethod
     def _check_valid_project_path(config_path):
@@ -559,7 +583,7 @@ class ConfigReader(object):
 
         self.templating_vars["stack_group_config"] = stack_group_config
         parsed_stack_group_config = self._parsed_stack_group_config(stack_group_config)
-        config = self.read(rel_path, stack_group_config)
+        config = self._read(rel_path, stack_group_config)
         stack_name = path.splitext(rel_path)[0]
 
         # Check for missing mandatory attributes
@@ -609,6 +633,7 @@ class ConfigReader(object):
             ignore=config.get("ignore", False),
             obsolete=config.get("obsolete", False),
             stack_group_config=parsed_stack_group_config,
+            config=config,
         )
 
         del self.templating_vars["stack_group_config"]

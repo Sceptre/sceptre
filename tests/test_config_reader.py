@@ -2,21 +2,25 @@
 
 import errno
 import os
-from unittest.mock import patch, sentinel, MagicMock
+from unittest.mock import patch, sentinel, MagicMock, ANY
 
 import pytest
 import yaml
+
 from click.testing import CliRunner
 from freezegun import freeze_time
+from glob import glob
 
 from sceptre.config.reader import ConfigReader
 from sceptre.context import SceptreContext
+
 from sceptre.exceptions import (
     DependencyDoesNotExistError,
     VersionIncompatibleError,
     ConfigFileNotFoundError,
     InvalidSceptreDirectoryError,
     InvalidConfigFileError,
+    SceptreException,
 )
 
 
@@ -87,7 +91,7 @@ class TestConfigReader(object):
             self.write_config(abs_path, config)
 
         self.context.project_path = project_path
-        config = ConfigReader(self.context).read(target)
+        config = ConfigReader(self.context)._read(target)
 
         assert config == {
             "project_path": project_path,
@@ -127,7 +131,7 @@ class TestConfigReader(object):
             self.context.project_path = project_path
             reader = ConfigReader(self.context)
 
-            config_a = reader.read("A/config.yaml")
+            config_a = reader._read("A/config.yaml")
 
             assert config_a == {
                 "project_path": project_path,
@@ -136,7 +140,7 @@ class TestConfigReader(object):
                 "shared": "A",
             }
 
-            config_b = reader.read("A/B/config.yaml")
+            config_b = reader._read("A/B/config.yaml")
 
             assert config_b == {
                 "project_path": project_path,
@@ -147,7 +151,7 @@ class TestConfigReader(object):
                 "parent": "A",
             }
 
-            config_c = reader.read("A/B/C/config.yaml")
+            config_c = reader._read("A/B/C/config.yaml")
 
             assert config_c == {
                 "project_path": project_path,
@@ -173,7 +177,7 @@ class TestConfigReader(object):
 
             base_config = {"base_config": "base_config"}
             self.context.project_path = project_path
-            config = ConfigReader(self.context).read("A/stack.yaml", base_config)
+            config = ConfigReader(self.context)._read("A/stack.yaml", base_config)
 
             assert config == {
                 "project_path": project_path,
@@ -186,11 +190,11 @@ class TestConfigReader(object):
         project_path, config_dir = self.create_project()
         self.context.project_path = project_path
         with pytest.raises(ConfigFileNotFoundError):
-            ConfigReader(self.context).read("stack.yaml")
+            ConfigReader(self.context)._read("stack.yaml")
 
     def test_read_with_empty_config_file(self):
         config_reader = ConfigReader(self.context)
-        config = config_reader.read("account/stack-group/region/subnets.yaml")
+        config = config_reader._read("account/stack-group/region/subnets.yaml")
         assert config == {
             "project_path": self.test_project_path,
             "stack_group_path": "account/stack-group/region",
@@ -207,7 +211,7 @@ class TestConfigReader(object):
             "template_bucket_name": "stack_group_template_bucket_name",
         }
         os.environ["TEST_ENV_VAR"] = "environment_variable_value"
-        config = config_reader.read("account/stack-group/region/security_groups.yaml")
+        config = config_reader._read("account/stack-group/region/security_groups.yaml")
 
         assert config == {
             "project_path": self.context.project_path,
@@ -314,6 +318,7 @@ class TestConfigReader(object):
                 "project_path": self.context.project_path,
                 "custom_key": "custom_value",
             },
+            config=ANY,
         )
 
         assert stacks == ({sentinel.stack}, {sentinel.stack})
@@ -580,3 +585,85 @@ class TestConfigReader(object):
         new_node = config_reader.resolve_node_tag(mock_loader, mock_node)
 
         assert new_node.tag == "new_tag"
+
+    def test_render__missing_config_file__returns_none(self):
+        config_reader = ConfigReader(self.context)
+        directory_path = "configs"
+        basename = "missing_config.yaml"
+        stack_group_config = {}
+
+        result = config_reader._render(directory_path, basename, stack_group_config)
+        assert result is None
+
+    def test_render__existing_config_file__returns_dict(self):
+        with self.runner.isolated_filesystem():
+            project_path = os.path.abspath("./example")
+            config_dir = os.path.join(project_path, "config")
+            directory_path = os.path.join(config_dir, "configs")
+
+            os.makedirs(directory_path)
+
+            basename = "existing_config.yaml"
+            stack_group_config = {}
+
+            test_config_path = os.path.join(directory_path, basename)
+            test_config_content = "key: value"
+
+            with open(test_config_path, "w") as file:
+                file.write(test_config_content)
+
+            self.context.project_path = project_path
+            config_reader = ConfigReader(self.context)
+
+            result = config_reader._render("configs", basename, stack_group_config)
+
+            assert result == {"key": "value"}
+
+    def test_render__invalid_jinja_template__raises_and_creates_debug_file(self):
+        with self.runner.isolated_filesystem():
+            project_path = os.path.abspath("./example")
+            config_dir = os.path.join(project_path, "config")
+            directory_path = os.path.join(config_dir, "configs")
+
+            os.makedirs(directory_path)
+
+            basename = "invalid_jinja.yaml"
+            stack_group_config = {}
+
+            test_config_path = os.path.join(directory_path, basename)
+            test_config_content = "key: {{ invalid_var }}"
+
+            with open(test_config_path, "w") as file:
+                file.write(test_config_content)
+
+            self.context.project_path = project_path
+            config_reader = ConfigReader(self.context)
+
+            pattern = f"{os.path.join('configs', basename)} - .*"
+            with pytest.raises(SceptreException, match=pattern):
+                config_reader._render("configs", basename, stack_group_config)
+                assert len(glob("/tmp/vars_*")) == 1
+
+    def test_render_invalid_yaml__raises_and_creates_debug_file(self):
+        with self.runner.isolated_filesystem():
+            project_path = os.path.abspath("./example")
+            config_dir = os.path.join(project_path, "config")
+            directory_path = os.path.join(config_dir, "configs")
+
+            os.makedirs(directory_path)
+
+            basename = "invalid_yaml.yaml"
+            stack_group_config = {}
+
+            test_config_path = os.path.join(directory_path, basename)
+            test_config_content = "{ key: value"
+
+            with open(test_config_path, "w") as file:
+                file.write(test_config_content)
+
+            self.context.project_path = project_path
+            config_reader = ConfigReader(self.context)
+
+            with pytest.raises(ValueError, match="Error parsing .*"):
+                config_reader._render("configs", basename, stack_group_config)
+                assert len(glob("/tmp/rendered_*")) == 1
