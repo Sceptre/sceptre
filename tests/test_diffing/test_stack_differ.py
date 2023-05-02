@@ -332,6 +332,17 @@ class TestStackDiffer:
             self.expected_deployed_config, self.expected_generated_config
         )
 
+    def test_diff__deployed_stack_has_default_values_one_of_them_none__compares_different_configs(
+        self,
+    ):
+        self.deployed_parameters["new"] = "default value"
+        self.deployed_parameter_defaults["new"] = None
+        self.parameters_on_stack_config["new"] = ""
+        self.differ.diff(self.actions)
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            self.expected_deployed_config, self.expected_generated_config
+        )
+
     def test_diff__stack_exists_with_same_config_but_template_does_not__compares_identical_configs(
         self,
     ):
