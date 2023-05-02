@@ -380,6 +380,7 @@ class SceptrePlan(object):
         self.resolve(command=self.estimate_cost.__name__)
         return self._execute(*args)
 
+    @deprecated("4.2.0", "5.0.0", __version__, "Use dump template instead.")
     def generate(self, *args):
         """
         Returns a generated Template for a given Stack
@@ -444,7 +445,6 @@ class SceptrePlan(object):
         self.resolve(command=self.dump_config.__name__)
         return self._execute(*args)
 
-    @deprecated("4.2.0", "5.0.0", __version__, "Use dump template instead.")
     def dump_template(self, *args):
         """
         Returns a generated Template for a given Stack

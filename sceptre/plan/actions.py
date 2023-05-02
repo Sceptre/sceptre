@@ -20,8 +20,6 @@ from os import path
 from deprecation import deprecated
 
 from sceptre import __version__
-from sceptre.config.reader import ConfigReader
-
 from sceptre.connection_manager import ConnectionManager
 
 from sceptre.exceptions import (
