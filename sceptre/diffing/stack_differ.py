@@ -172,7 +172,7 @@ class StackDiffer(Generic[DiffType]):
             if isinstance(value, str):
                 formatted_parameters[key] = value.rstrip("\n")
             elif value is None:
-                formatted_parameters[key] = value
+                formatted_parameters[key] = ""
 
         return formatted_parameters
 
