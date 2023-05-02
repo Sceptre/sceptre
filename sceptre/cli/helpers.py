@@ -189,23 +189,6 @@ def _generate_text(stream):
     return stream
 
 
-def dump_to_file(
-    template: dict, output_format: str, template_type: str = "template"
-) -> None:
-    """
-    Helper to write templates and configs used in dump commands.
-
-    :param template: the template.
-    :param output_format: The format to print the output as. Allowed values: \
-    :param template_type: either template or config used only in the file name.
-    """
-    stack_name = list(template.keys())[0]
-    file_path = Path(".dump") / stack_name / f"{template_type}.{output_format}"
-    logger.info(f"{stack_name} dumping {template_type} to {file_path}")
-    write(template[stack_name], output_format, no_colour=True, file_path=file_path)
-    logger.info(f"{stack_name} dump to {file_path} complete.")
-
-
 def setup_vars(var_file, var, merge_vars, debug, no_colour):
     """
     Handle --var-file and --var arguments before

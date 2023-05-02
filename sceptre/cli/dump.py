@@ -1,8 +1,10 @@
 import logging
 import click
 
+from pathlib import Path
+
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import catch_exceptions, dump_to_file
+from sceptre.cli.helpers import catch_exceptions, write
 from sceptre.plan.plan import SceptrePlan
 from sceptre.helpers import null_context
 from sceptre.resolvers.placeholders import use_resolver_placeholders_on_error
@@ -20,9 +22,12 @@ def dump_group():
 
 @dump_group.command(name="config")
 @click.argument("path")
+@click.option(
+    "--to-file", is_flag=True, help="If True, also dump the template to a local file."
+)
 @click.pass_context
 @catch_exceptions
-def dump_config(ctx, path):
+def dump_config(ctx, to_file, path):
     """
     Dump the rendered (post-Jinja) Stack Configs.
     \f
@@ -41,14 +46,19 @@ def dump_config(ctx, path):
     plan = SceptrePlan(context)
     responses = plan.dump_config()
 
-    output = []
-    for stack, config in responses.items():
-        output.append({stack.external_name: config})
-
     output_format = "json" if context.output_format == "json" else "yaml"
 
-    for config in output:
-        dump_to_file(config, output_format, type="config")
+    for stack, config in responses.items():
+        stack_name = stack.external_name
+
+        if to_file:
+            file_path = Path(".dump") / stack_name / f"config.{output_format}"
+            logger.info(f"{stack_name} dumping to {file_path}")
+            write(config, output_format, no_colour=True, file_path=file_path)
+            logger.info(f"{stack_name} dump to {file_path} complete.")
+
+        else:
+            write(config, output_format, no_colour=True)
 
 
 @dump_group.command(name="template")
@@ -59,9 +69,12 @@ def dump_config(ctx, path):
     is_flag=True,
     help="If True, no placeholder values will be supplied for resolvers that cannot be resolved.",
 )
+@click.option(
+    "--to-file", is_flag=True, help="If True, also dump the template to a local file."
+)
 @click.pass_context
 @catch_exceptions
-def dump_template(ctx, no_placeholders, path):
+def dump_template(ctx, to_file, no_placeholders, path):
     """
     Prints the template used for stack in PATH.
     \f
@@ -78,7 +91,6 @@ def dump_template(ctx, no_placeholders, path):
         output_format=ctx.obj.get("output_format"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies"),
     )
-
     plan = SceptrePlan(context)
 
     execution_context = (
@@ -87,14 +99,19 @@ def dump_template(ctx, no_placeholders, path):
     with execution_context:
         responses = plan.dump_template()
 
-    output = []
-    for stack, template in responses.items():
-        output.append({stack.external_name: template})
-
     output_format = "json" if context.output_format == "json" else "yaml"
 
-    for template in output:
-        dump_to_file(template, output_format)
+    for stack, template in responses.items():
+        stack_name = stack.external_name
+
+        if to_file:
+            file_path = Path(".dump") / stack_name / f"template.{output_format}"
+            logger.info(f"{stack_name} dumping template to {file_path}")
+            write(template, output_format, no_colour=True, file_path=file_path)
+            logger.info(f"{stack_name} dump to {file_path} complete.")
+
+        else:
+            write(template, output_format, no_colour=True)
 
 
 @dump_group.command(name="all")

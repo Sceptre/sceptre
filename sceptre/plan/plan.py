@@ -448,8 +448,6 @@ class SceptrePlan(object):
     def dump_template(self, *args):
         """
         Returns a generated Template for a given Stack
-
-        :returns: A dictionary of Stacks and their template body.
-        :rtype: dict
         """
         self.resolve(command=self.dump_template.__name__)
+        return self._execute(*args)
