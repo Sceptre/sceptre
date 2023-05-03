@@ -119,7 +119,7 @@ def step_impl(context, stack_name):
     )
     sceptre_plan = SceptrePlan(sceptre_context)
     try:
-        context.output = sceptre_plan.generate()
+        context.output = sceptre_plan.dump_template()
     except Exception as e:
         context.error = e
 
