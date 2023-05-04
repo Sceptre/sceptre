@@ -19,18 +19,19 @@ class StackStatusColourer(object):
     """
 
     STACK_STATUS_CODES = {
-        "PENDING": Fore.CYAN,
         "CREATE_COMPLETE": Fore.GREEN,
         "CREATE_FAILED": Fore.RED,
         "CREATE_IN_PROGRESS": Fore.YELLOW,
         "DELETE_COMPLETE": Fore.GREEN,
         "DELETE_FAILED": Fore.RED,
         "DELETE_IN_PROGRESS": Fore.YELLOW,
+        "DELETE_SKIPPED": Fore.CYAN,
         "IMPORT_COMPLETE": Fore.GREEN,
         "IMPORT_IN_PROGRESS": Fore.YELLOW,
         "IMPORT_ROLLBACK_COMPLETE": Fore.GREEN,
         "IMPORT_ROLLBACK_FAILED": Fore.RED,
         "IMPORT_ROLLBACK_IN_PROGRESS": Fore.YELLOW,
+        "PENDING": Fore.CYAN,
         "REVIEW_IN_PROGRESS": Fore.YELLOW,
         "ROLLBACK_COMPLETE": Fore.RED,
         "ROLLBACK_FAILED": Fore.RED,
