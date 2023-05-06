@@ -167,12 +167,15 @@ class StackDiffer(Generic[DiffType]):
         """
         formatted_parameters = {}
         for key, value in stack.parameters.items():
+            # When boto3 receives "None" for a cloudformation parameter, it treats it as if the
+            # value is not passed at all. To be consistent in our diffing, we need to skip Nones
+            # altogether.
+            if value is None:
+                continue
+
             if isinstance(value, list):
                 value = ",".join(item.rstrip("\n") for item in value)
-            if isinstance(value, str):
-                formatted_parameters[key] = value.rstrip("\n")
-            elif value is None:
-                formatted_parameters[key] = ""
+            formatted_parameters[key] = value.rstrip("\n")
 
         return formatted_parameters
 
