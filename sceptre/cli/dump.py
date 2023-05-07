@@ -122,9 +122,12 @@ def dump_template(ctx, to_file, no_placeholders, path):
     is_flag=True,
     help="If True, no placeholder values will be supplied for resolvers that cannot be resolved.",
 )
+@click.option(
+    "--to-file", is_flag=True, help="If True, also dump the template to a local file."
+)
 @click.pass_context
 @catch_exceptions
-def dump_all(ctx, no_placeholders, path):
+def dump_all(ctx, to_file, no_placeholders, path):
     """
     Dumps both the rendered (post-Jinja) Stack Configs and the template used for stack in PATH.
     \f
@@ -132,5 +135,7 @@ def dump_all(ctx, no_placeholders, path):
     :param path: Path to execute the command on.
     :type path: str
     """
-    ctx.invoke(dump_config, path=path)
-    ctx.invoke(dump_template, no_placeholders=no_placeholders, path=path)
+    ctx.invoke(dump_config, to_file=to_file, path=path)
+    ctx.invoke(
+        dump_template, to_file=to_file, no_placeholders=no_placeholders, path=path
+    )

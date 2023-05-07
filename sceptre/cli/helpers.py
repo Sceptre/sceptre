@@ -93,11 +93,6 @@ def write(
         output = _generate_yaml(var)
     if output_format == "text":
         output = _generate_text(var)
-    if not no_colour:
-        stack_status_colourer = StackStatusColourer()
-        output = stack_status_colourer.colour(str(output))
-
-    click.echo(output)
 
     if file_path:
         dir_path = file_path.parent
@@ -105,6 +100,14 @@ def write(
 
         with open(file_path, "w") as f:
             f.write(output)
+
+        return
+
+    if not no_colour:
+        stack_status_colourer = StackStatusColourer()
+        output = stack_status_colourer.colour(str(output))
+
+    click.echo(output)
 
 
 def _generate_json(stream):
