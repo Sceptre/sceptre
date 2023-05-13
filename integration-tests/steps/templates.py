@@ -104,12 +104,13 @@ def step_impl(context, stack_name):
 
     try:
         context.output = sceptre_plan.dump_template()
+        print(f"Got output {context.output}")
     except Exception as e:
         context.error = e
 
 
 @when(
-    'the user generates the template for stack "{stack_name}" with ignore dependencies'
+    'the user dumps the template for stack "{stack_name}" with ignore dependencies'
 )
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
