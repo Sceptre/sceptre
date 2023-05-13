@@ -1,6 +1,6 @@
-Feature: Generate template
+Feature: Dump template
 
-  Scenario Outline: Generating static templates
+  Scenario Outline: Dumping static templates
     Given the template for stack "1/A" is "<filename>"
     When the user dumps the template for stack "1/A"
     Then the output is the same as the contents of "<filename>" template
@@ -33,7 +33,7 @@ Feature: Generate template
     When the user dumps the template for stack "1/A"
     Then the output is the same as the contents returned by "valid_template_yaml.py"
 
-  Scenario Outline: Generating erroneous python templates
+  Scenario Outline: Dumping erroneous python templates
     Given the template for stack "1/A" is "<filename>"
     When the user dumps the template for stack "1/A"
     Then a "<exception>" is raised
@@ -67,7 +67,7 @@ Feature: Generate template
     | jinja/invalid_template_missing_key.j2   | UndefinedError     |
     | jinja/invalid_template_missing_attr.j2  | UndefinedError     |
 
-  Scenario: Generating static templates with file template handler
+  Scenario: Dumping static templates with file template handler
     Given the template for stack "13/A" is "valid_template.json"
     When the user dumps the template for stack "13/A"
     Then the output is the same as the contents of "valid_template.json" template
