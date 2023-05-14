@@ -109,9 +109,7 @@ def step_impl(context, stack_name):
         context.error = e
 
 
-@when(
-    'the user dumps the template for stack "{stack_name}" with ignore dependencies'
-)
+@when('the user dumps the template for stack "{stack_name}" with ignore dependencies')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
         command_path=stack_name + ".yaml",
