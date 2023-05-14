@@ -1,3 +1,4 @@
 stack_timeout: 1
 template:
-  path: malformed_template.json
+  path: /Users/alexharvey/git/fox/sceptre/integration-tests/sceptre-project/templates/template.unsupported
+  type: file

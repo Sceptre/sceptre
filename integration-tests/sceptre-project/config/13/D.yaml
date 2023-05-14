@@ -1,5 +1,5 @@
 sceptre_user_data:
   type: AWS::CloudFormation::WaitConditionHandle
 template:
-  path: sceptre-test-artifacts/13/python/valid_template.json
+  path: sceptre-test-artifacts-9p9sp0hm8gjppker/13/python/valid_template.json
   type: s3

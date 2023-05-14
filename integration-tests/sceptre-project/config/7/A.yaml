@@ -1,4 +1,5 @@
 sceptre_user_data:
   type: AWS::CloudFormation::WaitConditionHandle
 template:
-  path: invalid_template_missing_attr.j2
+  path: /Users/alexharvey/git/fox/sceptre/integration-tests/sceptre-project/templates/jinja/invalid_template_missing_attr.j2
+  type: file

@@ -145,3 +145,4 @@ def step_impl(context, filename):
         assert yaml.load(body, Loader=CfnYamlLoader) == yaml.load(
             template, CfnYamlLoader
         )
+
