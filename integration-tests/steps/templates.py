@@ -77,7 +77,7 @@ def step_impl(context, stack_name):
         context.error = e
 
 
-@when('the user generates the template for stack "{stack_name}"')
+@when('the user dumps the template for stack "{stack_name}"')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
         command_path=stack_name + ".yaml", project_path=context.sceptre_dir
@@ -85,6 +85,7 @@ def step_impl(context, stack_name):
 
     config_path = sceptre_context.full_config_path()
     template_path = sceptre_context.full_templates_path()
+
     with open(os.path.join(config_path, stack_name + ".yaml")) as config_file:
         stack_config = yaml.safe_load(config_file)
 
@@ -100,15 +101,15 @@ def step_impl(context, stack_name):
             stack_config = yaml.safe_load(config_file)
 
     sceptre_plan = SceptrePlan(sceptre_context)
+
     try:
-        context.output = sceptre_plan.generate()
+        context.output = sceptre_plan.dump_template()
+        print(f"Got output {context.output}")
     except Exception as e:
         context.error = e
 
 
-@when(
-    'the user generates the template for stack "{stack_name}" with ignore dependencies'
-)
+@when('the user dumps the template for stack "{stack_name}" with ignore dependencies')
 def step_impl(context, stack_name):
     sceptre_context = SceptreContext(
         command_path=stack_name + ".yaml",
@@ -117,7 +118,7 @@ def step_impl(context, stack_name):
     )
     sceptre_plan = SceptrePlan(sceptre_context)
     try:
-        context.output = sceptre_plan.generate()
+        context.output = sceptre_plan.dump_template()
     except Exception as e:
         context.error = e
 

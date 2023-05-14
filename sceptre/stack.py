@@ -8,9 +8,9 @@ This module implements a Stack class, which stores a Stack's data.
 """
 
 import logging
-from typing import List, Any, Optional
 
-import deprecation
+from typing import List, Any, Optional
+from deprecation import deprecated
 
 from sceptre import __version__
 from sceptre.connection_manager import ConnectionManager
@@ -387,7 +387,7 @@ class Stack:
         return self._template
 
     @property
-    @deprecation.deprecated(
+    @deprecated(
         "4.0.0", "5.0.0", __version__, "Use the template Stack Config key instead."
     )
     def template_path(self) -> str:
@@ -397,7 +397,7 @@ class Stack:
         return self.template_handler_config["path"]
 
     @template_path.setter
-    @deprecation.deprecated(
+    @deprecated(
         "4.0.0", "5.0.0", __version__, "Use the template Stack Config key instead."
     )
     def template_path(self, value: str):

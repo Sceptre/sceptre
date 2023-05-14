@@ -1,7 +1,11 @@
 import logging
 import sys
+
 from itertools import cycle
 from functools import partial, wraps
+
+from typing import Any, Optional
+from pathlib import Path
 
 import json
 import click
@@ -16,6 +20,8 @@ from sceptre.helpers import logging_level
 from sceptre.exceptions import SceptreException
 from sceptre.stack_status import StackStatus
 from sceptre.stack_status_colourer import StackStatusColourer
+
+logger = logging.getLogger(__name__)
 
 
 def catch_exceptions(func):
@@ -63,18 +69,21 @@ def confirmation(command, ignore, command_path, change_set=None):
         click.confirm(msg, abort=True)
 
 
-def write(var, output_format="json", no_colour=True):
+def write(
+    var: Any,
+    output_format: str = "json",
+    no_colour: bool = True,
+    file_path: Optional[Path] = None,
+) -> None:
     """
     Writes ``var`` to stdout. If output_format is set to "json" or "yaml",
     write ``var`` as a JSON or YAML string.
 
     :param var: The object to print
-    :type var: object
     :param output_format: The format to print the output as. Allowed values: \
     "text", "json", "yaml"
-    :type output_format: str
     :param no_colour: Whether to colour stack statuses
-    :type no_colour: bool
+    :param file_path: Optional path to a file to save the output
     """
     output = var
 
@@ -84,6 +93,16 @@ def write(var, output_format="json", no_colour=True):
         output = _generate_yaml(var)
     if output_format == "text":
         output = _generate_text(var)
+
+    if file_path:
+        dir_path = file_path.parent
+        dir_path.mkdir(parents=True, exist_ok=True)
+
+        with open(file_path, "w") as f:
+            f.write(output)
+
+        return
+
     if not no_colour:
         stack_status_colourer = StackStatusColourer()
         output = stack_status_colourer.colour(str(output))

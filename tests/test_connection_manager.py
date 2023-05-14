@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import warnings
+import pytest
+
 from collections import defaultdict
 from typing import Union
 from unittest.mock import Mock, patch, sentinel, create_autospec
+from deprecation import fail_if_not_removed
 
-import deprecation
-import pytest
 from boto3.session import Session
 from botocore.exceptions import ClientError
 
@@ -785,11 +786,11 @@ class TestConnectionManager(object):
         }
         assert expected == result
 
-    @deprecation.fail_if_not_removed
+    @fail_if_not_removed
     def test_iam_role__is_removed_on_removal_version(self):
         self.connection_manager.iam_role
 
-    @deprecation.fail_if_not_removed
+    @fail_if_not_removed
     def test_iam_role_session_duration__is_removed_on_removal_version(self):
         self.connection_manager.iam_role_session_duration
 
