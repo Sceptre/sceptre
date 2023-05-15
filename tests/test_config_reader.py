@@ -2,7 +2,7 @@
 
 import errno
 import os
-from unittest.mock import patch, sentinel, MagicMock, ANY
+from unittest.mock import patch, sentinel, MagicMock
 
 import pytest
 import yaml

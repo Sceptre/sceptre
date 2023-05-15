@@ -140,7 +140,6 @@ def dump_vars(ctx, to_file, path):
     plan = SceptrePlan(context)
     responses = plan.dump_vars()
 
-    output = [vars for _, vars in responses.items()]
     output_format = "json" if context.output_format == "json" else "yaml"
 
     for stack, vars in responses.items():
