@@ -158,7 +158,7 @@ class TestStackDiffer:
     def expected_generated_config(self):
         return StackConfiguration(
             stack_name=self.external_name,
-            parameters=self.parameters_on_stack_config,
+            parameters=deepcopy(self.parameters_on_stack_config),
             stack_tags=deepcopy(self.tags),
             notifications=deepcopy(self.notifications),
             cloudformation_service_role=self.cloudformation_service_role,
@@ -168,7 +168,7 @@ class TestStackDiffer:
     def expected_deployed_config(self):
         return StackConfiguration(
             stack_name=self.external_name,
-            parameters=self.deployed_parameters,
+            parameters=deepcopy(self.deployed_parameters),
             stack_tags=deepcopy(self.deployed_tags),
             notifications=deepcopy(self.deployed_notification_arns),
             cloudformation_service_role=self.deployed_cloudformation_service_role,
@@ -330,6 +330,17 @@ class TestStackDiffer:
         self.differ.diff(self.actions)
         self.command_capturer.compare_stack_configurations.assert_called_with(
             self.expected_deployed_config, self.expected_generated_config
+        )
+
+    def test_diff__generated_stack_has_none_for_parameter_value__its_treated_like_its_not_specified(
+        self,
+    ):
+        self.parameters_on_stack_config["new"] = None
+        expected_generated = self.expected_generated_config
+        del expected_generated.parameters["new"]
+        self.differ.diff(self.actions)
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            self.expected_deployed_config, expected_generated
         )
 
     def test_diff__stack_exists_with_same_config_but_template_does_not__compares_identical_configs(

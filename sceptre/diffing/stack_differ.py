@@ -167,6 +167,12 @@ class StackDiffer(Generic[DiffType]):
         """
         formatted_parameters = {}
         for key, value in stack.parameters.items():
+            # When boto3 receives "None" for a cloudformation parameter, it treats it as if the
+            # value is not passed at all. To be consistent in our diffing, we need to skip Nones
+            # altogether.
+            if value is None:
+                continue
+
             if isinstance(value, list):
                 value = ",".join(item.rstrip("\n") for item in value)
             formatted_parameters[key] = value.rstrip("\n")
@@ -219,6 +225,7 @@ class StackDiffer(Generic[DiffType]):
             self._remove_deployed_default_parameters_that_arent_passed(
                 deployed_template_summary, generated_config, deployed_config
             )
+
         if not self.show_no_echo:
             # We don't actually want to show parameters Sceptre is passing that the local template
             # marks as NoEcho parameters (unless show_no_echo is set to true). Therefore those
