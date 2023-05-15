@@ -12,14 +12,16 @@ import logging
 import time
 import typing
 import urllib
-from datetime import datetime, timedelta
-from os import path
-from typing import Dict, Optional, Tuple, Union
-
 import botocore
-from dateutil.tz import tzutc
 
+from datetime import datetime, timedelta
+from dateutil.tz import tzutc
+from os import path
+from deprecation import deprecated
+
+from sceptre import __version__
 from sceptre.connection_manager import ConnectionManager
+
 from sceptre.exceptions import (
     CannotUpdateFailedStackError,
     ProtectedStackError,
@@ -31,6 +33,8 @@ from sceptre.helpers import extract_datetime_from_aws_response_headers
 from sceptre.hooks import add_stack_hooks
 from sceptre.stack import Stack
 from sceptre.stack_status import StackChangeSetStatus, StackStatus
+
+from typing import Dict, Optional, Tuple, Union
 
 if typing.TYPE_CHECKING:
     from sceptre.diffing.stack_differ import StackDiff, StackDiffer
@@ -623,12 +627,12 @@ class StackActions:
 
         return new_summaries
 
-    @add_stack_hooks
+    @deprecated("4.2.0", "5.0.0", __version__, "Use dump template instead.")
     def generate(self):
         """
         Returns the Template for the Stack
         """
-        return self.stack.template.body
+        return self.dump_template()
 
     @add_stack_hooks
     def validate(self):
@@ -1157,3 +1161,9 @@ class StackActions:
         Dump the vars for a stack.
         """
         return self.stack.vars
+
+    def dump_template(self):
+        """
+        Returns the Template for the Stack
+        """
+        return self.stack.template.body

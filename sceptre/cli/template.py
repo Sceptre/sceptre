@@ -1,8 +1,10 @@
 import logging
 import webbrowser
-
 import click
 
+from deprecation import deprecated
+
+from sceptre import __version__
 from sceptre.cli.helpers import catch_exceptions, write
 from sceptre.context import SceptreContext
 from sceptre.helpers import null_context
@@ -65,6 +67,7 @@ def validate_command(ctx, no_placeholders, path):
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
+@deprecated("4.2.0", "5.0.0", __version__, "Use dump template instead.")
 def generate_command(ctx, no_placeholders, path):
     """
     Prints the template used for stack in PATH.

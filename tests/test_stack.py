@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from unittest.mock import MagicMock, sentinel
+from deprecation import fail_if_not_removed
 
-import deprecation
 import pytest
 
 from sceptre.exceptions import InvalidConfigFileError
@@ -257,15 +257,15 @@ class TestStack(object):
         connection_manager = self.stack.connection_manager
         assert connection_manager.sceptre_role == "role"
 
-    @deprecation.fail_if_not_removed
+    @fail_if_not_removed
     def test_iam_role__is_removed_on_removal_version(self):
         self.stack.iam_role
 
-    @deprecation.fail_if_not_removed
+    @fail_if_not_removed
     def test_role_arn__is_removed_on_removal_version(self):
         self.stack.role_arn
 
-    @deprecation.fail_if_not_removed
+    @fail_if_not_removed
     def test_iam_role_session_duration__is_removed_on_removal_version(self):
         self.stack.iam_role_session_duration
 

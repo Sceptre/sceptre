@@ -60,7 +60,7 @@ class SceptreContext(object):
     ):
         # project_path: absolute path to the base sceptre project folder
         # e.g. absolute_path/to/sceptre_directory
-        self.project_path = normalise_path(project_path)
+        self.project_path = path.abspath(normalise_path(project_path))
 
         # config_path: holds the project stack_groups
         # e.g {project_path}/config
