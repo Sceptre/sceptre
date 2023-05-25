@@ -4,6 +4,17 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+
+## 4.2.0 (2023.05.25)
+
+ - [Resolves #894] Switch to using poetry (#1323)
+ - Remove Moto dependency (#1330)
+ - Write rendered template to a temp file (#1321)
+ - [Resolve #1319] Add colouring for missing state DELETE_SKIPPED
+ - [Resolve #1291] Fix attribute error caused by a relative project path
+ - [Resolve #1318] Implement dump template and write output files
+ - [Resolve #1336] Add bugfix in Stack Differ (#1337)
+
 ## 4.1.0 (2023.04.17)
 ### Added
  - [Resolve #1304] Adding StackLoggerAdapter to hooks, resolvers, and template handler
