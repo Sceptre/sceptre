@@ -101,6 +101,13 @@ def add_stack_hooks(func):
 
 
 def add_stack_hooks_with_aliases(function_aliases: List[str]):
+    """
+    Returns a decorator to trigger the before and after hooks, relative to the decorated function's
+    name AS WELL AS the passed function alias names.
+    :param function_aliases: The list of OTHER functions to trigger hooks around.
+    :return: The hook-triggering decorator.
+    """
+
     def decorator(func):
         all_hook_names = [func.__name__] + function_aliases
 
