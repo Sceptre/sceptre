@@ -30,7 +30,7 @@ from sceptre.exceptions import (
     UnknownStackStatusError,
 )
 from sceptre.helpers import extract_datetime_from_aws_response_headers
-from sceptre.hooks import add_stack_hooks
+from sceptre.hooks import add_stack_hooks, add_stack_hooks_with_aliases
 from sceptre.stack import Stack
 from sceptre.stack_status import StackChangeSetStatus, StackStatus
 
@@ -628,7 +628,6 @@ class StackActions:
         return new_summaries
 
     @deprecated("4.2.0", "5.0.0", __version__, "Use dump template instead.")
-    @add_stack_hooks
     def generate(self):
         """
         Returns the Template for the Stack
@@ -1156,7 +1155,7 @@ class StackActions:
         """
         return self.stack.config
 
-    @add_stack_hooks
+    @add_stack_hooks_with_aliases([generate.__name__])
     def dump_template(self):
         """
         Returns the Template for the Stack

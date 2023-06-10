@@ -1,30 +1,32 @@
 Hooks
 =====
 
-Hooks allows the ability for custom commands to be run when Sceptre actions
-occur.
+Hooks allows the ability for actions to be run when Sceptre actions occur.
 
 A hook is executed at a particular hook point when Sceptre is run.
 
-If required, users can create their own ``hooks``, as described in the section
-`Custom Hooks`_.
+If required, users can create their own ``hooks``, as described in the section `Custom Hooks`_.
 
 Hook points
 -----------
 
-``before_generate`` or ``after_generate`` - run hook before or after generating stack template.
-
-``before_create`` or ``after_create`` - run hook before or after Stack creation.
-
-``before_update`` or ``after_update`` - run hook before or after Stack update.
-
-``before_delete`` or ``after_delete`` - run hook before or after Stack deletion.
-
-``before_launch`` or ``after_launch`` - run hook before or after Stack launch.
-
-``before_validate`` or ``after_validate`` - run hook before or after Stack validation.
-
-``before_create_change_set`` or ``after_create_change_set`` - run hook before or after create change set.
+- ``before_create``/``after_create`` - Runs before/after Stack creation.
+- ``before_update``/``after_update`` - Runs before/after Stack update.
+- ``before_delete``/``after_delete`` - Runs before/after Stack deletion.
+- ``before_launch``/``after_launch`` - Runs before/after Stack launch.
+- ``before_create_change_set``/``after_create_change_set`` - Runs before/after create change set.
+- ``before_validate``/``after_validate`` - Runs before/after Stack validation.
+- ``before_diff``/``after_diff`` - Runs before/after diffing the deployed stack with the local
+  configuration.
+- ``before_drift_detect``/``after_drift_detect`` - Runs before/after detecting drift on the stack.
+- ``before_drift_show``/``after_drift_show`` - Runs before/after showing detected drift on the stack.
+- ``before_dump_config``/``after_dump_config`` - Runs before/after dumpint the Stack Config.
+- ``before_dump_template``/``after_dump_template`` - Runs before/after rendering the stack template.
+  This hook point is aliased to ``before/generate``/``after_generate``. This hook point will also
+  be triggered when diffing, since the template needs to be generated to diff the template.
+- ``before_generate``/``after_generate`` - Runs before/after rendering the stack template. This
+  hook point is aliased to ``before_dump_template``/``after_dump_template``. *Note:* ``generate`` *is
+  a deprecated command and will be removed in a future release.*
 
 Syntax:
 
