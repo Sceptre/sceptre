@@ -2,7 +2,13 @@
 from unittest import TestCase
 from unittest.mock import MagicMock, Mock
 
-from sceptre.hooks import Hook, HookProperty, add_stack_hooks, execute_hooks
+from sceptre.hooks import (
+    Hook,
+    HookProperty,
+    add_stack_hooks,
+    execute_hooks,
+    add_stack_hooks_with_aliases,
+)
 from sceptre.resolvers import Resolver
 from sceptre.stack import Stack
 import logging
@@ -38,6 +44,29 @@ class TestHooksFunctions(object):
 
         assert mock_hook_before.run.call_count == 1
         assert mock_hook_after.run.call_count == 1
+
+    def test_add_stack_hooks_with_aliases(self):
+        mock_before_something = MagicMock(Hook)
+        mock_after_something = MagicMock(Hook)
+        mock_object = MagicMock()
+
+        mock_object.stack.hooks = {
+            "before_something": [mock_before_something],
+            "after_something": [mock_after_something],
+        }
+
+        @add_stack_hooks_with_aliases(["something"])
+        def mock_function(self):
+            return 123
+
+        mock_object.mock_function = mock_function
+        mock_object.mock_function.__name__ = "mock_function"
+
+        result = mock_function(mock_object)
+
+        assert mock_before_something.run.call_count == 1
+        assert mock_after_something.run.call_count == 1
+        assert result == 123
 
     def test_execute_hooks_with_not_a_list(self):
         execute_hooks(None)

@@ -114,7 +114,7 @@ def add_stack_hooks_with_aliases(function_aliases: List[str]):
 
             for hook in all_hook_names:
                 after_hook_name = f"after_{hook}"
-                execute_hooks(after_hook_name)
+                execute_hooks(self.stack.hooks.get(after_hook_name))
 
             return response
 
