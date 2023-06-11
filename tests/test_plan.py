@@ -1,8 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch, sentinel
 
-from deprecation import fail_if_not_removed
-
 from sceptre.context import SceptreContext
 from sceptre.stack import Stack
 from sceptre.config.reader import ConfigReader

@@ -17,9 +17,7 @@ import botocore
 from datetime import datetime, timedelta
 from dateutil.tz import tzutc
 from os import path
-from deprecation import deprecated
 
-from sceptre import __version__
 from sceptre.connection_manager import ConnectionManager
 
 from sceptre.exceptions import (

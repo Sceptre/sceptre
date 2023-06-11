@@ -11,7 +11,6 @@ import itertools
 
 from os import path, walk
 from typing import Dict, List, Set, Callable, Iterable, Optional
-from deprecation import deprecated
 
 from sceptre.config.graph import StackGraph
 from sceptre.config.reader import ConfigReader
@@ -21,7 +20,6 @@ from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.helpers import sceptreise_path
 from sceptre.plan.executor import SceptrePlanExecutor
 from sceptre.stack import Stack
-from sceptre import __version__
 
 
 def require_resolved(func) -> Callable:
