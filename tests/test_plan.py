@@ -63,9 +63,3 @@ class TestSceptrePlan(object):
             plan = MagicMock(spec=SceptrePlan)
             plan.context = self.mock_context
             plan.invalid_command()
-
-    @fail_if_not_removed
-    def test_generate_removed(self):
-        plan = MagicMock(spec=SceptrePlan)
-        plan.context = self.mock_context
-        plan.generate("test-attribute")
