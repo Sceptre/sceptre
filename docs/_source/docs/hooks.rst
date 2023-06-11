@@ -24,9 +24,7 @@ Hook points
 - ``before_dump_template``/``after_dump_template`` - Runs before/after rendering the stack template.
   This hook point is aliased to ``before/generate``/``after_generate``. This hook point will also
   be triggered when diffing, since the template needs to be generated to diff the template.
-- ``before_generate``/``after_generate`` - Runs before/after rendering the stack template. This
-  hook point is aliased to ``before_dump_template``/``after_dump_template``. *Note:* ``generate`` *is
-  a deprecated command and will be removed in a future release.*
+- ``before_generate``/``after_generate`` - Runs before/after rendering the stack template.
 
 Syntax:
 

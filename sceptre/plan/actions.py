@@ -627,10 +627,10 @@ class StackActions:
 
         return new_summaries
 
-    @deprecated("4.2.0", "5.0.0", __version__, "Use dump template instead.")
     def generate(self):
         """
-        Returns the Template for the Stack
+        Returns the Template for the Stack. An alias for
+        dump_template for historical reasons.
         """
         return self.dump_template()
 
@@ -1158,6 +1158,7 @@ class StackActions:
     @add_stack_hooks_with_aliases([generate.__name__])
     def dump_template(self):
         """
-        Returns the Template for the Stack
+        Dump the template for the Stack. An alias for generate
+        for historical reasons.
         """
         return self.stack.template.body

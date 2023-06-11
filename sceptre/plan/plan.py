@@ -380,10 +380,10 @@ class SceptrePlan(object):
         self.resolve(command=self.estimate_cost.__name__)
         return self._execute(*args)
 
-    @deprecated("4.2.0", "5.0.0", __version__, "Use dump template instead.")
     def generate(self, *args):
         """
-        Returns a generated Template for a given Stack
+        Returns a generated Template for a given Stack. An alias for
+        dump_template for historical reasons.
 
         :returns: A dictionary of Stacks and their template body.
         :rtype: dict
@@ -447,7 +447,8 @@ class SceptrePlan(object):
 
     def dump_template(self, *args):
         """
-        Returns a generated Template for a given Stack
+        Dump the template for a stack. An alias
+        for generate for historical reasons.
         """
         self.resolve(command=self.dump_template.__name__)
         return self._execute(*args)
