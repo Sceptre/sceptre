@@ -65,17 +65,17 @@ def validate_command(ctx, no_placeholders, path):
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
-def generate_command(ctx: click.Context, no_placeholders, path):
+def generate_command(ctx: click.Context, no_placeholders: bool, path: str):
     """
     Prints the template used for stack in PATH.
 
-    This command is aliased to the dump template command; It's the same as running
-    `sceptre dump template`, for legacy support reasons.
+    This command is aliased to the dump template command for legacy support reasons. It's the same
+    as running `sceptre dump template`.
+
     \f
     :param no_placeholders: If True, will disable placeholders for unresolvable resolvers. By
         default, placeholders will be active.
     :param path: Path to execute the command on.
-    :type path: str
     """
     ctx.forward(dump_template)
 
