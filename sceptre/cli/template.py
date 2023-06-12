@@ -69,7 +69,8 @@ def generate_command(ctx: click.Context, no_placeholders, path):
     """
     Prints the template used for stack in PATH.
 
-    This command is aliased to running `sceptre dump template` for historical support reasons.
+    This command is aliased to the dump template command; It's the same as running
+    `sceptre dump template`, for legacy support reasons.
     \f
     :param no_placeholders: If True, will disable placeholders for unresolvable resolvers. By
         default, placeholders will be active.
