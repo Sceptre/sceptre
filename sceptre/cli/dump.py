@@ -77,6 +77,9 @@ def dump_config(ctx, to_file, path):
 def dump_template(ctx, to_file, no_placeholders, path):
     """
     Prints the template used for stack in PATH.
+
+    This command is essentially the same as the `generate` command, but with the option of also
+    outputting to file.
     \f
 
     :param path: Path to execute the command on.
