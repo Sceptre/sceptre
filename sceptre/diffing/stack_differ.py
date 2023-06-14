@@ -313,7 +313,7 @@ class StackDiffer(Generic[DiffType]):
                 generated_config.parameters[key] = self.NO_ECHO_REPLACEMENT
 
     def _generate_template(self, stack_actions: StackActions) -> str:
-        return stack_actions.generate()
+        return stack_actions.dump_template()
 
     def _get_deployed_template(
         self, stack_actions: StackActions, is_deployed: bool

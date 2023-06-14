@@ -17,9 +17,7 @@ import botocore
 from datetime import datetime, timedelta
 from dateutil.tz import tzutc
 from os import path
-from deprecation import deprecated
 
-from sceptre import __version__
 from sceptre.connection_manager import ConnectionManager
 
 from sceptre.exceptions import (
@@ -30,7 +28,7 @@ from sceptre.exceptions import (
     UnknownStackStatusError,
 )
 from sceptre.helpers import extract_datetime_from_aws_response_headers
-from sceptre.hooks import add_stack_hooks
+from sceptre.hooks import add_stack_hooks, add_stack_hooks_with_aliases
 from sceptre.stack import Stack
 from sceptre.stack_status import StackChangeSetStatus, StackStatus
 
@@ -627,10 +625,10 @@ class StackActions:
 
         return new_summaries
 
-    @deprecated("4.2.0", "5.0.0", __version__, "Use dump template instead.")
     def generate(self):
         """
-        Returns the Template for the Stack
+        Returns the Template for the Stack. An alias for
+        dump_template for historical reasons.
         """
         return self.dump_template()
 
@@ -1155,9 +1153,10 @@ class StackActions:
         """
         return self.stack.config
 
-    @add_stack_hooks
+    @add_stack_hooks_with_aliases([generate.__name__])
     def dump_template(self):
         """
-        Returns the Template for the Stack
+        Dump the template for the Stack. An alias for generate
+        for historical reasons.
         """
         return self.stack.template.body

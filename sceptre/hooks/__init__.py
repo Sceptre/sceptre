@@ -1,7 +1,7 @@
 import abc
 import logging
 from functools import wraps
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from sceptre.helpers import _call_func_on_values
 from sceptre.resolvers import CustomYamlTagBase
@@ -98,3 +98,33 @@ def add_stack_hooks(func):
         return response
 
     return decorated
+
+
+def add_stack_hooks_with_aliases(function_aliases: List[str]):
+    """
+    Returns a decorator to trigger the before and after hooks, relative to the decorated function's
+    name AS WELL AS the passed function alias names.
+    :param function_aliases: The list of OTHER functions to trigger hooks around.
+    :return: The hook-triggering decorator.
+    """
+
+    def decorator(func):
+        all_hook_names = [func.__name__] + function_aliases
+
+        @wraps(func)
+        def decorated(self, *args, **kwargs):
+            for hook in all_hook_names:
+                before_hook_name = f"before_{hook}"
+                execute_hooks(self.stack.hooks.get(before_hook_name))
+
+            response = func(self, *args, **kwargs)
+
+            for hook in all_hook_names:
+                after_hook_name = f"after_{hook}"
+                execute_hooks(self.stack.hooks.get(after_hook_name))
+
+            return response
+
+        return decorated
+
+    return decorator

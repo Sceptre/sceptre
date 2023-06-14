@@ -179,7 +179,7 @@ class TestStackDiffer:
 
         self.command_capturer.compare_templates.assert_called_with(
             self.actions.fetch_remote_template.return_value,
-            self.actions.generate.return_value,
+            self.actions.dump_template.return_value,
         )
 
     def test_diff__template_diff_is_value_returned_by_implemented_differ(self):
@@ -216,7 +216,7 @@ class TestStackDiffer:
 
     def test_diff__returns_generated_template(self):
         diff = self.differ.diff(self.actions)
-        assert diff.generated_template == self.actions.generate.return_value
+        assert diff.generated_template == self.actions.dump_template.return_value
 
     def test_diff__deployed_stack_exists__returns_is_deployed_as_true(self):
         diff = self.differ.diff(self.actions)
@@ -244,7 +244,7 @@ class TestStackDiffer:
         self.differ.diff(self.actions)
 
         self.command_capturer.compare_templates.assert_called_with(
-            "{}", self.actions.generate.return_value
+            "{}", self.actions.dump_template.return_value
         )
 
     @pytest.mark.parametrize(
@@ -285,7 +285,7 @@ class TestStackDiffer:
         self.stack_status = status
         self.differ.diff(self.actions)
         self.command_capturer.compare_templates.assert_called_with(
-            "{}", self.actions.generate.return_value
+            "{}", self.actions.dump_template.return_value
         )
 
     def test_diff__deployed_stack_has_default_values__doesnt_pass_parameter__compares_identical_configs(

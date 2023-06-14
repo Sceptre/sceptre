@@ -1,8 +1,6 @@
 import pytest
 from unittest.mock import MagicMock, patch, sentinel
 
-from deprecation import fail_if_not_removed
-
 from sceptre.context import SceptreContext
 from sceptre.stack import Stack
 from sceptre.config.reader import ConfigReader
@@ -63,9 +61,3 @@ class TestSceptrePlan(object):
             plan = MagicMock(spec=SceptrePlan)
             plan.context = self.mock_context
             plan.invalid_command()
-
-    @fail_if_not_removed
-    def test_generate_removed(self):
-        plan = MagicMock(spec=SceptrePlan)
-        plan.context = self.mock_context
-        plan.generate("test-attribute")
