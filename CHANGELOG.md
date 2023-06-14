@@ -4,6 +4,20 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 4.2.1 (2023.06.14)
+ - [Resolve #1344] Addressing issue with Generate hook and its deprecation (#1346)
+   Here is what this includes:
+     * The `dump_template` action ALSO triggers `before_generate` and
+       `after_generate`
+     * The `generate` action ALSO triggers `before_dump_template` and
+       `after_dump_template`
+     * The StackDiffer invokes `dump_template` rather than `generate`, preventing
+       our own code from triggering deprecation warnings.
+     * The documentation for hook points is updated to include all current hooks,
+       including notes about the aliasing.
+     * Deprecation of `generate` is removed after discussion in Slack. This
+       deprecation would be too disruptive to many users, and we agreed instead
+       to support a permanent alias of `generate` => `dump_template`.
 
 ## 4.2.0 (2023.05.25)
 
