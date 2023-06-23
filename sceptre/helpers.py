@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from contextlib import contextmanager
 from datetime import datetime
 from os import sep
@@ -7,6 +8,7 @@ from typing import Optional, Any, List, Tuple, Union
 import dateutil.parser
 import deprecation
 import logging
+import tempfile
 
 from sceptre.exceptions import PathConversionError
 from sceptre import __version__
@@ -18,6 +20,22 @@ def logging_level():
     """
     logger = logging.getLogger(__name__)
     return logger.getEffectiveLevel()
+
+
+def write_debug_file(content: str, prefix: str) -> str:
+    """
+    Write some content to a temp file for debug purposes.
+
+    :param content: the file content to write.
+    :returns: the full path to the temp file.
+    """
+    with tempfile.NamedTemporaryFile(
+        mode="w", delete=False, prefix=prefix
+    ) as temp_file:
+        temp_file.write(content)
+        temp_file.flush()
+
+    return temp_file.name
 
 
 def get_external_stack_name(project_code, stack_name):

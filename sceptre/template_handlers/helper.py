@@ -2,11 +2,18 @@ import logging
 import os
 import sys
 import traceback
+import json
 
 from importlib.machinery import SourceFileLoader
 from jinja2 import Environment, select_autoescape, FileSystemLoader, StrictUndefined
 from pathlib import Path
-from sceptre.exceptions import TemplateSceptreHandlerError, TemplateNotFoundError
+
+from sceptre.helpers import logging_level, write_debug_file
+from sceptre.exceptions import (
+    TemplateSceptreHandlerError,
+    TemplateNotFoundError,
+    SceptreException,
+)
 from sceptre.config import strategies
 
 logger = logging.getLogger(__name__)
@@ -142,5 +149,15 @@ def render_jinja_template(path, jinja_vars, j2_environment):
 
     template = j2_environment.get_template(path.name)
 
-    body = template.render(**jinja_vars)
+    try:
+        body = template.render(**jinja_vars)
+    except Exception as err:
+        message = f"{path} - {err}"
+
+        if logging_level() == logging.DEBUG:
+            debug_file_path = write_debug_file(json.dumps(jinja_vars), prefix="vars_")
+            message += f"\nTemplating vars saved to: {debug_file_path}"
+
+        raise SceptreException(message) from err
+
     return body

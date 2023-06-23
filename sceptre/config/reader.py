@@ -15,7 +15,6 @@ import logging
 import sys
 import yaml
 import json
-import tempfile
 
 from os import environ, path, walk
 from typing import Set, Tuple
@@ -34,7 +33,7 @@ from sceptre.exceptions import InvalidConfigFileError
 from sceptre.exceptions import InvalidSceptreDirectoryError
 from sceptre.exceptions import VersionIncompatibleError
 from sceptre.exceptions import ConfigFileNotFoundError
-from sceptre.helpers import sceptreise_path, logging_level
+from sceptre.helpers import sceptreise_path, logging_level, write_debug_file
 from sceptre.stack import Stack
 from sceptre.config import strategies
 
@@ -407,21 +406,6 @@ class ConfigReader(object):
 
         return config
 
-    def _write_debug_file(self, content: str, prefix: str) -> str:
-        """
-        Write some content to a temp file for debug purposes.
-
-        :param content: the file content to write.
-        :returns: the full path to the temp file.
-        """
-        with tempfile.NamedTemporaryFile(
-            mode="w", delete=False, prefix=prefix
-        ) as temp_file:
-            temp_file.write(content)
-            temp_file.flush()
-
-        return temp_file.name
-
     def _render(self, directory_path, basename, stack_group_config):
         """
         Reads a configuration file, loads the config file as a template
@@ -475,7 +459,7 @@ class ConfigReader(object):
             message = f"{Path(directory_path, basename).as_posix()} - {err}"
 
             if logging_level() == logging.DEBUG:
-                debug_file_path = self._write_debug_file(
+                debug_file_path = write_debug_file(
                     json.dumps(self.templating_vars), prefix="vars_"
                 )
                 message += f"\nTemplating vars saved to: {debug_file_path}"
@@ -488,7 +472,7 @@ class ConfigReader(object):
             message = f"Error parsing {abs_directory_path}{basename}:\n{err}"
 
             if logging_level() == logging.DEBUG:
-                debug_file_path = self._write_debug_file(
+                debug_file_path = write_debug_file(
                     rendered_template, prefix="rendered_"
                 )
                 message += f"\nRendered template saved to: {debug_file_path}"
