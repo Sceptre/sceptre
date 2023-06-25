@@ -155,7 +155,9 @@ def render_jinja_template(path, jinja_vars, j2_environment):
         message = f"{path} - {err}"
 
         if logging_level() == logging.DEBUG:
-            debug_file_path = write_debug_file(json.dumps(jinja_vars), prefix="vars_")
+            debug_file_path = write_debug_file(
+                json.dumps(jinja_vars, indent=4), prefix="vars_"
+            )
             message += f"\nTemplating vars saved to: {debug_file_path}"
 
         raise SceptreException(message) from err

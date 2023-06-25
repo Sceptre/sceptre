@@ -460,7 +460,7 @@ class ConfigReader(object):
 
             if logging_level() == logging.DEBUG:
                 debug_file_path = write_debug_file(
-                    json.dumps(self.templating_vars), prefix="vars_"
+                    json.dumps(self.templating_vars, indent=4), prefix="vars_"
                 )
                 message += f"\nTemplating vars saved to: {debug_file_path}"
 
