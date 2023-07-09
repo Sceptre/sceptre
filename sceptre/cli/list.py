@@ -51,7 +51,7 @@ def list_resources(ctx, path):
 @click.option(
     "-e",
     "--export",
-    type=click.Choice(["envvar"]),
+    type=click.Choice(["envvar", "stackoutput"]),
     help="Specify the export formatting.",
 )
 @click.pass_context
@@ -89,6 +89,21 @@ def list_outputs(ctx, path, export):
                         ),
                         "text",
                     )
+
+    elif export == "stackoutput":
+        stack_names = {stack.name: stack.external_name for stack in plan.graph}
+        for response in responses:
+            for stack_name, stack in response.items():
+                for output in stack:
+                    write(
+                        "!stack_output_external {0}::{1} [{2}]".format(
+                            stack_names[stack_name],
+                            output.get("OutputKey"),
+                            output.get("OutputValue"),
+                        ),
+                        "text",
+                    )
+
     else:
         write(responses, context.output_format)
 
