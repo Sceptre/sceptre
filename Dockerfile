@@ -1,5 +1,5 @@
-FROM python:3.10-alpine
-RUN apk add --no-cache bash
+FROM python:3.10
+RUN apt-get install bash
 WORKDIR /app
 COPY pyproject.toml README.md CHANGELOG.md ./
 COPY sceptre/ ./sceptre
