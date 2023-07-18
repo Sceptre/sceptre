@@ -4,6 +4,9 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 4.2.2 (2023.07.18)
+ - [Resolve #1358] Updating PyYaml to ^6.0 (#1359)
+
 ## 4.2.1 (2023.06.14)
  - [Resolve #1344] Addressing issue with Generate hook and its deprecation (#1346)
    Here is what this includes:
