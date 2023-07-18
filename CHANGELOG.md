@@ -4,6 +4,11 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 3.3.1 (2023.07.18)
+
+ - [Resolve #1358] Hotfix upgrading PyYaml to v6 to resolve issue where PyYaml cannot compile
+   using the latest version of Cython in environments without wheels.
+
 ## 3.3.0 (2023.02.06)
 
 ### Added
