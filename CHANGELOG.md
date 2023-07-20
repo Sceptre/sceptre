@@ -4,6 +4,9 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 3.2.1 (2023.06.20)
+  - [Resolves #1358] Fix installer for version 3.2
+
 ## 3.2.0 (2022.09.20)
 
 ### Added

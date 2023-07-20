@@ -34,7 +34,8 @@ install_requirements = [
     "sceptre-cmd-resolver>=1.1.3,<2",
     "sceptre-file-resolver>=1.0.4,<2",
     "six>=1.11.0,<2.0.0",
-    "networkx>=2.6,<2.7"
+    "networkx>=2.6,<2.7",
+    "urllib3<2.0"
 ]
 
 extra_requirements = {
