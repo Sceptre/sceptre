@@ -26,7 +26,7 @@ install_requirements = [
     "click>=7.0,<9.0",
     "cfn-flip>=1.2.3,<2.0",
     "deepdiff>=5.5.0,<6.0",
-    "PyYaml>=5.1,<6.0",
+    "PyYaml>6.0,<7.0",
     "Jinja2>=3.0,<4",
     "jsonschema>=3.2,<3.3",
     "colorama>=0.3.9",
@@ -35,6 +35,7 @@ install_requirements = [
     "sceptre-file-resolver>=1.0.4,<2",
     "six>=1.11.0,<2.0.0",
     "networkx>=2.6,<2.7",
+    "urllib3<2.0",
 ]
 
 extra_requirements = {
