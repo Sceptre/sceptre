@@ -13,11 +13,11 @@ repos:
     hooks:
       - id: flake8
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.29.0
+    rev: v1.32.0
     hooks:
       - id: yamllint
   - repo: https://github.com/awslabs/cfn-python-lint
-    rev: v0.72.10
+    rev: v0.78.2
     hooks:
       - id: cfn-python-lint
         args:
@@ -36,7 +36,7 @@ repos:
             ^.pre-commit-config.yaml
           )
   - repo: https://github.com/psf/black
-    rev: 23.1.0
+    rev: 23.7.0
     hooks:
       - id: black
         # It is recommended to specify the latest version of Python
