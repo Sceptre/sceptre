@@ -131,7 +131,7 @@ def step_impl(context, stack_name):
     )
     yaml_file = Path(sceptre_context.full_config_path()) / f'{stack_name}.yaml'
     with yaml_file.open(mode='r') as f:
-        loaded = yaml.load(f)
+        loaded = yaml.load(f, yaml.Loader)
 
     original_config = deepcopy(loaded)
     loaded['stack_tags'] = {
