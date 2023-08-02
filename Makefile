@@ -1,15 +1,4 @@
-.PHONY: clean-pyc clean-build docs clean docs
-define BROWSER_PYSCRIPT
-import os, webbrowser, sys
-try:
-	from urllib import pathname2url
-except:
-	from urllib.request import pathname2url
-
-webbrowser.open("file://" + pathname2url(os.path.abspath(sys.argv[1])))
-endef
-export BROWSER_PYSCRIPT
-BROWSER := python -c "$$BROWSER_PYSCRIPT"
+.PHONY: help clean clean-pyc clean-build lint test test-all test-integration install
 
 help:
 	@echo "clean - remove all build, test, coverage and Python artifacts"
@@ -20,13 +9,9 @@ help:
 	@echo "test - run tests quickly with the default Python"
 	@echo "test-all - run tests on every Python version with tox"
 	@echo "test-integration - run integration tests"
-	@echo "dist - package"
 	@echo "install - install the package to the active Python's site-packages"
-	@echo "install-dev - install the test requirements to the active Python's site-packages"
-	@echo "docs - generate Sphinx HTML documentation, including API docs"
 	@echo ""
 	@ $(MAKE) -C docs help
-
 
 clean: clean-build clean-pyc clean-test docs-clean
 
@@ -48,63 +33,19 @@ clean-test:
 	rm -fr .cache/
 	rm -f .coverage
 	rm -fr htmlcov/
-	rm -fr test-reports/
+	rm -f test-results.xml
 
 lint:
-	poetry run pre-commit run --all-files
+	pre-commit run --all-files --show-diff-on-failure
 
-test:
-	poetry run pytest
+pre:
+	poetry install --all-extras -v
 
-test-all:
+test: pre
 	poetry run tox
 
-test-integration: install
-	poetry run behave integration-tests/
-
-docs:
-	rm -f docs/sceptre.rst
-	rm -f docs/modules.rst
-	poetry run sphinx-apidoc -o docs/ sceptre
-	$(MAKE) -C docs clean
-	$(MAKE) -C docs html
-	$(BROWSER) docs/_build/html/index.html
-
-docs-latest:
-	$(MAKE) -C docs build-latest
-
-docs-build-tag:
-	$(MAKE) -C docs build-tag
-
-docs-build-dev:
-	$(MAKE) -C docs build-dev
-
-docs-build-commit:
-	$(MAKE) -C docs build-commit
-
-docs-serve-latest:
-	$(MAKE) -C docs serve-latest
-
-docs-serve-tag:
-	$(MAKE) -C docs serve-tag
-
-docs-serve-dev:
-	$(MAKE) -C docs serve-dev
-
-docs-serve-commit: docs-commit
-	$(MAKE) -C docs serve-commit
-
-docs-install:
-	$(MAKE) -C docs install
-
-docs-clean:
-	$(MAKE) -C docs clean
-
-dist: clean
-	poetry build
+test-integration: pre install
+	poetry run behave --junit --junit-directory build/behave
 
 install: clean
-	poetry install -v
-
-install-dev: clean
-	poetry install --all-extras -v
+	pip install .
