@@ -19,8 +19,16 @@ class Cmd(Hook):
         :raises: subprocess.CalledProcessError
         """
         envs = self.stack.connection_manager.create_session_environment_variables()
+
+        if isinstance(self.argument, str):
+            args = self.argument
+            executable = None
+        elif isinstance(self.argument, dict):
+            args = self.argument["args"]
+            executable = self.argument["executable"]
+
         try:
-            subprocess.check_call(self.argument, shell=True, env=envs)
+            subprocess.check_call(args, shell=True, env=envs, executable=executable)
         except TypeError:
             raise InvalidHookArgumentTypeError(
                 'The argument "{0}" is the wrong type - cmd hooks require '
