@@ -20,7 +20,7 @@ class Cmd(Hook):
         """
         envs = self.stack.connection_manager.create_session_environment_variables()
 
-        if isinstance(self.argument, str):
+        if isinstance(self.argument, str) or self.argument is None:
             args = self.argument
             executable = None
         elif isinstance(self.argument, dict):
