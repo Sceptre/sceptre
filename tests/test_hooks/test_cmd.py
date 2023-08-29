@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from subprocess import CalledProcessError
-
+from unittest.mock import Mock
 import pytest
 
 from sceptre.exceptions import InvalidHookArgumentTypeError
@@ -16,6 +16,13 @@ class TestCmd(object):
             "region1",
             template_handler_config={"template": "path.yaml"},
         )
+
+        # Otherwise the test works only when the environment variables already
+        # set a valid AWS session.
+        self.stack.connection_manager.create_session_environment_variables = Mock(
+            return_value={}
+        )
+
         self.cmd = Cmd(stack=self.stack)
 
     def test_run_with_non_str_argument(self):
