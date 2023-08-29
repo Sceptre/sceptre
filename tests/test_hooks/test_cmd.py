@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-import subprocess
-from unittest.mock import patch, Mock
+from subprocess import CalledProcessError
 
 import pytest
 
@@ -11,8 +10,12 @@ from sceptre.stack import Stack
 
 class TestCmd(object):
     def setup_method(self, test_method):
-        self.stack = Mock(Stack)
-        self.stack.name = "my/stack.yaml"
+        self.stack = Stack(
+            "stack1",
+            "project1",
+            "region1",
+            template_handler_config={"template": "path.yaml"},
+        )
         self.cmd = Cmd(stack=self.stack)
 
     def test_run_with_non_str_argument(self):
@@ -20,18 +23,14 @@ class TestCmd(object):
         with pytest.raises(InvalidHookArgumentTypeError):
             self.cmd.run()
 
-    @patch("sceptre.hooks.cmd.subprocess.check_call")
-    def test_run_with_str_argument(self, mock_call):
+    def test_run_with_str_argument(self, capfd):
         self.cmd.argument = "echo hello"
         self.cmd.run()
-        expected_envs = (
-            self.stack.connection_manager.create_session_environment_variables.return_value
-        )
-        mock_call.assert_called_once_with("echo hello", shell=True, env=expected_envs)
+        cap = capfd.readouterr()
+        assert cap.out.strip() == "hello"
+        assert cap.err.strip() == ""
 
-    @patch("sceptre.hooks.cmd.subprocess.check_call")
-    def test_run_with_erroring_command(self, mock_call):
-        mock_call.side_effect = subprocess.CalledProcessError(1, "echo")
-        self.cmd.argument = "echo hello"
-        with pytest.raises(subprocess.CalledProcessError):
+    def test_run_with_erroring_command(self):
+        self.cmd.argument = "missing_command_that_causes_shell_error"
+        with pytest.raises(CalledProcessError):
             self.cmd.run()

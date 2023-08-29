@@ -20,6 +20,9 @@ class Cmd(Hook):
         """
         envs = self.stack.connection_manager.create_session_environment_variables()
 
+        if self.argument is None:
+            raise InvalidHookArgumentTypeError()
+
         if isinstance(self.argument, str) or self.argument is None:
             args = self.argument
             executable = None
@@ -27,10 +30,4 @@ class Cmd(Hook):
             args = self.argument["args"]
             executable = self.argument["executable"]
 
-        try:
-            subprocess.check_call(args, shell=True, env=envs, executable=executable)
-        except TypeError:
-            raise InvalidHookArgumentTypeError(
-                'The argument "{0}" is the wrong type - cmd hooks require '
-                "arguments of type string.".format(self.argument)
-            )
+        subprocess.check_call(args, shell=True, env=envs, executable=executable)
