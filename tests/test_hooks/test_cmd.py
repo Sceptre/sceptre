@@ -25,12 +25,12 @@ class TestCmd(object):
 
         self.cmd = Cmd(stack=self.stack)
 
-    def test_run_with_non_str_argument(self):
+    def test_run_with_null(self):
         self.cmd.argument = None
         with pytest.raises(InvalidHookArgumentTypeError):
             self.cmd.run()
 
-    def test_run_with_str_argument(self, capfd):
+    def test_run_with_correct_command(self, capfd):
         self.cmd.argument = "echo hello"
         self.cmd.run()
         cap = capfd.readouterr()
