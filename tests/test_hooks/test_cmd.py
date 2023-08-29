@@ -41,3 +41,9 @@ class TestCmd(object):
         self.cmd.argument = "missing_command_that_causes_shell_error"
         with pytest.raises(CalledProcessError):
             self.cmd.run()
+
+    def test_run_with_command_and_executable(self):
+        # TODO: Choose how to test this.
+        # Mock subprocess and check that executable message is sent?
+        # Spy Popen and check executable?
+        pytest.fail()
