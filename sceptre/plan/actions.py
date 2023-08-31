@@ -840,17 +840,23 @@ class StackActions:
         events.reverse()
         new_events = [event for event in events if event["Timestamp"] > after_datetime]
         for event in new_events:
-            self.logger.info(
-                " ".join(
+            stack_event_status = [
+                self.stack.name,
+                event["LogicalResourceId"],
+                event["ResourceType"],
+                event["ResourceStatus"],
+                event.get("ResourceStatusReason", ""),
+            ]
+            if "HookStatus" in event:
+                stack_event_status.extend(
                     [
-                        self.stack.name,
-                        event["LogicalResourceId"],
-                        event["ResourceType"],
-                        event["ResourceStatus"],
-                        event.get("ResourceStatusReason", ""),
+                        event["HookType"],
+                        event["HookStatus"],
+                        event.get("HookStatusReason", ""),
+                        event["HookFailureMode"],
                     ]
                 )
-            )
+            self.logger.info(" ".join(stack_event_status))
             after_datetime = event["Timestamp"]
         return after_datetime
 
