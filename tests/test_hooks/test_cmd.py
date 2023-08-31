@@ -109,3 +109,13 @@ def test_executable_sets_the_shell(stack, capfd):
     cap = capfd.readouterr()
     assert cap.out.strip() == "/bin/bash"
     assert cap.err.strip() == ""
+
+
+def test_shell_has_session_environment_variables(stack, capfd):
+    stack.connection_manager.create_session_environment_variables = Mock(
+        return_value={"AWS_PROFILE": "sceptre_profile"}
+    )
+    Cmd("env | grep -E '^AWS_PROFILE='", stack).run()
+    cap = capfd.readouterr()
+    assert cap.out.strip() == "AWS_PROFILE=sceptre_profile"
+    assert cap.err.strip() == ""
