@@ -46,7 +46,61 @@ def list_resources(ctx, path):
     write(responses, context.output_format)
 
 
-# flake8: noqa: C901
+def process_export_envvar(responses):
+    """
+    --export=envvar
+    Legacy. This option was added in the initial commit of the project,
+    although its intended use case is unclear. It may relate to a feature
+    that had been removed prior to the initial commit.
+    """
+    for response in responses:
+        for stack in response.values():
+            for output in stack:
+                write(
+                    "export SCEPTRE_{0}='{1}'".format(
+                        output.get("OutputKey"), output.get("OutputValue")
+                    ),
+                    "text",
+                )
+
+
+def process_export_stackoutput(responses, plan):
+    """
+    --export=stackoutput
+    Format outputs as !stack_output references.
+    """
+    for response in responses:
+        for stack_name, stack in response.items():
+            for output in stack:
+                write(
+                    "!stack_output {0}.yaml::{1} [{2}]".format(
+                        stack_name,
+                        output.get("OutputKey"),
+                        output.get("OutputValue"),
+                    ),
+                    "text",
+                )
+
+
+def process_export_stackoutputexternal(responses, plan):
+    """
+    --export=stackoutputexternal
+    Format outputs as !stack_output_external references.
+    """
+    stack_names = {stack.name: stack.external_name for stack in plan.graph}
+    for response in responses:
+        for stack_name, stack in response.items():
+            for output in stack:
+                write(
+                    "!stack_output_external {0}::{1} [{2}]".format(
+                        stack_names[stack_name],
+                        output.get("OutputKey"),
+                        output.get("OutputValue"),
+                    ),
+                    "text",
+                )
+
+
 @list_group.command(name="outputs")
 @click.argument("path")
 @click.option(
@@ -80,52 +134,12 @@ def list_outputs(ctx, path, export):
     plan = SceptrePlan(context)
     responses = [response for response in plan.describe_outputs().values() if response]
 
-    # Legacy. This option was added in the initial commit of the project,
-    # although its intended use case is unclear. It may relate to a feature
-    # that had been removed prior to the initial commit.
     if export == "envvar":
-        for response in responses:
-            for stack in response.values():
-                for output in stack:
-                    write(
-                        "export SCEPTRE_{0}='{1}'".format(
-                            output.get("OutputKey"), output.get("OutputValue")
-                        ),
-                        "text",
-                    )
-
-    # Format outputs as !stack_output references.
+        process_export_envvar(responses)
     elif export == "stackoutput":
-        for response in responses:
-            for stack_name, stack in response.items():
-                for output in stack:
-                    write(
-                        "!stack_output {0}.yaml::{1} [{2}]".format(
-                            stack_name,
-                            output.get("OutputKey"),
-                            output.get("OutputValue"),
-                        ),
-                        "text",
-                    )
-
-    # Format outputs as !stack_output_external references.
+        process_export_stackoutput(responses, plan)
     elif export == "stackoutputexternal":
-        stack_names = {stack.name: stack.external_name for stack in plan.graph}
-        for response in responses:
-            for stack_name, stack in response.items():
-                for output in stack:
-                    write(
-                        "!stack_output_external {0}::{1} [{2}]".format(
-                            stack_names[stack_name],
-                            output.get("OutputKey"),
-                            output.get("OutputValue"),
-                        ),
-                        "text",
-                    )
-
-    # Legacy. The output here is somewhat confusing in that
-    # outputs are organised in keys that only have meaning inside
-    # Sceptre.
+        process_export_stackoutputexternal(responses, plan)
     else:
         write(responses, context.output_format)
 
