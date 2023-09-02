@@ -5,22 +5,19 @@ Sceptre can be used as a command line tool.
 Running Sceptre without a sub-command will display help, showing a list of the
 available commands.
 
-Running Sceptre without a subcommand will display help, showing a list of the
-available commands.
-
 Autocomplete
 ------------
 
 To enable CLI autocomplete for subcommands and parameters execute the
 following command:
 
-+----------+------------------------------------------------+
-| shell    | command                                        |
-+==========+================================================+
-| bash     | eval "$(_SCEPTRE_COMPLETE=source sceptre)"     |
-+----------+------------------------------------------------+
-| zsh      | eval "$(_SCEPTRE_COMPLETE=source_zsh sceptre)" |
-+----------+------------------------------------------------+
++----------+-------------------------------------------------+
+| shell    | command                                         |
++==========+=================================================+
+| bash     | eval "$(_SCEPTRE_COMPLETE=source_bash sceptre)" |
++----------+-------------------------------------------------+
+| zsh      | eval "$(_SCEPTRE_COMPLETE=source_zsh sceptre)"  |
++----------+-------------------------------------------------+
 
 Export Stack Outputs to Environment Variables
 ---------------------------------------------
@@ -42,7 +39,7 @@ Variable Handling
 
 You can pass variables into your project using ``--var-file`` and ``--var``.
 
-Varibles passed in with ``--var`` will overwrite any matching variables specified in
+Variables passed in with ``--var`` will overwrite any matching variables specified in
 ``--var-file``. If you use multiple ``--var`` flags then the right-most ``--var`` will
 overwrite any matching ``--vars`` to the left. For example, in the following command
 

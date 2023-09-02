@@ -985,32 +985,110 @@ class TestStackActions(object):
         self.actions.describe_events.assert_called_once_with()
 
     @patch("sceptre.plan.actions.StackActions.describe_events")
-    def test_log_new_events_prints_correct_event(self, mock_describe_events):
-        self.actions.stack.name = "stack-name"
-        mock_describe_events.return_value = {
-            "StackEvents": [
-                {
-                    "Timestamp": datetime.datetime(
-                        2016, 3, 15, 14, 2, 0, 0, tzinfo=tzutc()
-                    ),
-                    "LogicalResourceId": "id-2",
-                    "ResourceType": "type-2",
-                    "ResourceStatus": "resource-status",
-                },
-                {
-                    "Timestamp": datetime.datetime(
-                        2016, 3, 15, 14, 1, 0, 0, tzinfo=tzutc()
-                    ),
-                    "LogicalResourceId": "id-1",
-                    "ResourceType": "type-1",
-                    "ResourceStatus": "resource",
-                    "ResourceStatusReason": "User Initiated",
-                },
-            ]
-        }
-        self.actions._log_new_events(
-            datetime.datetime(2016, 3, 15, 14, 0, 0, 0, tzinfo=tzutc())
-        )
+    def test_log_new_events_prints_correct_event(self, mock_describe_events, caplog):
+        with caplog.at_level("DEBUG"):
+            self.actions.stack.name = "stack-name"
+            mock_describe_events.return_value = {
+                "StackEvents": [
+                    {
+                        "Timestamp": datetime.datetime(
+                            2016, 3, 15, 14, 1, 0, 0, tzinfo=tzutc()
+                        ),
+                        "LogicalResourceId": "id-1",
+                        "ResourceType": "type-1",
+                        "ResourceStatus": "resource",
+                        "ResourceStatusReason": "User Initiated",
+                    },
+                    {
+                        "Timestamp": datetime.datetime(
+                            2016, 3, 15, 14, 2, 0, 0, tzinfo=tzutc()
+                        ),
+                        "LogicalResourceId": "id-2",
+                        "ResourceType": "type-2",
+                        "ResourceStatus": "resource-status",
+                    },
+                ]
+            }
+            self.actions._log_new_events(
+                datetime.datetime(2016, 3, 15, 14, 0, 0, 0, tzinfo=tzutc())
+            )
+            assert len(self.actions.describe_events()["StackEvents"]) == 2
+            assert [
+                self.actions.stack.name,
+                self.actions.describe_events()["StackEvents"][1]["LogicalResourceId"],
+                self.actions.describe_events()["StackEvents"][1]["ResourceType"],
+                self.actions.describe_events()["StackEvents"][1]["ResourceStatus"],
+                self.actions.describe_events()["StackEvents"][1][
+                    "ResourceStatusReason"
+                ],
+            ].sort() == caplog.messages[0].split().sort()
+            assert [
+                self.actions.stack.name,
+                self.actions.describe_events()["StackEvents"][0]["LogicalResourceId"],
+                self.actions.describe_events()["StackEvents"][0]["ResourceType"],
+                self.actions.describe_events()["StackEvents"][0]["ResourceStatus"],
+            ].sort() == caplog.messages[1].split().sort()
+
+    @patch("sceptre.plan.actions.StackActions.describe_events")
+    def test_log_new_events_with_hook_status_prints_correct_event(
+        self, mock_describe_events, caplog
+    ):
+        with caplog.at_level("DEBUG"):
+            self.actions.stack.name = "stack-name-with-hook-status"
+            mock_describe_events.return_value = {
+                "StackEvents": [
+                    {
+                        "Timestamp": datetime.datetime(
+                            2023, 8, 15, 14, 3, 0, 0, tzinfo=tzutc()
+                        ),
+                        "LogicalResourceId": "id-3",
+                        "ResourceType": "type-3",
+                        "ResourceStatus": "resource-with-cf-hook",
+                        "HookType": "type-3",
+                        "HookStatus": "HOOK_COMPLETE_SUCCEEDED",
+                        "HookFailureMode": "WARN",
+                    },
+                    {
+                        "Timestamp": datetime.datetime(
+                            2023, 8, 15, 14, 4, 0, 0, tzinfo=tzutc()
+                        ),
+                        "LogicalResourceId": "id-4",
+                        "ResourceType": "type-4",
+                        "ResourceStatus": "another-resource-with-cf-hook",
+                        "ResourceStatusReason": "User Initiated",
+                        "HookType": "type-4",
+                        "HookStatus": "HOOK_IN_PROGRESS",
+                        "HookStatusReason": "Good hook",
+                        "HookFailureMode": "WARN",
+                    },
+                ]
+            }
+            self.actions._log_new_events(
+                datetime.datetime(2023, 8, 15, 14, 0, 0, 0, tzinfo=tzutc())
+            )
+            assert len(self.actions.describe_events()["StackEvents"]) == 2
+            assert [
+                self.actions.stack.name,
+                self.actions.describe_events()["StackEvents"][1]["LogicalResourceId"],
+                self.actions.describe_events()["StackEvents"][1]["ResourceType"],
+                self.actions.describe_events()["StackEvents"][1]["ResourceStatus"],
+                self.actions.describe_events()["StackEvents"][1]["HookType"],
+                self.actions.describe_events()["StackEvents"][1]["HookStatus"],
+                self.actions.describe_events()["StackEvents"][1]["HookFailureMode"],
+            ].sort() == caplog.messages[0].split().sort()
+            assert [
+                self.actions.stack.name,
+                self.actions.describe_events()["StackEvents"][0]["LogicalResourceId"],
+                self.actions.describe_events()["StackEvents"][0]["ResourceType"],
+                self.actions.describe_events()["StackEvents"][0]["ResourceStatus"],
+                self.actions.describe_events()["StackEvents"][0][
+                    "ResourceStatusReason"
+                ],
+                self.actions.describe_events()["StackEvents"][0]["HookType"],
+                self.actions.describe_events()["StackEvents"][0]["HookStatus"],
+                self.actions.describe_events()["StackEvents"][0]["HookStatusReason"],
+                self.actions.describe_events()["StackEvents"][0]["HookFailureMode"],
+            ].sort() == caplog.messages[1].split().sort()
 
     @patch("sceptre.plan.actions.StackActions._get_cs_status")
     def test_wait_for_cs_completion_calls_get_cs_status(self, mock_get_cs_status):
