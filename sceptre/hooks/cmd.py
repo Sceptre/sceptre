@@ -13,9 +13,11 @@ class Cmd(Hook):
 
     def run(self):
         """
-        Runs the argument string in a subprocess.
+        Executes a command through the shell.
 
-        :raises: sceptre.exceptions.InvalidTaskArgumentTypeException
+        See hooks documentation for details.
+
+        :raises: sceptre.exceptions.InvalidHookArgumentTypeError
         :raises: subprocess.CalledProcessError
         """
         envs = self.stack.connection_manager.create_session_environment_variables()
