@@ -52,13 +52,13 @@ Syntax:
 
    # Default shell.
    <hook_point>:
-     - !cmd <command string>
+     - !cmd <shell_command>
 
    # Another shell.
    <hook_point>:
      - !cmd
-         args: <command string>
-         executable: <shell command>
+         args: <shell_command>
+         executable: <shell_name_or_path>
 
 Pass the command string as the only argument to use the default shell.
 
