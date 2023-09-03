@@ -46,6 +46,20 @@ cmd
 
 Executes a command through the shell.
 
+Syntax:
+
+.. code-block:: yaml
+
+  # Default shell.
+  before_update:
+    - !cmd <command string>
+
+  # Another shell.
+  before_update:
+    - !cmd
+        args: <command string>
+        executable: <shell command>
+
 Pass the command string as the only argument to use the default shell.
 
 On POSIX the default shell is ``sh``. On Windows it's usually ``cmd.exe``, but ``%ComSpec%`` may
@@ -60,7 +74,7 @@ quotes and backslashes to escape filenames with spaces in them.
     before_update:
       - !cmd "echo 'Hello, world!'"
 
-The command's standard output messages appear between status messages from Sceptre.
+This example succeeds. Its standard output messages appear between status messages from Sceptre.
 
 .. code-block::
 
@@ -84,7 +98,7 @@ in system path, you can write ``bash``; otherwise, you need to write the absolut
           args: "if foo; then baz; else qux; fi"
           executable: "bash"
 
-The ``if`` command fails because none of the ``foo``, ``baz``, and ``quz`` commands exist. The command's standard error messages sit between Sceptre's status messages and a Python traceback. Here the traceback is snipped.
+This example fails because none of the ``foo``, ``baz``, and ``quz`` commands exist. Its standard error messages sit between Sceptre's status messages and a Python traceback.
 
 .. code-block:: text
 
@@ -93,7 +107,7 @@ The ``if`` command fails because none of the ``foo``, ``baz``, and ``quz`` comma
   bash: foo: command not found
   bash: qux: command not found
   Traceback (most recent call last):
-  ...
+  <snip>
   subprocess.CalledProcessError: Command 'if foo; then baz; else qux; fi' returned non-zero exit status 127.
 
 
