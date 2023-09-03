@@ -50,15 +50,15 @@ Syntax:
 
 .. code-block:: yaml
 
-  # Default shell.
-  <hook_point>:
-    - !cmd <command string>
+   # Default shell.
+   <hook_point>:
+     - !cmd <command string>
 
-  # Another shell.
-  <hook_point>:
-    - !cmd
-        args: <command string>
-        executable: <shell command>
+   # Another shell.
+   <hook_point>:
+     - !cmd
+         args: <command string>
+         executable: <shell command>
 
 Pass the command string as the only argument to use the default shell.
 
@@ -70,19 +70,19 @@ quotes and backslashes to escape filenames with spaces in them.
 
 .. code-block:: yaml
 
-  hooks:
-    before_update:
-      - !cmd "echo 'Hello, world!'"
+   hooks:
+     before_update:
+       - !cmd "echo 'Hello, world!'"
 
 This example succeeds. Its standard output messages appear between status messages from Sceptre.
 
 .. code-block::
 
-  [2023-09-03 01:06:28] - test - Launching Stack
-  [2023-09-03 01:06:29] - test - Stack is in the CREATE_COMPLETE state
-  Hello, world!
-  [2023-09-03 01:06:31] - test - Updating Stack
-  [2023-09-03 01:06:31] - test - No updates to perform.
+   [2023-09-03 01:06:28] - test - Launching Stack
+   [2023-09-03 01:06:29] - test - Stack is in the CREATE_COMPLETE state
+   Hello, world!
+   [2023-09-03 01:06:31] - test - Updating Stack
+   [2023-09-03 01:06:31] - test - No updates to perform.
 
 Pass named arguments ``args`` and ``executable`` to use a different shell.
 
@@ -92,23 +92,23 @@ in system path, you can write ``bash``; otherwise, you need to write the absolut
 
 .. code-block:: yaml
 
-  hooks:
-    before_update:
-      - !cmd
-          args: "if foo; then baz; else qux; fi"
-          executable: "bash"
+   hooks:
+     before_update:
+       - !cmd
+           args: "if foo; then baz; else qux; fi"
+           executable: "bash"
 
 This example fails because none of the ``foo``, ``baz``, and ``quz`` commands exist. Its standard error messages sit between Sceptre's status messages and a Python traceback.
 
 .. code-block:: text
 
-  [2023-09-03 02:00:21] - test - Launching Stack
-  [2023-09-03 02:00:22] - test - Stack is in the CREATE_COMPLETE state
-  bash: foo: command not found
-  bash: qux: command not found
-  Traceback (most recent call last):
-  <snip>
-  subprocess.CalledProcessError: Command 'if foo; then baz; else qux; fi' returned non-zero exit status 127.
+   [2023-09-03 02:00:21] - test - Launching Stack
+   [2023-09-03 02:00:22] - test - Stack is in the CREATE_COMPLETE state
+   bash: foo: command not found
+   bash: qux: command not found
+   Traceback (most recent call last):
+   <snip>
+   subprocess.CalledProcessError: Command 'if foo; then baz; else qux; fi' returned non-zero exit status 127.
 
 
 asg_scaling_processes
