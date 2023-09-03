@@ -44,23 +44,58 @@ Available Hooks
 cmd
 ~~~
 
-Executes the argument string in the shell as a Python subprocess.
+Executes a command through the shell.
 
-For more information about how this works, see the `subprocess documentation`_
+Pass the command string as the only argument to use the default shell.
 
-Syntax:
+On POSIX the default shell is ``sh``. On Windows it's usually ``cmd.exe``, but ``%ComSpec%`` may
+override that.
 
-.. code-block:: yaml
-
-   <hook_point>:
-     - !cmd <shell_command>
-
-Example:
+Format the command string exactly as you would type it at the shell prompt. This includes
+quotes and backslashes to escape filenames with spaces in them.
 
 .. code-block:: yaml
 
-   before_create:
-     - !cmd "echo hello"
+  hooks:
+    before_update:
+      - !cmd "echo 'Hello, world!'"
+
+The command's standard output messages appear between status messages from Sceptre.
+
+.. code-block::
+
+  [2023-09-03 01:06:28] - test - Launching Stack
+  [2023-09-03 01:06:29] - test - Stack is in the CREATE_COMPLETE state
+  Hello, world!
+  [2023-09-03 01:06:31] - test - Updating Stack
+  [2023-09-03 01:06:31] - test - No updates to perform.
+
+Pass named arguments ``args`` and ``executable`` to use a different shell.
+
+Format the executable name exactly as you would type it to start the shell. For example, if Bash is
+in system path, you can write ``bash``; otherwise, you need to write the absolute path such as
+``/bin/bash``.
+
+.. code-block:: yaml
+
+  hooks:
+    before_update:
+      - !cmd
+          args: "if foo; then baz; else qux; fi"
+          executable: "bash"
+
+The ``if`` command fails because none of the ``foo``, ``baz``, and ``quz`` commands exist. The command's standard error messages sit between Sceptre's status messages and a Python traceback. Here the traceback is snipped.
+
+.. code-block:: text
+
+  [2023-09-03 02:00:21] - test - Launching Stack
+  [2023-09-03 02:00:22] - test - Stack is in the CREATE_COMPLETE state
+  bash: foo: command not found
+  bash: qux: command not found
+  Traceback (most recent call last):
+  ...
+  subprocess.CalledProcessError: Command 'if foo; then baz; else qux; fi' returned non-zero exit status 127.
+
 
 asg_scaling_processes
 ~~~~~~~~~~~~~~~~~~~~~
