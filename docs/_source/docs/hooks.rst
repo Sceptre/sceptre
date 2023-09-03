@@ -51,11 +51,11 @@ Syntax:
 .. code-block:: yaml
 
   # Default shell.
-  before_update:
+  <hook_point>:
     - !cmd <command string>
 
   # Another shell.
-  before_update:
+  <hook_point>:
     - !cmd
         args: <command string>
         executable: <shell command>
