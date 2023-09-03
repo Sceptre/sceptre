@@ -116,7 +116,7 @@ def test_shell_has_session_environment_variables(stack, capfd):
     stack.connection_manager.create_session_environment_variables = Mock(
         return_value={"AWS_PROFILE": "sceptre_profile"}
     )
-    Cmd("env | grep -E '^AWS_PROFILE='", stack).run()
+    Cmd("echo $AWS_PROFILE", stack).run()
     cap = capfd.readouterr()
-    assert cap.out.strip() == "AWS_PROFILE=sceptre_profile"
+    assert cap.out.strip() == "sceptre_profile"
     assert cap.err.strip() == ""
