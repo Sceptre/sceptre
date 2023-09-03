@@ -57,8 +57,8 @@ Syntax:
    # Another shell.
    <hook_point>:
      - !cmd
-         args: <shell_command>
-         executable: <shell_name_or_path>
+         command: <shell_command>
+         shell: <shell_name_or_path>
 
 Pass the command string as the only argument to use the default shell.
 
@@ -95,8 +95,8 @@ in system path, you can write ``bash``; otherwise, you need to write the absolut
    hooks:
      before_update:
        - !cmd
-           args: "if foo; then baz; else qux; fi"
-           executable: "bash"
+           command: "if foo; then baz; else qux; fi"
+           shell: "bash"
 
 This example fails because none of the ``foo``, ``baz``, and ``quz`` commands exist. Its standard error messages sit between Sceptre's status messages and a Python traceback.
 

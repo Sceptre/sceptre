@@ -25,17 +25,17 @@ class Cmd(Hook):
             executable = None
         elif (
             isinstance(self.argument, dict)
-            and set(self.argument) == {"args", "executable"}
-            and isinstance(self.argument["args"], str)
-            and isinstance(self.argument["executable"], str)
+            and set(self.argument) == {"command", "shell"}
+            and isinstance(self.argument["command"], str)
+            and isinstance(self.argument["shell"], str)
         ):
-            args = self.argument["args"]
-            executable = self.argument["executable"]
+            args = self.argument["command"]
+            executable = self.argument["shell"]
         else:
             raise InvalidHookArgumentTypeError(
                 "A cmd hook requires either a string argument or an object with "
-                "args and executable keys with string values. "
-                f"You gave {self.argument!r}."
+                "`command` and `shell` keys with string values. "
+                f"You gave `{self.argument!r}`."
             )
 
         subprocess.check_call(args, shell=True, env=envs, executable=executable)

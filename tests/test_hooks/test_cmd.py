@@ -43,30 +43,31 @@ def test_list_raises_exception(stack):
 
 def test_dict_without_executable_raises_exception(stack):
     with pytest.raises(InvalidHookArgumentTypeError):
-        Cmd({"args": "echo hello"}, stack).run()
+        Cmd({"command": "echo hello"}, stack).run()
 
 
 def test_dict_without_args_raises_exception(stack):
     with pytest.raises(InvalidHookArgumentTypeError):
-        Cmd({"executable": "/bin/bash"}, stack).run()
+        Cmd({"shell": "/bin/bash"}, stack).run()
 
 
 def test_dict_with_list_args_raises_exception(stack):
     with pytest.raises(InvalidHookArgumentTypeError):
-        Cmd({"args": ["echo", "hello"], "executable": "/bin/bash"}, stack).run()
+        Cmd({"command": ["echo", "hello"], "shell": "/bin/bash"}, stack).run()
 
 
 def test_dict_with_list_executable_raises_exception(stack):
     with pytest.raises(InvalidHookArgumentTypeError):
-        Cmd({"args": "echo hello", "executable": ["/bin/bash"]}, stack).run()
+        Cmd({"command": "echo hello", "shell": ["/bin/bash"]}, stack).run()
 
 
 def test_input_exception_reprs_input(stack):
     import datetime
 
     exception_message = (
-        r"A cmd hook requires either a string argument or an object with args and "
-        r"executable keys with string values\. You gave datetime.date\(2023, 8, 31\)\."
+        r"A cmd hook requires either a string argument or an object with "
+        r"`command` and `shell` keys with string values\. You gave "
+        r"`datetime.date\(2023, 8, 31\)`\."
     )
     with pytest.raises(InvalidHookArgumentTypeError, match=exception_message):
         Cmd(datetime.date(2023, 8, 31), stack).run()
@@ -105,7 +106,7 @@ def test_default_shell_is_sh(stack, capfd):
 
 
 def test_executable_sets_the_shell(stack, capfd):
-    Cmd({"args": "echo $0", "executable": "/bin/bash"}, stack).run()
+    Cmd({"command": "echo $0", "shell": "/bin/bash"}, stack).run()
     cap = capfd.readouterr()
     assert cap.out.strip() == "/bin/bash"
     assert cap.err.strip() == ""
