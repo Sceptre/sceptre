@@ -57,7 +57,7 @@ Syntax:
    # Another shell.
    <hook_point>:
      - !cmd
-         command: <shell_command>
+         run: <shell_command>
          shell: <shell_name_or_path>
 
 Pass the command string as the only argument to use the default shell.
@@ -85,7 +85,7 @@ A successful command prints its standard output messages between status messages
    [2023-09-03 01:06:31] - test - Updating Stack
    [2023-09-03 01:06:31] - test - No updates to perform.
 
-Pass named arguments to use a different shell. Here the command string is called ``command`` and the
+Pass named arguments to use a different shell. Here the command string is called ``run`` and the
 shell executable is called ``shell``.
 
 Write the executable name as you would type it at an interactive prompt to start the shell. For
@@ -97,7 +97,7 @@ absolute path such as ``/bin/bash``.
    hooks:
      before_update:
        - !cmd
-           command: echo "Hello, $0!"
+           run: echo "Hello, $0!"
            shell: bash
 
 .. code-block:: text
@@ -115,7 +115,7 @@ You can use PowerShell in the same way.
    hooks:
      before_update:
        - !cmd
-           command: Write-Output "Hello, Posh!"
+           run: Write-Output "Hello, Posh!"
            shell: pwsh
 
 .. code-block:: text
@@ -126,7 +126,7 @@ You can use PowerShell in the same way.
    [2023-09-04 00:44:34] - test - Updating Stack
    [2023-09-04 00:44:34] - test - No updates to perform.
 
-If the shell command fails, so does Sceptre. The command output sits between Sceptre's status
+If the shell command fails, so does Sceptre. Its output sits between Sceptre's status
 messages and a Python traceback.
 
 .. code-block:: yaml
