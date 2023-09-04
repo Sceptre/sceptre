@@ -23,23 +23,23 @@ class Cmd(Hook):
         envs = self.stack.connection_manager.create_session_environment_variables()
 
         if isinstance(self.argument, str) and self.argument != "":
-            command = self.argument
+            command_to_run = self.argument
             shell = None
 
         elif (
             isinstance(self.argument, dict)
-            and set(self.argument) == {"command", "shell"}
-            and isinstance(self.argument["command"], str)
+            and set(self.argument) == {"run", "shell"}
+            and isinstance(self.argument["run"], str)
             and isinstance(self.argument["shell"], str)
         ):
-            command = self.argument["command"]
+            command_to_run = self.argument["run"]
             shell = self.argument["shell"]
 
         else:
             raise InvalidHookArgumentTypeError(
                 "A cmd hook requires either a string argument or an object with "
-                "`command` and `shell` keys with string values. "
+                "`run` and `shell` keys with string values. "
                 f"You gave `{self.argument!r}`."
             )
 
-        subprocess.check_call(command, shell=True, env=envs, executable=shell)
+        subprocess.check_call(command_to_run, shell=True, env=envs, executable=shell)
