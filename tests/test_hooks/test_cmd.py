@@ -41,22 +41,22 @@ def test_list_raises_exception(stack):
         Cmd(["echo", "hello"], stack).run()
 
 
-def test_dict_without_executable_raises_exception(stack):
+def test_dict_without_shell_raises_exception(stack):
     with pytest.raises(InvalidHookArgumentTypeError):
         Cmd({"command": "echo hello"}, stack).run()
 
 
-def test_dict_without_args_raises_exception(stack):
+def test_dict_without_command_raises_exception(stack):
     with pytest.raises(InvalidHookArgumentTypeError):
         Cmd({"shell": "/bin/bash"}, stack).run()
 
 
-def test_dict_with_list_args_raises_exception(stack):
+def test_dict_with_list_command_raises_exception(stack):
     with pytest.raises(InvalidHookArgumentTypeError):
         Cmd({"command": ["echo", "hello"], "shell": "/bin/bash"}, stack).run()
 
 
-def test_dict_with_list_executable_raises_exception(stack):
+def test_dict_with_list_shell_raises_exception(stack):
     with pytest.raises(InvalidHookArgumentTypeError):
         Cmd({"command": "echo hello", "shell": ["/bin/bash"]}, stack).run()
 
@@ -82,14 +82,14 @@ def test_nonzero_exit_raises_exception(stack):
         Cmd("exit 1", stack).run()
 
 
-def test_command_writes_to_stdout(stack, capfd):
+def test_hook_writes_to_stdout(stack, capfd):
     Cmd("echo hello", stack).run()
     cap = capfd.readouterr()
     assert cap.out.strip() == "hello"
     assert cap.err.strip() == ""
 
 
-def test_shell_error_writes_to_stderr(stack, capfd):
+def test_hook_writes_to_stderr(stack, capfd):
     try:
         Cmd("missing_command", stack).run()
     except CalledProcessError:
@@ -105,7 +105,7 @@ def test_default_shell_is_sh(stack, capfd):
     assert cap.err.strip() == ""
 
 
-def test_executable_sets_the_shell(stack, capfd):
+def test_shell_parameter_sets_the_shell(stack, capfd):
     Cmd({"command": "echo $0", "shell": "/bin/bash"}, stack).run()
     cap = capfd.readouterr()
     assert cap.out.strip() == "/bin/bash"
