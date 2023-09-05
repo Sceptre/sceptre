@@ -7,6 +7,11 @@ from sceptre.exceptions import InvalidHookArgumentTypeError
 from sceptre.hooks.cmd import Cmd
 from sceptre.stack import Stack
 
+ERROR_MESSAGE_PREFIX = (
+    r"A cmd hook requires either a string argument or an object with `run` and "
+    r"`shell` keys with string values\. You gave "
+)
+
 
 @pytest.fixture()
 def stack():
@@ -61,14 +66,25 @@ def test_dict_with_list_shell_raises_exception(stack):
         Cmd({"run": "echo hello", "shell": ["/bin/bash"]}, stack).run()
 
 
+def test_dict_with_bad_shell_raises_exception(stack):
+    exception_message = r"^\[Errno 2\] No such file or directory: '/bin/bsah'$"
+    with pytest.raises(FileNotFoundError, match=exception_message):
+        typo = "/bin/bsah"
+        Cmd({"run": "echo hello", "shell": typo}, stack).run()
+
+
+def test_dict_with_empty_string_raises_exception(stack):
+    exception_message = (
+        ERROR_MESSAGE_PREFIX + r"`\{'run': '', 'shell': '/bin/bash'\}`\."
+    )
+    with pytest.raises(InvalidHookArgumentTypeError, match=exception_message):
+        Cmd({"run": "", "shell": "/bin/bash"}, stack).run()
+
+
 def test_input_exception_reprs_input(stack):
     import datetime
 
-    exception_message = (
-        r"A cmd hook requires either a string argument or an object with "
-        r"`run` and `shell` keys with string values\. You gave "
-        r"`datetime.date\(2023, 8, 31\)`\."
-    )
+    exception_message = ERROR_MESSAGE_PREFIX + r"`datetime.date\(2023, 8, 31\)`\."
     with pytest.raises(InvalidHookArgumentTypeError, match=exception_message):
         Cmd(datetime.date(2023, 8, 31), stack).run()
 

@@ -31,6 +31,7 @@ class Cmd(Hook):
             and set(self.argument) == {"run", "shell"}
             and isinstance(self.argument["run"], str)
             and isinstance(self.argument["shell"], str)
+            and self.argument["run"] != ""
         ):
             command_to_run = self.argument["run"]
             shell = self.argument["shell"]
