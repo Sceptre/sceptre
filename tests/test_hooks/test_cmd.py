@@ -73,12 +73,20 @@ def test_dict_with_bad_shell_raises_exception(stack):
         Cmd({"run": "echo hello", "shell": typo}, stack).run()
 
 
-def test_dict_with_empty_string_raises_exception(stack):
+def test_dict_with_empty_run_raises_exception(stack):
     exception_message = (
         ERROR_MESSAGE_PREFIX + r"`\{'run': '', 'shell': '/bin/bash'\}`\."
     )
     with pytest.raises(InvalidHookArgumentTypeError, match=exception_message):
         Cmd({"run": "", "shell": "/bin/bash"}, stack).run()
+
+
+def test_dict_with_empty_shell_raises_exception(stack):
+    exception_message = (
+        ERROR_MESSAGE_PREFIX + r"`\{'run': 'echo hello', 'shell': ''\}`\."
+    )
+    with pytest.raises(InvalidHookArgumentTypeError, match=exception_message):
+        Cmd({"run": "echo hello", "shell": ""}, stack).run()
 
 
 def test_input_exception_reprs_input(stack):
