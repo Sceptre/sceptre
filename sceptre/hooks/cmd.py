@@ -17,8 +17,9 @@ class Cmd(Hook):
 
         See hooks documentation for details.
 
-        :raises: sceptre.exceptions.InvalidHookArgumentTypeError
-        :raises: subprocess.CalledProcessError
+        :raises: sceptre.exceptions.InvalidHookArgumentTypeError invalid input
+        :raises: subprocess.CalledProcessError failed command
+        :raises: subprocess.FileNotFoundError shell doesn't exist
         """
         envs = self.stack.connection_manager.create_session_environment_variables()
 
