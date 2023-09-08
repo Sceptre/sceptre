@@ -12,6 +12,11 @@ ERROR_MESSAGE_PREFIX = (
     r"`shell` keys with string values\. You gave "
 )
 
+ERROR_MESSAGE = (
+    r"A cmd hook requires either a string argument or an object with `run` and "
+    r"`shell` keys with string values\. You gave `{0}`\."
+)
+
 
 @pytest.fixture()
 def stack():
@@ -32,67 +37,72 @@ def stack():
 
 
 def test_null_input_raises_exception(stack):
-    with pytest.raises(InvalidHookArgumentTypeError):
+    message = ERROR_MESSAGE.format(r"None")
+    with pytest.raises(InvalidHookArgumentTypeError, match=message):
         Cmd(None, stack).run()
 
 
 def test_empty_string_raises_exception(stack):
-    with pytest.raises(InvalidHookArgumentTypeError):
+    message = ERROR_MESSAGE.format(r"''")
+    with pytest.raises(InvalidHookArgumentTypeError, match=message):
         Cmd("", stack).run()
 
 
 def test_list_raises_exception(stack):
-    with pytest.raises(InvalidHookArgumentTypeError):
+    message = ERROR_MESSAGE.format(r"\['echo', 'hello'\]")
+    with pytest.raises(InvalidHookArgumentTypeError, match=message):
         Cmd(["echo", "hello"], stack).run()
 
 
 def test_dict_without_shell_raises_exception(stack):
-    with pytest.raises(InvalidHookArgumentTypeError):
+    message = ERROR_MESSAGE.format(r"\{'run': 'echo hello'\}")
+    with pytest.raises(InvalidHookArgumentTypeError, match=message):
         Cmd({"run": "echo hello"}, stack).run()
 
 
 def test_dict_without_run_raises_exception(stack):
-    with pytest.raises(InvalidHookArgumentTypeError):
+    message = ERROR_MESSAGE.format(r"\{'shell': '/bin/bash'\}")
+    with pytest.raises(InvalidHookArgumentTypeError, match=message):
         Cmd({"shell": "/bin/bash"}, stack).run()
 
 
 def test_dict_with_list_run_raises_exception(stack):
-    with pytest.raises(InvalidHookArgumentTypeError):
+    message = ERROR_MESSAGE.format(
+        r"\{'run': \['echo', 'hello'\], 'shell': '/bin/bash'\}"
+    )
+    with pytest.raises(InvalidHookArgumentTypeError, match=message):
         Cmd({"run": ["echo", "hello"], "shell": "/bin/bash"}, stack).run()
 
 
 def test_dict_with_list_shell_raises_exception(stack):
-    with pytest.raises(InvalidHookArgumentTypeError):
+    message = ERROR_MESSAGE.format(r"\{'run': 'echo hello', 'shell': \['/bin/bash'\]\}")
+    with pytest.raises(InvalidHookArgumentTypeError, match=message):
         Cmd({"run": "echo hello", "shell": ["/bin/bash"]}, stack).run()
 
 
 def test_dict_with_bad_shell_raises_exception(stack):
-    exception_message = r"^\[Errno 2\] No such file or directory: '/bin/bsah'$"
-    with pytest.raises(FileNotFoundError, match=exception_message):
+    message = r"^\[Errno 2\] No such file or directory: '/bin/bsah'$"
+    with pytest.raises(FileNotFoundError, match=message):
         typo = "/bin/bsah"
         Cmd({"run": "echo hello", "shell": typo}, stack).run()
 
 
 def test_dict_with_empty_run_raises_exception(stack):
-    exception_message = (
-        ERROR_MESSAGE_PREFIX + r"`\{'run': '', 'shell': '/bin/bash'\}`\."
-    )
-    with pytest.raises(InvalidHookArgumentTypeError, match=exception_message):
+    message = ERROR_MESSAGE.format(r"\{'run': '', 'shell': '/bin/bash'\}")
+    with pytest.raises(InvalidHookArgumentTypeError, match=message):
         Cmd({"run": "", "shell": "/bin/bash"}, stack).run()
 
 
 def test_dict_with_empty_shell_raises_exception(stack):
-    exception_message = (
-        ERROR_MESSAGE_PREFIX + r"`\{'run': 'echo hello', 'shell': ''\}`\."
-    )
-    with pytest.raises(InvalidHookArgumentTypeError, match=exception_message):
+    message = ERROR_MESSAGE.format(r"\{'run': 'echo hello', 'shell': ''\}")
+    with pytest.raises(InvalidHookArgumentTypeError, match=message):
         Cmd({"run": "echo hello", "shell": ""}, stack).run()
 
 
 def test_input_exception_reprs_input(stack):
     import datetime
 
-    exception_message = ERROR_MESSAGE_PREFIX + r"`datetime.date\(2023, 8, 31\)`\."
+    exception_message = ERROR_MESSAGE.format(r"datetime.date\(2023, 8, 31\)")
     with pytest.raises(InvalidHookArgumentTypeError, match=exception_message):
         Cmd(datetime.date(2023, 8, 31), stack).run()
 
@@ -102,7 +112,8 @@ def test_zero_exit_returns(stack):
 
 
 def test_nonzero_exit_raises_exception(stack):
-    with pytest.raises(CalledProcessError):
+    message = r"Command 'exit 1' returned non-zero exit status 1\."
+    with pytest.raises(CalledProcessError, match=message):
         Cmd("exit 1", stack).run()
 
 
@@ -114,12 +125,11 @@ def test_hook_writes_to_stdout(stack, capfd):
 
 
 def test_hook_writes_to_stderr(stack, capfd):
-    try:
+    with pytest.raises(Exception):
         Cmd("missing_command", stack).run()
-    except CalledProcessError:
-        cap = capfd.readouterr()
-        assert cap.out.strip() == ""
-        assert "missing_command: not found" in cap.err
+    cap = capfd.readouterr()
+    assert cap.out.strip() == ""
+    assert cap.err.strip() == "/bin/sh: 1: missing_command: not found"
 
 
 def test_default_shell_is_sh(stack, capfd):
