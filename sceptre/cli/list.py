@@ -5,6 +5,8 @@ from sceptre.context import SceptreContext
 from sceptre.cli.helpers import catch_exceptions, write
 from sceptre.plan.plan import SceptrePlan
 
+from typing import List, Dict
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,59 +48,42 @@ def list_resources(ctx, path):
     write(responses, context.output_format)
 
 
-def process_export_envvar(responses):
-    """
-    --export=envvar
-    Legacy. This option was added in the initial commit of the project,
-    although its intended use case is unclear. It may relate to a feature
-    that had been removed prior to the initial commit.
-    """
+def iterate_stack_outputs(responses: List[Dict[str, List[dict]]]):
     for response in responses:
-        for stack in response.values():
-            for output in stack:
-                write(
-                    "export SCEPTRE_{0}='{1}'".format(
-                        output.get("OutputKey"), output.get("OutputValue")
-                    ),
-                    "text",
-                )
+        for stack_name, values in response.items():
+            for value in values:
+                yield stack_name, value
 
 
-def process_export_stackoutput(responses, plan):
-    """
-    --export=stackoutput
-    Format outputs as !stack_output references.
-    """
-    for response in responses:
-        for stack_name, stack in response.items():
-            for output in stack:
-                write(
-                    "!stack_output {0}.yaml::{1} [{2}]".format(
-                        stack_name,
-                        output.get("OutputKey"),
-                        output.get("OutputValue"),
-                    ),
-                    "text",
-                )
+def write_envvar(stack_name, output):
+    write(
+        "export SCEPTRE_{0}='{1}'".format(
+            output.get("OutputKey"), output.get("OutputValue")
+        ),
+        "text",
+    )
 
 
-def process_export_stackoutputexternal(responses, plan):
-    """
-    --export=stackoutputexternal
-    Format outputs as !stack_output_external references.
-    """
-    stack_names = {stack.name: stack.external_name for stack in plan.graph}
-    for response in responses:
-        for stack_name, stack in response.items():
-            for output in stack:
-                write(
-                    "!stack_output_external {0}::{1} [{2}]".format(
-                        stack_names[stack_name],
-                        output.get("OutputKey"),
-                        output.get("OutputValue"),
-                    ),
-                    "text",
-                )
+def write_stackoutput(stack_name, output):
+    write(
+        "!stack_output {0}.yaml::{1} [{2}]".format(
+            stack_name,
+            output.get("OutputKey"),
+            output.get("OutputValue"),
+        ),
+        "text",
+    )
+
+
+def write_stackoutputexternal(stack_name, output, stack_names):
+    write(
+        "!stack_output_external {0}::{1} [{2}]".format(
+            stack_names[stack_name],
+            output.get("OutputKey"),
+            output.get("OutputValue"),
+        ),
+        "text",
+    )
 
 
 @list_group.command(name="outputs")
@@ -134,12 +119,27 @@ def list_outputs(ctx, path, export):
     plan = SceptrePlan(context)
     responses = [response for response in plan.describe_outputs().values() if response]
 
+    # Legacy. This option was added in the initial commit of the project,
+    # although its intended use case is unclear. It may relate to a feature
+    # that had been removed prior to the initial commit.
     if export == "envvar":
-        process_export_envvar(responses)
+        for stack_name, output in iterate_stack_outputs(responses):
+            write_envvar(stack_name, output)
+
+    # Format outputs as !stack_output references.
     elif export == "stackoutput":
-        process_export_stackoutput(responses, plan)
+        for stack_name, output in iterate_stack_outputs(responses):
+            write_stackoutput(stack_name, output)
+
+    # Format outputs as !stack_output_external references.
     elif export == "stackoutputexternal":
-        process_export_stackoutputexternal(responses, plan)
+        stack_names = {stack.name: stack.external_name for stack in plan.graph}
+        for stack_name, output in iterate_stack_outputs(responses):
+            write_stackoutputexternal(stack_name, output, stack_names)
+
+    # Legacy. The output here is somewhat confusing in that
+    # outputs are organised in keys that only have meaning inside
+    # Sceptre.
     else:
         write(responses, context.output_format)
 

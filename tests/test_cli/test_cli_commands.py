@@ -661,7 +661,9 @@ class TestCli:
             cli, ["list", "outputs", "dev/vpc.yaml", "-e", "stackoutputexternal"]
         )
         assert result.exit_code == 0
-        assert result.output == "!stack_output_external mock-stack-external::Key [Value]\n"
+        assert (
+            result.output == "!stack_output_external mock-stack-external::Key [Value]\n"
+        )
 
     @pytest.mark.parametrize(
         "path,output_format,expected_output",
