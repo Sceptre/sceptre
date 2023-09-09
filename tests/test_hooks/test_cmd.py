@@ -7,14 +7,9 @@ from sceptre.exceptions import InvalidHookArgumentTypeError
 from sceptre.hooks.cmd import Cmd
 from sceptre.stack import Stack
 
-ERROR_MESSAGE_PREFIX = (
-    r"A cmd hook requires either a string argument or an object with `run` and "
-    r"`shell` keys with string values\. You gave "
-)
-
 ERROR_MESSAGE = (
-    r"A cmd hook requires either a string argument or an object with `run` and "
-    r"`shell` keys with string values\. You gave `{0}`\."
+    r"^A cmd hook requires either a string argument or an object with `run` and "
+    r"`shell` keys with string values\. You gave `{0}`\.$"
 )
 
 
