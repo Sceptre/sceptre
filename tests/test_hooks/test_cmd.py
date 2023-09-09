@@ -92,11 +92,17 @@ def test_dict_with_list_shell_raises_exception(stack):
         Cmd({"run": "echo hello", "shell": ["/bin/bash"]}, stack).run()
 
 
-def test_dict_with_bad_shell_raises_exception(stack):
+def test_dict_with_typo_shell_raises_exception(stack):
     message = r"^\[Errno 2\] No such file or directory: '/bin/bsah'$"
     with pytest.raises(FileNotFoundError, match=message):
         typo = "/bin/bsah"
         Cmd({"run": "echo hello", "shell": typo}, stack).run()
+
+
+def test_dict_with_non_executable_shell_raises_exception(stack):
+    message = r"^\[Errno 13\] Permission denied: '/'$"
+    with pytest.raises(PermissionError, match=message):
+        Cmd({"run": "echo hello", "shell": "/"}, stack).run()
 
 
 def test_dict_with_empty_shell_raises_exception(stack):
