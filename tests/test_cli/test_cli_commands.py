@@ -636,14 +636,34 @@ class TestCli:
         expected_output = "StackOutputKeyOutputValue\n\nStackNameKeyValue\n"
         assert result.output.replace(" ", "") == expected_output
 
-    def test_list_outputs_with_export(self):
-        outputs = {"stack": [{"OutputKey": "Key", "OutputValue": "Value"}]}
+    def test_list_outputs_with_export__envvar(self):
+        outputs = {"mock-stack": [{"OutputKey": "Key", "OutputValue": "Value"}]}
         self.mock_stack_actions.describe_outputs.return_value = outputs
         result = self.runner.invoke(
             cli, ["list", "outputs", "dev/vpc.yaml", "-e", "envvar"]
         )
         assert result.exit_code == 0
         assert result.output == "export SCEPTRE_Key='Value'\n"
+
+    def test_list_outputs_with_export__stackoutput(self):
+        outputs = {"mock-stack": [{"OutputKey": "Key", "OutputValue": "Value"}]}
+        self.mock_stack_actions.describe_outputs.return_value = outputs
+        result = self.runner.invoke(
+            cli, ["list", "outputs", "dev/vpc.yaml", "-e", "stackoutput"]
+        )
+        assert result.exit_code == 0
+        assert result.output == "!stack_output mock-stack.yaml::Key [Value]\n"
+
+    def test_list_outputs_with_export__stackoutputexternal(self):
+        outputs = {"mock-stack": [{"OutputKey": "Key", "OutputValue": "Value"}]}
+        self.mock_stack_actions.describe_outputs.return_value = outputs
+        result = self.runner.invoke(
+            cli, ["list", "outputs", "dev/vpc.yaml", "-e", "stackoutputexternal"]
+        )
+        assert result.exit_code == 0
+        assert (
+            result.output == "!stack_output_external mock-stack-external::Key [Value]\n"
+        )
 
     @pytest.mark.parametrize(
         "path,output_format,expected_output",
