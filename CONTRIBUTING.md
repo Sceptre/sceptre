@@ -137,6 +137,17 @@ $ poetry run tox
 [Tox](https://pypi.org/project/tox/) is used to execute tests against multiple
 python versions inside of poetry virtual environments.
 
+## Build documentation
+
+Sceptre uses [Sphinx](https://www.sphinx-doc.org/en/master/) to generate
+documentation in HTML format.
+
+To build the documentation locally:
+
+```bash
+$ make docs
+```
+
 ## Integration Tests
 
 If you haven't setup your local environment or personal CircleCI account to run

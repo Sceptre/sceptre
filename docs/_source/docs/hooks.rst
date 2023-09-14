@@ -44,23 +44,105 @@ Available Hooks
 cmd
 ~~~
 
-Executes the argument string in the shell as a Python subprocess.
-
-For more information about how this works, see the `subprocess documentation`_
+Executes a command through the shell.
 
 Syntax:
 
 .. code-block:: yaml
 
+   # Default shell.
    <hook_point>:
      - !cmd <shell_command>
 
-Example:
+   # Another shell.
+   <hook_point>:
+     - !cmd
+         run: <shell_command>
+         shell: <shell_name_or_path>
+
+Pass the command string as the only argument to use the default shell.
+
+On POSIX the default shell is ``sh``. On Windows it's usually ``cmd.exe``, but ``%ComSpec%`` may
+override that.
+
+Write the command string as you would type it at the shell prompt. This includes quotes and
+backslashes to escape filenames with spaces in them. To minimize escaping, you can use YAML plain
+strings like the following examples.
 
 .. code-block:: yaml
 
-   before_create:
-     - !cmd "echo hello"
+   hooks:
+     before_update:
+       - !cmd echo "Hello, world!"
+
+A successful command prints its standard output messages between status messages from Sceptre.
+
+.. code-block::
+
+   [2023-09-03 01:06:28] - test - Launching Stack
+   [2023-09-03 01:06:29] - test - Stack is in the CREATE_COMPLETE state
+   Hello, world!
+   [2023-09-03 01:06:31] - test - Updating Stack
+   [2023-09-03 01:06:31] - test - No updates to perform.
+
+Pass named arguments to use a different shell. Here the command string is called ``run`` and the
+shell executable is called ``shell``.
+
+Write the executable name as you would type it at an interactive prompt to start the shell. For
+example, if Bash is in the system path, you can write ``bash``; otherwise, you need to write the
+absolute path such as ``/bin/bash``.
+
+.. code-block:: yaml
+
+   hooks:
+     before_update:
+       - !cmd
+           run: echo "Hello, $0!"
+           shell: bash
+
+.. code-block:: text
+
+   [2023-09-04 00:29:42] - test - Launching Stack
+   [2023-09-04 00:29:43] - test - Stack is in the CREATE_COMPLETE state
+   Hello, bash!
+   [2023-09-04 00:29:43] - test - Updating Stack
+   [2023-09-04 00:29:43] - test - No updates to perform.
+
+You can use PowerShell in the same way.
+
+.. code-block:: yaml
+
+   hooks:
+     before_update:
+       - !cmd
+           run: Write-Output "Hello, Posh!"
+           shell: pwsh
+
+.. code-block:: text
+
+   [2023-09-04 00:44:32] - test - Launching Stack
+   [2023-09-04 00:44:33] - test - Stack is in the CREATE_COMPLETE state
+   Hello, Posh!
+   [2023-09-04 00:44:34] - test - Updating Stack
+   [2023-09-04 00:44:34] - test - No updates to perform.
+
+If the shell command fails, so does Sceptre. Its output sits between Sceptre's status
+messages and a Python traceback.
+
+.. code-block:: yaml
+
+   hooks:
+     before_update:
+       - !cmd missing_command
+
+.. code-block:: text
+
+   [2023-09-04 00:46:25] - test - Launching Stack
+   [2023-09-04 00:46:26] - test - Stack is in the CREATE_COMPLETE state
+   /bin/sh: 1: missing_command: not found
+   Traceback (most recent call last):
+   <snip>
+   subprocess.CalledProcessError: Command 'missing_command' returned non-zero exit status 127.
 
 asg_scaling_processes
 ~~~~~~~~~~~~~~~~~~~~~

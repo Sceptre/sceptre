@@ -5,6 +5,8 @@ from sceptre.context import SceptreContext
 from sceptre.cli.helpers import catch_exceptions, write
 from sceptre.plan.plan import SceptrePlan
 
+from typing import List, Dict
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,12 +48,67 @@ def list_resources(ctx, path):
     write(responses, context.output_format)
 
 
+# flake8: noqa: C901
+def write_outputs(export, responses, plan, context):
+    """
+    Helper function for list outputs.
+    """
+    # Legacy. This option was added in the initial commit of the project,
+    # although its intended use case is unclear. It may relate to a feature
+    # that had been removed prior to the initial commit.
+    if export == "envvar":
+        for response in responses:
+            for stack in response.values():
+                for output in stack:
+                    write(
+                        "export SCEPTRE_{0}='{1}'".format(
+                            output.get("OutputKey"), output.get("OutputValue")
+                        ),
+                        "text",
+                    )
+
+    # Format outputs as !stack_output references.
+    elif export == "stackoutput":
+        for response in responses:
+            for stack_name, stack in response.items():
+                for output in stack:
+                    write(
+                        "!stack_output {0}.yaml::{1} [{2}]".format(
+                            stack_name,
+                            output.get("OutputKey"),
+                            output.get("OutputValue"),
+                        ),
+                        "text",
+                    )
+
+    # Format outputs as !stack_output_external references.
+    elif export == "stackoutputexternal":
+        stack_names = {stack.name: stack.external_name for stack in plan.graph}
+        for response in responses:
+            for stack_name, stack in response.items():
+                for output in stack:
+                    write(
+                        "!stack_output_external {0}::{1} [{2}]".format(
+                            stack_names[stack_name],
+                            output.get("OutputKey"),
+                            output.get("OutputValue"),
+                        ),
+                        "text",
+                    )
+
+    # Legacy. The output here is somewhat confusing in that
+    # outputs are organised in keys that only have meaning inside
+    # Sceptre.
+    else:
+        write(responses, context.output_format)
+
+
 @list_group.command(name="outputs")
 @click.argument("path")
 @click.option(
     "-e",
     "--export",
-    type=click.Choice(["envvar"]),
+    type=click.Choice(["envvar", "stackoutput", "stackoutputexternal"]),
     help="Specify the export formatting.",
 )
 @click.pass_context
@@ -60,7 +117,6 @@ def list_outputs(ctx, path, export):
     """
     List outputs for stack.
     \f
-
     :param path: Path to execute the command on.
     :type path: str
     :param export: Specify the export formatting.
@@ -79,18 +135,7 @@ def list_outputs(ctx, path, export):
     plan = SceptrePlan(context)
     responses = [response for response in plan.describe_outputs().values() if response]
 
-    if export == "envvar":
-        for response in responses:
-            for stack in response.values():
-                for output in stack:
-                    write(
-                        "export SCEPTRE_{0}='{1}'".format(
-                            output.get("OutputKey"), output.get("OutputValue")
-                        ),
-                        "text",
-                    )
-    else:
-        write(responses, context.output_format)
+    write_outputs(export, responses, plan, context)
 
 
 @list_group.command(name="change-sets")
