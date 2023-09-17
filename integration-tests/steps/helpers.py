@@ -8,6 +8,7 @@ from botocore.exceptions import ClientError
 from sceptre.exceptions import TemplateSceptreHandlerError
 from sceptre.exceptions import UnsupportedTemplateFileTypeError
 from sceptre.exceptions import StackDoesNotExistError
+from sceptre.exceptions import SceptreException
 
 
 @then('the user is told "{message}"')
@@ -47,6 +48,8 @@ def step_impl(context, exception_type):
         assert isinstance(context.error, AttributeError)
     elif exception_type == "UndefinedError":
         assert isinstance(context.error, jinja2.exceptions.UndefinedError)
+    elif exception_type == "SceptreException":
+        assert isinstance(context.error, SceptreException)
     else:
         raise Exception("Step has incorrect message")
 
