@@ -186,10 +186,6 @@ during development.
   to work with an AWS account that you have access to.  You can use the same user
   that you use for CircleCi.
 
-_Note_: All integration tests are set up to run in `eu-west-*` region.  If you prefer
-to run in a different region you must update the region in each test before running it
-
-
 #### run all tests
 
 ```bash
