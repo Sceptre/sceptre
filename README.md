@@ -277,7 +277,6 @@ Follow the [SceptreOrg Twitter account](https://twitter.com/SceptreOrg) to get a
 
 See our [Contributing Guide](CONTRIBUTING.md)
 
-
 ## Sponsors
 
 [![Sage Bionetworks](sponsors/sage_bionetworks_logo.png "Sage Bionetworks")](https://sagebionetworks.org)
