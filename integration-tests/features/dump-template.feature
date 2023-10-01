@@ -64,8 +64,8 @@ Feature: Dump template
 
   Examples: Render Errors
     | filename                                | exception          |
-    | jinja/invalid_template_missing_key.j2   | UndefinedError     |
-    | jinja/invalid_template_missing_attr.j2  | UndefinedError     |
+    | jinja/invalid_template_missing_key.j2   | SceptreException   |
+    | jinja/invalid_template_missing_attr.j2  | SceptreException   |
 
   Scenario: Dumping static templates with file template handler
     Given the template for stack "13/A" is "valid_template.json"
