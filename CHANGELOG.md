@@ -4,6 +4,13 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 4.3.0 (2023.10.07)
+ - [Resolve #1351] Add debugging to Jinja rendering (#1375)
+ - [Resolves #1356] Add export=stackoutput and stackoutputexternal feature to list outputs (#1357)
+ - [Resolves #1213] Add shell option to cmd hook (#1372)
+ - [Resolve #1370] Use Python 3.11 for Black (#1371)
+ - Documentation updates (#1355) (#1373)
+
 ## 4.2.2 (2023.07.18)
  - [Resolve #1358] Updating PyYaml to ^6.0 (#1359)
 
