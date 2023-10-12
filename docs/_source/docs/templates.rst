@@ -45,7 +45,7 @@ Stack:
 
 .. code-block:: yaml
 
-    template
+    template:
       path: templates/dns-extras.j2
       type: file
     dependencies:
