@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import functools
-import logging
 import shlex
 
 from botocore.exceptions import ClientError
@@ -17,10 +16,6 @@ class StackOutputBase(Resolver):
     """
     A abstract base class which provides methods for getting Stack outputs.
     """
-
-    def __init__(self, *args, **kwargs):
-        self.logger = logging.getLogger(__name__)
-        super(StackOutputBase, self).__init__(*args, **kwargs)
 
     def _get_output_value(
         self, stack_name, output_key, profile=None, region=None, sceptre_role=None
@@ -97,12 +92,11 @@ class StackOutput(StackOutputBase):
     Sceptre StackGroup. Adds the target Stack to the dependencies of the
     Stack using the Resolver.
 
-    :param argument: The Stack name and output name to get.
-    :type argument: str in the format ``"<stack name>::<output key>"``
+    :ivar argument: The Stack name and output name to get. In the format of
+        `"<stack config path>::<output key>"``
     """
 
-    def __init__(self, *args, **kwargs):
-        super(StackOutput, self).__init__(*args, **kwargs)
+    argument: str
 
     def setup(self):
         """
@@ -160,12 +154,12 @@ class StackOutputExternal(StackOutputBase):
     Resolver for retrieving the value of an output of any Stack within the
     current Sceptre stack_group's account and region.
 
-    :param argument: The Stack name and output name to get.
-    :type argument: str in the format ``"<full stack name>::<output key>"``
+    :ivar argument: The Stack name and output name to get. In the format
+        ``"<full stack name>::<output key>"`` or
+        ``"<full stack name>::<profile>::<region>::<sceptre_role>::<output_key>"``
     """
 
-    def __init__(self, *args, **kwargs):
-        super(StackOutputExternal, self).__init__(*args, **kwargs)
+    argument: str
 
     def resolve(self):
         """
