@@ -64,6 +64,13 @@ Please keep in mind:
   the feature, as maintenance burden of new contributions are usually put on the
   maintainers of the project.
 
+## Dependency Management
+
+[Poetry](https://pypi.org/project/poetry/) is the tool that is used for
+dependency management, versioning and deployment management to pypi.
+Please [install poetry](https://python-poetry.org/docs/#installation)
+and execute commands from the poetry environment.
+
 # Get Started
 
 1. Fork the `sceptre` repository on GitHub.
@@ -79,9 +86,7 @@ $ git clone git@github.org:<github_username>/sceptre.git
 
 ```bash
    $ cd sceptre/
-   $ pip install -r requirements/prod.txt
-   $ pip install -r requirements/dev.txt
-   $ pip install -e .
+   $ poetry install --all-extras -v
 ```
 
 4. Create a branch for local development:
@@ -122,26 +127,15 @@ can manually execute the validations by running `pre-commit run --all-files`.
 
 ## Unit Tests
 
-Run unit tests or coverage in your current environment - (handy for quickly
-running unit tests):
+Sceptre aims to be compatible with Python 3, please run unit test
+against all supported versions.
 
 ```bash
-$ make test
-$ make coverage
+$ poetry run tox
 ```
 
-Note: Sceptre aims to be compatible with Python 3, please run unit test
-against both versions. You will need the corresponding versions of Python
-installed on your system.
-
-Run unit tests and coverage using tox for multiple Python versions:
-
-```bash
-$ tox -e py36 -e py37
-```
-
-If you use pyenv to manage Python versions, try `pip install tox-pyenv` to make
-tox and pyenv play nicely.
+[Tox](https://pypi.org/project/tox/) is used to execute tests against multiple
+python versions inside of poetry virtual environments.
 
 ## Integration Tests
 
@@ -180,28 +174,38 @@ during development.
 * Setup [AWS CLI Environment variables](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html)
   to work with an AWS account that you have access to.  You can use the same user
   that you use for CircleCi.
-* `pip install behave`
 
-_Note_: All integration tests are setup to run in `eu-west-*` region.  If you prefer
+_Note_: All integration tests are set up to run in `eu-west-*` region.  If you prefer
 to run in a different region you must update the region in each test before running it
 
-### run all tests
+
+#### run all tests
 
 ```bash
-$ behave integration-tests
+$ AWS_PROFILE=<profile> AWS_DEFAULT_REGION=<region> poetry run behave --junit --junit-directory build/behave
 ```
 
-### run a specific feature
+#### run a specific feature
 
 ```bash
-$ behave integration-tests --include <feature-file>
+$ poetry run behave integration-tests --include <feature-file>
 ```
 
 ### run a specific scenario
 
 ```bash
-$ behave integration-tests -n "<scenario-name>"
+$ poetry run behave integration-tests -n "<scenario-name>"
 ```
+
+# Sponsors
+
+* [Sage Bionetworks](https://sagebionetworks.org/) donated the AWS account for running Sceptre integration
+  tests.  Please contact it@sagebase.org for support.
+* [GoDaddy](https://www.godaddy.com/) donated [the domain](https://docs.sceptre-project.org) for hosting
+  the Sceptre project.  Please contact oss@godaddy.com for support.
+* [Cloudreach](https://www.cloudreach.com/) started the Sceptre project and continuted to maintain it
+  until the ver 2.4 release.  It has since been extricated from Cloudreach and has been maintained
+  by members of the Sceptre open source community.
 
 # Credits
 

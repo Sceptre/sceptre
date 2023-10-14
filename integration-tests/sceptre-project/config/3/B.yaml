@@ -1,3 +1,4 @@
 dependencies:
   - 3/A.yaml
-template_path: valid_template.json
+template:
+  path: valid_template.json

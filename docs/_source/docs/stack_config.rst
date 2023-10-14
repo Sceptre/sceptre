@@ -16,12 +16,19 @@ particular Stack. The available keys are listed below.
 -  `template_path`_ or `template`_ *(required)*
 -  `dependencies`_ *(optional)*
 -  `hooks`_ *(optional)*
+-  `ignore`_ *(optional)*
 -  `notifications`_ *(optional)*
+-  `obsolete`_ *(optional)*
 -  `on_failure`_ *(optional)*
+-  `disable_rollback`_ *(optional)*
 -  `parameters`_ *(optional)*
 -  `protected`_ *(optional)*
 -  `role_arn`_ *(optional)*
+-  `cloudformation_service_role`_ *(optional)*
 -  `iam_role`_ *(optional)*
+-  `sceptre_role`_ (*optional)*
+-  `iam_role_session_duration`_ *(optional)*
+-  `sceptre_role_session_duration`_ *(optional)*
 -  `sceptre_user_data`_ *(optional)*
 -  `stack_name`_ *(optional)*
 -  `stack_tags`_ *(optional)*
@@ -44,7 +51,7 @@ from the Stack config filename.
 
 .. warning::
 
-   This key is deprecated in favor of the `template`_ key.
+   This key is deprecated in favor of the `template`_ key. It will be removed in version 5.0.0.
 
 template
 ~~~~~~~~
@@ -93,12 +100,53 @@ and that Stack need not be added as an explicit dependency.
 
 hooks
 ~~~~~
-* Resolvable: No
+* Resolvable: No (but you can use resolvers _in_ hook arguments!)
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
 A list of arbitrary shell or Python commands or scripts to run. Find out more
 in the :doc:`hooks` section.
+
+ignore
+~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This configuration should be set with a boolean value of ``True`` or ``False``. By default, this is
+set to ``False`` on all stacks.
+
+``ignore`` determines how the stack should be handled when running ``sceptre launch``. A stack
+marked with ``ignore: True`` will be completely ignored by the launch command. If the stack does NOT
+exist on AWS, it won't be created. If it *DOES* exist, it will neither be updated nor deleted.
+
+You *can* mark a stack with ``ignore: True`` that other non-ignored stacks depend on, but the launch
+will fail if dependent stacks require resources or outputs that don't exist because the stack has not been
+launched. **Therefore, only ignore dependencies of other stacks if you are aware of the risks of
+launch failure.**
+
+This setting can be especially useful when combined with Jinja logic to exclude certain stacks from
+launch based upon conditional Jinja-based template logic.
+
+For Example:
+
+.. code-block:: yaml
+
+   template:
+       path: "my/test/resources.yaml"
+
+   # Configured this way, if the var "use_test_resources" is not true, the stack will not be launched
+   # and instead excluded from the launch. But if "use_test_resources" is true, the stack will be
+   # deployed along with the rest of the resources being deployed.
+   {% if not var.use_test_resources %}
+   ignore: True
+   {% endif %}
+
+
+.. note::
+   The ``ignore`` configuration **only** applies to the **launch** command. You can still run
+   ``create``, ``update``, or ``delete`` commands on a stack marked with ``ignore: True``;
+   these commands will ignore the ``ignore`` setting and act upon the stack the same as any other.
 
 notifications
 ~~~~~~~~~~~~~
@@ -111,6 +159,39 @@ can be specified per Stack. This configuration will be used by the ``create``,
 ``update``, and ``delete`` commands. More information about Stack notifications
 can found under the relevant section in the `AWS CloudFormation API
 documentation`_.
+
+.. _`obsolete`:
+
+obsolete
+~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This configuration should be set with a boolean value of ``True`` or ``False``. By default, this is
+set to ``False`` on all stacks.
+
+The ``obsolete`` configuration should be used to mark stacks to be deleted via ``prune`` actions,
+if they currently exist on AWS. (If they don't exist on AWS, pruning does nothing).
+
+There are two ways to prune obsolete stacks:
+
+1. ``sceptre prune`` will delete *all* obsolete stacks in the **project**.
+2. ``sceptre launch --prune [command path]`` will delete all obsolete stacks in the command path
+   before continuing with the launch.
+
+In practice, the ``obsolete`` configuration operates identically to ``ignore`` with the extra prune
+effects. When the ``launch`` command is invoked without the ``--prune`` flag, obsolete stacks will
+be ignored and not launched, just as if ``ignore: True`` was on the Stack Config.
+
+**Important**: You cannot have non-obsolete stacks dependent upon obsolete stacks. Both the
+``prune`` and ``launch --prune`` will reject such configurations and will not continue if this sort
+of dependency structure is detected. Only obsolete stacks can depend on obsolete stacks.
+
+.. note::
+   The ``obsolete`` configuration **only** applies to the **launch** and **prune** commands. You can
+   still run ``create``, ``update``, or ``delete`` commands on a stack marked with ``obsolete: True``;
+   these commands will ignore the ``obsolete`` setting and act upon the stack the same as any other.
 
 on_failure
 ~~~~~~~~~~
@@ -129,6 +210,23 @@ Examples include:
 
 ``on_failure: "DELETE"``
 
+disable_rollback
+~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This parameter describes the action taken by CloudFormation when a Stack fails
+to create or update, default is False. This option can be set from the stack
+config or from the Sceptre CLI commands to deploy stacks. The disable_rollback
+CLI option (i.e. sceptre launch --disable-rollback) disables cloudformation
+rollback globally for all stacks. This option overrides on_failure since
+Cloudformation does not allow setting both on deployment. For more information
+and valid values see the `AWS Documentation`_.
+
+Examples:
+
+``disable_rollback: "True"``
 
 parameters
 ~~~~~~~~~~
@@ -218,9 +316,19 @@ role_arn
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
+.. warning::
+   This field is deprecated as of v4.0.0 and will be removed in v5.0.0. It has been renamed to
+   `cloudformation_service_role`_ as a clearer name for its purpose.
+
+cloudformation_service_role
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Resolvable: Yes
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
 The ARN of a `CloudFormation Service Role`_ that is assumed by *CloudFormation* (not Sceptre)
 to create, update or delete resources. For more information on this configuration, its implications,
-and its uses see :ref:`Sceptre and IAM: role_arn <role_arn_permissions>`.
+and its uses see :ref:`Sceptre and IAM: cloudformation_service_role <cloudformation_service_role_permissions>`.
 
 iam_role
 ~~~~~~~~
@@ -228,21 +336,57 @@ iam_role
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
+.. warning::
+   This field is deprecated as of v4.0.0 and will be removed in v5.0.0. It has been renamed to
+   `sceptre_role`_ as a clearer name for its purpose.
+
+sceptre_role
+~~~~~~~~~~~~
+* Resolvable: Yes
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
 This is the IAM Role ARN that **Sceptre** should *assume* using AWS STS when executing any actions
 on the Stack.
 
-This is different from the ``role_arn`` option, which sets a CloudFormation service role for the
-stack. The ``iam_role`` configuration does not configure anything on the stack itself.
+This is different from the ``cloudformation_service_role`` option, which sets a CloudFormation
+service role for the stack. The ``sceptre_role`` configuration does not configure anything on the
+stack itself.
 
 .. warning::
 
-   If you set the value of ``iam_role`` with ``!stack_output``, that ``iam_role``
+   If you set the value of ``sceptre_role`` with ``!stack_output``, that ``sceptre_role``
    will not actually be used to obtain the stack_output, but it *WILL* be used for all subsequent stack
    actions. Therefore, it is important that the user executing the stack action have permissions to get
-   stack outputs for the stack outputting the ``iam_role``.
+   stack outputs for the stack outputting the ``sceptre_role``.
 
 For more information on this configuration, its implications, and its uses, see
-:ref:`Sceptre and IAM: iam_role <iam_role_permissions>`.
+:ref:`Sceptre and IAM: sceptre_role <sceptre_role_permissions>`.
+
+iam_role_session_duration
+~~~~~~~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+.. warning::
+   This field is deprecated as of v4.0.0 and will be removed in v5.0.0. It has been renamed to
+   `sceptre_role_session_duration`_ as a clearer name for its purpose.
+
+sceptre_role_session_duration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This is the session duration when **Sceptre** *assumes* the **sceptre_role** IAM Role using AWS STS when
+executing any actions on the Stack.
+
+.. warning::
+
+   If you set the value of ``sceptre_role_session_duration`` to a number that *GREATER* than 3600, you
+   will need to make sure that the ``sceptre_role`` has a configuration of ``MaxSessionDuration``, and
+   its value is *GREATER* than or equal to the value of ``sceptre_role_session_duration``.
 
 sceptre_user_data
 ~~~~~~~~~~~~~~~~~
@@ -446,7 +590,8 @@ order:
 A common point of confusion tends to be around the distinction between **"render time"** (phase 3, when
 Jinja logic is applied) and **"resolve time"** (phase 6, when resolvers are resolved). You cannot use
 a resolver via Jinja during "render time", since the resolver won't exist or be ready to use yet. You can,
-however, use Jinja logic to indicate *whether*, *which*, or *how* a resolver is configured.
+however, use Jinja logic to indicate *whether*, *which*, or *how* a resolver is configured. You can
+also use resolvers like ``!sub`` to interpolate resolved values when Jinja isn't available.
 
 For example, you **can** do something like this:
 
@@ -456,6 +601,11 @@ For example, you **can** do something like this:
      {% if var.use_my_parameter %}
        my_parameter: !stack_output {{ var.stack_name }}::{{ var.output_name }}
      {% endif %}
+       # !sub will let you combine outputs of multiple resolvers into a single string
+       my_combined_parameter: !sub
+         - "{fist_part} - {second_part}"
+         - first_part: !stack_output my/stack/name.yaml::Output
+         - second_part: {{ var.second_part }}
 
 Accessing resolved values in other fields
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -518,6 +668,7 @@ Examples
 .. _hooks: #hooks
 .. _notifications: #notifications
 .. _on_failure: #on-failure
+.. _disable_rollback: #disable-rollback
 .. _parameters: #parameters
 .. _protected: #protected
 .. _role_arn: #role-arn

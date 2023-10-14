@@ -1,2 +1,3 @@
 on_failure: DO_NOTHING
-template_path: invalid_template.json
+template:
+  path: invalid_template.json

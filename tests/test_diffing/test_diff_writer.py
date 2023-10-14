@@ -9,18 +9,24 @@ import pytest
 import yaml
 from deepdiff import DeepDiff
 
-from sceptre.diffing.diff_writer import DiffWriter, DeepDiffWriter, deepdiff_json_defaults, DiffLibWriter
+from sceptre.diffing.diff_writer import (
+    DiffWriter,
+    DeepDiffWriter,
+    deepdiff_json_defaults,
+    DiffLibWriter,
+    ColouredDiffLibWriter,
+)
 from sceptre.diffing.stack_differ import StackDiff, DiffType, StackConfiguration
+from colorama import Fore
 
 
 class ImplementedDiffWriter(DiffWriter):
-
     def __init__(
         self,
         stack_diff: StackDiff,
         output_stream: TextIO,
         output_format: str,
-        capturing_mock: Mock
+        capturing_mock: Mock,
     ):
         super().__init__(stack_diff, output_stream, output_format)
         self.capturing_mock = capturing_mock
@@ -38,22 +44,21 @@ class ImplementedDiffWriter(DiffWriter):
 
 
 class TestDiffWriter:
-
     def setup_method(self, method):
-        self.diff_output = 'diff'
-        self.capturing_mock = Mock(**{
-            'dump_diff.return_value': self.diff_output
-        })
-        self.stack_name = 'stack'
+        self.diff_output = "diff"
+        self.capturing_mock = Mock(**{"dump_diff.return_value": self.diff_output})
+        self.stack_name = "stack"
         self.template_diff = Mock()
         self.config_diff = Mock()
         self.is_deployed = True
-        self.generated_template = 'my template'
-        self.output_format = 'yaml'
+        self.generated_template = "my template"
+        self.output_format = "yaml"
 
         self.output_stream = StringIO()
 
-        self.diff_detected_message = f'--> Difference detected for stack {self.stack_name}!'
+        self.diff_detected_message = (
+            f"--> Difference detected for stack {self.stack_name}!"
+        )
 
     @property
     def generated_config(self):
@@ -62,7 +67,7 @@ class TestDiffWriter:
             parameters={},
             stack_tags={},
             notifications=[],
-            role_arn=None
+            cloudformation_service_role=None,
         )
 
     @property
@@ -73,31 +78,30 @@ class TestDiffWriter:
             self.config_diff,
             self.is_deployed,
             self.generated_config,
-            self.generated_template
+            self.generated_template,
         )
 
     @property
     def writer(self):
         return ImplementedDiffWriter(
-            self.diff,
-            self.output_stream,
-            self.output_format,
-            self.capturing_mock
+            self.diff, self.output_stream, self.output_format, self.capturing_mock
         )
 
     def assert_expected_output(self, *expected_segments):
-        expected_segments = [f'{line}\n' for line in expected_segments]
-        joined = ''.join(expected_segments)
+        expected_segments = [f"{line}\n" for line in expected_segments]
+        joined = "".join(expected_segments)
         expected_split_lines = joined.splitlines()
 
         received_lines = self.output_stream.getvalue().splitlines()
-        diff = list(difflib.unified_diff(
-            received_lines,
-            expected_split_lines,
-            fromfile='actual',
-            tofile='expected'
-        ))
-        assert not diff, '\n'.join(diff)
+        diff = list(
+            difflib.unified_diff(
+                received_lines,
+                expected_split_lines,
+                fromfile="actual",
+                tofile="expected",
+            )
+        )
+        assert not diff, "\n".join(diff)
 
     def test_write__no_difference__writes_no_difference(self):
         self.capturing_mock.has_config_difference = False
@@ -106,19 +110,20 @@ class TestDiffWriter:
         self.writer.write()
 
         self.assert_expected_output(
-            DiffWriter.STAR_BAR,
-            f'No difference to deployed stack {self.stack_name}'
+            DiffWriter.STAR_BAR, f"No difference to deployed stack {self.stack_name}"
         )
 
     @pytest.mark.parametrize(
-        'output_format, config_serializer',
+        "output_format, config_serializer",
         [
-            pytest.param('yaml', cfn_flip.dump_yaml, id='output format is yaml'),
-            pytest.param('json', cfn_flip.dump_json, id='output format is json'),
-            pytest.param('text', cfn_flip.dump_yaml, id='output format is text')
-        ]
+            pytest.param("yaml", cfn_flip.dump_yaml, id="output format is yaml"),
+            pytest.param("json", cfn_flip.dump_json, id="output format is json"),
+            pytest.param("text", cfn_flip.dump_yaml, id="output format is text"),
+        ],
     )
-    def test_write__new_stack__writes_new_stack_config_and_template(self, output_format, config_serializer):
+    def test_write__new_stack__writes_new_stack_config_and_template(
+        self, output_format, config_serializer
+    ):
         self.is_deployed = False
         self.output_format = output_format
 
@@ -127,15 +132,15 @@ class TestDiffWriter:
         self.assert_expected_output(
             DiffWriter.STAR_BAR,
             self.diff_detected_message,
-            'This stack is not deployed yet!',
+            "This stack is not deployed yet!",
             DiffWriter.LINE_BAR,
-            'New Config:',
-            '',
+            "New Config:",
+            "",
             config_serializer(dict(self.generated_config._asdict())),
             DiffWriter.LINE_BAR,
-            'New Template:',
-            '',
-            self.generated_template
+            "New Template:",
+            "",
+            self.generated_template,
         )
 
     def test_write__only_config_is_different__writes_config_difference(self):
@@ -148,11 +153,11 @@ class TestDiffWriter:
             DiffWriter.STAR_BAR,
             self.diff_detected_message,
             DiffWriter.LINE_BAR,
-            f'Config difference for {self.stack_name}:',
-            '',
+            f"Config difference for {self.stack_name}:",
+            "",
             self.diff_output,
             DiffWriter.LINE_BAR,
-            'No template difference'
+            "No template difference",
         )
 
     def test_write__only_template_is_different__writes_template_difference(self):
@@ -165,11 +170,11 @@ class TestDiffWriter:
             DiffWriter.STAR_BAR,
             self.diff_detected_message,
             DiffWriter.LINE_BAR,
-            'No stack config difference',
+            "No stack config difference",
             DiffWriter.LINE_BAR,
-            f'Template difference for {self.stack_name}:',
-            '',
-            self.diff_output
+            f"Template difference for {self.stack_name}:",
+            "",
+            self.diff_output,
         )
 
     def test_write__config_and_template_are_different__writes_both_differences(self):
@@ -182,22 +187,22 @@ class TestDiffWriter:
             DiffWriter.STAR_BAR,
             self.diff_detected_message,
             DiffWriter.LINE_BAR,
-            f'Config difference for {self.stack_name}:',
-            '',
+            f"Config difference for {self.stack_name}:",
+            "",
             self.diff_output,
             DiffWriter.LINE_BAR,
-            f'Template difference for {self.stack_name}:',
-            '',
-            self.diff_output
+            f"Template difference for {self.stack_name}:",
+            "",
+            self.diff_output,
         )
 
 
 class TestDeepDiffWriter:
     def setup_method(self, method):
-        self.stack_name = 'stack'
+        self.stack_name = "stack"
 
         self.is_deployed = True
-        self.output_format = 'yaml'
+        self.output_format = "yaml"
 
         self.output_stream = StringIO()
 
@@ -206,13 +211,13 @@ class TestDeepDiffWriter:
             parameters={},
             stack_tags={},
             notifications=[],
-            role_arn=None
+            cloudformation_service_role=None,
         )
 
         self.config2 = deepcopy(self.config1)
 
-        self.template1 = 'template'
-        self.template2 = 'template'
+        self.template1 = "template"
+        self.template2 = "template"
 
     @property
     def template_diff(self):
@@ -230,7 +235,7 @@ class TestDeepDiffWriter:
             self.config_diff,
             self.is_deployed,
             self.config1,
-            self.template1
+            self.template1,
         )
 
     @property
@@ -242,30 +247,36 @@ class TestDeepDiffWriter:
         )
 
     def test_has_config_difference__config_difference_is_present__returns_true(self):
-        self.config2.parameters['new_key'] = 'new value'
+        self.config2.parameters["new_key"] = "new value"
         assert self.writer.has_config_difference
 
     def test_has_config_difference__config_difference_is_absent__returns_false(self):
         assert self.writer.has_config_difference is False
 
-    def test_has_template_difference__template_difference_is_present__returns_true(self):
-        self.template2 = 'new'
+    def test_has_template_difference__template_difference_is_present__returns_true(
+        self,
+    ):
+        self.template2 = "new"
         assert self.writer.has_template_difference
 
-    def test_has_template_difference__template_difference_is_absent__returns_false(self):
+    def test_has_template_difference__template_difference_is_absent__returns_false(
+        self,
+    ):
         assert self.writer.has_template_difference is False
 
     def test_dump_diff__output_format_is_json__outputs_to_json(self):
-        self.output_format = 'json'
-        self.config2.parameters['new_key'] = 'new value'
+        self.output_format = "json"
+        self.config2.parameters["new_key"] = "new value"
 
         result = self.writer.dump_diff(self.config_diff)
-        expected = self.config_diff.to_json(indent=4, default_mapping=deepdiff_json_defaults)
+        expected = self.config_diff.to_json(
+            indent=4, default_mapping=deepdiff_json_defaults
+        )
         assert result == expected
 
     def test_dump_diff__output_format_is_yaml__outputs_to_yaml(self):
-        self.output_format = 'yaml'
-        self.config2.parameters['new_key'] = 'new value'
+        self.output_format = "yaml"
+        self.config2.parameters["new_key"] = "new value"
 
         result = self.writer.dump_diff(self.config_diff)
         expected_dict = self.config_diff.to_dict()
@@ -273,38 +284,53 @@ class TestDeepDiffWriter:
         assert result == expected_yaml
 
     def test_dump_diff__output_format_is_text__outputs_to_yaml(self):
-        self.output_format = 'text'
-        self.config2.parameters['new_key'] = 'new value'
+        self.output_format = "text"
+        self.config2.parameters["new_key"] = "new value"
 
         result = self.writer.dump_diff(self.config_diff)
         expected_dict = self.config_diff.to_dict()
         expected_yaml = yaml.dump(expected_dict, indent=4)
         assert result == expected_yaml
 
-    def test_dump_diff__output_format_is_yaml__diff_has_multiline_strings__strips_out_extra_spaces(self):
-        self.config1.parameters['long_param'] = 'here \nis \nmy \nlong \nstring'
-        self.config2.parameters['long_param'] = 'here \nis \nmy \nother \nlong \nstring'
+    def test_dump_diff__output_format_is_yaml__diff_has_multiline_strings__strips_out_extra_spaces(
+        self,
+    ):
+        self.config1.parameters["long_param"] = "here \nis \nmy \nlong \nstring"
+        self.config2.parameters["long_param"] = "here \nis \nmy \nother \nlong \nstring"
 
         dumped = self.writer.dump_diff(self.config_diff)
         loaded = yaml.safe_load(dumped)
-        assert ' ' not in loaded['values_changed']["root.parameters['long_param']"]['new_value']
-        assert ' ' not in loaded['values_changed']["root.parameters['long_param']"]['old_value']
-        expected_diff = '\n'.join(
+        assert (
+            " "
+            not in loaded["values_changed"]["root.parameters['long_param']"][
+                "new_value"
+            ]
+        )
+        assert (
+            " "
+            not in loaded["values_changed"]["root.parameters['long_param']"][
+                "old_value"
+            ]
+        )
+        expected_diff = "\n".join(
             difflib.unified_diff(
-                self.config1.parameters['long_param'].splitlines(),
-                self.config2.parameters['long_param'].splitlines(),
-                lineterm=''
+                self.config1.parameters["long_param"].splitlines(),
+                self.config2.parameters["long_param"].splitlines(),
+                lineterm="",
             )
-        ).replace(' \n', '\n')
-        assert expected_diff == loaded['values_changed']["root.parameters['long_param']"]['diff']
+        ).replace(" \n", "\n")
+        assert (
+            expected_diff
+            == loaded["values_changed"]["root.parameters['long_param']"]["diff"]
+        )
 
 
 class TestDiffLibWriter:
     def setup_method(self, method):
-        self.stack_name = 'stack'
+        self.stack_name = "stack"
 
         self.is_deployed = True
-        self.output_format = 'yaml'
+        self.output_format = "yaml"
 
         self.output_stream = StringIO()
 
@@ -313,13 +339,13 @@ class TestDiffLibWriter:
             parameters={},
             stack_tags={},
             notifications=[],
-            role_arn=None
+            cloudformation_service_role=None,
         )
 
         self.config2 = deepcopy(self.config1)
 
-        self.template1 = 'template'
-        self.template2 = 'template'
+        self.template1 = "template"
+        self.template2 = "template"
 
     @property
     def template_diff(self):
@@ -339,7 +365,7 @@ class TestDiffLibWriter:
             self.config_diff,
             self.is_deployed,
             self.config1,
-            self.template1
+            self.template1,
         )
 
     @property
@@ -351,20 +377,91 @@ class TestDiffLibWriter:
         )
 
     def test_has_config_difference__config_difference_is_present__returns_true(self):
-        self.config2.parameters['new_key'] = 'new value'
+        self.config2.parameters["new_key"] = "new value"
         assert self.writer.has_config_difference
 
     def test_has_config_difference__config_difference_is_absent__returns_false(self):
         assert self.writer.has_config_difference is False
 
-    def test_has_template_difference__template_difference_is_present__returns_true(self):
-        self.template2 = 'new'
+    def test_has_template_difference__template_difference_is_present__returns_true(
+        self,
+    ):
+        self.template2 = "new"
         assert self.writer.has_template_difference
 
-    def test_has_template_difference__template_difference_is_absent__returns_false(self):
+    def test_has_template_difference__template_difference_is_absent__returns_false(
+        self,
+    ):
         assert self.writer.has_template_difference is False
 
     def test_dump_diff__returns_joined_list(self):
         result = self.writer.dump_diff(self.diff.config_diff)
-        expected = '\n'.join(self.diff.config_diff)
+        expected = "\n".join(self.diff.config_diff)
         assert result == expected
+
+
+class TestColouredDiffLibWriter:
+    def setup_method(self, method):
+        self.stack_name = "stack"
+
+        self.is_deployed = True
+        self.output_format = "yaml"
+
+        self.output_stream = StringIO()
+
+        self.config1 = StackConfiguration(
+            stack_name=self.stack_name,
+            parameters={},
+            stack_tags={},
+            notifications=[],
+            cloudformation_service_role=None,
+        )
+
+        self.template1 = "foo"
+
+    @property
+    def template_diff(self):
+        return [
+            "--- file1.txt   2018-01-11 10:39:38.237464052 +0000\n",
+            "+++ file2.txt   2018-01-11 10:40:00.323423021 +0000\n",
+            "@@ -1,4 +1,4 @@\n",
+            " cat\n",
+            "-mv\n",
+            "-comm\n",
+            " cp\n",
+            "+diff\n",
+            "+comm\n",
+        ]
+
+    @property
+    def config_diff(self):
+        return []
+
+    @property
+    def diff(self):
+        return StackDiff(
+            self.stack_name,
+            self.template_diff,
+            self.config_diff,
+            self.is_deployed,
+            self.config1,
+            self.template1,
+        )
+
+    @property
+    def writer(self):
+        return ColouredDiffLibWriter(self.diff, self.output_stream, self.output_format)
+
+    def test_lines_are_coloured(self):
+        coloured = (
+            f"{Fore.RED}--- file1.txt   2018-01-11 10:39:38.237464052 +0000\n{Fore.RESET}\n"
+            f"{Fore.GREEN}+++ file2.txt   2018-01-11 10:40:00.323423021 +0000\n{Fore.RESET}\n"
+            "@@ -1,4 +1,4 @@\n\n"
+            " cat\n\n"
+            f"{Fore.RED}-mv\n{Fore.RESET}\n"
+            f"{Fore.RED}-comm\n{Fore.RESET}\n"
+            " cp\n\n"
+            f"{Fore.GREEN}+diff\n{Fore.RESET}\n"
+            f"{Fore.GREEN}+comm\n{Fore.RESET}"
+        )
+        assert self.writer.dump_diff(self.template_diff) == coloured

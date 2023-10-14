@@ -1,4 +1,5 @@
-template_path: valid_template.json
+template:
+  path: valid_template.json
 stack_tags:
   Project: '{{ project }}'
   Key: '{{ keyC }}'

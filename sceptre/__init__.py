@@ -2,11 +2,16 @@
 
 import logging
 import warnings
+import sys
 
+if sys.version_info < (3, 8):
+    from importlib_metadata import version
+else:
+    from importlib.metadata import version
 
-__author__ = 'Cloudreach'
-__email__ = 'sceptre@cloudreach.com'
-__version__ = '2.7.1'
+__author__ = "SceptreOrg"
+__email__ = "sceptreorg@gmail.com"
+__version__ = version(__package__ or __name__)
 
 
 # Set up logging to ``/dev/null`` like a library is supposed to.
@@ -16,7 +21,7 @@ class NullHandler(logging.Handler):  # pragma: no cover
         pass
 
 
-with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=DeprecationWarning)
+if not sys.warnoptions:
+    warnings.filterwarnings("default", category=DeprecationWarning, module="sceptre")
 
-logging.getLogger('sceptre').addHandler(NullHandler())
+logging.getLogger("sceptre").addHandler(NullHandler())

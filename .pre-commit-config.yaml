@@ -3,21 +3,21 @@ default_language_version:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.4.0
+    rev: v4.4.0
     hooks:
       - id: end-of-file-fixer
       - id: mixed-line-ending
       - id: trailing-whitespace
-  - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.9.0
+  - repo: https://github.com/PyCQA/flake8
+    rev: 6.0.0
     hooks:
       - id: flake8
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.26.1
+    rev: v1.29.0
     hooks:
       - id: yamllint
   - repo: https://github.com/awslabs/cfn-python-lint
-    rev: v0.52.0
+    rev: v0.72.10
     hooks:
       - id: cfn-python-lint
         args:
@@ -35,3 +35,23 @@ repos:
             ^.circleci/|
             ^.pre-commit-config.yaml
           )
+  - repo: https://github.com/psf/black
+    rev: 23.1.0
+    hooks:
+      - id: black
+        # It is recommended to specify the latest version of Python
+        # supported by your project here, or alternatively use
+        # pre-commit's default_language_version, see
+        # https://pre-commit.com/#top_level-default_language_version
+        language_version: python3.10
+  - repo: https://github.com/python-poetry/poetry
+    rev: '1.4.0'
+    hooks:
+      - id: poetry-check
+      - id: poetry-lock
+        language_version: python3.10
+        args: ['--check']
+  - repo: https://github.com/AleksaC/circleci-cli-py
+    rev: v0.1.25638
+    hooks:
+      - id: circle-ci-validator

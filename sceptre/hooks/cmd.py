@@ -18,10 +18,11 @@ class Cmd(Hook):
         :raises: sceptre.exceptions.InvalidTaskArgumentTypeException
         :raises: subprocess.CalledProcessError
         """
+        envs = self.stack.connection_manager.create_session_environment_variables()
         try:
-            subprocess.check_call(self.argument, shell=True)
+            subprocess.check_call(self.argument, shell=True, env=envs)
         except TypeError:
             raise InvalidHookArgumentTypeError(
                 'The argument "{0}" is the wrong type - cmd hooks require '
-                'arguments of type string.'.format(self.argument)
+                "arguments of type string.".format(self.argument)
             )

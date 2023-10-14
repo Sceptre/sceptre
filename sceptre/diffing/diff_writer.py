@@ -3,6 +3,7 @@ import json
 import re
 from abc import abstractmethod
 from typing import TextIO, Generic, List
+from colorama import Fore
 
 import cfn_flip
 import yaml
@@ -13,7 +14,7 @@ from sceptre.diffing.stack_differ import StackConfiguration, StackDiff, DiffType
 
 deepdiff_json_defaults = {
     datetime.date: lambda x: x.isoformat(),
-    StackConfiguration: lambda x: dict(x._asdict())
+    StackConfiguration: lambda x: dict(x._asdict()),
 }
 
 
@@ -22,10 +23,13 @@ class DiffWriter(Generic[DiffType]):
     readable. This is an abstract base class, so the abstract methods need to be implemented to
     create a DiffWriter for a given DiffType.
     """
-    STAR_BAR = '*' * 80
-    LINE_BAR = '-' * 80
 
-    def __init__(self, stack_diff: StackDiff, output_stream: TextIO, output_format: str):
+    STAR_BAR = "*" * 80
+    LINE_BAR = "-" * 80
+
+    def __init__(
+        self, stack_diff: StackDiff, output_stream: TextIO, output_format: str
+    ):
         """Initializes the DiffWriter
 
         :param stack_diff: The diff this writer will be outputting
@@ -69,20 +73,20 @@ class DiffWriter(Generic[DiffType]):
     def _write_new_stack_details(self):
         stack_config_text = self._dump_stack_config(self.stack_diff.generated_config)
         self._output(
-            'This stack is not deployed yet!',
+            "This stack is not deployed yet!",
             self.LINE_BAR,
-            'New Config:',
-            '',
+            "New Config:",
+            "",
             stack_config_text,
             self.LINE_BAR,
-            'New Template:',
-            '',
-            self.stack_diff.generated_template
+            "New Template:",
+            "",
+            self.stack_diff.generated_template,
         )
         return
 
     def _output(self, *lines: str):
-        lines_with_breaks = [f'{line}\n' for line in lines]
+        lines_with_breaks = [f"{line}\n" for line in lines]
         self.output_stream.writelines(lines_with_breaks)
 
     def _dump_stack_config(self, stack_config: StackConfiguration) -> str:
@@ -106,27 +110,19 @@ class DiffWriter(Generic[DiffType]):
             return
 
         diff_text = self.dump_diff(self.config_diff)
-        self._output(
-            f'Config difference for {self.stack_name}:',
-            '',
-            diff_text
-        )
+        self._output(f"Config difference for {self.stack_name}:", "", diff_text)
 
     def _write_template_difference(self):
         if not self.has_template_difference:
-            self._output('No template difference')
+            self._output("No template difference")
             return
 
         diff_text = self.dump_diff(self.template_diff)
-        self._output(
-            f'Template difference for {self.stack_name}:',
-            '',
-            diff_text
-        )
+        self._output(f"Template difference for {self.stack_name}:", "", diff_text)
 
     @abstractmethod
     def dump_diff(self, diff: DiffType) -> str:
-        """"Implement this method to write the DiffType to string"""
+        """ "Implement this method to write the DiffType to string"""
 
     @property
     @abstractmethod
@@ -152,11 +148,11 @@ class DeepDiffWriter(DiffWriter[DeepDiff]):
 
     def dump_diff(self, diff: DeepDiff) -> str:
         as_diff_dict = diff.to_dict()
-        if self.output_format == 'json':
+        if self.output_format == "json":
             return json.dumps(
                 as_diff_dict,
                 indent=4,
-                default=json_convertor_default(default_mapping=deepdiff_json_defaults)
+                default=json_convertor_default(default_mapping=deepdiff_json_defaults),
             )
 
         compatible = self._make_strings_block_compatible(as_diff_dict)
@@ -187,7 +183,7 @@ class DeepDiffWriter(DiffWriter[DeepDiff]):
         elif isinstance(obj, list):
             return [self._make_strings_block_compatible(item) for item in obj]
         elif isinstance(obj, str):
-            return re.sub('[ ]*\n', '\n', obj)
+            return re.sub("[ ]*\n", "\n", obj)
         else:
             return obj
 
@@ -206,4 +202,23 @@ class DiffLibWriter(DiffWriter[List[str]]):
     def dump_diff(self, diff: List[str]) -> str:
         # Difflib doesn't care about the output format since it only outputs strings. We would have
         # accounted for the output format in the differ itself rather than here.
-        return '\n'.join(diff)
+        return "\n".join(diff)
+
+
+class ColouredDiffLibWriter(DiffLibWriter):
+    """A DiffWriter for StackDiffs where the DiffType is a a list of strings with coloured diffs."""
+
+    def _colour_diff(self, diff: List[str]):
+        for line in diff:
+            if line.startswith("+"):
+                yield Fore.GREEN + line + Fore.RESET
+            elif line.startswith("-"):
+                yield Fore.RED + line + Fore.RESET
+            elif line.startswith("^"):
+                yield Fore.BLUE + line + Fore.RESET
+            else:
+                yield line
+
+    def dump_diff(self, diff: List[str]) -> str:
+        coloured_diff = self._colour_diff(diff)
+        return super().dump_diff(coloured_diff)

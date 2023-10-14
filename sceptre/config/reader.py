@@ -12,13 +12,14 @@ import copy
 import datetime
 import fnmatch
 import logging
-from os import environ, path, walk
-from typing import Set
-
-from pkg_resources import iter_entry_points
-from pathlib import Path
+import sys
 import yaml
+import json
+import tempfile
 
+from os import environ, path, walk
+from typing import Set, Tuple
+from pathlib import Path
 from jinja2 import Environment
 from jinja2 import StrictUndefined
 from jinja2 import FileSystemLoader
@@ -27,12 +28,13 @@ from packaging.specifiers import SpecifierSet
 from packaging.version import Version
 
 from sceptre import __version__
+from sceptre.exceptions import SceptreException
 from sceptre.exceptions import DependencyDoesNotExistError
 from sceptre.exceptions import InvalidConfigFileError
 from sceptre.exceptions import InvalidSceptreDirectoryError
 from sceptre.exceptions import VersionIncompatibleError
 from sceptre.exceptions import ConfigFileNotFoundError
-from sceptre.helpers import sceptreise_path
+from sceptre.helpers import sceptreise_path, logging_level
 from sceptre.stack import Stack
 from sceptre.config import strategies
 
@@ -42,6 +44,9 @@ CONFIG_MERGE_STRATEGIES = {
     "dependencies": strategies.list_join,
     "hooks": strategies.child_wins,
     "iam_role": strategies.child_wins,
+    "sceptre_role": strategies.child_wins,
+    "iam_role_session_duration": strategies.child_wins,
+    "sceptre_role_session_duration": strategies.child_wins,
     "notifications": strategies.child_wins,
     "on_failure": strategies.child_wins,
     "parameters": strategies.child_wins,
@@ -51,28 +56,28 @@ CONFIG_MERGE_STRATEGIES = {
     "region": strategies.child_wins,
     "required_version": strategies.child_wins,
     "role_arn": strategies.child_wins,
+    "cloudformation_service_role": strategies.child_wins,
     "sceptre_user_data": strategies.child_wins,
     "stack_name": strategies.child_wins,
     "stack_tags": strategies.child_wins,
     "stack_timeout": strategies.child_wins,
     "template_bucket_name": strategies.child_wins,
     "template_key_value": strategies.child_wins,
-    "template_path": strategies.child_wins,
     "template": strategies.child_wins,
-    "is_project_dependency": strategies.child_wins
+    "template_path": strategies.child_wins,
+    "ignore": strategies.child_wins,
+    "obsolete": strategies.child_wins,
+    "is_project_dependency": strategies.child_wins,
 }
 
 STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
-    {
-        "project_code",
-        "region"
-    },
+    {"project_code", "region"},
     {
         "template_bucket_name",
         "template_key_prefix",
         "required_version",
-        "j2_environment"
-    }
+        "j2_environment",
+    },
 )
 
 STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
@@ -83,26 +88,21 @@ STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
         "dependencies",
         "hooks",
         "iam_role",
+        "sceptre_role",
+        "iam_role_session_duration",
+        "sceptre_role_session_duration",
         "notifications",
         "on_failure",
         "parameters",
         "profile",
         "protect",
         "role_arn",
+        "cloudformation_service_role",
         "sceptre_user_data",
         "stack_name",
         "stack_tags",
-        "stack_timeout"
-    }
-)
-
-INTERNAL_CONFIG_ATTRIBUTES = ConfigAttributes(
-    {
-        "project_path",
-        "stack_group_path",
+        "stack_timeout",
     },
-    {
-    }
 )
 
 REQUIRED_KEYS = STACK_GROUP_CONFIG_ATTRIBUTES.required.union(
@@ -136,6 +136,21 @@ class ConfigReader(object):
 
         self.templating_vars = {"var": self.context.user_variables}
 
+    @staticmethod
+    def _iterate_entry_points(group):
+        """
+        Helper to determine whether to use pkg_resources or importlib.metadata.
+        https://docs.python.org/3/library/importlib.metadata.html
+        """
+        if sys.version_info < (3, 10):
+            from pkg_resources import iter_entry_points
+
+            return iter_entry_points(group)
+        else:
+            from importlib.metadata import entry_points
+
+            return entry_points(group=group)
+
     def _add_yaml_constructors(self, entry_point_groups):
         """
         Adds PyYAML constructor functions for all classes found registered at
@@ -161,7 +176,8 @@ class ConfigReader(object):
             :returns: Class initialiser.
             :rtype: func
             """
-            # This function signture is required by PyYAML
+
+            # This function signature is required by PyYAML
             def class_constructor(loader, node):
                 return node_class(
                     loader.construct_object(self.resolve_node_tag(loader, node))
@@ -170,9 +186,9 @@ class ConfigReader(object):
             return class_constructor
 
         for group in entry_point_groups:
-            for entry_point in iter_entry_points(group):
+            for entry_point in self._iterate_entry_points(group):
                 # Retrieve name and class from entry point
-                node_tag = u'!' + entry_point.name
+                node_tag = "!" + entry_point.name
                 node_class = entry_point.load()
 
                 # Add constructor to PyYAML loader
@@ -181,7 +197,8 @@ class ConfigReader(object):
                 )
                 self.logger.debug(
                     "Added constructor for %s with node tag %s",
-                    str(node_class), node_tag
+                    str(node_class),
+                    node_tag,
                 )
 
     def resolve_node_tag(self, loader, node):
@@ -189,7 +206,7 @@ class ConfigReader(object):
         node.tag = loader.resolve(type(node), node.value, (True, False))
         return node
 
-    def construct_stacks(self) -> Set[Stack]:
+    def construct_stacks(self) -> Tuple[Set[Stack], Set[Stack]]:
         """
         Traverses the files under the command path.
         For each file encountered, a Stack is constructed
@@ -211,8 +228,8 @@ class ConfigReader(object):
         else:
             todo = set()
             for directory_name, sub_directories, files in walk(root, followlinks=True):
-                for filename in fnmatch.filter(files, '*.yaml'):
-                    if filename.startswith('config.'):
+                for filename in fnmatch.filter(files, "*.yaml"):
+                    if filename.startswith("config."):
                         continue
 
                     todo.add(path.join(directory_name, filename))
@@ -223,15 +240,15 @@ class ConfigReader(object):
 
         while todo:
             abs_path = todo.pop()
-            rel_path = path.relpath(
-                abs_path, start=self.context.full_config_path())
+            rel_path = path.relpath(abs_path, start=self.context.full_config_path())
             directory, filename = path.split(rel_path)
 
             if directory in stack_group_configs:
                 stack_group_config = stack_group_configs[directory]
             else:
-                stack_group_config = stack_group_configs[directory] = \
-                    self.read(path.join(directory, self.context.config_file))
+                stack_group_config = stack_group_configs[directory] = self._read(
+                    path.join(directory, self.context.config_file)
+                )
 
             stack = self._construct_stack(rel_path, stack_group_config)
             for dep in stack.dependencies:
@@ -240,8 +257,10 @@ class ConfigReader(object):
                     raise DependencyDoesNotExistError(
                         "{stackname}: Dependency {dep} not found. "
                         "Please make sure that your dependencies stack_outputs "
-                        "have their full path from `config` defined."
-                        .format(stackname=stack.name, dep=dep))
+                        "have their full path from `config` defined.".format(
+                            stackname=stack.name, dep=dep
+                        )
+                    )
 
                 if full_dep not in full_todo and full_dep not in deps_todo:
                     todo.add(full_dep)
@@ -250,15 +269,16 @@ class ConfigReader(object):
             stack_map[sceptreise_path(rel_path)] = stack
 
             full_command_path = self.context.full_command_path()
-            if abs_path == full_command_path\
-                    or abs_path.startswith(full_command_path.rstrip(path.sep) + path.sep):
+            if abs_path == full_command_path or abs_path.startswith(
+                full_command_path.rstrip(path.sep) + path.sep
+            ):
                 command_stacks.add(stack)
 
         stacks = self.resolve_stacks(stack_map)
 
         return stacks, command_stacks
 
-    def resolve_stacks(self, stack_map):
+    def resolve_stacks(self, stack_map) -> Set[Stack]:
         """
         Transforms map of Stacks into a set of Stacks, transforms dependencies
         from a list of Strings (stack names) to a list of Stacks.
@@ -286,13 +306,19 @@ class ConfigReader(object):
                             "Valid dependency names are: "
                             "{stackkeys}. "
                             "Please make sure that your dependencies stack_outputs "
-                            "have their full path from `config` defined."
-                            .format(stackname=stack.name, dep=dep,
-                                    stackkeys=", ".join(stack_map.keys())))
+                            "have their full path from `config` defined.".format(
+                                stackname=stack.name,
+                                dep=dep,
+                                stackkeys=", ".join(stack_map.keys()),
+                            )
+                        )
+                # We deduplicate the dependencies using a set here, since it's possible that a given
+                # dependency ends up in the list multiple times.
+                stack.dependencies = list(set(stack.dependencies))
             stacks.add(stack)
         return stacks
 
-    def read(self, rel_path, base_config=None):
+    def _read(self, rel_path, base_config=None):
         """
         Reads in configuration from one or more YAML files
         within the Sceptre project folder.
@@ -311,7 +337,7 @@ class ConfigReader(object):
         # Adding properties from class
         config = {
             "project_path": self.context.project_path,
-            "stack_group_path": directory_path
+            "stack_group_path": directory_path,
         }
 
         # Adding defaults from base config.
@@ -319,20 +345,19 @@ class ConfigReader(object):
             config.update(base_config)
 
         # Check if file exists, but ignore config.yaml as can be inherited.
-        if not path.isfile(abs_path)\
-                and not filename.endswith(self.context.config_file):
+        if not path.isfile(abs_path) and not filename.endswith(
+            self.context.config_file
+        ):
             raise ConfigFileNotFoundError(
-                "Config file \"{0}\" not found.".format(rel_path)
+                'Config file "{0}" not found.'.format(rel_path)
             )
 
         # Parse and read in the config files.
         this_config = self._recursive_read(directory_path, filename, config)
 
         if "dependencies" in config or "dependencies" in this_config:
-            this_config['dependencies'] = \
-                CONFIG_MERGE_STRATEGIES['dependencies'](
-                    this_config.get("dependencies"),
-                    config.get("dependencies")
+            this_config["dependencies"] = CONFIG_MERGE_STRATEGIES["dependencies"](
+                this_config.get("dependencies"), config.get("dependencies")
             )
         config.update(this_config)
 
@@ -341,7 +366,9 @@ class ConfigReader(object):
         self.logger.debug("Config: %s", config)
         return config
 
-    def _recursive_read(self, directory_path: str, filename: str, stack_group_config: dict) -> dict:
+    def _recursive_read(
+        self, directory_path: str, filename: str, stack_group_config: dict
+    ) -> dict:
         """
         Traverses the directory_path, from top to bottom, reading in all
         relevant config files. If config attributes are encountered further
@@ -360,7 +387,9 @@ class ConfigReader(object):
         config = {}
 
         if directory_path:
-            config = self._recursive_read(parent_directory, filename, stack_group_config)
+            config = self._recursive_read(
+                parent_directory, filename, stack_group_config
+            )
 
         # Combine the stack_group_config with the nested config dict
         config_group = stack_group_config.copy()
@@ -370,9 +399,7 @@ class ConfigReader(object):
         child_config = self._render(directory_path, filename, config_group) or {}
 
         for config_key, strategy in CONFIG_MERGE_STRATEGIES.items():
-            value = strategy(
-                config.get(config_key), child_config.get(config_key)
-            )
+            value = strategy(config.get(config_key), child_config.get(config_key))
 
             if value:
                 child_config[config_key] = value
@@ -380,6 +407,21 @@ class ConfigReader(object):
         config.update(child_config)
 
         return config
+
+    def _write_debug_file(self, content: str, prefix: str) -> str:
+        """
+        Write some content to a temp file for debug purposes.
+
+        :param content: the file content to write.
+        :returns: the full path to the temp file.
+        """
+        with tempfile.NamedTemporaryFile(
+            mode="w", delete=False, prefix=prefix
+        ) as temp_file:
+            temp_file.write(content)
+            temp_file.flush()
+
+        return temp_file.name
 
     def _render(self, directory_path, basename, stack_group_config):
         """
@@ -397,35 +439,64 @@ class ConfigReader(object):
         """
         config = {}
         abs_directory_path = path.join(self.full_config_path, directory_path)
-        if path.isfile(path.join(abs_directory_path, basename)):
-            default_j2_environment_config = {
-                "autoescape": select_autoescape(
-                    disabled_extensions=('yaml',),
-                    default=True,
-                ),
-                "loader": FileSystemLoader(abs_directory_path),
-                "undefined": StrictUndefined
-            }
-            j2_environment_config = strategies.dict_merge(
-                default_j2_environment_config,
-                stack_group_config.get("j2_environment", {}))
-            j2_environment = Environment(**j2_environment_config)
+
+        if not path.isfile(path.join(abs_directory_path, basename)):
+            return
+
+        default_j2_environment_config = {
+            "autoescape": select_autoescape(
+                disabled_extensions=("yaml",),
+                default=True,
+            ),
+            "loader": FileSystemLoader(abs_directory_path),
+            "undefined": StrictUndefined,
+        }
+        j2_environment_config = strategies.dict_merge(
+            default_j2_environment_config,
+            stack_group_config.get("j2_environment", {}),
+        )
+        j2_environment = Environment(**j2_environment_config)
+
+        try:
             template = j2_environment.get_template(basename)
-            self.templating_vars.update(stack_group_config)
+        except Exception as err:
+            raise SceptreException(
+                f"{Path(directory_path, basename).as_posix()} - {err}"
+            ) from err
+
+        self.templating_vars.update(stack_group_config)
+
+        try:
             rendered_template = template.render(
                 self.templating_vars,
                 command_path=self.context.command_path.split(path.sep),
-                environment_variable=environ
+                environment_variable=environ,
             )
+        except Exception as err:
+            message = f"{Path(directory_path, basename).as_posix()} - {err}"
 
-            try:
-                config = yaml.safe_load(rendered_template)
-            except Exception as err:
-                raise ValueError(
-                    "Error parsing {}:\n{}".format(abs_directory_path, err)
+            if logging_level() == logging.DEBUG:
+                debug_file_path = self._write_debug_file(
+                    json.dumps(self.templating_vars), prefix="vars_"
                 )
+                message += f"\nTemplating vars saved to: {debug_file_path}"
 
-            return config
+            raise SceptreException(message) from err
+
+        try:
+            config = yaml.safe_load(rendered_template)
+        except Exception as err:
+            message = f"Error parsing {abs_directory_path}{basename}:\n{err}"
+
+            if logging_level() == logging.DEBUG:
+                debug_file_path = self._write_debug_file(
+                    rendered_template, prefix="rendered_"
+                )
+                message += f"\nRendered template saved to: {debug_file_path}"
+
+            raise ValueError(message)
+
+        return config
 
     @staticmethod
     def _check_valid_project_path(config_path):
@@ -449,14 +520,12 @@ class ConfigReader(object):
         :raises: sceptre.exceptions.VersionIncompatibleException
         """
         sceptre_version = __version__
-        if 'required_version' in config:
-            required_version = config['required_version']
+        if "required_version" in config:
+            required_version = config["required_version"]
             if Version(sceptre_version) not in SpecifierSet(required_version, True):
                 raise VersionIncompatibleError(
                     "Current sceptre version ({0}) does not meet version "
-                    "requirements: {1}".format(
-                        sceptre_version, required_version
-                    )
+                    "requirements: {1}".format(sceptre_version, required_version)
                 )
 
     @staticmethod
@@ -475,13 +544,16 @@ class ConfigReader(object):
         # If the config explicitly sets the template_bucket_name to None, we don't want to enter
         # this conditional block.
         if config.get("template_bucket_name") is not None:
-            template_key = "/".join([
-                sceptreise_path(stack_name), "{time_stamp}.json".format(
-                    time_stamp=datetime.datetime.utcnow().strftime(
-                        "%Y-%m-%d-%H-%M-%S-%fZ"
-                    )
-                )
-            ])
+            template_key = "/".join(
+                [
+                    sceptreise_path(stack_name),
+                    "{time_stamp}.json".format(
+                        time_stamp=datetime.datetime.utcnow().strftime(
+                            "%Y-%m-%d-%H-%M-%S-%fZ"
+                        )
+                    ),
+                ]
+            )
 
             if "template_key_prefix" in config:
                 prefix = config["template_key_prefix"]
@@ -489,7 +561,7 @@ class ConfigReader(object):
 
             s3_details = {
                 "bucket_name": config["template_bucket_name"],
-                "bucket_key": template_key
+                "bucket_key": template_key,
             }
         return s3_details
 
@@ -512,7 +584,7 @@ class ConfigReader(object):
 
         self.templating_vars["stack_group_config"] = stack_group_config
         parsed_stack_group_config = self._parsed_stack_group_config(stack_group_config)
-        config = self.read(rel_path, stack_group_config)
+        config = self._read(rel_path, stack_group_config)
         stack_name = path.splitext(rel_path)[0]
 
         # Check for missing mandatory attributes
@@ -524,15 +596,17 @@ class ConfigReader(object):
                     )
                 )
 
-        s3_details = self._collect_s3_details(
-            stack_name, config
-        )
+        s3_details = self._collect_s3_details(stack_name, config)
+        # If disable/enable rollback was specified on the command line, use that. Otherwise,
+        # fall back to the stack config.
+        disable_rollback = self.context.command_params.get("disable_rollback")
+        if disable_rollback is None:
+            disable_rollback = config.get("disable_rollback", False)
         is_project_dependency = config.get("is_project_dependency", False)
         if is_project_dependency:
             dependencies = []
         else:
             dependencies = config.get("dependencies", [])
-
         stack = Stack(
             name=stack_name,
             project_code=config["project_code"],
@@ -542,7 +616,10 @@ class ConfigReader(object):
             template_bucket_name=config.get("template_bucket_name"),
             template_key_prefix=config.get("template_key_prefix"),
             required_version=config.get("required_version"),
+            sceptre_role=config.get("sceptre_role"),
             iam_role=config.get("iam_role"),
+            sceptre_role_session_duration=config.get("sceptre_role_session_duration"),
+            iam_role_session_duration=config.get("iam_role_session_duration"),
             profile=config.get("profile"),
             parameters=config.get("parameters", {}),
             sceptre_user_data=config.get("sceptre_user_data", {}),
@@ -550,14 +627,19 @@ class ConfigReader(object):
             s3_details=s3_details,
             dependencies=dependencies,
             role_arn=config.get("role_arn"),
+            cloudformation_service_role=config.get("cloudformation_service_role"),
             protected=config.get("protect", False),
             tags=config.get("stack_tags", {}),
             external_name=config.get("stack_name"),
             notifications=config.get("notifications"),
             on_failure=config.get("on_failure"),
+            disable_rollback=disable_rollback,
             stack_timeout=config.get("stack_timeout", 0),
+            ignore=config.get("ignore", False),
+            obsolete=config.get("obsolete", False),
             stack_group_config=parsed_stack_group_config,
-            is_project_dependency=is_project_dependency
+            config=config,
+            is_project_dependency=is_project_dependency,
         )
 
         del self.templating_vars["stack_group_config"]
@@ -571,8 +653,7 @@ class ConfigReader(object):
         """
         parsed_config = {
             key: stack_group_config[key]
-            for key in
-            set(stack_group_config) - set(CONFIG_MERGE_STRATEGIES)
+            for key in set(stack_group_config) - set(CONFIG_MERGE_STRATEGIES)
         }
         parsed_config.pop("stack_group_path")
         return parsed_config

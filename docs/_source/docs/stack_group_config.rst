@@ -24,7 +24,7 @@ Sceptre. The available keys are listed below.
 
 Sceptre will only check for and uses the above keys in StackGroup config files
 and are directly accessible from Stack(). Any other keys added by the user are
-made available via ``stack_group_confg`` attribute on ``Stack()``.
+made available via ``stack_group_config`` attribute on ``Stack()``.
 
 profile
 ~~~~~~~
@@ -71,9 +71,9 @@ supplied in this way have a lower maximum length, so using the
 .. warning::
 
    If you resolve ``template_bucket_name`` using the ``!stack_output``
-   resolver on a StackGroup and the stack that outputs that bucket name is
-   defined in that StackGroup, a circular dependency will exist and Sceptre
-   will raise an error when attempting any Stack action. There are a few ways to avoid this situation:
+   resolver on a StackGroup, the stack that outputs that bucket name *cannot* be
+   defined in that StackGroup. Otherwise, a circular dependency will exist and Sceptre
+   will raise an error when attempting any Stack action. There are two ways to avoid this situation:
 
    1. Establish the stack that outputs the bucket name as a project dependency using
       `is_project_dependency: True``. As described in the documentation for
@@ -201,8 +201,8 @@ and concerns of the project. These include:
 * The S3 bucket where templates are uploaded to and then referenced from for stack actions (i.e. the
   ``template_bucket_name`` config key).
 * The CloudFormation service role added to the stack(s) that CloudFormation uses to execute stack
-  actions (i.e. the ``role_arn`` config key).
-* The role that Sceptre will assume to execute stack actions (i.e. the ``iam_role`` config key).
+  actions (i.e. the ``cloudformation_service_role`` config key).
+* The role that Sceptre will assume to execute stack actions (i.e. the ``sceptre_role`` config key).
 * SNS topics that cloudformation will notify with the results of stack actions (i.e. the
   ``notifications`` config key).
 
@@ -219,11 +219,27 @@ dependencies.
 
    You might have already considered that this might cause a circular dependency for those
    dependency stacks, the ones that output the template bucket name, role arn, iam_role, or topic arns.
-   In order to break the circular dependency, you can set ``is_project_dependency: True`` on those
-   dependency stacks. As described in the documentation for
-   :ref:`is_project_dependency <project_dependency_config>`, stacks marked with
-   ``is_project_dependency: True`` will ignore dependencies and any !stack_output resolvers will
-   resolve to nothing.
+   In order to avoid the circular dependency issue, you can do one of the following:
+
+   * Set ``is_project_dependency: True`` on those dependency stacks. As described in the
+     documentation for :ref:`is_project_dependency <project_dependency_config>`, stacks marked with
+     ``is_project_dependency: True`` will ignore dependencies and any !stack_output resolvers will
+     resolve to nothing.
+   * Set the value of those configurations to ``!no_value`` in the actual stacks that define those
+      items so they don't inherit a dependency on themselves.
+   * Define those stacks *outside* the StackGroup you reference them in. Here's an example project
+      structure that would support doing this:
+
+      .. code-block:: yaml
+
+        config/
+          - config.yaml               # This is the StackGroup Config for your whole project.
+          - sceptre-dependencies.yaml # This stack defines your template bucket, iam role, topics, etc...
+          - project/                  # You can put all your other stacks in this StackGroup
+              - config.yaml           # In this StackGroup Config you can use !stack_output to
+                                      # reference outputs from sceptre-dependencies.yaml.
+              - vpc.yaml              # Put all your other project stacks inside project/
+              - other-stack.yaml
 
 
 .. _stack_group_config_templating:
