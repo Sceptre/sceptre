@@ -18,7 +18,7 @@ import json
 import tempfile
 
 from os import environ, path, walk
-from typing import Set, Tuple
+from typing import Set, Tuple, Type
 from pathlib import Path
 from jinja2 import Environment
 from jinja2 import StrictUndefined
@@ -35,6 +35,11 @@ from sceptre.exceptions import InvalidSceptreDirectoryError
 from sceptre.exceptions import VersionIncompatibleError
 from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.helpers import sceptreise_path, logging_level
+from sceptre.resolvers.stack_output import (
+    StackOutputExternal,
+    StackOutput,
+    StackOutputBase,
+)
 from sceptre.stack import Stack
 from sceptre.config import strategies
 
@@ -108,6 +113,13 @@ STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
 REQUIRED_KEYS = STACK_GROUP_CONFIG_ATTRIBUTES.required.union(
     STACK_CONFIG_ATTRIBUTES.required
 )
+
+PROJECT_DEPENDENCY_CONFIGS = [
+    "template_bucket_name",
+    "sceptre_role",
+    "cloudformation_service_role",
+    "notifications",
+]
 
 
 class ConfigReader(object):
@@ -602,22 +614,24 @@ class ConfigReader(object):
         disable_rollback = self.context.command_params.get("disable_rollback")
         if disable_rollback is None:
             disable_rollback = config.get("disable_rollback", False)
+
         is_project_dependency = config.get("is_project_dependency", False)
         if is_project_dependency:
+            # Project dependencies cannot themselves have any dependencies.
             dependencies = []
         else:
             dependencies = config.get("dependencies", [])
+
+        project_dependency_kwargs = self._get_sceptre_project_dependency_kwargs(config)
+
         stack = Stack(
             name=stack_name,
             project_code=config["project_code"],
             template_path=config.get("template_path"),
             template_handler_config=config.get("template"),
             region=config["region"],
-            template_bucket_name=config.get("template_bucket_name"),
             template_key_prefix=config.get("template_key_prefix"),
             required_version=config.get("required_version"),
-            sceptre_role=config.get("sceptre_role"),
-            iam_role=config.get("iam_role"),
             sceptre_role_session_duration=config.get("sceptre_role_session_duration"),
             iam_role_session_duration=config.get("iam_role_session_duration"),
             profile=config.get("profile"),
@@ -626,12 +640,9 @@ class ConfigReader(object):
             hooks=config.get("hooks", {}),
             s3_details=s3_details,
             dependencies=dependencies,
-            role_arn=config.get("role_arn"),
-            cloudformation_service_role=config.get("cloudformation_service_role"),
             protected=config.get("protect", False),
             tags=config.get("stack_tags", {}),
             external_name=config.get("stack_name"),
-            notifications=config.get("notifications"),
             on_failure=config.get("on_failure"),
             disable_rollback=disable_rollback,
             stack_timeout=config.get("stack_timeout", 0),
@@ -640,10 +651,52 @@ class ConfigReader(object):
             stack_group_config=parsed_stack_group_config,
             config=config,
             is_project_dependency=is_project_dependency,
+            **project_dependency_kwargs,
         )
 
         del self.templating_vars["stack_group_config"]
         return stack
+
+    def _get_sceptre_project_dependency_kwargs(self, config: dict):
+        if config.get("external_bootstrap_stack") and config.get("bootstrap_stack"):
+            raise InvalidConfigFileError(
+                "You cannot set BOTH an external_bootstrap_stack AND a bootstrap_stack configuration"
+            )
+        if config.get("is_project_dependency", False):
+            # Project dependency stacks cannot use a bootstrap stack since they cannot themselves
+            # have any dependencies. If a bootstrap stack is being used, it's likely that the
+            # bootstrap stack will be the only project dependency anyway.
+            bootstrap_stack_name = None
+            resolver_type = None
+        elif config.get("external_bootstrap_stack"):
+            bootstrap_stack_name = config["external_bootstrap_stack"]
+            resolver_type = StackOutputExternal
+        elif config.get("bootstrap_stack"):
+            bootstrap_stack_name = config["bootstrap_stack"]
+            resolver_type = StackOutput
+        else:
+            bootstrap_stack_name = None
+            resolver_type = None
+
+        return self._make_project_dependency_kwargs(
+            config, bootstrap_stack_name, resolver_type
+        )
+
+    def _make_project_dependency_kwargs(
+        self,
+        config: dict,
+        bootstrap_stack_name: str = None,
+        output_resolver_type: Type[StackOutputBase] = None,
+    ):
+        return {
+            key: config.get(
+                key,
+                output_resolver_type(f"{bootstrap_stack_name}::{key}")
+                if output_resolver_type
+                else None,
+            )
+            for key in PROJECT_DEPENDENCY_CONFIGS
+        }
 
     def _parsed_stack_group_config(self, stack_group_config):
         """
