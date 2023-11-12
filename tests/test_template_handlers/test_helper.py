@@ -1,5 +1,4 @@
 import os
-import sys
 import pytest
 import yaml
 
@@ -72,7 +71,6 @@ def test_render_jinja_template(mock_pathlib, filename, sceptre_user_data, expect
     assert expected_yaml == result_yaml
 
 
-@pytest.mark.skipif(sys.version_info < (3, 8), reason="requires Python >= 3.8")
 @pytest.mark.parametrize(
     "j2_environment,expected_keys",
     [
