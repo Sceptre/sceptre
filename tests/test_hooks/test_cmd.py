@@ -88,12 +88,7 @@ def test_dict_with_list_shell_raises_exception(stack):
 
 
 def test_dict_with_typo_shell_raises_exception(stack):
-    import platform
-
-    if platform.python_version().startswith("3.7."):
-        message = r"^\[Errno 2\] No such file or directory: '/bin/bsah': '/bin/bsah'$"
-    else:
-        message = r"^\[Errno 2\] No such file or directory: '/bin/bsah'$"
+    message = r"^\[Errno 2\] No such file or directory: '/bin/bsah'$"
     with pytest.raises(FileNotFoundError, match=message):
         typo = "/bin/bsah"
         Cmd({"run": "echo hello", "shell": typo}, stack).run()
