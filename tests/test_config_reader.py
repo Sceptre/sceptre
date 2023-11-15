@@ -287,7 +287,6 @@ class TestConfigReader(object):
         mock_Stack.assert_any_call(
             name="account/stack-group/region/vpc",
             project_code="account_project_code",
-            template_path=None,
             template_handler_config={"path": "path/to/template"},
             region="region_region",
             profile="account_profile",
@@ -454,7 +453,7 @@ class TestConfigReader(object):
             config = {
                 "project_code": "project_code",
                 "region": "region",
-                "template_path": rel_path,
+                "path": rel_path,
             }
             # Delete the mandatory key to be tested.
             del config[del_key]

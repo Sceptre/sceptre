@@ -22,19 +22,7 @@ def set_template_path(context, stack_name, template_name):
     )
     with open(os.path.join(config_path, stack_name + ".yaml")) as config_file:
         stack_config = yaml.safe_load(config_file)
-
-    if "template_path" in stack_config:
-        stack_config["template_path"] = template_path
-    if "template" in stack_config:
-        stack_config["template"]["type"] = stack_config["template"].get("type", "file")
-        template_handler_type = stack_config["template"]["type"]
-        if template_handler_type.lower() == "s3":
-            segments = stack_config["template"]["path"].split("/")
-            bucket = context.TEST_ARTIFACT_BUCKET_NAME
-            key = "/".join(segments[1:])
-            stack_config["template"]["path"] = f"{bucket}/{key}"
-        else:
-            stack_config["template"]["path"] = template_path
+        stack_config["template"]["path"] = template_path
 
     with open(os.path.join(config_path, stack_name + ".yaml"), "w") as config_file:
         yaml.safe_dump(stack_config, config_file, default_flow_style=False)

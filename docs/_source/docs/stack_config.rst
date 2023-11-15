@@ -13,7 +13,7 @@ Structure
 A Stack config file is a ``yaml`` object of key-value pairs configuring a
 particular Stack. The available keys are listed below.
 
--  `template_path`_ or `template`_ *(required)*
+-  `template`_ *(required)*
 -  `dependencies`_ *(optional)*
 -  `hooks`_ *(optional)*
 -  `ignore`_ *(optional)*
@@ -34,23 +34,6 @@ particular Stack. The available keys are listed below.
 -  `stack_tags`_ *(optional)*
 -  `stack_timeout`_ *(optional)*
 
-It is not possible to define both `template_path`_ and `template`_. If you do so,
-you will receive an error when deploying the stack.
-
-template_path
-~~~~~~~~~~~~~~~~~~~~~~~~
-* Resolvable: No
-* Can be inherited from StackGroup: No
-
-The path to the CloudFormation, Jinja2 or Python template to build the Stack
-from. The path can either be absolute or relative to the Sceptre Directory.
-Sceptre treats the template as CloudFormation, Jinja2 or Python depending on
-the template’s file extension. Note that the template filename may be different
-from the Stack config filename.
-
-.. warning::
-
-   This key is deprecated in favor of the `template`_ key. It will be removed in version 5.0.0.
 
 template
 ~~~~~~~~
@@ -628,7 +611,6 @@ Examples
        tag_1: value_1
        tag_2: value_2
 
-.. _template_path: #template-path
 .. _template: #template
 .. _dependencies: #dependencies
 .. _hooks: #hooks
