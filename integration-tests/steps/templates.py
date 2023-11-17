@@ -77,7 +77,11 @@ def step_impl(context, stack_name):
     with open(os.path.join(config_path, stack_name + ".yaml")) as config_file:
         stack_config = yaml.safe_load(config_file)
 
-    if "template" in stack_config and stack_config["template"]["type"].lower() == "s3":
+    if (
+        "template" in stack_config
+        and "type" in stack_config["template"]
+        and stack_config["template"]["type"].lower() == "s3"
+    ):
         segments = stack_config["template"]["path"].split("/")
         bucket = segments[0]
         key = "/".join(segments[1:])
