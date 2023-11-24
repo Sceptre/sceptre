@@ -55,7 +55,7 @@ class TestStackOutputResolver(object):
         stack = MagicMock(spec=Stack)
         stack.name = "my/stack"
 
-        stack_output_resolver = StackOutput("account/dev/vpc.yaml", stack)
+        stack_output_resolver = StackOutput("not_a_valid_stack_output", stack)
 
         with pytest.raises(ValueError):
             stack_output_resolver.setup()
