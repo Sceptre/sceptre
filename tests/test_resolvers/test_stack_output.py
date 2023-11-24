@@ -51,6 +51,16 @@ class TestStackOutputResolver(object):
         )
 
     @patch("sceptre.resolvers.stack_output.StackOutput._get_output_value")
+    def test_resolver__badly_formatted(self, mock_get_output_value):
+        stack = MagicMock(spec=Stack)
+        stack.name = "my/stack"
+
+        stack_output_resolver = StackOutput("account/dev/vpc.yaml", stack)
+
+        with pytest.raises(ValueError):
+            stack_output_resolver.setup()
+
+    @patch("sceptre.resolvers.stack_output.StackOutput._get_output_value")
     def test_resolver_with_existing_dependencies(self, mock_get_output_value):
         stack = MagicMock(spec=Stack)
         stack.name = "my/stack"
