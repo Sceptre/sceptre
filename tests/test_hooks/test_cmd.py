@@ -138,11 +138,10 @@ def test_hook_writes_to_stdout(stack, capfd):
 
 
 def test_hook_writes_to_stderr(stack, capfd):
-    with pytest.raises(Exception):
-        Cmd("missing_command", stack).run()
+    Cmd("echo hello >&2", stack).run()
     cap = capfd.readouterr()
     assert cap.out.strip() == ""
-    assert cap.err.strip() == "/bin/sh: 1: missing_command: not found"
+    assert cap.err.strip() == "hello"
 
 
 def test_default_shell_is_sh(stack, capfd):
