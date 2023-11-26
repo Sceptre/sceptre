@@ -271,8 +271,6 @@ Sceptre community discussions happen in the #sceptre chanel in the
 on <http://slackhatesthe.cloud/> to create an account and join the
 #sceptre channel.
 
-Follow the [SceptreOrg Twitter account](https://twitter.com/SceptreOrg) to get announcements on the latest releases.
-
 ## Contributing
 
 See our [Contributing Guide](CONTRIBUTING.md)
