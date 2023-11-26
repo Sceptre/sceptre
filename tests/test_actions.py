@@ -981,7 +981,7 @@ class TestStackActions(object):
     @patch("sceptre.plan.actions.StackActions.describe_events")
     def test_log_new_events_calls_describe_events(self, mock_describe_events):
         mock_describe_events.return_value = {"StackEvents": []}
-        self.actions._log_new_events(datetime.datetime.utcnow())
+        self.actions._log_new_events(datetime.datetime.now(datetime.timezone.utc))
         self.actions.describe_events.assert_called_once_with()
 
     @patch("sceptre.plan.actions.StackActions.describe_events")
