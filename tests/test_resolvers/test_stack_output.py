@@ -181,6 +181,18 @@ class TestStackOutputExternalResolver(object):
         )
         assert stack.dependencies == []
 
+    @patch("sceptre.resolvers.stack_output.StackOutput._get_output_value")
+    def test_resolve__badly_formatted(self, mock_get_output_value):
+        stack = MagicMock(spec=Stack)
+        stack.name = "my/stack"
+
+        stack_output_external_resolver = StackOutputExternal(
+            "not_a_valid_stack_output", stack
+        )
+
+        with pytest.raises(ValueError):
+            stack_output_external_resolver.resolve()
+
     @patch("sceptre.resolvers.stack_output.StackOutputExternal._get_output_value")
     def test_resolve_with_args(self, mock_get_output_value):
         stack = MagicMock(spec=Stack)
