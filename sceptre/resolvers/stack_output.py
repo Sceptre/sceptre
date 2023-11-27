@@ -117,7 +117,7 @@ class StackOutput(StackOutputBase):
             dep_stack_name, self.output_key = self.argument.split("::")
         except ValueError as err:
             raise SceptreException(
-                "StackOutput argument should match STACK_NAME::OUTPUT_KEY"
+                "!stack_output arg should match STACK_NAME::OUTPUT_KEY"
             ) from err
 
         self.dependency_stack_name = sceptreise_path(normalise_path(dep_stack_name))
