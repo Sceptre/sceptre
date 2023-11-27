@@ -133,16 +133,11 @@ class StackOutput(StackOutputBase):
         self.logger.debug("Resolving Stack output: {0}".format(self.argument))
         friendly_stack_name = self.dependency_stack_name.replace(TEMPLATE_EXTENSION, "")
 
-        try:
-            stack = next(
-                stack
-                for stack in self.stack.dependencies
-                if stack.name == friendly_stack_name
-            )
-        except StopIteration as err:
-            raise SceptreException(
-                f"Stack '{friendly_stack_name}' not found in dependencies"
-            ) from err
+        stack = next(
+            stack
+            for stack in self.stack.dependencies
+            if stack.name == friendly_stack_name
+        )
 
         stack_name = "-".join(
             [stack.project_code, friendly_stack_name.replace("/", "-")]
