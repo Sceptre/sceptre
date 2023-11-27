@@ -5,6 +5,8 @@ from unittest.mock import MagicMock, patch, sentinel
 
 from sceptre.exceptions import DependencyStackMissingOutputError
 from sceptre.exceptions import StackDoesNotExistError
+from sceptre.exceptions import SceptreException
+
 from botocore.exceptions import ClientError
 
 from sceptre.connection_manager import ConnectionManager
@@ -57,7 +59,7 @@ class TestStackOutputResolver(object):
 
         stack_output_resolver = StackOutput("not_a_valid_stack_output", stack)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(SceptreException, match="STACK_NAME::OUTPUT_KEY"):
             stack_output_resolver.setup()
 
     @patch("sceptre.resolvers.stack_output.StackOutput._get_output_value")
@@ -190,7 +192,7 @@ class TestStackOutputExternalResolver(object):
             "not_a_valid_stack_output", stack
         )
 
-        with pytest.raises(ValueError):
+        with pytest.raises(SceptreException, match="STACK_NAME::OUTPUT_KEY"):
             stack_output_external_resolver.resolve()
 
     @patch("sceptre.resolvers.stack_output.StackOutputExternal._get_output_value")
