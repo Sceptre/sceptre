@@ -6,8 +6,11 @@ import shlex
 
 from botocore.exceptions import ClientError
 
-from sceptre.exceptions import DependencyStackMissingOutputError, StackDoesNotExistError, \
-    SceptreException
+from sceptre.exceptions import (
+    DependencyStackMissingOutputError,
+    StackDoesNotExistError,
+    SceptreException,
+)
 
 from sceptre.helpers import normalise_path, sceptreise_path
 from sceptre.resolvers import Resolver
@@ -113,7 +116,9 @@ class StackOutput(StackOutputBase):
         try:
             dep_stack_name, self.output_key = self.argument.split("::")
         except ValueError as err:
-            raise SceptreException("StackOutput argument should match STACK_NAME::OUTPUT_KEY") from err
+            raise SceptreException(
+                "StackOutput argument should match STACK_NAME::OUTPUT_KEY"
+            ) from err
 
         self.dependency_stack_name = sceptreise_path(normalise_path(dep_stack_name))
         self.stack.dependencies.append(self.dependency_stack_name)
@@ -135,7 +140,9 @@ class StackOutput(StackOutputBase):
                 if stack.name == friendly_stack_name
             )
         except StopIteration as err:
-            raise SceptreException(f"Stack '{friendly_stack_name}' not found in dependencies") from err
+            raise SceptreException(
+                f"Stack '{friendly_stack_name}' not found in dependencies"
+            ) from err
 
         stack_name = "-".join(
             [stack.project_code, friendly_stack_name.replace("/", "-")]
@@ -180,7 +187,9 @@ class StackOutputExternal(StackOutputBase):
         if len(arguments) > 1:
             try:
                 extra_args = arguments[1].split("::", 2)
-                profile, region, sceptre_role = extra_args + (3 - len(extra_args)) * [None]
+                profile, region, sceptre_role = extra_args + (3 - len(extra_args)) * [
+                    None
+                ]
             except ValueError as err:
                 message = (
                     "!stack_output_external second arg should be "
