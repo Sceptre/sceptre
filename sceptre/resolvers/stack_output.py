@@ -6,7 +6,9 @@ import shlex
 
 from botocore.exceptions import ClientError
 
-from sceptre.exceptions import DependencyStackMissingOutputError, StackDoesNotExistError
+from sceptre.exceptions import DependencyStackMissingOutputError, StackDoesNotExistError, \
+    SceptreException
+
 from sceptre.helpers import normalise_path, sceptreise_path
 from sceptre.resolvers import Resolver
 
@@ -108,7 +110,11 @@ class StackOutput(StackOutputBase):
         """
         Adds dependency to a Stack.
         """
-        dep_stack_name, self.output_key = self.argument.split("::")
+        try:
+            dep_stack_name, self.output_key = self.argument.split("::")
+        except ValueError as err:
+            raise SceptreException("StackOutput argument should match STACK_NAME::OUTPUT_KEY") from err
+
         self.dependency_stack_name = sceptreise_path(normalise_path(dep_stack_name))
         self.stack.dependencies.append(self.dependency_stack_name)
 
@@ -120,14 +126,16 @@ class StackOutput(StackOutputBase):
         :rtype: str
         """
         self.logger.debug("Resolving Stack output: {0}".format(self.argument))
-
         friendly_stack_name = self.dependency_stack_name.replace(TEMPLATE_EXTENSION, "")
 
-        stack = next(
-            stack
-            for stack in self.stack.dependencies
-            if stack.name == friendly_stack_name
-        )
+        try:
+            stack = next(
+                stack
+                for stack in self.stack.dependencies
+                if stack.name == friendly_stack_name
+            )
+        except StopIteration as err:
+            raise SceptreException(f"Stack '{friendly_stack_name}' not found in dependencies") from err
 
         stack_name = "-".join(
             [stack.project_code, friendly_stack_name.replace("/", "-")]
@@ -170,10 +178,22 @@ class StackOutputExternal(StackOutputBase):
 
         stack_argument = arguments[0]
         if len(arguments) > 1:
-            extra_args = arguments[1].split("::", 2)
-            profile, region, sceptre_role = extra_args + (3 - len(extra_args)) * [None]
+            try:
+                extra_args = arguments[1].split("::", 2)
+                profile, region, sceptre_role = extra_args + (3 - len(extra_args)) * [None]
+            except ValueError as err:
+                message = (
+                    "!stack_output_external second arg should be "
+                    "in the format 'profile::region::sceptre_role'"
+                )
+                raise SceptreException(message) from err
 
-        dependency_stack_name, output_key = stack_argument.split("::")
+        try:
+            dependency_stack_name, output_key = stack_argument.split("::")
+        except ValueError as err:
+            message = "!stack_output_external arg should match STACK_NAME::OUTPUT_KEY"
+            raise SceptreException(message) from err
+
         return self._get_output_value(
             dependency_stack_name,
             output_key,
