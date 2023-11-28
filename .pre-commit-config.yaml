@@ -25,6 +25,7 @@ repos:
           - "-i=E1001"
           - "-i=E3012"
           - "-i=W6001"
+          - "-i=E231"
         exclude: |
           (?x)(
             ^integration-tests/sceptre-project/config/|
