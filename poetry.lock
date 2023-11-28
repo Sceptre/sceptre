@@ -52,7 +52,6 @@ files = [
 
 [package.dependencies]
 pytz = {version = ">=2015.7", markers = "python_version < \"3.9\""}
-setuptools = {version = "*", markers = "python_version >= \"3.12\""}
 
 [package.extras]
 dev = ["freezegun (>=1.0,<2.0)", "pytest (>=6.0)", "pytest-cov"]
@@ -97,17 +96,17 @@ css = ["tinycss2 (>=1.1.0,<1.3)"]
 
 [[package]]
 name = "boto3"
-version = "1.33.0"
+version = "1.33.2"
 description = "The AWS SDK for Python"
 optional = false
 python-versions = ">= 3.7"
 files = [
-    {file = "boto3-1.33.0-py3-none-any.whl", hash = "sha256:799fe8399ea132aa5aa868caf78c47ef9ed675d5ef61be97cb7131081bb8a861"},
-    {file = "boto3-1.33.0.tar.gz", hash = "sha256:ebf6d86217c37986f965dbe35a3bbd0318127d23a65737ab6486667496decb54"},
+    {file = "boto3-1.33.2-py3-none-any.whl", hash = "sha256:fc7c0dd5fa74ae0d57e11747695bdba4ad164e62dee35db15b43762c392fbd92"},
+    {file = "boto3-1.33.2.tar.gz", hash = "sha256:70626598dd6698d6da8f2854a1ae5010f175572e2a465b2aa86685c745c1013c"},
 ]
 
 [package.dependencies]
-botocore = ">=1.33.0,<1.34.0"
+botocore = ">=1.33.2,<1.34.0"
 jmespath = ">=0.7.1,<2.0.0"
 s3transfer = ">=0.8.0,<0.9.0"
 
@@ -116,13 +115,13 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.33.0"
+version = "1.33.2"
 description = "Low-level, data-driven core of boto 3."
 optional = false
 python-versions = ">= 3.7"
 files = [
-    {file = "botocore-1.33.0-py3-none-any.whl", hash = "sha256:ccf3d67fd046265ae73bc9862d1618c6e774a61a96beac832edb63d9a21fe1ba"},
-    {file = "botocore-1.33.0.tar.gz", hash = "sha256:e35526421fe8ee180b6aed3102929594aa51e4d60e3f29366a603707c37c0d52"},
+    {file = "botocore-1.33.2-py3-none-any.whl", hash = "sha256:5c46b7e8450efbf7ddc2a0016eee7225a5564583122e25a20ca92a29a105225c"},
+    {file = "botocore-1.33.2.tar.gz", hash = "sha256:16a30faac6e6f17961c009defb74ab1a3508b8abc58fab98e7cf96af0d91ea84"},
 ]
 
 [package.dependencies]
@@ -1058,20 +1057,20 @@ test = ["fixtures", "mock", "purl", "pytest", "requests-futures", "sphinx", "tes
 
 [[package]]
 name = "s3transfer"
-version = "0.8.0"
+version = "0.8.1"
 description = "An Amazon S3 Transfer Manager"
 optional = false
 python-versions = ">= 3.7"
 files = [
-    {file = "s3transfer-0.8.0-py3-none-any.whl", hash = "sha256:baa479dc2e63e5c2ed51611b4d46cdf0295e2070d8d0b86b22f335ee5b954986"},
-    {file = "s3transfer-0.8.0.tar.gz", hash = "sha256:e8d6bd52ffd99841e3a57b34370a54841f12d3aab072af862cdcc50955288002"},
+    {file = "s3transfer-0.8.1-py3-none-any.whl", hash = "sha256:d1c52af7bceca1650d0f27728b29bb4925184aead7b55bccacf893b79a108604"},
+    {file = "s3transfer-0.8.1.tar.gz", hash = "sha256:e6cafd5643fc7b44fddfba1e5b521005675b0e07533ddad958a3554bc87d7330"},
 ]
 
 [package.dependencies]
-botocore = ">=1.32.7,<2.0a.0"
+botocore = ">=1.33.2,<2.0a.0"
 
 [package.extras]
-crt = ["botocore[crt] (>=1.32.7,<2.0a.0)"]
+crt = ["botocore[crt] (>=1.33.2,<2.0a.0)"]
 
 [[package]]
 name = "sceptre-cmd-resolver"
@@ -1485,5 +1484,5 @@ troposphere = ["troposphere"]
 
 [metadata]
 lock-version = "2.0"
-python-versions = ">=3.8,<=3.12"
-content-hash = "cea42cae0cf0bf1d715fe9ae19e03b40d9015148c41036b892c2de62f5bbc35c"
+python-versions = ">=3.8,<3.12"
+content-hash = "04d3d244f177ff9d180c03f7bb0aa066fd8123a90495fec376a89a5b0318a45b"
