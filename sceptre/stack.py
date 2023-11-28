@@ -421,7 +421,7 @@ class Stack:
 
         if preferred_value and deprecated_value:
             raise InvalidConfigFileError(
-                f"Both '{preferred_config_name}' and '{deprecated_config_name}' are set; You should only set a "
+                f"Both '{preferred_config_name}' and '{deprecated_config_name}' are set, You should only set a "
                 f"value for {preferred_config_name} because {deprecated_config_name} is deprecated."
             )
         elif preferred_value:
