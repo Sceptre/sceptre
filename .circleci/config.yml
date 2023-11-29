@@ -4,7 +4,6 @@ executors:
   docker-publisher:
     environment:
       IMAGE_NAME: sceptreorg/sceptre
-      CIRCLECI_DOCKER_IMAGE: cimg/python:3.12.0
     docker:
       - image: circleci/buildpack-deps:stretch
 
