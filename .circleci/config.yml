@@ -4,14 +4,14 @@ executors:
   docker-publisher:
     environment:
       IMAGE_NAME: sceptreorg/sceptre
-      CIRCLECI_DOCKER_IMAGE: cimg/python:3.12.0-node
+      CIRCLECI_DOCKER_IMAGE: cimg/python:3.12.0
     docker:
       - image: circleci/buildpack-deps:stretch
 
 aliases:
   - &docs-job
     docker:
-      - image: $CIRCLECI_DOCKER_IMAGE
+      - image: cimg/python:3.12.0
         environment:
           REPOSITORY_PATH: '/home/circleci/docs'
           DEPLOYMENT_GIT_SSH: 'git@github.com:Sceptre/sceptre.github.io.git'
@@ -35,7 +35,7 @@ aliases:
 jobs:
   build:
     docker:
-      - image: $CIRCLECI_DOCKER_IMAGE
+      - image: cimg/python:3.12.0
     steps:
       - checkout
       - restore_cache:
@@ -58,7 +58,7 @@ jobs:
 
   unit-tests:
     docker:
-      - image: $CIRCLECI_DOCKER_IMAGE
+      - image: cimg/python:3.12.0
     steps:
       - checkout
       - restore_cache:
@@ -84,7 +84,7 @@ jobs:
   integration-tests:
     parallelism: 2
     docker:
-      - image: $CIRCLECI_DOCKER_IMAGE
+      - image: cimg/python:3.12.0
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
@@ -131,7 +131,7 @@ jobs:
 
   deploy-pypi-test:
     docker:
-      - image: $CIRCLECI_DOCKER_IMAGE
+      - image: cimg/python:3.12.0
     steps:
       - checkout
       - restore_cache:
@@ -144,7 +144,7 @@ jobs:
 
   deploy-pypi-prod:
     docker:
-      - image: $CIRCLECI_DOCKER_IMAGE
+      - image: cimg/python:3.12.0
     steps:
       - checkout
       - restore_cache:
