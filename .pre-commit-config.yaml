@@ -49,7 +49,7 @@ repos:
     hooks:
       - id: poetry-check
       - id: poetry-lock
-        language_version: python3.10
+        language_version: python3.12
         args: ['--check']
   - repo: https://github.com/AleksaC/circleci-cli-py
     rev: v0.1.25638

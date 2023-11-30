@@ -46,7 +46,7 @@ classifiers = [
 "http" = "sceptre.template_handlers.http:Http"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.12"
+python = ">=3.8,<3.13"
 boto3 = "^1.20.27"
 click = ">=7.0,<9.0"
 cfn-flip = "^1.2.3"
