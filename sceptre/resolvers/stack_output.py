@@ -179,16 +179,22 @@ class StackOutputExternal(StackOutputBase):
         arguments = shlex.split(self.argument)
 
         stack_argument = arguments[0]
+
         if len(arguments) > 1:
             try:
                 extra_args = arguments[1].split("::", 2)
-                profile, region, sceptre_role = extra_args + (3 - len(extra_args)) * [
-                    None
-                ]
+
+                if len(extra_args) > 0:
+                    profile = extra_args[0]
+                if len(extra_args) > 1:
+                    region = extra_args[1]
+                if len(extra_args) > 2:
+                    sceptre_role = extra_args[2]
+
             except ValueError as err:
                 message = (
                     "!stack_output_external second arg should be "
-                    "in the format 'profile::region::sceptre_role'"
+                    "in the format 'PROFILE[::REGION[::SCEPTRE_ROLE]]'"
                 )
                 raise SceptreException(message) from err
 
