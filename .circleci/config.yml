@@ -10,7 +10,7 @@ executors:
 aliases:
   - &docs-job
     docker:
-      - image: sceptreorg/sceptre-circleci:2.0.0
+      - image: sceptreorg/sceptre-circleci:2.1.0
         environment:
           REPOSITORY_PATH: '/home/circleci/docs'
           DEPLOYMENT_GIT_SSH: 'git@github.com:Sceptre/sceptre.github.io.git'
@@ -34,7 +34,7 @@ aliases:
 jobs:
   build:
     docker:
-      - image: sceptreorg/sceptre-circleci:2.0.0
+      - image: sceptreorg/sceptre-circleci:2.1.0
     steps:
       - checkout
       - restore_cache:
@@ -57,7 +57,7 @@ jobs:
 
   unit-tests:
     docker:
-      - image: sceptreorg/sceptre-circleci:2.0.0
+      - image: sceptreorg/sceptre-circleci:2.1.0
     steps:
       - checkout
       - restore_cache:
@@ -83,7 +83,7 @@ jobs:
   integration-tests:
     parallelism: 2
     docker:
-      - image: sceptreorg/sceptre-circleci:2.0.0
+      - image: sceptreorg/sceptre-circleci:2.1.0
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
@@ -130,7 +130,7 @@ jobs:
 
   deploy-pypi-test:
     docker:
-      - image: sceptreorg/sceptre-circleci:2.0.0
+      - image: sceptreorg/sceptre-circleci:2.1.0
     steps:
       - checkout
       - restore_cache:
@@ -143,7 +143,7 @@ jobs:
 
   deploy-pypi-prod:
     docker:
-      - image: sceptreorg/sceptre-circleci:2.0.0
+      - image: sceptreorg/sceptre-circleci:2.1.0
     steps:
       - checkout
       - restore_cache:
