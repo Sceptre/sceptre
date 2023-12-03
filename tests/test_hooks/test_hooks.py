@@ -80,14 +80,14 @@ class TestHooksFunctions(object):
     def test_execute_hooks_with_single_hook(self):
         hook = MagicMock(spec=Hook)
         execute_hooks([hook])
-        hook.run.called_once_with()
+        hook.run.assert_called_once_with()
 
     def test_execute_hooks_with_multiple_hook(self):
         hook_1 = MagicMock(spec=Hook)
         hook_2 = MagicMock(spec=Hook)
         execute_hooks([hook_1, hook_2])
-        hook_1.run.called_once_with()
-        hook_2.run.called_once_with()
+        hook_1.run.assert_called_once_with()
+        hook_2.run.assert_called_once_with()
 
 
 class MyResolver(Resolver):
