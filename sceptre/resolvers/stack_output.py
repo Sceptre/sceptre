@@ -173,41 +173,43 @@ class StackOutputExternal(StackOutputBase):
         """
         self.logger.debug("Resolving external Stack output: {0}".format(self.argument))
 
-        profile = None
-        region = None
-        sceptre_role = None
         arguments = shlex.split(self.argument)
 
+        if not arguments:
+            message = "!stack_output_external requires at least one argument"
+            raise SceptreException(message)
+
         stack_argument = arguments[0]
+        stack_args = iter(stack_argument.split("::"))
+
+        try:
+            dependency_stack_name = next(stack_args)
+            output_key = next(stack_args)
+
+        except StopIteration as err:
+            message = "!stack_output_external arg should match STACK_NAME::OUTPUT_KEY"
+            raise SceptreException(message) from err
+
+        profile = region = sceptre_role = None
 
         if len(arguments) > 1:
+            extra_args = iter(arguments[1].split("::"))
+
+            profile = next(extra_args, None)
+            region = next(extra_args, None)
+            sceptre_role = next(extra_args, None)
+
             try:
-                extra_args = arguments[1].split("::", 2)
-
-                if len(extra_args) > 0:
-                    profile = extra_args[0]
-                if len(extra_args) > 1:
-                    region = extra_args[1]
-                if len(extra_args) > 2:
-                    sceptre_role = extra_args[2]
-
-            except ValueError as err:
+                next(extra_args)
                 message = (
                     "!stack_output_external second arg should be "
                     "in the format 'PROFILE[::REGION[::SCEPTRE_ROLE]]'"
                 )
-                raise SceptreException(message) from err
+                raise SceptreException(message)
 
-        try:
-            dependency_stack_name, output_key = stack_argument.split("::")
-        except ValueError as err:
-            message = "!stack_output_external arg should match STACK_NAME::OUTPUT_KEY"
-            raise SceptreException(message) from err
+            except StopIteration:
+                pass
 
         return self._get_output_value(
-            dependency_stack_name,
-            output_key,
-            profile or None,
-            region or None,
-            sceptre_role or None,
+            dependency_stack_name, output_key, profile, region, sceptre_role
         )
