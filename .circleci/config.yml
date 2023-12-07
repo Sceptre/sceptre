@@ -1,8 +1,5 @@
 version: 2.1
 
-orbs:
-  twitter-orb: jakousa/twitter-orb@1.0.1
-
 executors:
   docker-publisher:
     environment:
@@ -13,7 +10,7 @@ executors:
 aliases:
   - &docs-job
     docker:
-      - image: sceptreorg/sceptre-circleci:2.0.0
+      - image: sceptreorg/sceptre-circleci:2.1.0
         environment:
           REPOSITORY_PATH: '/home/circleci/docs'
           DEPLOYMENT_GIT_SSH: 'git@github.com:Sceptre/sceptre.github.io.git'
@@ -37,7 +34,7 @@ aliases:
 jobs:
   build:
     docker:
-      - image: sceptreorg/sceptre-circleci:2.0.0
+      - image: sceptreorg/sceptre-circleci:2.1.0
     steps:
       - checkout
       - restore_cache:
@@ -60,7 +57,7 @@ jobs:
 
   unit-tests:
     docker:
-      - image: sceptreorg/sceptre-circleci:2.0.0
+      - image: sceptreorg/sceptre-circleci:2.1.0
     steps:
       - checkout
       - restore_cache:
@@ -86,7 +83,7 @@ jobs:
   integration-tests:
     parallelism: 2
     docker:
-      - image: sceptreorg/sceptre-circleci:2.0.0
+      - image: sceptreorg/sceptre-circleci:2.1.0
         environment:
           AWS_DEFAULT_REGION: eu-west-1
     steps:
@@ -133,7 +130,7 @@ jobs:
 
   deploy-pypi-test:
     docker:
-      - image: sceptreorg/sceptre-circleci:2.0.0
+      - image: sceptreorg/sceptre-circleci:2.1.0
     steps:
       - checkout
       - restore_cache:
@@ -146,7 +143,7 @@ jobs:
 
   deploy-pypi-prod:
     docker:
-      - image: sceptreorg/sceptre-circleci:2.0.0
+      - image: sceptreorg/sceptre-circleci:2.1.0
     steps:
       - checkout
       - restore_cache:
@@ -187,20 +184,6 @@ jobs:
             docker tag $IMAGE_NAME:latest $IMAGE_NAME:$IMAGE_TAG
             docker push $IMAGE_NAME:latest
             docker push $IMAGE_NAME:$IMAGE_TAG
-
-  tweet-release:
-    docker:
-      - image: jakousa/twurl:latest
-    resource_class: small
-    steps:
-      - twitter-orb/tweet:
-          access_secret: TOKEN_SECRET
-          access_token: ACCESS_TOKEN
-          consumer_key: API_KEY
-          consumer_secret: API_SECRET
-          contents: |
-            (echo $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME) has released << pipeline.git.tag >>:
-            << pipeline.project.git_url >>/releases/tag/<< pipeline.git.tag >>
 
 workflows:
   build-and-unit-test:
@@ -303,17 +286,6 @@ workflows:
           context: sceptreorg-dockerhub
           requires:
             - build-docker-image
-          filters:
-            tags:
-              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
-            branches:
-              ignore: /.*/
-      - tweet-release:
-          context: sceptreorg-twitter
-          requires:
-            - deploy-pypi-prod
-            - deploy-docs-tag
-            - deploy-dockerhub-tagged
           filters:
             tags:
               only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
