@@ -30,7 +30,7 @@ class TestStackActions(object):
         self.stack = Stack(
             name="prod/app/stack",
             project_code=sentinel.project_code,
-            template_path=sentinel.template_path,
+            template_handler_config={"type": "file", "path": sentinel.path},
             region=sentinel.region,
             profile=sentinel.profile,
             parameters={"key1": "val1"},
@@ -76,7 +76,7 @@ class TestStackActions(object):
 
         mock_Template.assert_called_once_with(
             name="prod/app/stack",
-            handler_config={"type": "file", "path": sentinel.template_path},
+            handler_config={"type": "file", "path": sentinel.path},
             sceptre_user_data=sentinel.sceptre_user_data,
             stack_group_config={},
             connection_manager=self.stack.connection_manager,
@@ -93,7 +93,6 @@ class TestStackActions(object):
         stack = Stack(
             name="stack_name",
             project_code="project_code",
-            template_path="template_path",
             region="region",
             external_name="external_name",
         )
