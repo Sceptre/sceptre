@@ -146,14 +146,23 @@ class Stack:
     hooks = HookProperty("hooks")
 
     iam_role = create_deprecated_alias_property(
-        "iam_role", "sceptre_role", "4.0.0", "5.0.0"
+        "iam_role",
+        "sceptre_role",
+        deprecated_in="4.0.0",
+        removed_in=None,
     )
     role_arn = create_deprecated_alias_property(
-        "role_arn", "cloudformation_service_role", "4.0.0", "5.0.0"
+        "role_arn",
+        "cloudformation_service_role",
+        deprecated_in="4.0.0",
+        removed_in=None,
     )
     sceptre_role_session_duration = None
     iam_role_session_duration = create_deprecated_alias_property(
-        "iam_role_session_duration", "sceptre_role_session_duration", "4.0.0", "5.0.0"
+        "iam_role_session_duration",
+        "sceptre_role_session_duration",
+        deprecated_in="4.0.0",
+        removed_in=None,
     )
 
     def __init__(
