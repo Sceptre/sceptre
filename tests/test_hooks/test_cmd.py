@@ -154,7 +154,7 @@ def test_hook_writes_to_stderr(stack, capfd):
     cap = capfd.readouterr()
 
     assert cap.out.strip() == ""
-    assert cap.err.strip() == "/bin/sh: missing_command: command not found"
+    assert cap.err.strip() == expected_error
 
 
 def test_default_shell_is_sh(stack, capfd):
