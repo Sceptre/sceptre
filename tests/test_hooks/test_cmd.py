@@ -2,6 +2,7 @@
 from subprocess import CalledProcessError
 from unittest.mock import Mock
 import pytest
+import platform
 
 from sceptre.exceptions import InvalidHookArgumentTypeError
 from sceptre.hooks.cmd import Cmd
@@ -140,9 +141,20 @@ def test_hook_writes_to_stdout(stack, capfd):
 def test_hook_writes_to_stderr(stack, capfd):
     with pytest.raises(Exception):
         Cmd("missing_command", stack).run()
+
+    os_name = platform.system()
+
+    if os_name == "Linux":
+        expected_error = "/bin/sh: 1: missing_command: not found"
+    elif os_name == "Darwin":
+        expected_error = "/bin/sh: missing_command: command not found"
+    else:
+        raise NotImplementedError(f"Test not implemented for OS: {os_name}")
+
     cap = capfd.readouterr()
+
     assert cap.out.strip() == ""
-    assert cap.err.strip() == "/bin/sh: 1: missing_command: not found"
+    assert cap.err.strip() == "/bin/sh: missing_command: command not found"
 
 
 def test_default_shell_is_sh(stack, capfd):
