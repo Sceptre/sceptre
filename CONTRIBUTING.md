@@ -85,8 +85,8 @@ $ git clone git@github.org:<github_username>/sceptre.git
    [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/))
 
 ```bash
-   $ cd sceptre/
-   $ poetry install --all-extras -v
+$ cd sceptre/
+$ make install-dev
 ```
 
 4. Create a branch for local development:
@@ -125,17 +125,37 @@ Please [install pre-commit](https://pre-commit.com/#install) then run
 linters will automatically run on every git commit.  Alternatively you
 can manually execute the validations by running `pre-commit run --all-files`.
 
+```bash
+$ make lint
+```
+
 ## Unit Tests
 
 Sceptre aims to be compatible with Python 3, please run unit test
 against all supported versions.
 
 ```bash
-$ poetry run tox
+$ make test
+```
+
+To run a specific test file:
+
+```bash
+$ make test ARGS="-ssv <test-file>.py"
+```
+
+Or to run a specific test in that file:
+
+```bash
+$ make test ARGS="-ssv <test-file>.py::<unit-test-class>::<test-case>"
 ```
 
 [Tox](https://pypi.org/project/tox/) is used to execute tests against multiple
 python versions inside of poetry virtual environments.
+
+```bash
+$ make test-all  # Runs 'poetry run tox'
+```
 
 ## Build documentation
 
@@ -193,20 +213,31 @@ to run in a different region you must update the region in each test before runn
 #### run all tests
 
 ```bash
-$ AWS_PROFILE=<profile> AWS_DEFAULT_REGION=<region> poetry run behave --junit --junit-directory build/behave
+$ AWS_PROFILE=<profile> AWS_DEFAULT_REGION=<region> make test-integration
 ```
 
 #### run a specific feature
 
 ```bash
-$ poetry run behave integration-tests --include <feature-file>
+$ make test-integration ARGS="--include <feature-file>"
 ```
 
 ### run a specific scenario
 
 ```bash
-$ poetry run behave integration-tests -n "<scenario-name>"
+$ make test-integration ARGS="-n <scenario-name>"
 ```
+
+## Add the ipdb debugger
+
+To add the Python debugger using poetry:
+
+```bash
+$ poetry add ipdb --group dev
+$ make install-dev
+```
+
+DO NOT COMMIT THESE CHANGES!
 
 # Sponsors
 
