@@ -71,6 +71,27 @@ jobs:
           args: --all-extras
       - run:
           name: Unit Tests
+          # Normally a single tox invocation runs the tests on all available
+          # Python versions.
+          #
+          # Now CircleCI runs parallel test pipelines, one for each supported
+          # Python version.
+          #
+          # See `matrix.parameters.python` for the Python version values. Each
+          # pipeline uses that value as its default Python version.
+          #
+          # There is one tox invocation for each pipeline. The `-e` option runs
+          # tox on just the default Python for that pipeline.
+          #
+          # The container may make more Python versions available, and we don't
+          # want tox to run the tests on those because they may cause false
+          # failures.
+          #
+          # For example, if the container for Python 3.12 would use Python 3.12
+          # by default. It make also have an earlier Python version installed
+          # such as 3.10 that was used for bootstrapping the container image.
+          # Configured this way, tox ignores the version 3.10 in the pipeline
+          # for version 3.12.
           command: |
             poetry run tox -e py$(echo <<parameters.python>> | tr -d .)
             poetry run tox -e report
