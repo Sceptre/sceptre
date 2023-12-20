@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  python: circleci/python@2.1.1
+
 executors:
   docker-publisher:
     environment:
@@ -9,39 +12,36 @@ executors:
 
 aliases:
   - &docs-job
-    docker:
-      - image: sceptreorg/sceptre-circleci:2.1.0
-        environment:
-          REPOSITORY_PATH: '/home/circleci/docs'
-          DEPLOYMENT_GIT_SSH: 'git@github.com:Sceptre/sceptre.github.io.git'
+    executor: python/default
     steps:
       - checkout
-      - restore_cache:
-          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum ".pre-commit-config.yaml" }}-{{ checksum "tox.ini" }}
       - add_ssh_keys:
           fingerprints:
-            - '80:24:c0:40:28:36:f1:80:7f:fd:15:c3:09:cf:86:fc'
+            - "80:24:c0:40:28:36:f1:80:7f:fd:15:c3:09:cf:86:fc"
       - attach_workspace:
           at: /home/circleci
+      - python/install-packages:
+          pkg-manager: poetry
+          args: --all-extras
       - run:
-          name: 'Build and deploy docs'
+          name: Build and deploy docs
           command: |
-            chmod +x .circleci/add-known-hosts.sh
             poetry run ./.circleci/add-known-hosts.sh
-            chmod +x .circleci/github-pages.sh
             poetry run ./.circleci/github-pages.sh
+          environment:
+            REPOSITORY_PATH: /home/circleci/docs
+            DEPLOYMENT_GIT_SSH: git@github.com:Sceptre/sceptre.github.io.git
 
 jobs:
   build:
-    docker:
-      - image: sceptreorg/sceptre-circleci:2.1.0
+    executor: python/default
     steps:
       - checkout
       - restore_cache:
-          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum ".pre-commit-config.yaml" }}-{{ checksum "tox.ini" }}
-      - run:
-          name: 'Installing Dependencies'
-          command: poetry install --all-extras -v
+          key: sceptre-v1-{{ checksum ".pre-commit-config.yaml" }}
+      - python/install-packages:
+          pkg-manager: poetry
+          args: --all-extras
       - run:
           name: Run pre-commit
           command: poetry run pre-commit run --all-files --show-diff-on-failure
@@ -49,24 +49,51 @@ jobs:
           name: Build package
           command: poetry build
       - save_cache:
-          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum ".pre-commit-config.yaml" }}-{{ checksum "tox.ini" }}
+          key: sceptre-v1-{{ checksum ".pre-commit-config.yaml" }}
           paths:
-            - '~/.cache/pypoetry'
-            - '~/.cache/pre-commit'
-            - '.tox'
+            - ~/.cache/pre-commit
 
   unit-tests:
-    docker:
-      - image: sceptreorg/sceptre-circleci:2.1.0
+    parameters:
+      python:
+        type: string
+    executor:
+      name: python/default
+      tag: <<parameters.python>>
     steps:
       - checkout
       - restore_cache:
-          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum ".pre-commit-config.yaml" }}-{{ checksum "tox.ini" }}
+          key: sceptre-v1-{{ checksum "poetry.lock" }}-{{ checksum "tox.ini" }}
+      # Update poetry for https://github.com/python-poetry/poetry/issues/7184
+      - run: poetry self update --no-ansi
+      - python/install-packages:
+          pkg-manager: poetry
+          args: --all-extras
       - run:
           name: Unit Tests
+          # Normally a single tox invocation runs the tests on all available
+          # Python versions.
+          #
+          # Now CircleCI runs parallel test pipelines, one for each supported
+          # Python version.
+          #
+          # See `matrix.parameters.python` for the Python version values. Each
+          # pipeline uses that value as its default Python version.
+          #
+          # There is one tox invocation for each pipeline. The `-e` option runs
+          # tox on just the default Python for that pipeline.
+          #
+          # The container may make more Python versions available, and we don't
+          # want tox to run the tests on those because they may cause false
+          # failures.
+          #
+          # For example, if the container for Python 3.12 would use Python 3.12
+          # by default. It make also have an earlier Python version installed
+          # such as 3.10 that was used for bootstrapping the container image.
+          # Configured this way, tox ignores the version 3.10 in the pipeline
+          # for version 3.12.
           command: |
-            poetry run tox -e clean
-            poetry run tox
+            poetry run tox -e py$(echo <<parameters.python>> | tr -d .)
             poetry run tox -e report
       - store_test_results:
           path: test-reports
@@ -74,24 +101,19 @@ jobs:
           path: htmlcov
           destination: coverage-reports
       - save_cache:
-          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum ".pre-commit-config.yaml" }}-{{ checksum "tox.ini" }}
+          key: sceptre-v1-{{ checksum "poetry.lock" }}-{{ checksum "tox.ini" }}
           paths:
-            - '~/.cache/pypoetry'
-            - '~/.cache/pre-commit'
-            - '.tox'
+            - ".tox"
 
   integration-tests:
+    executor: python/default
     parallelism: 2
-    docker:
-      - image: sceptreorg/sceptre-circleci:2.1.0
-        environment:
-          AWS_DEFAULT_REGION: eu-west-1
     steps:
       - checkout
-      - restore_cache:
-          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum ".pre-commit-config.yaml" }}-{{ checksum "tox.ini" }}
+      - python/install-packages:
+          pkg-manager: poetry
       - run:
-          name: 'Integration Testing'
+          name: "Integration Testing"
           command: |
             mkdir -p ~/.aws
             echo -e "[default]\nregion=eu-west-1\nsource_profile=default\nrole_arn=arn:aws:iam::743644221192:role/sceptre-integration-test-ServiceRole-1SHK9LY0T6P3F" > ~/.aws/config
@@ -129,12 +151,9 @@ jobs:
   deploy-docs-tag: *docs-job
 
   deploy-pypi-test:
-    docker:
-      - image: sceptreorg/sceptre-circleci:2.1.0
+    executor: python/default
     steps:
       - checkout
-      - restore_cache:
-          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum ".pre-commit-config.yaml" }}-{{ checksum "tox.ini" }}
       - run:
           name: Test upload to PyPi
           command: |
@@ -142,12 +161,9 @@ jobs:
             poetry publish --build -r test-pypi -u $PYPI_TEST_USER -p $PYPI_TEST_PASSWORD
 
   deploy-pypi-prod:
-    docker:
-      - image: sceptreorg/sceptre-circleci:2.1.0
+    executor: python/default
     steps:
       - checkout
-      - restore_cache:
-          key: sceptre-v1-{{ checksum "pyproject.toml" }}-{{ checksum "poetry.lock" }}-{{ checksum ".pre-commit-config.yaml" }}-{{ checksum "tox.ini" }}
       - run:
           name: Upload to PyPi
           command: poetry publish --build -u $PYPI_PROD_USER -p $PYPI_PROD_PASSWORD
@@ -198,6 +214,9 @@ workflows:
           filters:
             branches:
               only: /^pull\/.*/
+          matrix:
+            parameters:
+              python: ["3.8", "3.9", "3.10", "3.11", "3.12"]
       - build-docker-image:
           requires:
             - build
@@ -217,6 +236,9 @@ workflows:
           filters:
             branches:
               ignore: /^pull\/.*/
+          matrix:
+            parameters:
+              python: ["3.8", "3.9", "3.10", "3.11", "3.12"]
       - integration-tests:
           context: sceptre-core
           requires:
