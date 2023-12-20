@@ -17,11 +17,14 @@ aliases:
       - checkout
       - add_ssh_keys:
           fingerprints:
-            - '80:24:c0:40:28:36:f1:80:7f:fd:15:c3:09:cf:86:fc'
+            - "80:24:c0:40:28:36:f1:80:7f:fd:15:c3:09:cf:86:fc"
       - attach_workspace:
           at: /home/circleci
+      - python/install-packages:
+          pkg-manager: poetry
+          args: --all-extras
       - run:
-          name: 'Build and deploy docs'
+          name: Build and deploy docs
           command: |
             poetry run ./.circleci/add-known-hosts.sh
             poetry run ./.circleci/github-pages.sh
@@ -59,18 +62,27 @@ jobs:
       tag: <<parameters.python>>
     steps:
       - checkout
+      - restore_cache:
+          key: sceptre-v1-{{ checksum "poetry.lock" }}-{{ checksum "tox.ini" }}
+      # Update poetry for https://github.com/python-poetry/poetry/issues/7184
+      - run: poetry self update --no-ansi
       - python/install-packages:
           pkg-manager: poetry
           args: --all-extras
       - run:
           name: Unit Tests
           command: |
-            poetry run pytest --cov=sceptre --cov-report=term-missing --cov-report=html --junitxml=test-reports/junit.xml
+            poetry run tox -e py$(echo <<parameters.python>> | tr -d .)
+            poetry run tox -e report
       - store_test_results:
           path: test-reports
       - store_artifacts:
           path: htmlcov
           destination: coverage-reports
+      - save_cache:
+          key: sceptre-v1-{{ checksum "poetry.lock" }}-{{ checksum "tox.ini" }}
+          paths:
+            - ".tox"
 
   integration-tests:
     executor: python/default
