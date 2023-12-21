@@ -4,6 +4,16 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 5.0.0 (2023.12.21)
+ - ci: use matrix for unit tests (#1395)
+ - Remove template_path config parameter (#1386)
+ - Add support for python 3.12 (#1390)
+ - Update docker container for CI (#1393)
+ - [Resolves #1377] Remove auto announcements to twitter (#1385)
+ - [Resolves #1383] Simplify stderr test for cmd hook (#1387)
+ - Drop support for Python 3.7 (#1382)
+ - Update templates.rst (#1378)
+
 ## 4.3.0 (2023.10.07)
  - [Resolve #1351] Add debugging to Jinja rendering (#1375)
  - [Resolves #1356] Add export=stackoutput and stackoutputexternal feature to list outputs (#1357)
