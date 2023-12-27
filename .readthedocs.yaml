@@ -17,4 +17,4 @@ build:
       - poetry install --all-extras
 
 sphinx:
-  configuration: docs/source/conf.py
+  configuration: docs/_source/conf.py
