@@ -224,16 +224,14 @@ $ poetry run behave integration-tests --include <feature-file>
 $ poetry run behave integration-tests -n "<scenario-name>"
 ```
 
-## Add the ipdb debugger
+## Add a debugger
 
-To add the Python debugger using poetry:
+To add a Python debugger like `ipdb` or `pdb++` using poetry:
 
 ```bash
-$ poetry add ipdb --group dev
-$ poetry install --all-extras -v
+$ poetry run pip install ipdb
+$ poetry run pip install pdbpp
 ```
-
-DO NOT COMMIT THESE CHANGES!
 
 # Sponsors
 
