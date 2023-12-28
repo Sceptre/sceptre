@@ -1,4 +1,5 @@
-.PHONY: clean-pyc clean-build docs clean docs
+.PHONY: help clean clean-build clean-pyc clean-test lint test test-all test-integration docs docs-latest docs-build-tag docs-build-dev docs-build-commit docs-serve-latest docs-serve-tag docs-serve-dev docs-serve-commit docs-install docs-clean dist install install-dev
+
 define BROWSER_PYSCRIPT
 import os, webbrowser, sys
 try:
@@ -27,7 +28,6 @@ help:
 	@echo ""
 	@ $(MAKE) -C docs help
 
-
 clean: clean-build clean-pyc clean-test docs-clean
 
 clean-build:
@@ -54,13 +54,13 @@ lint:
 	poetry run pre-commit run --all-files
 
 test:
-	poetry run pytest
+	poetry run pytest $(ARGS)
 
 test-all:
-	poetry run tox
+	poetry run tox $(ARGS)
 
 test-integration: install
-	poetry run behave integration-tests/
+	poetry run behave integration-tests $(ARGS)
 
 docs:
 	rm -f docs/sceptre.rst
