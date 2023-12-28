@@ -63,7 +63,6 @@ CONFIG_MERGE_STRATEGIES = {
     "template_bucket_name": strategies.child_wins,
     "template_key_value": strategies.child_wins,
     "template": strategies.child_wins,
-    "template_path": strategies.child_wins,
     "ignore": strategies.child_wins,
     "obsolete": strategies.child_wins,
 }
@@ -81,7 +80,6 @@ STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
 STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
     {},
     {
-        "template_path",
         "template",
         "dependencies",
         "hooks",
@@ -469,7 +467,7 @@ class ConfigReader(object):
         try:
             config = yaml.safe_load(rendered_template)
         except Exception as err:
-            message = f"Error parsing {abs_directory_path}{basename}:\n{err}"
+            message = f"Error parsing {abs_directory_path}{basename}: \n{err}"
 
             if logging_level() == logging.DEBUG:
                 debug_file_path = write_debug_file(
@@ -589,7 +587,6 @@ class ConfigReader(object):
         stack = Stack(
             name=stack_name,
             project_code=config["project_code"],
-            template_path=config.get("template_path"),
             template_handler_config=config.get("template"),
             region=config["region"],
             template_bucket_name=config.get("template_bucket_name"),

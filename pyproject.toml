@@ -18,7 +18,8 @@ classifiers = [
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11"
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
 ]
 
 [tool.poetry.scripts]
@@ -46,7 +47,7 @@ classifiers = [
 "http" = "sceptre.template_handlers.http:Http"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.12"
+python = "^3.8"
 boto3 = "^1.20.27"
 click = ">=7.0,<9.0"
 cfn-flip = "^1.2.3"
@@ -82,7 +83,7 @@ pre-commit = "^2.21.0"
 behave = "^1.2.5"
 freezegun = ">=0.3.12,<0.4.0"
 pygments = "^2.2"
-pytest = "^6.2"
+pytest = "^7.4.3"
 pytest-cov = "^2.11.1"
 pytest-sugar = "^0.9.4"
 readme-renderer = "^24.0"
