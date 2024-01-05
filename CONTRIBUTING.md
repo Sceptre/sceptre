@@ -85,8 +85,7 @@ $ git clone git@github.org:<github_username>/sceptre.git
    [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/))
 
 ```bash
-$ cd sceptre/
-$ poetry install --all-extras -v
+   $ poetry install --all-extras -v
 ```
 
 4. Create a branch for local development:
@@ -161,8 +160,10 @@ documentation in HTML format.
 To build the documentation locally:
 
 ```bash
-$ make docs
+  $ poetry run make html --directory docs
 ```
+
+*Note*: The generated documentation files are in docs/_build/html
 
 ## Integration Tests
 
