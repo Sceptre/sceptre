@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch, sentinel
 
 from sceptre.exceptions import DependencyStackMissingOutputError
 from sceptre.exceptions import StackDoesNotExistError
+
 from botocore.exceptions import ClientError
 
 from sceptre.connection_manager import ConnectionManager
@@ -49,6 +50,16 @@ class TestStackOutputResolver(object):
             region="dependency_region",
             sceptre_role="dependency_sceptre_role",
         )
+
+    @patch("sceptre.resolvers.stack_output.StackOutput._get_output_value")
+    def test_resolver__badly_formatted(self, mock_get_output_value):
+        stack = MagicMock(spec=Stack)
+        stack.name = "my/stack"
+
+        stack_output_resolver = StackOutput("not_a_valid_stack_output", stack)
+
+        with pytest.raises(ValueError, match="not enough values to unpack"):
+            stack_output_resolver.setup()
 
     @patch("sceptre.resolvers.stack_output.StackOutput._get_output_value")
     def test_resolver_with_existing_dependencies(self, mock_get_output_value):
@@ -170,6 +181,18 @@ class TestStackOutputExternalResolver(object):
             "another/account-vpc", "VpcId", None, None, None
         )
         assert stack.dependencies == []
+
+    @patch("sceptre.resolvers.stack_output.StackOutput._get_output_value")
+    def test_resolve__badly_formatted(self, mock_get_output_value):
+        stack = MagicMock(spec=Stack)
+        stack.name = "my/stack"
+
+        stack_output_external_resolver = StackOutputExternal(
+            "not_a_valid_stack_output", stack
+        )
+
+        with pytest.raises(ValueError, match="not enough values to unpack"):
+            stack_output_external_resolver.resolve()
 
     @patch("sceptre.resolvers.stack_output.StackOutputExternal._get_output_value")
     def test_resolve_with_args(self, mock_get_output_value):
