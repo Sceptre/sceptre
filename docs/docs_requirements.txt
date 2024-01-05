@@ -1,4 +1,0 @@
-Sphinx>=1.6.5,<5.0.0
-sphinx-click>=2.0.1,<4.0.0
-sphinx_rtd_theme==0.5.2
-docutils<0.17 # temporary fix for sphinx-rtd-theme==0.5.2, it depends on docutils<0.17
