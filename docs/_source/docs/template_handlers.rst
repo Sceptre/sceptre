@@ -5,6 +5,10 @@ Template handlers can be used to resolve a ``template`` config block to a CloudF
 fetch templates from S3, for example. Users can create their own template handlers to easily add support for other
 template loading mechanisms. See `Custom Template Handlers`_ for more information.
 
+.. warning::
+
+   The ``template_path`` key is deprecated in favor of the ``template`` key.
+
 Available Template Handlers
 ---------------------------
 
@@ -13,6 +17,9 @@ file
 
 Loads a template from the local file system. This handler supports templates with .json, .yaml, .template, .j2
 and .py extensions.  This is the default template handler type, specifying the ``file`` type is optional.
+
+For backwards compatability, when a ``template_path`` key is specified in the Stack config, it is wired to
+use the ``file`` template handler.
 
 Syntax:
 

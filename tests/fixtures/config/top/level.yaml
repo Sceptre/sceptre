@@ -1,2 +1,1 @@
-template:
-  path: vpc.py
+template_path: vpc.py
