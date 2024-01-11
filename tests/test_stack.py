@@ -18,6 +18,7 @@ def stack_factory(**kwargs):
         "template_bucket_name": sentinel.template_bucket_name,
         "template_key_prefix": sentinel.template_key_prefix,
         "required_version": sentinel.required_version,
+        "template_path": sentinel.template_path,
         "region": sentinel.region,
         "profile": sentinel.profile,
         "parameters": {"key1": "val1"},
@@ -47,6 +48,7 @@ class TestStack(object):
             template_bucket_name=sentinel.template_bucket_name,
             template_key_prefix=sentinel.template_key_prefix,
             required_version=sentinel.required_version,
+            template_path=sentinel.template_path,
             region=sentinel.region,
             profile=sentinel.profile,
             parameters={"key1": "val1"},
@@ -68,10 +70,47 @@ class TestStack(object):
         )
         self.stack._template = MagicMock(spec=Template)
 
+    def test_initialize_stack_with_template_path(self):
+        stack = Stack(
+            name="dev/stack/app",
+            project_code=sentinel.project_code,
+            template_path=sentinel.template_path,
+            template_bucket_name=sentinel.template_bucket_name,
+            template_key_prefix=sentinel.template_key_prefix,
+            required_version=sentinel.required_version,
+            region=sentinel.region,
+            external_name=sentinel.external_name,
+        )
+        assert stack.name == "dev/stack/app"
+        assert stack.project_code == sentinel.project_code
+        assert stack.template_bucket_name == sentinel.template_bucket_name
+        assert stack.template_key_prefix == sentinel.template_key_prefix
+        assert stack.required_version == sentinel.required_version
+        assert stack.external_name == sentinel.external_name
+        assert stack.hooks == {}
+        assert stack.parameters == {}
+        assert stack.sceptre_user_data == {}
+        assert stack.template_path == sentinel.template_path
+        assert stack.template_handler_config == {
+            "path": sentinel.template_path,
+            "type": "file",
+        }
+        assert stack.s3_details is None
+        assert stack._template is None
+        assert stack.protected is False
+        assert stack.sceptre_role is None
+        assert stack.role_arn is None
+        assert stack.dependencies == []
+        assert stack.tags == {}
+        assert stack.notifications == []
+        assert stack.on_failure is None
+        assert stack.disable_rollback is False
+        assert stack.stack_group_config == {}
+
     def test_initialize_stack_with_template_handler(self):
         expected_template_handler_config = {
             "type": "file",
-            "path": sentinel.path,
+            "path": sentinel.template_path,
         }
         stack = Stack(
             name="dev/stack/app",
@@ -92,6 +131,7 @@ class TestStack(object):
         assert stack.hooks == {}
         assert stack.parameters == {}
         assert stack.sceptre_user_data == {}
+        assert stack.template_path == sentinel.template_path
         assert stack.template_handler_config == expected_template_handler_config
         assert stack.s3_details is None
         assert stack._template is None
@@ -104,6 +144,16 @@ class TestStack(object):
         assert stack.on_failure is None
         assert stack.disable_rollback is False
         assert stack.stack_group_config == {}
+
+    def test_raises_exception_if_path_and_handler_configured(self):
+        with pytest.raises(InvalidConfigFileError):
+            Stack(
+                name="stack_name",
+                project_code="project_code",
+                template_path="template_path",
+                template_handler_config={"type": "file"},
+                region="region",
+            )
 
     def test_init__non_boolean_ignore_value__raises_invalid_config_file_error(self):
         with pytest.raises(InvalidConfigFileError):
@@ -138,7 +188,7 @@ class TestStack(object):
             self.stack.__repr__() == "sceptre.stack.Stack("
             "name='dev/app/stack', "
             "project_code=sentinel.project_code, "
-            "template_handler_config=None, "
+            "template_handler_config={'type': 'file', 'path': sentinel.template_path}, "
             "region=sentinel.region, "
             "template_bucket_name=sentinel.template_bucket_name, "
             "template_key_prefix=sentinel.template_key_prefix, "
