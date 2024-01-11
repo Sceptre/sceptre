@@ -10,28 +10,6 @@ executors:
     docker:
       - image: circleci/buildpack-deps:stretch
 
-aliases:
-  - &docs-job
-    executor: python/default
-    steps:
-      - checkout
-      - add_ssh_keys:
-          fingerprints:
-            - "80:24:c0:40:28:36:f1:80:7f:fd:15:c3:09:cf:86:fc"
-      - attach_workspace:
-          at: /home/circleci
-      - python/install-packages:
-          pkg-manager: poetry
-          args: --all-extras
-      - run:
-          name: Build and deploy docs
-          command: |
-            poetry run ./.circleci/add-known-hosts.sh
-            poetry run ./.circleci/github-pages.sh
-          environment:
-            REPOSITORY_PATH: /home/circleci/docs
-            DEPLOYMENT_GIT_SSH: git@github.com:Sceptre/sceptre.github.io.git
-
 jobs:
   build:
     executor: python/default
@@ -146,10 +124,6 @@ jobs:
           paths:
             - ./image.tar
 
-  deploy-docs-branch: *docs-job
-
-  deploy-docs-tag: *docs-job
-
   deploy-pypi-test:
     executor: python/default
     steps:
@@ -255,14 +229,6 @@ workflows:
               only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
             branches:
               ignore: /.*/
-      - deploy-docs-branch:
-          context: sceptre-core
-          requires:
-            - unit-tests
-            - integration-tests
-          filters:
-            branches:
-              ignore: /^pull\/.*/
       - build-docker-image:
           requires:
             - unit-tests
@@ -282,15 +248,6 @@ workflows:
     jobs:
       - deploy-pypi-prod:
           context: sceptre-core
-          filters:
-            tags:
-              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
-            branches:
-              ignore: /.*/
-      - deploy-docs-tag:
-          context: sceptre-core
-          requires:
-            - deploy-pypi-prod
           filters:
             tags:
               only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
