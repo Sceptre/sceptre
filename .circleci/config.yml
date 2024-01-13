@@ -150,16 +150,6 @@ jobs:
 
   deploy-docs-tag: *docs-job
 
-  deploy-pypi-test:
-    executor: python/default
-    steps:
-      - checkout
-      - run:
-          name: Test upload to PyPi
-          command: |
-            poetry config repositories.test-pypi "https://test.pypi.org/legacy/"
-            poetry publish --build -r test-pypi -u __token__ -p $TEST_PYPI_API_TOKEN
-
   deploy-pypi-prod:
     executor: python/default
     steps:
@@ -243,13 +233,6 @@ workflows:
           context: sceptre-core
           requires:
             - build
-          filters:
-            branches:
-              ignore: /^pull\/.*/
-      - deploy-pypi-test:
-          context: sceptre-core
-          requires:
-            - unit-tests
           filters:
             branches:
               ignore: /^pull\/.*/
