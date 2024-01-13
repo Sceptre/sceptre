@@ -4,7 +4,7 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
-## 4.4.0 (2024.01.12)
+## 4.4.2 (2024.01.13)
  - Add support for python 3.12 (#1390)
  - Drop support for Python 3.7 (#1382)
  - [Resolves #1327] Setup readthedocs (#1404)
