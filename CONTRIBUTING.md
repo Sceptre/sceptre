@@ -152,7 +152,7 @@ Or to run a specific test in that file:
 $ poetry run pytest -ssv <test-file>.py::<unit-test-class>::<test-case>
 ```
 
-## Build documentation
+## Documentation
 
 Sceptre uses [Sphinx](https://www.sphinx-doc.org/en/master/) to generate
 documentation in HTML format.
@@ -164,6 +164,14 @@ To build the documentation locally:
 ```
 
 *Note*: The generated documentation files are in docs/_build/html
+
+The CI for Sceptre docs have been offloaded to [readthedocs.org](https://readthedocs.org/).
+It is managed by the [.readthedocs.yaml](.readthedocs.yaml) configuration file
+which builds the docs on every change and publishes them to
+[sceptre.readthedocs.io](https://sceptre.readthedocs.io).
+
+The [docs.sceptre-project.org](https://docs.sceptre-project.org) domain is setup
+to be the main website for Sceptre docs.
 
 ## Integration Tests
 
