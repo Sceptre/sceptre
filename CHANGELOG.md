@@ -4,6 +4,16 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 4.4.2 (2024.01.13)
+ - Add support for python 3.12 (#1390)
+ - Drop support for Python 3.7 (#1382)
+ - [Resolves #1327] Setup readthedocs (#1404)
+ - [Resolves #1377] Remove auto announcements to twitter (#1385)
+ - [Resolves #1383] Simplify stderr test for cmd hook (#1387)
+ - Remove project Makefile (#1403)
+ - docs: Update instructions to generate docs and remove requirements file for docs (#1398) (#1405)
+ - ci: use matrix for unit tests (#1395)
+
 ## 4.3.0 (2023.10.07)
  - [Resolve #1351] Add debugging to Jinja rendering (#1375)
  - [Resolves #1356] Add export=stackoutput and stackoutputexternal feature to list outputs (#1357)

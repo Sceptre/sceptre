@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sceptre"
-version = "4.3.0"
+version = "4.4.2"
 packages = [{ include = "sceptre" }]
 readme = "README.md"
 homepage = "https://github.com/Sceptre/sceptre"

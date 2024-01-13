@@ -124,23 +124,13 @@ jobs:
           paths:
             - ./image.tar
 
-  deploy-pypi-test:
-    executor: python/default
-    steps:
-      - checkout
-      - run:
-          name: Test upload to PyPi
-          command: |
-            poetry config repositories.test-pypi "https://test.pypi.org/legacy/"
-            poetry publish --build -r test-pypi -u $PYPI_TEST_USER -p $PYPI_TEST_PASSWORD
-
   deploy-pypi-prod:
     executor: python/default
     steps:
       - checkout
       - run:
           name: Upload to PyPi
-          command: poetry publish --build -u $PYPI_PROD_USER -p $PYPI_PROD_PASSWORD
+          command: poetry publish --build -u __token__ -p $PYPI_API_TOKEN
 
   deploy-latest-dockerhub:
     executor: docker-publisher
@@ -220,15 +210,6 @@ workflows:
           filters:
             branches:
               ignore: /^pull\/.*/
-      - deploy-pypi-test:
-          context: sceptre-core
-          requires:
-            - unit-tests
-          filters:
-            tags:
-              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
-            branches:
-              ignore: /.*/
       - build-docker-image:
           requires:
             - unit-tests
