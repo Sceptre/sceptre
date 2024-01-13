@@ -251,10 +251,8 @@ workflows:
           requires:
             - unit-tests
           filters:
-            tags:
-              only: /^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$/
             branches:
-              ignore: /.*/
+              ignore: /^pull\/.*/
       - deploy-docs-branch:
           context: sceptre-core
           requires:
