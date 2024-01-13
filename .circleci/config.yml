@@ -158,7 +158,7 @@ jobs:
           name: Test upload to PyPi
           command: |
             poetry config repositories.test-pypi "https://test.pypi.org/legacy/"
-            poetry publish --build -r test-pypi -u $PYPI_TEST_USER -p $PYPI_TEST_PASSWORD
+            poetry publish --build -r test-pypi -u __token__ -p $TEST_PYPI_API_TOKEN
 
   deploy-pypi-prod:
     executor: python/default
@@ -166,7 +166,7 @@ jobs:
       - checkout
       - run:
           name: Upload to PyPi
-          command: poetry publish --build -u $PYPI_PROD_USER -p $PYPI_PROD_PASSWORD
+          command: poetry publish --build -u __token__ -p $PYPI_API_TOKEN
 
   deploy-latest-dockerhub:
     executor: docker-publisher
