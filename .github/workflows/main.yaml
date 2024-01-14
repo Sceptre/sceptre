@@ -2,8 +2,9 @@ name: main
 
 env:
   AWS_REGION: us-east-1
-  AWS_ROLE: TBD
   AWS_ROLE_DURATION: 3600
+  # role generated from https://github.com/Sceptre/sceptre-aws/blob/master/config/prod/gh-oidc-sceptre-tests.yaml
+  AWS_ROLE: TBD
 
 on:
   push:
@@ -69,7 +70,6 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-region: ${{ env.AWS_REGION }}
-          # role from output of ..
           role-to-assume: ${{ env.AWS_ROLE }}
           role-session-name: GHA-${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}
           role-duration-seconds: ${{ env.AWS_ROLE_DURATION }}
