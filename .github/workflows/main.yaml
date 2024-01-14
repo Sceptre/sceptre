@@ -4,7 +4,7 @@ env:
   AWS_REGION: us-east-1
   AWS_ROLE_DURATION: 3600
   # role generated from https://github.com/Sceptre/sceptre-aws/blob/master/config/prod/gh-oidc-sceptre-tests.yaml
-  AWS_ROLE: TBD
+  AWS_ROLE: arn:aws:iam::743644221192:role/gh-oidc-sceptre-tests
 
 on:
   push:
