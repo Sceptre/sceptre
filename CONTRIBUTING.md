@@ -175,30 +175,23 @@ to be the main website for Sceptre docs.
 
 ## Integration Tests
 
-If you haven't setup your local environment or personal CircleCI account to run
+If you haven't setup your local environment or personal Github action to run
 integration tests then follow these steps:
 
-To run on CircleCi (please do this before submitting your PR so we can see that
+To run on Github action (please do this before submitting your PR so we can see that
 your tests are passing):
 
-- Login to CircleCi using your Github Account.
-- Click `Add Projects`, you will be presented with a list of projects from your
-  GitHub Account.
-- On your sceptre fork press the `Set Up Project` button.
-- You can ignore the setup steps, we already have a CircleCi config file in
-  Sceptre. Click "Start Building".
-- Modify the `Project Settings`, which can be found by navigating:
-  `Builds -> Sceptre` and selecting the `Settings` icon, on the right hand side
-  of the page.
-- Once in the `Project Settings` section under `Permissions` select
-  `AWS Permissions`.
-- Add your `Access Key ID` and `Secret Access Key` that is associated with an
+- Login to your Github Account.
+- On your Sceptre fork goto repositories -> sceptre -> settings -> enable
+  "Allow all actions and reusable workflows"
+- Setup Github OIDC to allow access to your AWS account or add
+  your `Access Key ID` and `Secret Access Key` that is associated with an
   IAM User from your AWS account. The IAM User will require "Full" permissions
   for `CloudFormation` and `S3` and Write permissions for `STS` (AssumeRole).
   For an example please take a look at the Sceptre
   [CI service user policy](https://github.com/Sceptre/sceptre-aws/blob/master/config/prod/sceptre-integration-test-service-access.yaml#L5-L35)
 
-Once you have set up CircleCi any time you commit to a branch in your fork all
+Once you have set up Github action any time you commit to a branch in your fork all
 tests will be run, including integration tests.
 
 You can also (optionally) run the integration tests locally, which is quicker
@@ -209,7 +202,7 @@ during development.
 * `pip install awscli`
 * Setup [AWS CLI Environment variables](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html)
   to work with an AWS account that you have access to.  You can use the same user
-  that you use for CircleCi.
+  or role that you use for Github actions.
 
 _Note_: All integration tests are set up to run in `eu-west-*` region.  If you prefer
 to run in a different region you must update the region in each test before running it

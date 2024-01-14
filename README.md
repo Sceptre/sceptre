@@ -1,6 +1,6 @@
 # Sceptre
 
-[![CircleCI](https://img.shields.io/circleci/build/github/Sceptre/sceptre?logo=circleci)](https://app.circleci.com/pipelines/github/Sceptre)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Sceptre/sceptre/main.yaml)](https://github.com/Sceptre/sceptre/actions)
 [![Docker Image Version (latest semver)](https://img.shields.io/docker/v/sceptreorg/sceptre?logo=docker&sort=semver)](https://hub.docker.com/r/sceptreorg/sceptre)
 [![PyPI](https://img.shields.io/pypi/v/sceptre?logo=pypi)](https://pypi.org/project/sceptre/)
 [![PyPI - Status](https://img.shields.io/pypi/status/sceptre?logo=pypi)](https://pypi.org/project/sceptre/)
