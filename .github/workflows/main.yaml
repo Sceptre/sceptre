@@ -38,7 +38,6 @@ jobs:
       - name: build package
         run: poetry build
   unit-tests:
-    needs: linting
     strategy:
       fail-fast: true
       matrix:
