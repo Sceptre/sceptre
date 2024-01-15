@@ -31,6 +31,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Install dependencies
+        run: poetry install --no-interaction --all-extras
       - name: build package
         run: poetry build
   unit-tests:
@@ -44,6 +48,10 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Install dependencies
+        run: poetry install --no-interaction --all-extras
       - name: Set up python ${{ matrix.version }}
         id: setup-python
         uses: actions/setup-python@v5
@@ -58,6 +66,8 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
       - name: Build Docker Image
         uses: docker/build-push-action@v5
         with:
@@ -67,6 +77,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Install dependencies
+        run: poetry install --no-interaction --all-extras
       # Update poetry for https://github.com/python-poetry/poetry/issues/7184
       - name: update poetry
         run: poetry self update --no-ansi
@@ -83,6 +97,7 @@ jobs:
     if: ${{ (github.ref == 'refs/heads/master') || (github.ref_type == 'tag') }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
@@ -102,5 +117,10 @@ jobs:
     if: ${{ (github.ref == 'refs/heads/master') || (github.ref_type == 'tag') }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Install dependencies
+        run: poetry install --no-interaction --all-extras
       - name: Publish to pypi
         run: poetry publish --build -u __token__ -p ${{ secrets.PYPI_API_TOKEN }}
