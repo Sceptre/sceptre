@@ -1,0 +1,19 @@
+name: main
+
+on:
+  push:
+    branches:
+      - '*'
+    tags:
+      - '^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  linting:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: run pre-commit
+        run: poetry run pre-commit run --all-files --show-diff-on-failure
