@@ -170,7 +170,7 @@ jobs:
       - packaging
       - documentation
       - unit-tests
-      - docker-build-release
+      - docker-build
 #      - integration-tests
     if: ${{ github.ref_type == 'tag' }}
     runs-on: ubuntu-latest
