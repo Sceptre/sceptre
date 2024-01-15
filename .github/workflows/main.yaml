@@ -134,7 +134,7 @@ jobs:
       - unit-tests
       - docker-build-push
       - integration-tests
-    if: ${{ (github.ref == 'refs/heads/master') || (github.ref_type == 'tag') }}
+    if: ${{ github.ref_type == 'tag' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
