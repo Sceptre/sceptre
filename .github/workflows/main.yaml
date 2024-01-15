@@ -82,7 +82,8 @@ jobs:
         with:
           context: .
   integration-tests:
-    needs: ["unit-tests"]
+    needs:
+      - unit-tests
     if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
     steps:
@@ -104,7 +105,8 @@ jobs:
       - name: run tests
         run: poetry run behave --junit --junit-directory build/behave
   docker-build-push:
-    needs: ["docker-build"]
+    needs:
+      - docker-build
     if: ${{ (github.ref == 'refs/heads/master') || (github.ref_type == 'tag') }}
     runs-on: ubuntu-latest
     steps:
@@ -125,7 +127,13 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
   pypi-publish:
-    needs: ["integration-tests"]
+    needs:
+      - linting
+      - packaging
+      - documentation
+      - unit-tests
+      - docker-build-push
+      - integration-tests
     if: ${{ (github.ref == 'refs/heads/master') || (github.ref_type == 'tag') }}
     runs-on: ubuntu-latest
     steps:
