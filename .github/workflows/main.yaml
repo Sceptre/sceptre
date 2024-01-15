@@ -163,7 +163,7 @@ jobs:
       - packaging
       - documentation
       - unit-tests
-      - docker-build-push
+      - docker-build-push-tag
 #      - integration-tests
     if: ${{ github.ref_type == 'tag' }}
     runs-on: ubuntu-latest
