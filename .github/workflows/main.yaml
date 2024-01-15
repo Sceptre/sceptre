@@ -60,9 +60,10 @@ jobs:
           cache: 'poetry'
       - name: Install dependencies
         run: poetry install --all-extras -v
-      - name: run tests
+      - name: run python tests
         run: poetry run tox -e py
-          poetry run tox -e report
+      - name: run python test report
+        run: poetry run tox -e report
   docker-build:
     runs-on: ubuntu-latest
     steps:
