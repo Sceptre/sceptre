@@ -48,12 +48,11 @@ jobs:
       - name: build documentation
         run: poetry run make html --directory docs
   unit-tests:
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
-        os: [ "ubuntu-latest" ]
-        python-version: [ "3.8", "3.9", "3.10", "3.11", "3.12" ]
-    runs-on: ${{ matrix.os }}
+        python: ["3.8", "3.9", "3.10", "3.11", "3.12"]
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -61,11 +60,11 @@ jobs:
         uses: snok/install-poetry@v1
       - name: Install dependencies
         run: poetry install --no-interaction --all-extras
-      - name: Set up python ${{ matrix.version }}
+      - name: Setup Python
         id: setup-python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.version }}
+          python-version: ${{ matrix.python }}
           cache: 'poetry'
       - name: Install dependencies
         run: poetry install --all-extras -v
