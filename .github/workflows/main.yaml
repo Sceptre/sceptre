@@ -11,7 +11,7 @@ on:
     branches:
       - '*'
     tags:
-      - '^v([0-9]+)\.([0-9]+)\.([0-9]+)(?:([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+)?$'
+      - 'v[0-9]+.[0-9]+.[0-9]+([0-9]+)'
   pull_request:
     branches:
       - '*'
@@ -21,6 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Install dependencies
+        run: poetry install --no-interaction --all-extras
       - name: run pre-commit
         run: poetry run pre-commit run --all-files --show-diff-on-failure
   packaging:
