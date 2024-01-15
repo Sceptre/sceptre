@@ -211,7 +211,7 @@ to run in a different region you must update the region in each test before runn
 #### run all tests
 
 ```bash
-$ AWS_PROFILE=<profile> AWS_DEFAULT_REGION=<region> poetry run behave --junit --junit-directory build/behave
+$ AWS_PROFILE=<profile> AWS_DEFAULT_REGION=<region> poetry run behave integration-tests/features --junit --junit-directory build/behave
 ```
 
 #### run a specific feature

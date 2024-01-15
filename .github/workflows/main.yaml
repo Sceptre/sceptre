@@ -109,7 +109,7 @@ jobs:
           role-session-name: GHA-${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}
           role-duration-seconds: ${{ env.AWS_ROLE_DURATION }}
       - name: run tests
-        run: poetry run behave --junit --junit-directory build/behave
+        run: poetry run behave integration-tests/features --junit --junit-directory build/behave
   docker-build-push:
     needs:
       - docker-build
