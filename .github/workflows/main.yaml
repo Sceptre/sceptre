@@ -86,6 +86,8 @@ jobs:
       - unit-tests
     if: ${{ github.event_name != 'pull_request' }}
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - name: Install Poetry
