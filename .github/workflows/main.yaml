@@ -66,8 +66,6 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: 'poetry'
-      - name: Install dependencies
-        run: poetry install --all-extras -v
       - name: run python tests
         run: poetry run tox -e py
       - name: run python test report
@@ -97,6 +95,12 @@ jobs:
       # Update poetry for https://github.com/python-poetry/poetry/issues/7184
       - name: update poetry
         run: poetry self update --no-ansi
+      - name: Setup Python
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'poetry'
       - name: Assume AWS role
         uses: aws-actions/configure-aws-credentials@v4
         with:
