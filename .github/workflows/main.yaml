@@ -113,7 +113,7 @@ jobs:
 #      - name: run tests
 #        run: poetry run behave integration-tests/features --junit --junit-directory build/behave
 
-  docker-build-push-latest:
+  docker-build-push:
     needs:
       - docker-build
     if: ${{ github.ref == 'refs/heads/master' }}
@@ -128,14 +128,14 @@ jobs:
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
-      - name: Build and push Docker image
+      - name: Build and push Docker image to sceptreorg/sceptre:${{ steps.meta.outputs.tags }}
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: sceptreorg/sceptre:latest
+          tags: sceptreorg/sceptre:${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-  docker-build-push-tag:
+  docker-build-release:
     needs:
       - docker-build
     if: ${{ github.ref_type == 'tag' }}
@@ -150,20 +150,27 @@ jobs:
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
-      - name: Build and push Docker image
+      - name: Build and push Docker image to sceptreorg/sceptre:latest
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: sceptreorg/sceptre:latest
+          labels: ${{ steps.meta.outputs.labels }}
+      - name: Build and push Docker image to sceptreorg/sceptre:${{ steps.meta.outputs.tags }}
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: sceptreorg/sceptre:${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-  pypi-publish:
+  pypi-release:
     needs:
       - linting
       - packaging
       - documentation
       - unit-tests
-      - docker-build-push-tag
+      - docker-build-release
 #      - integration-tests
     if: ${{ github.ref_type == 'tag' }}
     runs-on: ubuntu-latest
