@@ -1,14 +1,20 @@
 name: main
 
+env:
+  AWS_REGION: us-east-1
+  AWS_ROLE_DURATION: 3600
+  # role generated from https://github.com/Sceptre/sceptre-aws/blob/master/config/prod/gh-oidc-sceptre-tests.yaml
+  AWS_ROLE: arn:aws:iam::743644221192:role/gh-oidc-sceptre-tests
+
 on:
   push:
     branches:
-      - '*'
+      - 'master'
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+([0-9]+)'
   pull_request:
     branches:
-      - '*'
+      - 'master'
 
 jobs:
   linting:
@@ -21,3 +27,130 @@ jobs:
         run: poetry install --no-interaction --all-extras
       - name: run pre-commit
         run: poetry run pre-commit run --all-files --show-diff-on-failure
+  packaging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Install dependencies
+        run: poetry install --no-interaction --all-extras
+      - name: build package
+        run: poetry build
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Install dependencies
+        run: poetry install --no-interaction --all-extras
+      - name: build documentation
+        run: poetry run make html --directory docs
+  unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        python: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Install dependencies
+        run: poetry install --no-interaction --all-extras
+      - name: Setup Python
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: 'poetry'
+      - name: run python tests
+        run: poetry run tox -e py
+      - name: run python test report
+        run: poetry run tox -e report
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Build Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+
+# temporarily comment out to get GH action into place.  Will fix tests on a follow on PR.
+# https://github.com/Sceptre/sceptre/pull/1412#discussion_r1452566731
+#  integration-tests:
+#    needs:
+#      - unit-tests
+#    if: ${{ github.event_name != 'pull_request' }}
+#    runs-on: ubuntu-latest
+#    permissions:
+#      id-token: write
+#    steps:
+#      - uses: actions/checkout@v4
+#      - name: Install Poetry
+#        uses: snok/install-poetry@v1
+#      - name: Install dependencies
+#        run: poetry install --no-interaction --all-extras
+#      # Update poetry for https://github.com/python-poetry/poetry/issues/7184
+#      - name: update poetry
+#        run: poetry self update --no-ansi
+#      - name: Setup Python
+#        id: setup-python
+#        uses: actions/setup-python@v5
+#        with:
+#          python-version: '3.10'
+#          cache: 'poetry'
+#      - name: Assume AWS role
+#        uses: aws-actions/configure-aws-credentials@v4
+#        with:
+#          aws-region: ${{ env.AWS_REGION }}
+#          role-to-assume: ${{ env.AWS_ROLE }}
+#          role-session-name: GHA-${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}
+#          role-duration-seconds: ${{ env.AWS_ROLE_DURATION }}
+#      - name: run tests
+#        run: poetry run behave integration-tests/features --junit --junit-directory build/behave
+
+  docker-build-push:
+    needs:
+      - docker-build
+    if: ${{ (github.ref == 'refs/heads/master') || (github.ref_type == 'tag') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+  pypi-publish:
+    needs:
+      - linting
+      - packaging
+      - documentation
+      - unit-tests
+      - docker-build-push
+#      - integration-tests
+    if: ${{ github.ref_type == 'tag' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Install dependencies
+        run: poetry install --no-interaction --all-extras
+      - name: Publish to pypi
+        run: poetry publish --build -u __token__ -p ${{ secrets.PYPI_API_TOKEN }}
