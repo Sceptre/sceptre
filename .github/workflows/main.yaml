@@ -81,7 +81,7 @@ jobs:
   integration-tests:
     needs:
       - unit-tests
-    if: ${{ github.event_name != 'pull_request' }}
+    if: ${{ github.ref_type == 'push' }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
