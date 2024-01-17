@@ -80,7 +80,11 @@ jobs:
           context: .
   integration-tests:
     needs:
+      - linting
+      - packaging
+      - documentation
       - unit-tests
+      - docker-build
     if: ${{ github.ref_type == 'push' }}
     runs-on: ubuntu-latest
     permissions:
@@ -111,9 +115,8 @@ jobs:
         run: AWS_DEFAULT_REGION=eu-west-1 poetry run behave integration-tests/features --junit --junit-directory build/behave
   docker-build-push:
     needs:
-      - docker-build
       - integration-tests
-    if: ${{ github.ref == 'refs/heads/master' }}
+    if: ${{ (github.ref_type == 'push') && (github.ref == 'refs/heads/master') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -133,13 +136,6 @@ jobs:
           tags: sceptreorg/sceptre:${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
   docker-build-release:
-    needs:
-      - linting
-      - packaging
-      - documentation
-      - unit-tests
-      - docker-build
-      - integration-tests
     if: ${{ github.ref_type == 'tag' }}
     runs-on: ubuntu-latest
     steps:
@@ -167,13 +163,6 @@ jobs:
           tags: sceptreorg/sceptre:${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
   pypi-release:
-    needs:
-      - linting
-      - packaging
-      - documentation
-      - unit-tests
-      - docker-build
-      - integration-tests
     if: ${{ github.ref_type == 'tag' }}
     runs-on: ubuntu-latest
     steps:
