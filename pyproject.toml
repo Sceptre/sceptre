@@ -45,6 +45,7 @@ classifiers = [
 "file" = "sceptre.template_handlers.file:File"
 "s3" = "sceptre.template_handlers.s3:S3"
 "http" = "sceptre.template_handlers.http:Http"
+"formatted_yaml" = "sceptre.template_handlers.formatted_yaml:FormattedYaml"
 
 [tool.poetry.dependencies]
 python = "^3.8"
