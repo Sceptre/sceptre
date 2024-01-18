@@ -50,7 +50,7 @@ building better infrastructure.
 `$ pip install sceptre`
 
 More information on installing sceptre can be found in our
-[Installation Guide](https://docs.sceptre-project.org/latest/docs/install.html)
+[Installation Guide](https://docs.sceptre-project.org/en/latest/docs/install.html)
 
 ### Using Docker Image
 
@@ -261,7 +261,7 @@ Full API reference documentation can be found in the
 
 ## Tutorial and Documentation
 
-- [Get Started](https://docs.sceptre-project.org/latest/docs/get_started.html)
+- [Get Started](https://docs.sceptre-project.org/en/latest/docs/get_started.html)
 - [Documentation](https://docs.sceptre-project.org/)
 
 ## Communication
