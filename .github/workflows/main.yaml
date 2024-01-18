@@ -47,7 +47,8 @@ jobs:
         run: poetry install --no-interaction --all-extras
       - name: build documentation
         run: poetry run make html --directory docs
-  get-envlist:
+  # use https://github.com/medmunds/tox-gh-matrix to export tox envlist to GH actions
+  get-tox-envlist:
     runs-on: ubuntu-latest
     outputs:
       envlist: ${{ steps.generate-envlist.outputs.envlist }}
@@ -61,12 +62,12 @@ jobs:
       - id: generate-envlist
         run: poetry run tox --gh-matrix
   unit-tests:
-    needs: get-envlist
+    needs: get-tox-envlist
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
-        tox: ${{ fromJSON(needs.get-envlist.outputs.envlist) }}
+        tox: ${{ fromJSON(needs.get-tox-envlist.outputs.envlist) }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
