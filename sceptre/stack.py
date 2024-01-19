@@ -395,12 +395,25 @@ class Stack:
             )
         return self._template
 
+    @property
+    @deprecated(
+        deprecated_in="4.0.0",
+        removed_in=None,
+        current_version=__version__,
+        details="Use the template Stack Config key instead.",
+    )
+    def template_path(self) -> str:
+        """The path argument from the template_handler config. This field is deprecated as of v4.0.0
+        and will be removed in v5.0.0.
+        """
+        return self.template_handler_config["path"]
+
     @template_path.setter
     @deprecated(
         deprecated_in="4.0.0",
         removed_in=None,
         current_version=__version__,
-        details="Use the template Stack Config key instead."
+        details="Use the template Stack Config key instead.",
     )
     def template_path(self, value: str):
         self.template_handler_config = {"type": "file", "path": value}
