@@ -27,6 +27,7 @@ jobs:
         run: poetry install --no-interaction --all-extras
       - name: run pre-commit
         run: poetry run pre-commit run --all-files --show-diff-on-failure
+
   packaging:
     runs-on: ubuntu-latest
     steps:
@@ -37,6 +38,7 @@ jobs:
         run: poetry install --no-interaction --all-extras
       - name: build package
         run: poetry build
+
   documentation:
     runs-on: ubuntu-latest
     steps:
@@ -47,6 +49,7 @@ jobs:
         run: poetry install --no-interaction --all-extras
       - name: build documentation
         run: poetry run make html --directory docs
+
   unit-tests:
     runs-on: ubuntu-latest
     strategy:
@@ -69,6 +72,7 @@ jobs:
         run: poetry run tox -e py
       - name: run python test report
         run: poetry run tox -e report
+
   docker-build:
     runs-on: ubuntu-latest
     steps:
@@ -78,6 +82,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+
   integration-tests:
     needs:
       - linting
@@ -112,7 +117,10 @@ jobs:
           role-session-name: GHA-${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}
           role-duration-seconds: ${{ env.AWS_ROLE_DURATION }}
       - name: run tests
-        run: AWS_DEFAULT_REGION=eu-west-1 poetry run behave integration-tests/features --junit --junit-directory build/behave
+        run: poetry run behave integration-tests/features --junit --junit-directory build/behave
+        env:
+          AWS_DEFAULT_REGION: eu-west-1
+
   docker-build-push:
     needs:
       - integration-tests
@@ -136,6 +144,7 @@ jobs:
           push: true
           tags: sceptreorg/sceptre:edge
           labels: ${{ steps.meta.outputs.labels }}
+
   docker-build-release:
     if: ${{ github.ref_type == 'tag' }}
     runs-on: ubuntu-latest
@@ -164,6 +173,7 @@ jobs:
           push: true
           tags: sceptreorg/sceptre:${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
   pypi-release:
     if: ${{ github.ref_type == 'tag' }}
     runs-on: ubuntu-latest
