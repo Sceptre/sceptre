@@ -90,7 +90,7 @@ jobs:
       - documentation
       - unit-tests
       - docker-build
-    if: ${{ github.ref_type == 'push' }}
+    if: ${{ github.event_name == 'push' }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -124,7 +124,7 @@ jobs:
   docker-build-push:
     needs:
       - integration-tests
-    if: ${{ (github.ref_type == 'push') && (github.ref == 'refs/heads/master') }}
+    if: ${{ (github.event_name == 'push') && (github.ref == 'refs/heads/master') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -146,7 +146,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   docker-build-release:
-    if: ${{ github.ref_type == 'tag' }}
+    if: ${{ github.event_name == 'tag' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -175,7 +175,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   pypi-release:
-    if: ${{ github.ref_type == 'tag' }}
+    if: ${{ github.event_name == 'tag' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
