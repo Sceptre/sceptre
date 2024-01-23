@@ -50,12 +50,28 @@ jobs:
       - name: build documentation
         run: poetry run make html --directory docs
 
+  # use https://github.com/medmunds/tox-gh-matrix to export tox envlist to GH actions
+  get-tox-envlist:
+    runs-on: ubuntu-latest
+    outputs:
+      envlist: ${{ steps.generate-envlist.outputs.envlist }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Install dependencies
+        run: poetry install --no-interaction --all-extras
+      - id: generate-envlist
+        run: poetry run tox --gh-matrix
+
   unit-tests:
+    needs: get-tox-envlist
     runs-on: ubuntu-latest
     strategy:
       fail-fast: true
       matrix:
-        python: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        tox: ${{ fromJSON(needs.get-tox-envlist.outputs.envlist) }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -63,13 +79,13 @@ jobs:
         id: setup-python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python }}
+          python-version: ${{ matrix.tox.python.spec }}
       - name: Install Poetry
         uses: snok/install-poetry@v1
       - name: Install dependencies
         run: poetry install --no-interaction --all-extras
       - name: run python tests
-        run: poetry run tox -e py
+        run: poetry run tox -e ${{ matrix.tox.name }}
       - name: run python test report
         run: poetry run tox -e report
 
