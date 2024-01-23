@@ -110,6 +110,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
       - name: Install Poetry
