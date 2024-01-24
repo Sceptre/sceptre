@@ -6,7 +6,7 @@ on:
       - 'v[0-9]+.[0-9]+.[0-9]+([0-9]+)'
 
 jobs:
-  docker-release:
+  docker-build-release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,7 +18,7 @@ jobs:
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
-      # The latest tag refers to the latest released version
+      # docker convention: latest tag refers to the last stable release
       - name: Build and push Docker image to sceptreorg/sceptre:latest
         uses: docker/build-push-action@v5
         with:
@@ -33,6 +33,7 @@ jobs:
           push: true
           tags: sceptreorg/sceptre:${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
   pypi-release:
     runs-on: ubuntu-latest
     steps:
