@@ -119,14 +119,17 @@ $ git checkout -b <branch-name>
 As a pre-deployment step we syntatically validate files with
 [pre-commit](https://pre-commit.com).
 
-Please [install pre-commit](https://pre-commit.com/#install) then run
-`pre-commit install` to setup the git hooks.  Once configured the pre-commit
-linters will automatically run on every git commit.  Alternatively you
-can manually execute the validations by running `pre-commit run --all-files`.
+Run `poetry run pre-commit install` to setup the git hooks.  Once configured
+the pre-commit  linters will automatically run on every git commit.
+Alternatively you can manually execute the validations by running
 
 ```bash
 $ poetry run pre-commit run --all-files
 ```
+
+The CI for pre-commit has been offloaded to [pre-commit.ci](https://pre-commit.ci)
+The configuration is in the [pre-commit-config.yaml](.pre-commit-config.yaml)
+file.
 
 ## Unit Tests
 
