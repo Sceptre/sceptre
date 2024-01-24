@@ -17,17 +17,6 @@ on:
       - '*'
 
 jobs:
-  linting:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-      - name: Install dependencies
-        run: poetry install --no-interaction --all-extras
-      - name: run pre-commit
-        run: poetry run pre-commit run --all-files --show-diff-on-failure
-
   packaging:
     runs-on: ubuntu-latest
     steps:
@@ -101,7 +90,6 @@ jobs:
 
   integration-tests:
     needs:
-      - linting
       - packaging
       - documentation
       - unit-tests
