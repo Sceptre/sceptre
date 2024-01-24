@@ -1,4 +1,4 @@
-name: merge
+name: post-push
 
 env:
   AWS_REGION: us-east-1
