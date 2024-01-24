@@ -90,6 +90,7 @@ readme-renderer = "^24.0"
 requests-mock = "^1.9.3"
 tox = "^3.23.0"
 troposphere = "^4"
+tox-gh-matrix = "^0.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
