@@ -12,7 +12,6 @@ on:
       - check
     types:
       - completed
-  push:
     branches:
       - '*'
 
