@@ -12,8 +12,9 @@ on:
       - check
     types:
       - completed
-    branches:
-      - '*'
+#  push:
+#    branches:
+#      - '*'
 
 jobs:
   integration-tests:
