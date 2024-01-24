@@ -90,7 +90,6 @@ jobs:
 
   integration-tests:
     needs:
-      - linting
       - packaging
       - documentation
       - unit-tests
