@@ -1,4 +1,4 @@
-name: post-push
+name: push
 
 env:
   AWS_REGION: us-east-1
@@ -9,7 +9,7 @@ env:
 on:
   workflow_run:
     workflows:
-      - pre-merge
+      - check
     types:
       - completed
   push:

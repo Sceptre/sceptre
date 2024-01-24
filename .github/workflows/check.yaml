@@ -1,4 +1,4 @@
-name: pre-merge
+name: check
 
 on:
   push:
