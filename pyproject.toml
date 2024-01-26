@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sceptre"
-version = "4.3.0"
+version = "4.4.2"
 packages = [{ include = "sceptre" }]
 readme = "README.md"
 homepage = "https://github.com/Sceptre/sceptre"
@@ -18,7 +18,8 @@ classifiers = [
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11"
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
 ]
 
 [tool.poetry.scripts]
@@ -46,7 +47,7 @@ classifiers = [
 "http" = "sceptre.template_handlers.http:Http"
 
 [tool.poetry.dependencies]
-python = ">=3.8,<3.12"
+python = "^3.8"
 boto3 = "^1.20.27"
 click = ">=7.0,<9.0"
 cfn-flip = "^1.2.3"
@@ -82,13 +83,14 @@ pre-commit = "^2.21.0"
 behave = "^1.2.5"
 freezegun = ">=0.3.12,<0.4.0"
 pygments = "^2.2"
-pytest = "^6.2"
+pytest = "^7.4.3"
 pytest-cov = "^2.11.1"
 pytest-sugar = "^0.9.4"
 readme-renderer = "^24.0"
 requests-mock = "^1.9.3"
 tox = "^3.23.0"
 troposphere = "^4"
+tox-gh-matrix = "^0.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

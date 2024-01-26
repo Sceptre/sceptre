@@ -63,6 +63,7 @@ class TestStackOutputResolver(object):
             SceptreException,
             match="!stack_output arg should match STACK_NAME::OUTPUT_KEY",
         ):
+
             stack_output_resolver.setup()
 
     @patch("sceptre.resolvers.stack_output.StackOutput._get_output_value")
