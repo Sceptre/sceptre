@@ -12,9 +12,8 @@ on:
       - check
     types:
       - completed
-  push:
     branches:
-      - '*'
+      - master
 
 jobs:
   integration-tests:
