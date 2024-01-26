@@ -1,4 +1,4 @@
-name: push
+name: gate
 
 env:
   AWS_REGION: us-east-1
