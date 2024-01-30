@@ -66,6 +66,7 @@ CONFIG_MERGE_STRATEGIES = {
     "template_path": strategies.child_wins,
     "ignore": strategies.child_wins,
     "obsolete": strategies.child_wins,
+    "is_project_dependency": strategies.child_wins,
 }
 
 STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
@@ -289,7 +290,9 @@ class ConfigReader(object):
         """
         stacks = set()
         for stack in stack_map.values():
-            if not self.context.ignore_dependencies:
+            if self.context.ignore_dependencies or stack.is_project_dependency:
+                stack.dependencies = []
+            else:
                 for i, dep in enumerate(stack.dependencies):
                     try:
                         if not isinstance(dep, Stack):
@@ -311,8 +314,6 @@ class ConfigReader(object):
                 # We deduplicate the dependencies using a set here, since it's possible that a given
                 # dependency ends up in the list multiple times.
                 stack.dependencies = list(set(stack.dependencies))
-            else:
-                stack.dependencies = []
             stacks.add(stack)
         return stacks
 
@@ -585,7 +586,11 @@ class ConfigReader(object):
         disable_rollback = self.context.command_params.get("disable_rollback")
         if disable_rollback is None:
             disable_rollback = config.get("disable_rollback", False)
-
+        is_project_dependency = config.get("is_project_dependency", False)
+        if is_project_dependency:
+            dependencies = []
+        else:
+            dependencies = config.get("dependencies", [])
         stack = Stack(
             name=stack_name,
             project_code=config["project_code"],
@@ -604,7 +609,7 @@ class ConfigReader(object):
             sceptre_user_data=config.get("sceptre_user_data", {}),
             hooks=config.get("hooks", {}),
             s3_details=s3_details,
-            dependencies=config.get("dependencies", []),
+            dependencies=dependencies,
             role_arn=config.get("role_arn"),
             cloudformation_service_role=config.get("cloudformation_service_role"),
             protected=config.get("protect", False),
@@ -618,6 +623,7 @@ class ConfigReader(object):
             obsolete=config.get("obsolete", False),
             stack_group_config=parsed_stack_group_config,
             config=config,
+            is_project_dependency=is_project_dependency,
         )
 
         del self.templating_vars["stack_group_config"]

@@ -433,6 +433,7 @@ class ResolvableContainerProperty(ResolvableProperty):
         """Represents a value that could not yet be resolved but can be resolved in the future."""
 
         def __init__(self, instance, name, key, resolution_function):
+            self._logger = logging.getLogger(__name__)
             self._instance = instance
             self._name = name
             self._key = key
@@ -443,7 +444,7 @@ class ResolvableContainerProperty(ResolvableProperty):
             attr = getattr(self._instance, self._name)
             result = self._resolution_function()
             if result is None:
-                self.logger.debug(
+                self._logger.debug(
                     f"Removing item {self._key} because resolver returned None."
                 )
                 del attr[self._key]

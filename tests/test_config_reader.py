@@ -12,6 +12,7 @@ from freezegun import freeze_time
 from glob import glob
 
 from sceptre.config.reader import ConfigReader
+from sceptre.stack import Stack
 from sceptre.context import SceptreContext
 
 from sceptre.exceptions import (
@@ -279,6 +280,7 @@ class TestConfigReader(object):
     ):
         mock_Stack.return_value = sentinel.stack
         sentinel.stack.dependencies = []
+        sentinel.stack.is_project_dependency = False
 
         mock_collect_s3_details.return_value = sentinel.s3_details
         self.context.project_path = os.path.abspath("tests/fixtures-vpc")
@@ -319,6 +321,7 @@ class TestConfigReader(object):
                 "custom_key": "custom_value",
             },
             config=ANY,
+            is_project_dependency=False,
         )
 
         assert stacks == ({sentinel.stack}, {sentinel.stack})
@@ -572,6 +575,60 @@ class TestConfigReader(object):
             raise
         else:
             assert True
+
+    def test_construct_stacks__ignore_dependencies__command_stack_has_no_dependencies(
+        self,
+    ):
+        project_path, config_dir = self.create_project()
+        filepaths = ["A/1.yaml", "A/2.yaml"]
+
+        for index, rel_path in enumerate(filepaths):
+            config = {
+                "region": "region",
+                "project_code": "project_code",
+                "template_path": rel_path,
+            }
+            if rel_path == "A/2.yaml":
+                config["dependencies"] = ["A/1.yaml"]
+
+            abs_path = os.path.join(config_dir, rel_path)
+            self.write_config(abs_path, config)
+
+        self.context.project_path = project_path
+        self.context.command_path = "A/2.yaml"
+        self.context.ignore_dependencies = True
+        config_reader = ConfigReader(self.context)
+        _, command_stacks = config_reader.construct_stacks()
+        assert len(command_stacks) == 1
+        stack: Stack = list(command_stacks)[0]
+        assert stack.dependencies == []
+
+    def test_construct_stacks__is_project_dependency__command_stack_has_no_dependencies(
+        self,
+    ):
+        project_path, config_dir = self.create_project()
+        filepaths = ["A/1.yaml", "A/2.yaml"]
+
+        for index, rel_path in enumerate(filepaths):
+            config = {
+                "region": "region",
+                "project_code": "project_code",
+                "template_path": rel_path,
+            }
+            if rel_path == "A/2.yaml":
+                config["dependencies"] = ["A/1.yaml"]
+                config["is_project_dependency"] = True
+
+            abs_path = os.path.join(config_dir, rel_path)
+            self.write_config(abs_path, config)
+
+        self.context.project_path = project_path
+        self.context.command_path = "A/2.yaml"
+        config_reader = ConfigReader(self.context)
+        _, command_stacks = config_reader.construct_stacks()
+        assert len(command_stacks) == 1
+        stack: Stack = list(command_stacks)[0]
+        assert stack.dependencies == []
 
     def test_resolve_node_tag(self):
         mock_loader = MagicMock(yaml.Loader)

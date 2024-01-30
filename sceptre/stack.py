@@ -122,6 +122,10 @@ class Stack:
     :param sceptre_role_session_duration: The session duration when Scetre assumes a role.\
            If not supplied, Sceptre uses default value (3600 seconds)
 
+    :param is_project_dependency: Indicates whether or not the the stack is a\
+            special dependency of the stack. If True, disables all dependencies\
+            on the the current stack.
+
     :param stack_group_config: The StackGroup config for the Stack
 
     :param config: The complete config for the stack. Used by dump config.
@@ -191,6 +195,7 @@ class Stack:
         disable_rollback=False,
         profile: str = None,
         stack_timeout: int = 0,
+        is_project_dependency=False,
         sceptre_role_session_duration: Optional[int] = None,
         iam_role_session_duration: Optional[int] = None,
         ignore=False,
@@ -226,6 +231,7 @@ class Stack:
         )
         self.ignore = self._ensure_boolean("ignore", ignore)
         self.obsolete = self._ensure_boolean("obsolete", obsolete)
+        self.is_project_dependency = is_project_dependency
 
         self._template = None
         self._connection_manager = None

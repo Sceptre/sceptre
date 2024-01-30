@@ -1,0 +1,3 @@
+is_project_dependency: True
+template:
+  path: project-dependencies/service-role.yaml
