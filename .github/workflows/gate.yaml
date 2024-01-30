@@ -14,6 +14,7 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     uses: "./.github/workflows/integration-tests.yaml"
     with:
+      # role generated from https://github.com/Sceptre/sceptre-aws/blob/master/config/prod/gh-oidc-sceptre-tests.yaml
       role-to-assume: "arn:aws:iam::743644221192:role/gh-oidc-sceptre-tests"
 
   docker-build-push:
