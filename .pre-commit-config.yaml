@@ -17,7 +17,7 @@ repos:
     hooks:
       - id: yamllint
   - repo: https://github.com/awslabs/cfn-python-lint
-    rev: v0.83.8
+    rev: v0.85.0
     hooks:
       - id: cfn-python-lint
         args:
@@ -36,7 +36,7 @@ repos:
             ^.pre-commit-config.yaml
           )
   - repo: https://github.com/psf/black
-    rev: 23.1.0
+    rev: 24.1.1
     hooks:
       - id: black
   - repo: https://github.com/python-poetry/poetry
