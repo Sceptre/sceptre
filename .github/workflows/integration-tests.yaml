@@ -19,7 +19,7 @@ jobs:
     permissions:
       id-token: write
     concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
+      group: integration-tests
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
