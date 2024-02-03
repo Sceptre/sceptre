@@ -7,8 +7,6 @@ on:
 jobs:
   integration-tests:
     if: ${{ contains(github.event.review.body, '/integration-tests') }}
-    permissions:
-      id-token: write
     uses: "./.github/workflows/integration-tests.yaml"
     with:
       # role generated from https://github.com/Sceptre/sceptre-aws/blob/master/config/prod/gh-oidc-sceptre-tests.yaml
