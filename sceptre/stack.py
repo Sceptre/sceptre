@@ -42,7 +42,7 @@ class Stack:
     :param template_path: The relative path to the CloudFormation, Jinja2,
             or Python template to build the Stack from. If this is filled,
             `template_handler_config` should not be filled. This field has been deprecated since
-            version 4.0.0 and will be removed in version 5.0.0.
+            version 4.0.0 and will be removed eventually.
 
     :param template_handler_config: Configuration for a Template Handler that can resolve
             its arguments to a template string. Should contain the `type` property to specify
@@ -92,15 +92,15 @@ class Stack:
 
     :param iam_role: The ARN of a role for Sceptre to assume before interacting
             with the environment. If not supplied, Sceptre uses the user's AWS CLI
-            credentials. This field has been deprecated since version 4.0.0 and will be removed in
-            version 5.0.0.
+            credentials. This field has been deprecated since version 4.0.0 and will be removed
+            eventually.
 
     :param sceptre_role: The ARN of a role for Sceptre to assume before interacting\
             with the environment. If not supplied, Sceptre uses the user's AWS CLI\
             credentials.
 
     :param iam_role_session_duration: The duration in seconds of the assumed IAM role session.
-            This field has been deprecated since version 4.0.0 and will be removed in version 5.0.0.
+            This field has been deprecated since version 4.0.0 and will be removed eventually.
 
     :param sceptre_role_session_duration: The duration in seconds of the assumed IAM role session.
 
@@ -154,14 +154,23 @@ class Stack:
     hooks = HookProperty("hooks")
 
     iam_role = create_deprecated_alias_property(
-        "iam_role", "sceptre_role", "4.0.0", "5.0.0"
+        "iam_role",
+        "sceptre_role",
+        deprecated_in="4.0.0",
+        removed_in=None,
     )
     role_arn = create_deprecated_alias_property(
-        "role_arn", "cloudformation_service_role", "4.0.0", "5.0.0"
+        "role_arn",
+        "cloudformation_service_role",
+        deprecated_in="4.0.0",
+        removed_in=None,
     )
     sceptre_role_session_duration = None
     iam_role_session_duration = create_deprecated_alias_property(
-        "iam_role_session_duration", "sceptre_role_session_duration", "4.0.0", "5.0.0"
+        "iam_role_session_duration",
+        "sceptre_role_session_duration",
+        deprecated_in="4.0.0",
+        removed_in=None,
     )
 
     def __init__(
@@ -388,7 +397,10 @@ class Stack:
 
     @property
     @deprecated(
-        "4.0.0", "5.0.0", __version__, "Use the template Stack Config key instead."
+        deprecated_in="4.0.0",
+        removed_in=None,
+        current_version=__version__,
+        details="Use the template Stack Config key instead.",
     )
     def template_path(self) -> str:
         """The path argument from the template_handler config. This field is deprecated as of v4.0.0
@@ -398,7 +410,10 @@ class Stack:
 
     @template_path.setter
     @deprecated(
-        "4.0.0", "5.0.0", __version__, "Use the template Stack Config key instead."
+        deprecated_in="4.0.0",
+        removed_in=None,
+        current_version=__version__,
+        details="Use the template Stack Config key instead.",
     )
     def template_path(self, value: str):
         self.template_handler_config = {"type": "file", "path": value}
