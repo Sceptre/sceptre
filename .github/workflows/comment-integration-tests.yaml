@@ -1,3 +1,8 @@
+# The idea with this workflow is to allow users to trigger an integration test
+# run from a PR however it doesn't work because github action does not allow
+# access to the github token when triggered from a PR.  The workflow fails with..
+# "Credentials could not be loaded, please check your action inputs: Could not load credentials from any providers"
+
 name: comment-integration-tests
 
 on:

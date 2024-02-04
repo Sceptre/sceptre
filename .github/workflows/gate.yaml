@@ -1,3 +1,5 @@
+# Run integration tests when a PR is merged to master and publish a
+# docker container (with an `edge` tag) with the latest code
 name: gate
 
 on:

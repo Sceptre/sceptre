@@ -1,3 +1,5 @@
+# The idea with this workflow is to allow core reviewers to trigger the
+# integration tests by pushing a branch to the sceptre repository.
 name: branch-integration-tests
 
 on:

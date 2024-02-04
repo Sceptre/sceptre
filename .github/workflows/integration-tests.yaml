@@ -18,6 +18,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+    # There is only one AWS account for running integration tests and the tests are not designed
+    # to run concurrently in one account which is why we are disabling concurrency.
+    # The intention is to have all triggered integration tests execute serially in one queue,
+    # all triggered integration tests should wait in the queue however github is canceling
+    # waiting jobs in the queue. Github currently does not support the desired use case,
+    # more info at https://github.com/orgs/community/discussions/41518
     concurrency:
       group: integration-tests
       cancel-in-progress: false

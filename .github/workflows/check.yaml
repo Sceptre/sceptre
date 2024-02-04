@@ -1,3 +1,4 @@
+# Execute sanity checks
 name: check
 
 on:
