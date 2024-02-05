@@ -47,7 +47,7 @@ repos:
         language_version: python3.10
         args: ['--check']
   - repo: https://github.com/sirosen/check-jsonschema
-    rev: 0.27.3
+    rev: 0.27.4
     hooks:
       - id: check-github-workflows
       - id: check-github-actions
