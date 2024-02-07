@@ -10,6 +10,11 @@ authors = ["Sceptre <sceptreorg@gmail.com>"]
 description = "An AWS Cloud Provisioning Tool"
 keywords = ["aws", "cloud", "devops", "infrastructure", "tools", "cli"]
 license = "Apache-2.0"
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Natural Language :: English",
+]
 
 [tool.poetry.scripts]
 "sceptre" = "sceptre.cli:cli"
