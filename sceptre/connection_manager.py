@@ -316,9 +316,9 @@ class ConnectionManager(object):
                         "RoleSessionName": session_name,
                     }
                     if self.sceptre_role_session_duration:
-                        assume_role_kwargs[
-                            "DurationSeconds"
-                        ] = self.sceptre_role_session_duration
+                        assume_role_kwargs["DurationSeconds"] = (
+                            self.sceptre_role_session_duration
+                        )
                     sts_response = sts_client.assume_role(**assume_role_kwargs)
 
                     credentials = sts_response["Credentials"]

@@ -433,9 +433,9 @@ class TestStackDiffer:
         self.local_no_echo_parameters.append("hide_me")
 
         expected_generated_config = self.expected_generated_config
-        expected_generated_config.parameters[
-            "hide_me"
-        ] = StackDiffer.NO_ECHO_REPLACEMENT
+        expected_generated_config.parameters["hide_me"] = (
+            StackDiffer.NO_ECHO_REPLACEMENT
+        )
 
         self.differ.diff(self.actions)
 

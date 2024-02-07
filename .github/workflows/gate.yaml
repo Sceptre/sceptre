@@ -1,0 +1,44 @@
+# Run integration tests when a PR is merged to master and publish a
+# docker container (with an `edge` tag) with the latest code
+name: gate
+
+on:
+  workflow_run:
+    workflows:
+      - check
+    types:
+      - completed
+    branches:
+      - master
+
+jobs:
+  integration-tests:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    uses: "./.github/workflows/integration-tests.yaml"
+    with:
+      # role generated from https://github.com/Sceptre/sceptre-aws/blob/master/config/prod/gh-oidc-sceptre-tests.yaml
+      role-to-assume: "arn:aws:iam::743644221192:role/gh-oidc-sceptre-tests"
+
+  docker-build-push:
+    needs:
+      - integration-tests
+    if: ${{ github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+      # docker convention: edge tag refers to the very latest code
+      - name: Build and push Docker image to sceptreorg/sceptre:${{ steps.meta.outputs.tags }}
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: sceptreorg/sceptre:edge
+          labels: ${{ steps.meta.outputs.labels }}
