@@ -19,6 +19,7 @@ import yaml
 from cfn_tools import ODict
 from yaml import Dumper
 
+from sceptre.exceptions import SceptreException
 from sceptre.plan.actions import StackActions
 from sceptre.stack import Stack
 
@@ -173,9 +174,18 @@ class StackDiffer(Generic[DiffType]):
             if value is None:
                 continue
 
-            if isinstance(value, list):
-                value = ",".join(item.rstrip("\n") for item in value)
-            formatted_parameters[key] = value.rstrip("\n")
+            try:
+                if isinstance(value, list):
+                    value = ",".join(item.rstrip("\n") for item in value)
+                formatted_parameters[key] = value.rstrip("\n")
+            # Other unexpected data can get through and this would blow up the differ
+            # and lead to quite confusing exceptions being raised. This check here could
+            # be removed in a future version of Sceptre if the reader class did sanity checking.
+            except AttributeError:
+                raise SceptreException(
+                    f"Parameter '{key}' whose value is {value} "
+                    f"is of type {type(value)} and not expected here"
+                )
 
         return formatted_parameters
 
@@ -361,7 +371,7 @@ class DeepDiffStackDiffer(StackDiffer[deepdiff.DeepDiff]):
         self,
         show_no_echo=False,
         *,
-        universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load
+        universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load,
     ):
         """Initializes a DeepDiffStackDiffer.
 
@@ -409,7 +419,7 @@ class DifflibStackDiffer(StackDiffer[List[str]]):
         self,
         show_no_echo=False,
         *,
-        universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load
+        universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load,
     ):
         """Initializes a DifflibStackDiffer.
 
