@@ -16,6 +16,7 @@ from sceptre.diffing.stack_differ import (
     DeepDiffStackDiffer,
     DifflibStackDiffer,
 )
+from sceptre.exceptions import SceptreException
 from sceptre.plan.actions import StackActions
 from sceptre.stack import Stack
 
@@ -343,6 +344,17 @@ class TestStackDiffer:
             self.expected_deployed_config, expected_generated
         )
 
+    def test_diff__generated_stack_has_a_bool(
+        self,
+    ):
+        self.parameters_on_stack_config["new"] = True
+        message = (
+            "Parameter 'new' whose value is True is of type "
+            "<class 'bool'> and not expected here"
+        )
+        with pytest.raises(SceptreException, match=message):
+            self.differ.diff(self.actions)
+
     def test_diff__stack_exists_with_same_config_but_template_does_not__compares_identical_configs(
         self,
     ):
@@ -421,9 +433,9 @@ class TestStackDiffer:
         self.local_no_echo_parameters.append("hide_me")
 
         expected_generated_config = self.expected_generated_config
-        expected_generated_config.parameters[
-            "hide_me"
-        ] = StackDiffer.NO_ECHO_REPLACEMENT
+        expected_generated_config.parameters["hide_me"] = (
+            StackDiffer.NO_ECHO_REPLACEMENT
+        )
 
         self.differ.diff(self.actions)
 
