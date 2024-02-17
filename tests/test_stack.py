@@ -183,6 +183,36 @@ class TestStack(object):
                 obsolete="true",
             )
 
+    @pytest.mark.parametrize("parameters", [
+        {"someNum": 1},
+        {"someBool": True},
+        {"aBadList": [1, 2, 3]}
+    ])
+    def test_init__invalid_types_raise_invalid_config_file_error(self, parameters):
+        with pytest.raises(InvalidConfigFileError):
+            Stack(
+                name="stack_name",
+                project_code="project_code",
+                template_handler_config={"type": "file"},
+                region="region",
+                parameters=parameters
+            )
+
+    @pytest.mark.parametrize("parameters", [
+        {"someNum": "1"},
+        {"someBool": "true"},
+        {"aBadList": ["1", "2", "3"]}
+    ])
+    def test_init__valid_types(self, parameters):
+        stack = Stack(
+            name="stack_name",
+            project_code="project_code",
+            template_handler_config={"type": "file"},
+            region="region",
+            parameters=parameters
+        )
+        assert stack.name == "stack_name"
+
     def test_stack_repr(self):
         assert (
             self.stack.__repr__() == "sceptre.stack.Stack("
