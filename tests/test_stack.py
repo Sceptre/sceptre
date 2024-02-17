@@ -198,7 +198,7 @@ class TestStack(object):
 
     @pytest.mark.parametrize(
         "parameters",
-        [{"someNum": "1"}, {"someBool": "true"}, {"aBadList": ["1", "2", "3"]}],
+        [{"someNum": "1"}, {"someBool": "true"}, {"aList": ["1", "2", "3"]}],
     )
     def test_init__valid_types(self, parameters):
         stack = Stack(
