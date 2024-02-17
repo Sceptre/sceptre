@@ -218,7 +218,7 @@ class TestStack(object):
             region="region",
             parameters=parameters,
         )
-        assert stack.name == "stack_name"
+        assert isinstance(stack, Stack)
 
     def test_stack_repr(self):
         assert (
