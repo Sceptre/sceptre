@@ -40,6 +40,11 @@ def stack_factory(**kwargs):
     return Stack(**call_kwargs)
 
 
+class FakeResolver(Resolver):
+    def resolve(self):
+        return "Fake"
+
+
 class TestStack(object):
     def setup_method(self, test_method):
         self.stack = Stack(
@@ -198,7 +203,12 @@ class TestStack(object):
 
     @pytest.mark.parametrize(
         "parameters",
-        [{"someNum": "1"}, {"someBool": "true"}, {"aList": ["1", "2", "3"]}],
+        [
+            {"someNum": "1"},
+            {"someBool": "true"},
+            {"aList": ["aString", FakeResolver()]},
+            {"aResolver": FakeResolver()},
+        ],
     )
     def test_init__valid_types(self, parameters):
         stack = Stack(
@@ -275,14 +285,10 @@ class TestStack(object):
     def test_configuration_manager__sceptre_role_returns_value__returns_connection_manager_with_that_role(
         self,
     ):
-        class FakeResolver(Resolver):
-            def resolve(self):
-                return "role"
-
         self.stack.sceptre_role = FakeResolver()
 
         connection_manager = self.stack.connection_manager
-        assert connection_manager.sceptre_role == "role"
+        assert connection_manager.sceptre_role == "Fake"
 
     @fail_if_not_removed
     def test_iam_role__is_removed_on_removal_version(self):
