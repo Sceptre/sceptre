@@ -9,7 +9,7 @@ This module implements a Stack class, which stores a Stack's data.
 
 import logging
 
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Union, Any, Optional
 from deprecation import deprecated
 
 from sceptre import __version__
@@ -26,6 +26,7 @@ from sceptre.resolvers import (
     ResolvableValueProperty,
     RecursiveResolve,
     PlaceholderType,
+    Resolver,
 )
 from sceptre.template import Template
 
@@ -275,10 +276,24 @@ class Stack:
             )
         return value
 
-    def _ensure_parameters(self, parameters: Dict[str, Any]) -> Dict[str, str]:
-        if not all(isinstance(value, str) for value in parameters.values()):
+    def _ensure_parameters(
+        self, parameters: Dict[str, Any]
+    ) -> Dict[str, Union[str, List[str], Resolver]]:
+        """Ensure CloudFormation parameters are of valid types"""
+
+        def is_valid(value: Any) -> bool:
+            return (
+                isinstance(value, str)
+                or (
+                    isinstance(value, list)
+                    and all(isinstance(item, str) for item in value)
+                )
+                or isinstance(value, Resolver)
+            )
+
+        if not all(is_valid(value) for value in parameters.values()):
             raise InvalidConfigFileError(
-                f"{self.name}: Values for parameters must be strings, got {parameters}"
+                f"{self.name}: Values for parameters must be strings, lists or resolvers, got {parameters}"
             )
         return parameters
 
