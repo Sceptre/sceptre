@@ -286,7 +286,10 @@ class Stack:
                 isinstance(value, str)
                 or (
                     isinstance(value, list)
-                    and all(isinstance(item, str) for item in value)
+                    and all(
+                        isinstance(item, str) or isinstance(item, Resolver)
+                        for item in value
+                    )
                 )
                 or isinstance(value, Resolver)
             )
