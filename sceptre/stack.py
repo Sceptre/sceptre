@@ -9,7 +9,7 @@ This module implements a Stack class, which stores a Stack's data.
 
 import logging
 
-from typing import List, Any, Optional
+from typing import List, Dict, Any, Optional
 from deprecation import deprecated
 
 from sceptre import __version__
@@ -262,7 +262,7 @@ class Stack:
         )
 
         self.s3_details = s3_details
-        self.parameters = parameters or {}
+        self.parameters = self._ensure_parameters(parameters or {})
         self.sceptre_user_data = sceptre_user_data or {}
         self.notifications = notifications or []
 
@@ -274,6 +274,13 @@ class Stack:
                 f"{self.name}: Value for {config_name} must be a boolean, not a {type(value).__name__}"
             )
         return value
+
+    def _ensure_parameters(self, parameters: Dict[str, Any]) -> Dict[str, str]:
+        if not all(isinstance(value, str) for value in parameters.values()):
+            raise InvalidConfigFileError(
+                f"{self.name}: Values for parameters must be strings, got {parameters}"
+            )
+        return parameters
 
     def __repr__(self):
         return (
