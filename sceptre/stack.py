@@ -278,7 +278,7 @@ class Stack:
 
     def _ensure_parameters(
         self, parameters: Dict[str, Any]
-    ) -> Dict[str, Union[str, List[str], Resolver]]:
+    ) -> Dict[str, Union[str, List[Union[str, Resolver]], Resolver]]:
         """Ensure CloudFormation parameters are of valid types"""
 
         def is_valid(value: Any) -> bool:
