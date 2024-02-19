@@ -13,11 +13,11 @@ repos:
     hooks:
       - id: flake8
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.34.0
+    rev: v1.35.1
     hooks:
       - id: yamllint
   - repo: https://github.com/awslabs/cfn-python-lint
-    rev: v0.85.1
+    rev: v0.85.2
     hooks:
       - id: cfn-python-lint
         args:
