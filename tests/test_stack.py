@@ -189,7 +189,13 @@ class TestStack(object):
             )
 
     @pytest.mark.parametrize(
-        "parameters", [{"someNum": 1}, {"someBool": True}, {"aBadList": [1, 2, 3]}]
+        "parameters",
+        [
+            {"someNum": 1},
+            {"someBool": True},
+            {"aBadList": [1, 2, 3]},
+            {"aDict": {"foo": "bar"}},
+        ],
     )
     def test_init__invalid_parameters_raise_invalid_config_file_error(self, parameters):
         with pytest.raises(InvalidConfigFileError):
@@ -210,7 +216,9 @@ class TestStack(object):
             {"aResolver": FakeResolver()},
         ],
     )
-    def test_init__valid_parameters_do_not(self, parameters):
+    def test_init__valid_parameters_do_not_raise_invalid_config_file_error(
+        self, parameters
+    ):
         stack = Stack(
             name="stack_name",
             project_code="project_code",
