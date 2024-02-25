@@ -71,3 +71,25 @@ def child_wins(a, b):
     :returns: b
     """
     return b
+
+
+def child_or_parent(a, b):
+    """
+    Returns second arg if is not empty, else the first.
+
+    :param a: An object.
+    :type a: object
+    :param b: An object.
+    :type b: object
+    :returns: b
+    """
+    return b or a
+
+
+SELECTABLE = {
+    "list_join": list_join,
+    "dict_merge": dict_merge,
+    "child_wins": child_wins,
+}
+LIST_STRATEGIES = ["list_join", "child_wins"]
+DICT_STRATEGIES = ["dict_merge", "child_wins"]

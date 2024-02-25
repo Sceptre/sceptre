@@ -15,13 +15,16 @@ particular Stack. The available keys are listed below.
 
 -  `template_path`_ or `template`_ *(required)*
 -  `dependencies`_ *(optional)*
+-  `dependencies_inheritance`_ *(optional)*
 -  `hooks`_ *(optional)*
+-  `hooks_inheritance`_ *(optional)*
 -  `ignore`_ *(optional)*
 -  `notifications`_ *(optional)*
 -  `obsolete`_ *(optional)*
 -  `on_failure`_ *(optional)*
 -  `disable_rollback`_ *(optional)*
 -  `parameters`_ *(optional)*
+-  `parameters_inheritance`_ *(optional)*
 -  `protected`_ *(optional)*
 -  `role_arn`_ *(optional)*
 -  `cloudformation_service_role`_ *(optional)*
@@ -30,8 +33,10 @@ particular Stack. The available keys are listed below.
 -  `iam_role_session_duration`_ *(optional)*
 -  `sceptre_role_session_duration`_ *(optional)*
 -  `sceptre_user_data`_ *(optional)*
+-  `sceptre_user_data_inheritance`_ *(optional)*
 -  `stack_name`_ *(optional)*
 -  `stack_tags`_ *(optional)*
+-  `stack_tags_inheritance`_ *(optional)*
 -  `stack_timeout`_ *(optional)*
 
 It is not possible to define both `template_path`_ and `template`_. If you do so,
@@ -97,6 +102,16 @@ and that Stack need not be added as an explicit dependency.
    situation by either (a) setting those ``dependencies`` on individual Stack Configs rather than the
    the StackGroup Config, or (b) moving those dependency stacks outside of the StackGroup.
 
+dependencies_inheritance
+~~~~~~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This configuration will override the default inheritance strategy of `dependencies`.
+
+Valid values for this config are: ``list_join``, and ``child_wins``.
+
 hooks
 ~~~~~
 * Resolvable: No (but you can use resolvers _in_ hook arguments!)
@@ -105,6 +120,16 @@ hooks
 
 A list of arbitrary shell or Python commands or scripts to run. Find out more
 in the :doc:`hooks` section.
+
+hooks_inheritance
+~~~~~~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This configuration will override the default inheritance strategy of `hooks`.
+
+Valid values for this config are: ``list_join``, and ``child_wins``.
 
 ignore
 ~~~~~~
@@ -292,6 +317,16 @@ Example:
        - !stack_output security-groups.yaml::BaseSecurityGroupId
        - !file_contents /file/with/security_group_id.txt
 
+parameters_inheritance
+~~~~~~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This configuration will override the default inheritance strategy of `parameters`.
+
+Valid values for this config are: ``dict_merge``, and ``child_wins``.
+
 protected
 ~~~~~~~~~
 * Resolvable: No
@@ -397,6 +432,16 @@ Represents data to be passed to the ``sceptre_handler(sceptre_user_data)``
 function in Python templates or accessible under ``sceptre_user_data`` variable
 key within Jinja2 templates.
 
+sceptre_user_data_inheritance
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This configuration will override the default inheritance strategy of `sceptre_user_data`.
+
+Valid values for this config are: ``dict_merge``, and ``child_wins``.
+
 stack_name
 ~~~~~~~~~~
 * Resolvable: No
@@ -439,6 +484,16 @@ stack_tags
 * Inheritance strategy: Overrides parent if set
 
 A dictionary of `CloudFormation Tags`_ to be applied to the Stack.
+
+stack_tags_inheritance
+~~~~~~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This configuration will override the default inheritance strategy of `stack_tags`.
+
+Valid values for this config are: ``dict_merge``, and ``child_wins``.
 
 stack_timeout
 ~~~~~~~~~~~~~
