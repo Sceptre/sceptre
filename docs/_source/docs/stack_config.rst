@@ -85,7 +85,7 @@ dependencies
 ~~~~~~~~~~~~
 * Resolvable: No
 * Can be inherited from StackGroup: Yes
-* Inheritance strategy: Appended to parent's dependencies
+* Inheritance strategy: Appended to parent's dependencies. Configurable with ``dependencies_inheritance`` parameter.
 
 A list of other Stacks in the environment that this Stack depends on. Note that
 if a Stack fetches an output value from another Stack using the
@@ -110,13 +110,15 @@ dependencies_inheritance
 
 This configuration will override the default inheritance strategy of `dependencies`.
 
-Valid values for this config are: ``list_join``, and ``child_wins``.
+The default value for this is ``list_join``.
+
+Valid values for this config are: ``list_join``, or ``child_wins``.
 
 hooks
 ~~~~~
 * Resolvable: No (but you can use resolvers _in_ hook arguments!)
 * Can be inherited from StackGroup: Yes
-* Inheritance strategy: Overrides parent if set
+* Inheritance strategy: Overrides parent if set. Configurable with ``hooks_inheritance`` parameter.
 
 A list of arbitrary shell or Python commands or scripts to run. Find out more
 in the :doc:`hooks` section.
@@ -129,7 +131,9 @@ hooks_inheritance
 
 This configuration will override the default inheritance strategy of `hooks`.
 
-Valid values for this config are: ``list_join``, and ``child_wins``.
+The default value for this is ``child_wins``.
+
+Valid values for this config are: ``list_join``, or ``child_wins``.
 
 ignore
 ~~~~~~
@@ -180,7 +184,7 @@ notifications
 
 List of SNS topic ARNs to publish Stack related events to. A maximum of 5 ARNs
 can be specified per Stack. This configuration will be used by the ``create``,
-``update``, and ``delete`` commands. More information about Stack notifications
+``update``, or ``delete`` commands. More information about Stack notifications
 can found under the relevant section in the `AWS CloudFormation API
 documentation`_.
 
@@ -256,7 +260,7 @@ parameters
 ~~~~~~~~~~
 * Resolvable: Yes
 * Can be inherited from StackGroup: Yes
-* Inheritance strategy: Overrides parent if set
+* Inheritance strategy: Overrides parent if set. Configurable with ``parameters_inheritance`` parameter.
 
 .. warning::
 
@@ -266,7 +270,7 @@ parameters
    environment variable resolver.
 
 A dictionary of key-value pairs to be supplied to a template as parameters. The
-keys must match up with the name of the parameter, and the value must be of the
+keys must match up with the name of the parameter, or the value must be of the
 type as defined in the template.
 
 .. note::
@@ -325,7 +329,9 @@ parameters_inheritance
 
 This configuration will override the default inheritance strategy of `parameters`.
 
-Valid values for this config are: ``dict_merge``, and ``child_wins``.
+The default value for this is ``child_wins``.
+
+Valid values for this config are: ``dict_merge``, or ``child_wins``.
 
 protected
 ~~~~~~~~~
@@ -426,7 +432,7 @@ sceptre_user_data
 ~~~~~~~~~~~~~~~~~
 * Resolvable: Yes
 * Can be inherited from StackGroup: Yes
-* Inheritance strategy: Overrides parent if set
+* Inheritance strategy: Overrides parent if set. Configurable with ``sceptre_user_data_inheritance`` parameter.
 
 Represents data to be passed to the ``sceptre_handler(sceptre_user_data)``
 function in Python templates or accessible under ``sceptre_user_data`` variable
@@ -440,7 +446,9 @@ sceptre_user_data_inheritance
 
 This configuration will override the default inheritance strategy of `sceptre_user_data`.
 
-Valid values for this config are: ``dict_merge``, and ``child_wins``.
+The default value for this is ``child_wins``.
+
+Valid values for this config are: ``dict_merge``, or ``child_wins``.
 
 stack_name
 ~~~~~~~~~~
@@ -481,7 +489,7 @@ stack_tags
 ~~~~~~~~~~
 * Resolvable: Yes
 * Can be inherited from StackGroup: Yes
-* Inheritance strategy: Overrides parent if set
+* Inheritance strategy: Overrides parent if set. Configurable with ``stack_tags_inheritance`` parameter.
 
 A dictionary of `CloudFormation Tags`_ to be applied to the Stack.
 
@@ -493,7 +501,9 @@ stack_tags_inheritance
 
 This configuration will override the default inheritance strategy of `stack_tags`.
 
-Valid values for this config are: ``dict_merge``, and ``child_wins``.
+The default value for this is ``child_wins``.
+
+Valid values for this config are: ``dict_merge``, or ``child_wins``.
 
 stack_timeout
 ~~~~~~~~~~~~~
