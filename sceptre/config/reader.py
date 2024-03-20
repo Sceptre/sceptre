@@ -435,16 +435,12 @@ class ConfigReader(object):
                 )
                 if not name:
                     pass
-                elif name not in strategies.SELECTABLE:
-                    raise SceptreException(
-                        f"{name} is not a valid inheritance strategy"
-                    )
                 elif name not in CONFIG_MERGE_STRATEGY_OVERRIDES[config_key]:
                     raise SceptreException(
                         f"{name} is not a valid inheritance strategy for {config_key}"
                     )
                 else:
-                    strategy = strategies.SELECTABLE[name]
+                    strategy = CONFIG_MERGE_STRATEGY_OVERRIDES[config_key][name]
 
             value = strategy(left.get(config_key), right.get(config_key))
             if value:

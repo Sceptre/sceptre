@@ -86,10 +86,11 @@ def child_or_parent(a, b):
     return b or a
 
 
-SELECTABLE = {
-    "list_join": list_join,
-    "dict_merge": dict_merge,
-    "child_wins": child_wins,
+LIST_STRATEGIES = {
+    "merge": list_join,
+    "override": child_wins,
 }
-LIST_STRATEGIES = ["list_join", "child_wins"]
-DICT_STRATEGIES = ["dict_merge", "child_wins"]
+DICT_STRATEGIES = {
+    "merge": dict_merge,
+    "override": child_wins,
+}

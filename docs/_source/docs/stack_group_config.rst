@@ -192,9 +192,8 @@ The inheritance strategy of some properties may be overridden by the stack group
 
 Strategy options:
 
- - ``list_join``: Child configs are appended to parent configs.
- - ``dict_merge``: Child configs will be merged with parent configs, the child keys taking precedence.
- - ``child_wins``: Overrides parent if set.
+* ``merge``: Child config is merged with parent configs.  For maps child keys take precedence.
+* ``override``: Overrides parent if set.
 
 .. _setting_dependencies_for_stack_groups:
 

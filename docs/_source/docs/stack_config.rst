@@ -110,9 +110,9 @@ dependencies_inheritance
 
 This configuration will override the default inheritance strategy of `dependencies`.
 
-The default value for this is ``list_join``.
+The default value for this is ``merge``.
 
-Valid values for this config are: ``list_join``, or ``child_wins``.
+Valid values for this config are: ``merge``, or ``override``.
 
 hooks
 ~~~~~
@@ -131,9 +131,9 @@ hooks_inheritance
 
 This configuration will override the default inheritance strategy of `hooks`.
 
-The default value for this is ``child_wins``.
+The default value for this is ``override``.
 
-Valid values for this config are: ``list_join``, or ``child_wins``.
+Valid values for this config are: ``merge``, or ``override``.
 
 ignore
 ~~~~~~
@@ -329,9 +329,9 @@ parameters_inheritance
 
 This configuration will override the default inheritance strategy of `parameters`.
 
-The default value for this is ``child_wins``.
+The default value for this is ``override``.
 
-Valid values for this config are: ``dict_merge``, or ``child_wins``.
+Valid values for this config are: ``merge``, or ``override``.
 
 protected
 ~~~~~~~~~
@@ -446,9 +446,9 @@ sceptre_user_data_inheritance
 
 This configuration will override the default inheritance strategy of `sceptre_user_data`.
 
-The default value for this is ``child_wins``.
+The default value for this is ``override``.
 
-Valid values for this config are: ``dict_merge``, or ``child_wins``.
+Valid values for this config are: ``merge``, or ``override``.
 
 stack_name
 ~~~~~~~~~~
@@ -501,9 +501,9 @@ stack_tags_inheritance
 
 This configuration will override the default inheritance strategy of `stack_tags`.
 
-The default value for this is ``child_wins``.
+The default value for this is ``override``.
 
-Valid values for this config are: ``dict_merge``, or ``child_wins``.
+Valid values for this config are: ``merge``, or ``override``.
 
 stack_timeout
 ~~~~~~~~~~~~~

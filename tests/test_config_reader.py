@@ -737,7 +737,7 @@ class TestConfigReader(object):
         for i, (stack_path, stack_values) in enumerate(zip(filepaths, values)):
             params = {config_key: stack_values}
             if i == inheritance_at:
-                params[f"{config_key}_inheritance"] = "dict_merge"
+                params[f"{config_key}_inheritance"] = "merge"
             config = {
                 "region": "region",
                 "project_code": "project_code",
@@ -787,7 +787,7 @@ class TestConfigReader(object):
         for i, (stack_path, stack_values) in enumerate(zip(filepaths, values)):
             params = {config_key: stack_values}
             if i == inheritance_at:
-                params[f"{config_key}_inheritance"] = "list_join"
+                params[f"{config_key}_inheritance"] = "merge"
             config = {
                 "region": "region",
                 "project_code": "project_code",
@@ -808,8 +808,6 @@ class TestConfigReader(object):
     @pytest.mark.parametrize(
         "config_key,strategy",
         (
-            ("hooks", "dict_merge"),
-            ("stack_tags", "list_join"),
             ("hooks", "foo"),
             ("hooks", "deepcopy"),
             ("hooks", "child_or_parent"),
