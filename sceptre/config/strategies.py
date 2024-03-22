@@ -75,7 +75,7 @@ def child_wins(a, b):
 
 def child_or_parent(a, b):
     """
-    Returns second arg if is not empty, else the first.
+    Returns the second arg if it is not empty, else the first.
 
     :param a: An object.
     :type a: object
