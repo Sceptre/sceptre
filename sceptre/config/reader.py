@@ -39,16 +39,30 @@ from sceptre.config import strategies
 
 ConfigAttributes = collections.namedtuple("Attributes", "required optional")
 
+
+CONFIG_MERGE_STRATEGY_OVERRIDES = {
+    "dependencies": strategies.LIST_STRATEGIES,
+    "hooks": strategies.LIST_STRATEGIES,
+    "notifications": strategies.LIST_STRATEGIES,
+    "parameters": strategies.DICT_STRATEGIES,
+    "sceptre_user_data": strategies.DICT_STRATEGIES,
+    "stack_tags": strategies.DICT_STRATEGIES,
+}
+
 CONFIG_MERGE_STRATEGIES = {
     "dependencies": strategies.list_join,
+    "dependencies_inheritance": strategies.child_or_parent,
     "hooks": strategies.child_wins,
+    "hooks_inheritance": strategies.child_or_parent,
     "iam_role": strategies.child_wins,
     "sceptre_role": strategies.child_wins,
     "iam_role_session_duration": strategies.child_wins,
     "sceptre_role_session_duration": strategies.child_wins,
     "notifications": strategies.child_wins,
+    "notifications_inheritance": strategies.child_or_parent,
     "on_failure": strategies.child_wins,
     "parameters": strategies.child_wins,
+    "parameters_inheritance": strategies.child_or_parent,
     "profile": strategies.child_wins,
     "project_code": strategies.child_wins,
     "protect": strategies.child_wins,
@@ -57,8 +71,10 @@ CONFIG_MERGE_STRATEGIES = {
     "role_arn": strategies.child_wins,
     "cloudformation_service_role": strategies.child_wins,
     "sceptre_user_data": strategies.child_wins,
+    "sceptre_user_data_inheritance": strategies.child_or_parent,
     "stack_name": strategies.child_wins,
     "stack_tags": strategies.child_wins,
+    "stack_tags_inheritance": strategies.child_or_parent,
     "stack_timeout": strategies.child_wins,
     "template_bucket_name": strategies.child_wins,
     "template_key_value": strategies.child_wins,
@@ -67,6 +83,7 @@ CONFIG_MERGE_STRATEGIES = {
     "ignore": strategies.child_wins,
     "obsolete": strategies.child_wins,
 }
+
 
 STACK_GROUP_CONFIG_ATTRIBUTES = ConfigAttributes(
     {"project_code", "region"},
@@ -84,7 +101,9 @@ STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
         "template_path",
         "template",
         "dependencies",
+        "dependencies_inheritance",
         "hooks",
+        "hooks_inheritance",
         "iam_role",
         "sceptre_role",
         "iam_role_session_duration",
@@ -92,13 +111,16 @@ STACK_CONFIG_ATTRIBUTES = ConfigAttributes(
         "notifications",
         "on_failure",
         "parameters",
+        "parameters_inheritance",
         "profile",
         "protect",
         "role_arn",
         "cloudformation_service_role",
         "sceptre_user_data",
+        "sceptre_user_data_inheritance",
         "stack_name",
         "stack_tags",
+        "stack_tags_inheritance",
         "stack_timeout",
     },
 )
@@ -352,11 +374,8 @@ class ConfigReader(object):
 
         # Parse and read in the config files.
         this_config = self._recursive_read(directory_path, filename, config)
-
-        if "dependencies" in config or "dependencies" in this_config:
-            this_config["dependencies"] = CONFIG_MERGE_STRATEGIES["dependencies"](
-                this_config.get("dependencies"), config.get("dependencies")
-            )
+        # Apply merge strategies with the config that includes base_config values.
+        this_config.update(self._get_merge_with_stratgies(config, this_config))
         config.update(this_config)
 
         self._check_version(config)
@@ -395,16 +414,39 @@ class ConfigReader(object):
 
         # Read config file and overwrite inherited properties
         child_config = self._render(directory_path, filename, config_group) or {}
-
-        for config_key, strategy in CONFIG_MERGE_STRATEGIES.items():
-            value = strategy(config.get(config_key), child_config.get(config_key))
-
-            if value:
-                child_config[config_key] = value
-
+        child_config.update(self._get_merge_with_stratgies(config, child_config))
         config.update(child_config)
-
         return config
+
+    def _get_merge_with_stratgies(self, left: dict, right: dict) -> dict:
+        """
+        Returns a new dict with only the merge values of the two inputs, using the
+        merge strategies defined for each key.
+        """
+        merge = {}
+
+        # Then apply the merge strategies to each item
+        for config_key, default_strategy in CONFIG_MERGE_STRATEGIES.items():
+            strategy = default_strategy
+            override_key = f"{config_key}_inheritance"
+            if override_key in CONFIG_MERGE_STRATEGIES:
+                name = CONFIG_MERGE_STRATEGIES[override_key](
+                    left.get(override_key), right.get(override_key)
+                )
+                if not name:
+                    pass
+                elif name not in CONFIG_MERGE_STRATEGY_OVERRIDES[config_key]:
+                    raise SceptreException(
+                        f"{name} is not a valid inheritance strategy for {config_key}"
+                    )
+                else:
+                    strategy = CONFIG_MERGE_STRATEGY_OVERRIDES[config_key][name]
+
+            value = strategy(left.get(config_key), right.get(config_key))
+            if value:
+                merge[config_key] = value
+
+        return merge
 
     def _render(self, directory_path, basename, stack_group_config):
         """
