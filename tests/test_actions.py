@@ -515,6 +515,22 @@ class TestStackActions(object):
         status = self.actions.delete()
         assert status == StackStatus.COMPLETE
 
+    def test_describe_stack_sends_correct_request(self):
+        self.actions.describe()
+        self.actions.connection_manager.call.assert_called_with(
+            service="cloudformation",
+            command="describe_stacks",
+            kwargs={"StackName": sentinel.external_name},
+        )
+
+    def test_describe_events_sends_correct_request(self):
+        self.actions.describe_events()
+        self.actions.connection_manager.call.assert_called_with(
+            service="cloudformation",
+            command="describe_stack_events",
+            kwargs={"StackName": sentinel.external_name},
+        )
+
     def test_describe_resources_sends_correct_request(self):
         self.actions.connection_manager.call.return_value = {
             "StackResources": [
