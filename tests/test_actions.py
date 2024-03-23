@@ -558,24 +558,17 @@ class TestStackActions(object):
 
     @patch("sceptre.plan.actions.StackActions.describe")
     def test_describe_outputs_sends_correct_request(self, mock_describe):
-        expected_outputs = [
-            {"OutputKey": "MyOutputKey1", "OutputValue": "MyOutputValue1"},
-            {"OutputKey": "MyOutputKey2", "OutputValue": "MyOutputValue2"},
-        ]
-
-        mock_describe.return_value = {"Stacks": [{"Outputs": expected_outputs}]}
+        mock_describe.return_value = {"Stacks": [{"Outputs": sentinel.outputs}]}
         response = self.actions.describe_outputs()
 
         mock_describe.assert_called_once_with()
-        assert response == {self.stack.name: expected_outputs}
+        assert response == {self.stack.name: sentinel.outputs}
 
     @patch("sceptre.plan.actions.StackActions.describe")
     def test_describe_outputs_handles_stack_with_no_outputs(self, mock_describe):
-        expected_outputs = []
-
-        mock_describe.return_value = {"Stacks": [{"Outputs": expected_outputs}]}
+        mock_describe.return_value = {"Stacks": [{}]}
         response = self.actions.describe_outputs()
-        assert response == {self.stack.name: expected_outputs}
+        assert response == {self.stack.name: []}
 
     def test_continue_update_rollback_sends_correct_request(self):
         self.actions.continue_update_rollback()
