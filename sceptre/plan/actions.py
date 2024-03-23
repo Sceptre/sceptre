@@ -296,24 +296,6 @@ class StackActions:
         self.set_policy(policy_path)
         self.logger.info("%s - Successfully unlocked Stack", self.stack.name)
 
-    def describe(self):
-        """
-        Returns the a description of the Stack.
-
-        :returns: A Stack description.
-        :rtype: dict
-        """
-        try:
-            return self.connection_manager.call(
-                service="cloudformation",
-                command="describe_stacks",
-                kwargs={"StackName": self.stack.external_name},
-            )
-        except botocore.exceptions.ClientError as e:
-            if e.response["Error"]["Message"].endswith("does not exist"):
-                return
-            raise
-
     def describe_events(self):
         """
         Returns the CloudFormation events for a Stack.
@@ -364,15 +346,11 @@ class StackActions:
         """
         Returns the Stack's outputs.
 
-        :returns: The Stack's outputs.
+        :returns: The stack's outputs.
         :rtype: list
         """
         self.logger.debug("%s - Describing stack outputs", self.stack.name)
-
-        try:
-            response = self._describe()
-        except botocore.exceptions.ClientError:
-            return []
+        response = self.describe()
 
         return {self.stack.name: response["Stacks"][0].get("Outputs", [])}
 
@@ -784,16 +762,27 @@ class StackActions:
 
         return status
 
-    def _describe(self):
-        return self.connection_manager.call(
-            service="cloudformation",
-            command="describe_stacks",
-            kwargs={"StackName": self.stack.external_name},
-        )
+    def describe(self):
+        """
+        Returns the a description of the Stack.
+
+        :returns: A Stack description.
+        :rtype: dict
+        """
+        try:
+            return self.connection_manager.call(
+                service="cloudformation",
+                command="describe_stacks",
+                kwargs={"StackName": self.stack.external_name},
+            )
+        except botocore.exceptions.ClientError as e:
+            if e.response["Error"]["Message"].endswith("does not exist"):
+                return
+            raise
 
     def _get_status(self):
         try:
-            status = self._describe()["Stacks"][0]["StackStatus"]
+            status = self.describe()["Stacks"][0]["StackStatus"]
         except botocore.exceptions.ClientError as exp:
             if exp.response["Error"]["Message"].endswith("does not exist"):
                 raise StackDoesNotExistError(exp.response["Error"]["Message"])
