@@ -303,16 +303,11 @@ class StackActions:
         :returns: A Stack description.
         :rtype: dict
         """
-        try:
-            return self.connection_manager.call(
-                service="cloudformation",
-                command="describe_stacks",
-                kwargs={"StackName": self.stack.external_name},
-            )
-        except botocore.exceptions.ClientError as e:
-            if e.response["Error"]["Message"].endswith("does not exist"):
-                return
-            raise
+        return self.connection_manager.call(
+            service="cloudformation",
+            command="describe_stacks",
+            kwargs={"StackName": self.stack.external_name},
+        )
 
     def describe_events(self):
         """
