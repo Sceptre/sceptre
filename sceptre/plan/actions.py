@@ -296,6 +296,24 @@ class StackActions:
         self.set_policy(policy_path)
         self.logger.info("%s - Successfully unlocked Stack", self.stack.name)
 
+    def describe(self):
+        """
+        Returns the a description of the Stack.
+
+        :returns: A Stack description.
+        :rtype: dict
+        """
+        try:
+            return self.connection_manager.call(
+                service="cloudformation",
+                command="describe_stacks",
+                kwargs={"StackName": self.stack.external_name},
+            )
+        except botocore.exceptions.ClientError as e:
+            if e.response["Error"]["Message"].endswith("does not exist"):
+                return
+            raise
+
     def describe_events(self):
         """
         Returns the CloudFormation events for a Stack.
@@ -761,24 +779,6 @@ class StackActions:
             elapsed += 4
 
         return status
-
-    def describe(self):
-        """
-        Returns the a description of the Stack.
-
-        :returns: A Stack description.
-        :rtype: dict
-        """
-        try:
-            return self.connection_manager.call(
-                service="cloudformation",
-                command="describe_stacks",
-                kwargs={"StackName": self.stack.external_name},
-            )
-        except botocore.exceptions.ClientError as e:
-            if e.response["Error"]["Message"].endswith("does not exist"):
-                return
-            raise
 
     def _get_status(self):
         try:
