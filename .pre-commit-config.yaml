@@ -3,7 +3,7 @@ default_language_version:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: end-of-file-fixer
       - id: mixed-line-ending
@@ -17,7 +17,7 @@ repos:
     hooks:
       - id: yamllint
   - repo: https://github.com/awslabs/cfn-python-lint
-    rev: v0.86.1
+    rev: v0.86.2
     hooks:
       - id: cfn-python-lint
         args:
