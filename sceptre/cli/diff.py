@@ -139,9 +139,11 @@ def diff_command(
     with execution_context:
         diffs: Dict[Stack, StackDiff] = plan.diff(stack_differ)
 
-    num_stacks_with_diff = output_diffs(
-        diffs.values(), writer_class, sys.stdout, output_format
-    )
+    num_stacks_with_diff = 0
+    if diffs.values():
+        num_stacks_with_diff = output_diffs(
+            diffs.values(), writer_class, sys.stdout, output_format
+        )
 
     if num_stacks_with_diff:
         logger.warning(f"{num_stacks_with_diff} stacks with differences detected.")
