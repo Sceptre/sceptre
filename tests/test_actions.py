@@ -631,6 +631,7 @@ class TestStackActions(object):
                     "CAPABILITY_AUTO_EXPAND",
                 ],
                 "ChangeSetName": sentinel.change_set_name,
+                "ChangeSetType": "UPDATE",
                 "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [sentinel.notification],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
@@ -658,8 +659,36 @@ class TestStackActions(object):
                     "CAPABILITY_AUTO_EXPAND",
                 ],
                 "ChangeSetName": sentinel.change_set_name,
+                "ChangeSetType": "UPDATE",
                 "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [],
+                "Tags": [{"Key": "tag1", "Value": "val1"}],
+            },
+        )
+
+    @patch("sceptre.plan.actions.StackActions._get_status")
+    def test_create_change_set_with_non_existent_stack(
+        self, mock_get_status
+    ):
+        mock_get_status.side_effect = StackDoesNotExistError()
+        self.template._body = sentinel.template
+        self.actions.create_change_set(sentinel.change_set_name)
+        self.actions.connection_manager.call.assert_called_with(
+            service="cloudformation",
+            command="create_change_set",
+            kwargs={
+                "StackName": sentinel.external_name,
+                "TemplateBody": sentinel.template,
+                "Parameters": [{"ParameterKey": "key1", "ParameterValue": "val1"}],
+                "Capabilities": [
+                    "CAPABILITY_IAM",
+                    "CAPABILITY_NAMED_IAM",
+                    "CAPABILITY_AUTO_EXPAND",
+                ],
+                "ChangeSetName": sentinel.change_set_name,
+                "ChangeSetType": "CREATE",
+                "RoleARN": sentinel.cloudformation_service_role,
+                "NotificationARNs": [sentinel.notification],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
             },
         )
