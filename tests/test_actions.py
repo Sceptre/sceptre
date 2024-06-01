@@ -667,9 +667,7 @@ class TestStackActions(object):
         )
 
     @patch("sceptre.plan.actions.StackActions._get_status")
-    def test_create_change_set_with_non_existent_stack(
-        self, mock_get_status
-    ):
+    def test_create_change_set_with_non_existent_stack(self, mock_get_status):
         mock_get_status.side_effect = StackDoesNotExistError()
         self.template._body = sentinel.template
         self.actions.create_change_set(sentinel.change_set_name)
