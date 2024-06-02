@@ -212,7 +212,11 @@ class StackActions:
 
         if existing_status == "PENDING":
             status = self.create()
-        elif existing_status in ["CREATE_FAILED", "ROLLBACK_COMPLETE"]:
+        elif existing_status in [
+            "CREATE_FAILED",
+            "ROLLBACK_COMPLETE",
+            "REVIEW_IN_PROGRESS",
+        ]:
             self.delete()
             status = self.create()
         elif existing_status.endswith("COMPLETE"):
@@ -449,7 +453,11 @@ class StackActions:
             "%s - Stack is in the %s state", self.stack.name, existing_status
         )
 
-        change_set_type = "CREATE" if existing_status == "PENDING" else "UPDATE"
+        change_set_type = (
+            "CREATE"
+            if existing_status in ["PENDING", "REVIEW_IN_PROGRESS"]
+            else "UPDATE"
+        )
 
         create_change_set_kwargs = {
             "StackName": self.stack.external_name,
