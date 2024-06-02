@@ -17,7 +17,7 @@ repos:
     hooks:
       - id: yamllint
   - repo: https://github.com/awslabs/cfn-python-lint
-    rev: v0.86.4
+    rev: v1.2.5a9
     hooks:
       - id: cfn-python-lint
         args:
@@ -28,7 +28,7 @@ repos:
         exclude: |
           (?x)(
             ^integration-tests/sceptre-project/config/|
-            ^integration-tests/sceptre-project/templates/jinja/|
+            ^integration-tests/sceptre-project/templates/|
             ^tests/fixtures-vpc/config/|
             ^tests/fixtures/config/|
             ^temp/|
@@ -47,7 +47,7 @@ repos:
         language_version: python3.10
         args: ['--check']
   - repo: https://github.com/sirosen/check-jsonschema
-    rev: 0.28.2
+    rev: 0.28.4
     hooks:
       - id: check-github-workflows
       - id: check-github-actions
