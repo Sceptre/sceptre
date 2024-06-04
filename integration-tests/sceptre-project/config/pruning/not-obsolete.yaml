@@ -1,0 +1,3 @@
+template:
+  path: /Users/jfalkenstein/sceptre/integration-tests/sceptre-project/templates/valid_template.json
+  type: file

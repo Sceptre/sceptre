@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from mock import patch
+from unittest.mock import patch
 
 from sceptre.resolvers.environment_variable import EnvironmentVariable
 
 
 class TestEnvironmentVariableResolver(object):
-
     def setup_method(self, test_method):
-        self.environment_variable_resolver = EnvironmentVariable(
-            argument=None
-        )
+        self.environment_variable_resolver = EnvironmentVariable(argument=None)
 
     @patch("sceptre.resolvers.environment_variable.os")
     def test_resolving_with_set_environment_variable(self, mock_os):

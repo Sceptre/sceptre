@@ -1,1 +1,2 @@
-template_path: updated_template.json
+template:
+  path: updated_template.json

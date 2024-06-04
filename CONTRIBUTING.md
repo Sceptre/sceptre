@@ -8,14 +8,15 @@ the project.
 This project adheres to the Contributor Covenant
 [code of conduct](http://contributor-covenant.org/version/1/4/). By
 participating, you are expected to uphold this code. Please report unacceptable
-behaviour to sceptre@cloudreach.com.
+behaviour to the [Sceptre github discussion](https://github.com/Sceptre/sceptre/discussions).
 
 # How to Contribute
 
 ## Report Bugs
 
 Before submitting a bug, please check our
-[issues page](https://github.com/cloudreach/sceptre/issues) to see if it's
+[issues page](https://github.com/Sceptre/sceptre/issues) and
+[discussion board](https://github.com/Sceptre/sceptre/discussions) to see if it's
 already been reported.
 
 When reporting a bug, fill out the required template, and please include as much
@@ -47,8 +48,7 @@ A good pull request:
 - Is clear.
 - Works across all supported version of Python.
 - Complies with the existing codebase style
-  ([flake8](http://flake8.pycqa.org/en/latest/),
-  [pylint](https://www.pylint.org/)).
+  ([pre-commit](https://pre-commit.com/))
 - Includes [docstrings](https://www.python.org/dev/peps/pep-0257/) and comments
   for unintuitive sections of code.
 - Includes documentation for new features.
@@ -64,6 +64,13 @@ Please keep in mind:
   the feature, as maintenance burden of new contributions are usually put on the
   maintainers of the project.
 
+## Dependency Management
+
+[Poetry](https://pypi.org/project/poetry/) is the tool that is used for
+dependency management, versioning and deployment management to pypi.
+Please [install poetry](https://python-poetry.org/docs/#installation)
+and execute commands from the poetry environment.
+
 # Get Started
 
 1. Fork the `sceptre` repository on GitHub.
@@ -78,10 +85,7 @@ $ git clone git@github.org:<github_username>/sceptre.git
    [virtual environment](http://docs.python-guide.org/en/latest/dev/virtualenvs/))
 
 ```bash
-   $ cd sceptre/
-   $ pip install -r requirements/prod.txt
-   $ pip install -r requirements/dev.txt
-   $ pip install -e .
+$ poetry install --all-extras -v
 ```
 
 4. Create a branch for local development:
@@ -90,86 +94,10 @@ $ git clone git@github.org:<github_username>/sceptre.git
 $ git checkout -b <branch-name>
 ```
 
-5. When you're done making changes, check that your changes pass linting, unit
-   tests and have sufficient coverage and integration tests pass:
-
-   Check linting:
-
-```bash
-$ make lint
-```
-
-Run unit tests or coverage in your current environment - (handy for quickly
-running unit tests):
-
-```bash
-$ make test $ make coverage
-```
-
-Note: Sceptre aims to be compatible with Python 2 & 3, please run unit test
-against both versions. You will need the corresponding versions of Python
-installed on your system.
-
-Run unit tests and coverage using tox for Python 3.6 and 3.7:
-
-```bash
-$ tox -e py36 -e py37
-```
-
-If you use pyenv to manage Python versions, try `pip install tox-pyenv` to make
-tox and pyenv play nicely.
-
-Run integration tests:
-
-If you haven't setup your local environment or personal CircleCI account to run
-integration tests then follow these steps:
-
-To run on CircleCi (please do this before submitting your PR so we can see that
-your tests are passing):
-
-- Login to CircleCi using your Github Account.
-- Click `Add Projects`, you will be presented with a list of projects from your
-  GitHub Account.
-- On your sceptre fork press the `Set Up Project` button.
-- You can ignore the setup steps, we already have a CircleCi config file in
-  Sceptre. Click "Start Building".
-- Modify the `Project Settings`, which can be found by navigating:
-  `Builds -> Sceptre` and selecting the `Settings` icon, on the right hand side
-  of the page.
-- Once in the `Project Settings` section under `Permissions` select
-  `AWS Permissions`.
-- Add your `Access Key ID` and `Secret Access Key` that is associated with an
-  IAM User from your AWS account. The IAM User will require "Full" permissions
-  for `CloudFormation` and `S3` and Write permissions for `STS` (AssumeRole).
-
-Once you have set up CircleCi any time you commit to a branch in your fork all
-tests will be run, including integration tests.
-
-You can also (optionally) run the integration tests locally, which is quicker
-during development.
-
-To run integration tests locally:
-* `pip install awscli`
-* Setup [AWS CLI Environment variables](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html)
-  to work with an AWS account that you have access to.  You can use the same user
-  that you use for CircleCi.
-* `pip install behave`
-
-run:
-
-```bash
-$ behave integration-tests
-```
-
-or to run a specific tests:
-
-```bash
-$ behave integration-tests -n "scenario-name"
-```
-
-_Note_: All integration tests are setup to run in `eu-west-*` region.  If you prefer
-to run in a different region you must update the region in each test before running it.
-
+5. When you're done making changes, check that your changes pass
+   [linting](#Linting), [unit tests](#Unit-Tests) and have
+   sufficient coverage and [integration tests](#Integration-Tests)
+   pass.
 
 6. Make sure the changes comply with the pull request guidelines in the section
    on `Contributing Code`.
@@ -185,6 +113,140 @@ to run in a different region you must update the region in each test before runn
    e.g. `[Resolves #123] Fix description of resolver syntax in documentation`
 
 8. Submit a pull request through the GitHub website.
+
+## Linting
+
+As a pre-deployment step we syntatically validate files with
+[pre-commit](https://pre-commit.com).
+
+Run `poetry run pre-commit install` to setup the git hooks.  Once configured
+the pre-commit  linters will automatically run on every git commit.
+Alternatively you can manually execute the validations by running
+
+```bash
+$ poetry run pre-commit run --all-files
+```
+
+The CI for pre-commit has been offloaded to [pre-commit.ci](https://pre-commit.ci)
+The configuration is in the [pre-commit-config.yaml](.pre-commit-config.yaml)
+file.
+
+## Unit Tests
+
+Sceptre aims to be compatible with Python 3, please run unit test
+against all supported versions.
+
+[Tox](https://pypi.org/project/tox/) is used to execute tests against multiple
+python versions inside of poetry virtual environments.
+
+```bash
+$ poetry run tox
+```
+
+To run a specific test file:
+
+```bash
+$ poetry run pytest -ssv <test-file>.py
+```
+
+Or to run a specific test in that file:
+
+```bash
+$ poetry run pytest -ssv <test-file>.py::<unit-test-class>::<test-case>
+```
+
+## Documentation
+
+Sceptre uses [Sphinx](https://www.sphinx-doc.org/en/master/) to generate
+documentation in HTML format.
+
+To build the documentation locally:
+
+```bash
+  $ poetry run make html --directory docs
+```
+
+*Note*: The generated documentation files are in docs/_build/html
+
+The CI for Sceptre docs have been offloaded to [readthedocs.org](https://readthedocs.org/).
+It is managed by the [.readthedocs.yaml](.readthedocs.yaml) configuration file
+which builds the docs on every change and publishes them to
+[sceptre.readthedocs.io](https://sceptre.readthedocs.io).
+
+The [docs.sceptre-project.org](https://docs.sceptre-project.org) domain is setup
+to be the main website for Sceptre docs.
+
+## Integration Tests
+
+If you haven't setup your local environment or personal Github action to run
+integration tests then follow these steps:
+
+To run on Github action (please do this before submitting your PR so we can see that
+your tests are passing):
+
+- Login to your Github Account.
+- On your Sceptre fork goto repositories -> sceptre -> settings -> enable
+  "Allow all actions and reusable workflows"
+- Setup Github OIDC to allow access to your AWS account or add
+  your `Access Key ID` and `Secret Access Key` that is associated with an
+  IAM User from your AWS account. The IAM User will require "Full" permissions
+  for `CloudFormation` and `S3` and Write permissions for `STS` (AssumeRole).
+  For an example please take a look at the Sceptre
+  [CI service user policy](https://github.com/Sceptre/sceptre-aws/blob/master/config/prod/sceptre-integration-test-service-access.yaml#L5-L35)
+
+Once you have set up Github action any time you commit to a branch in your fork all
+tests will be run, including integration tests.
+
+You can also (optionally) run the integration tests locally, which is quicker
+during development.
+
+### To run integration tests locally
+
+* `pip install awscli`
+* Setup [AWS CLI Environment variables](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html)
+  to work with an AWS account that you have access to.  You can use the same user
+  or role that you use for Github actions.
+
+_Note_: All integration tests are set up to run in `eu-west-*` region.  If you prefer
+to run in a different region you must update the region in each test before running it
+
+
+#### run all tests
+
+```bash
+$ AWS_PROFILE=<profile> AWS_DEFAULT_REGION=<region> poetry run behave integration-tests/features --junit --junit-directory build/behave
+```
+
+#### run a specific feature
+
+```bash
+$ poetry run behave integration-tests --include <feature-file>
+```
+
+### run a specific scenario
+
+```bash
+$ poetry run behave integration-tests -n "<scenario-name>"
+```
+
+## Add a debugger
+
+To add a Python debugger like `ipdb` or `pdb++` using poetry:
+
+```bash
+$ poetry run pip install ipdb
+$ poetry run pip install pdbpp
+```
+
+# Sponsors
+
+* [Sage Bionetworks](https://sagebionetworks.org/) donated the AWS account for running Sceptre integration
+  tests.  Please contact it@sagebase.org for support.
+* [GoDaddy](https://www.godaddy.com/) donated [the domain](https://docs.sceptre-project.org) for hosting
+  the Sceptre project.  Please contact oss@godaddy.com for support.
+* [Cloudreach](https://www.cloudreach.com/) started the Sceptre project and continuted to maintain it
+  until the ver 2.4 release.  It has since been extricated from Cloudreach and has been maintained
+  by members of the Sceptre open source community.
 
 # Credits
 

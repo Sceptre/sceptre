@@ -1,11 +1,17 @@
-from behave import *
-import os
 import time
-from sceptre.plan.plan import SceptrePlan
-from sceptre.context import SceptreContext
+from pathlib import Path
+
+from behave import *
 from botocore.exceptions import ClientError
-from helpers import read_template_file, get_cloudformation_stack_name
-from helpers import retry_boto_call
+
+from helpers import read_template_file, get_cloudformation_stack_name, retry_boto_call
+from sceptre.cli.launch import Launcher
+from sceptre.cli.prune import PATH_FOR_WHOLE_PROJECT, Pruner
+from sceptre.context import SceptreContext
+from sceptre.diffing.diff_writer import DeepDiffWriter
+from sceptre.diffing.stack_differ import DeepDiffStackDiffer, DifflibStackDiffer
+from sceptre.helpers import sceptreise_path
+from sceptre.plan.plan import SceptrePlan
 from stacks import wait_for_final_state
 from templates import set_template_path
 
@@ -43,32 +49,36 @@ def step_impl(context, stack_group_name, status):
 
 @when('the user launches stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
-    sceptre_context = SceptreContext(
-        command_path=stack_group_name,
-        project_path=context.sceptre_dir
-    )
+    launch_stack_group(context, stack_group_name)
 
-    sceptre_plan = SceptrePlan(sceptre_context)
-    sceptre_plan.launch()
+
+@when('the user launches stack_group "{stack_group_name}" with --prune')
+def step_impl(context, stack_group_name):
+    launch_stack_group(context, stack_group_name, True)
 
 
 @when('the user launches stack_group "{stack_group_name}" with ignore dependencies')
 def step_impl(context, stack_group_name):
+    launch_stack_group(context, stack_group_name, False, True)
+
+
+def launch_stack_group(
+    context, stack_group_name, prune=False, ignore_dependencies=False
+):
     sceptre_context = SceptreContext(
         command_path=stack_group_name,
         project_path=context.sceptre_dir,
-        ignore_dependencies=True
+        ignore_dependencies=ignore_dependencies,
     )
 
-    sceptre_plan = SceptrePlan(sceptre_context)
-    sceptre_plan.launch()
+    launcher = Launcher(sceptre_context)
+    launcher.launch(prune)
 
 
 @when('the user deletes stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
     sceptre_context = SceptreContext(
-        command_path=stack_group_name,
-        project_path=context.sceptre_dir
+        command_path=stack_group_name, project_path=context.sceptre_dir
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
@@ -80,7 +90,7 @@ def step_impl(context, stack_group_name):
     sceptre_context = SceptreContext(
         command_path=stack_group_name,
         project_path=context.sceptre_dir,
-        ignore_dependencies=True
+        ignore_dependencies=True,
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
@@ -90,8 +100,7 @@ def step_impl(context, stack_group_name):
 @when('the user describes stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
     sceptre_context = SceptreContext(
-        command_path=stack_group_name,
-        project_path=context.sceptre_dir
+        command_path=stack_group_name, project_path=context.sceptre_dir
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
@@ -103,8 +112,8 @@ def step_impl(context, stack_group_name):
     for response in responses.values():
         if response is None:
             continue
-        for stack in response['Stacks']:
-            cfn_stacks[stack['StackName']] = stack['StackStatus']
+        for stack in response["Stacks"]:
+            cfn_stacks[stack["StackName"]] = stack["StackStatus"]
 
     context.response = [
         {short_name: cfn_stacks[full_name]}
@@ -118,7 +127,7 @@ def step_impl(context, stack_group_name):
     sceptre_context = SceptreContext(
         command_path=stack_group_name,
         project_path=context.sceptre_dir,
-        ignore_dependencies=True
+        ignore_dependencies=True,
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
@@ -130,8 +139,8 @@ def step_impl(context, stack_group_name):
     for response in responses.values():
         if response is None:
             continue
-        for stack in response['Stacks']:
-            cfn_stacks[stack['StackName']] = stack['StackStatus']
+        for stack in response["Stacks"]:
+            cfn_stacks[stack["StackName"]] = stack["StackStatus"]
 
     context.response = [
         {short_name: cfn_stacks[full_name]}
@@ -143,20 +152,21 @@ def step_impl(context, stack_group_name):
 @when('the user describes resources in stack_group "{stack_group_name}"')
 def step_impl(context, stack_group_name):
     sceptre_context = SceptreContext(
-        command_path=stack_group_name,
-        project_path=context.sceptre_dir
+        command_path=stack_group_name, project_path=context.sceptre_dir
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
     context.response = sceptre_plan.describe_resources().values()
 
 
-@when('the user describes resources in stack_group "{stack_group_name}" with ignore dependencies')
+@when(
+    'the user describes resources in stack_group "{stack_group_name}" with ignore dependencies'
+)
 def step_impl(context, stack_group_name):
     sceptre_context = SceptreContext(
         command_path=stack_group_name,
         project_path=context.sceptre_dir,
-        ignore_dependencies=True
+        ignore_dependencies=True,
     )
 
     sceptre_plan = SceptrePlan(sceptre_context)
@@ -170,7 +180,9 @@ def step_impl(context, stack_group_name, status):
     check_stack_status(context, full_stack_names, status)
 
 
-@then('only the stacks in stack_group "{stack_group_name}", excluding dependencies are in "{status}"')
+@then(
+    'only the stacks in stack_group "{stack_group_name}", excluding dependencies are in "{status}"'
+)
 def step_impl(context, stack_group_name, status):
     full_stack_names = get_full_stack_names(context, stack_group_name).values()
 
@@ -192,7 +204,7 @@ def step_impl(context, stack_group_name, status):
         assert response in expected_response
 
 
-@then('no resources are described')
+@then("no resources are described")
 def step_impl(context):
     for stack_resources in context.response:
         stack_name = next(iter(stack_resources))
@@ -201,10 +213,10 @@ def step_impl(context):
 
 @then('stack "{stack_name}" is described as "{status}"')
 def step_impl(context, stack_name, status):
-    response = next((
-        stack for stack in context.response
-        if stack_name in stack
-    ), {stack_name: 'PENDING'})
+    response = next(
+        (stack for stack in context.response if stack_name in stack),
+        {stack_name: "PENDING"},
+    )
 
     assert response[stack_name] == status
 
@@ -221,8 +233,7 @@ def step_impl(context, stack_group_name):
     for short_name, full_name in stacks_names.items():
         time.sleep(1)
         response = retry_boto_call(
-            context.client.describe_stack_resources,
-            StackName=full_name
+            context.client.describe_stack_resources, StackName=full_name
         )
         expected_resources[short_name] = response["StackResources"]
 
@@ -244,7 +255,7 @@ def step_impl(context, stack_name):
 
     response = retry_boto_call(
         context.client.describe_stack_resources,
-        StackName=get_cloudformation_stack_name(context, stack_name)
+        StackName=get_cloudformation_stack_name(context, stack_name),
     )
     expected_resources[stack_name] = response["StackResources"]
 
@@ -259,11 +270,36 @@ def step_impl(context, stack_name):
 def step_impl(context, first_stack, second_stack):
     stacks = [
         get_cloudformation_stack_name(context, first_stack),
-        get_cloudformation_stack_name(context, second_stack)
+        get_cloudformation_stack_name(context, second_stack),
     ]
     creation_times = get_stack_creation_times(context, stacks)
 
     assert creation_times[stacks[0]] < creation_times[stacks[1]]
+
+
+@when('the user diffs stack group "{group_name}" with "{diff_type}"')
+def step_impl(context, group_name, diff_type):
+    sceptre_context = SceptreContext(
+        command_path=group_name, project_path=context.sceptre_dir
+    )
+    sceptre_plan = SceptrePlan(sceptre_context)
+    differ_classes = {"deepdiff": DeepDiffStackDiffer, "difflib": DifflibStackDiffer}
+    writer_class = {"deepdiff": DeepDiffWriter, "difflib": DeepDiffWriter}
+
+    differ = differ_classes[diff_type]()
+    context.writer_class = writer_class[diff_type]
+    context.output = list(sceptre_plan.diff(differ).values())
+
+
+@when("the whole project is pruned")
+def step_impl(context):
+    sceptre_context = SceptreContext(
+        command_path=PATH_FOR_WHOLE_PROJECT,
+        project_path=context.sceptre_dir,
+    )
+
+    pruner = Pruner(sceptre_context)
+    pruner.prune()
 
 
 def get_stack_creation_times(context, stacks):
@@ -276,13 +312,19 @@ def get_stack_creation_times(context, stacks):
 
 
 def get_stack_names(context, stack_group_name):
-    path = os.path.join(context.sceptre_dir, "config", stack_group_name)
+    config_dir = Path(context.sceptre_dir) / "config"
+    path = config_dir / stack_group_name
+
     stack_names = []
-    for root, dirs, files in os.walk(path):
-        for filepath in files:
-            filename = os.path.splitext(filepath)[0]
-            if not filename == "config":
-                stack_names.append(os.path.join(stack_group_name, filename))
+
+    for child in path.rglob("*"):
+        if child.is_dir() or child.stem == "config":
+            continue
+
+        relative_path = child.relative_to(config_dir)
+        stack_name = sceptreise_path(str(relative_path).replace(child.suffix, ""))
+        stack_names.append(stack_name)
+
     return stack_names
 
 
@@ -301,13 +343,12 @@ def create_stacks(context, stack_names):
         time.sleep(1)
         try:
             retry_boto_call(
-                context.client.create_stack,
-                StackName=stack_name,
-                TemplateBody=body
+                context.client.create_stack, StackName=stack_name, TemplateBody=body
             )
         except ClientError as e:
-            if e.response['Error']['Code'] == 'AlreadyExistsException' \
-                    and e.response['Error']['Message'].endswith("already exists"):
+            if e.response["Error"]["Code"] == "AlreadyExistsException" and e.response[
+                "Error"
+            ]["Message"].endswith("already exists"):
                 pass
             else:
                 raise e
@@ -316,7 +357,7 @@ def create_stacks(context, stack_names):
 
 
 def delete_stacks(context, stack_names):
-    waiter = context.client.get_waiter('stack_delete_complete')
+    waiter = context.client.get_waiter("stack_delete_complete")
     waiter.config.delay = 5
     waiter.config.max_attempts = 240
 

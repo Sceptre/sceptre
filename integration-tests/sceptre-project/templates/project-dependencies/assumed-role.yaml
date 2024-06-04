@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /service/
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              AWS: !Ref AWS::AccountId
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCloudFormationFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+        - arn:aws:iam::aws:policy/AmazonSNSFullAccess
+      Policies:
+        - PolicyName: "PassRolePermissions"
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action: "iam:PassRole"
+                Effect: Allow
+                Resource: "*"
+      MaxSessionDuration: 43200
+
+Outputs:
+  RoleArn:
+    Value: !GetAtt Role.Arn

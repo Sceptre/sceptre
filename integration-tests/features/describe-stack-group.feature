@@ -23,4 +23,3 @@ Feature: Describe stack_group
     Given all the stacks in stack_group "2" are in "CREATE_COMPLETE"
     When the user describes stack_group "2" with ignore dependencies
     Then all stacks in stack_group "2" are described as "CREATE_COMPLETE"
-

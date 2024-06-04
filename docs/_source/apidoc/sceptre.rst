@@ -13,6 +13,7 @@ Subpackages
 
     sceptre.cli
     sceptre.config
+    sceptre.diffing
     sceptre.hooks
     sceptre.plan
     sceptre.resolvers
@@ -83,5 +84,3 @@ sceptre.template module
     :members:
     :undoc-members:
     :show-inheritance:
-
-

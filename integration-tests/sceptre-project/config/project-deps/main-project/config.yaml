@@ -1,0 +1,9 @@
+template_bucket_name: !stack_output project-deps/dependencies/bucket.yaml::BucketName
+notifications:
+  - !stack_output project-deps/dependencies/topic.yaml::TopicArn
+
+sceptre_role: !stack_output project-deps/dependencies/assumed-role.yaml::RoleArn
+sceptre_role_session_duration: 1800
+stack_tags:
+  greeting: !rcmd "echo 'hello' | tr -d '\n'"
+  nonexistant: !no_value

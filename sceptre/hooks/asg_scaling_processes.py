@@ -30,14 +30,15 @@ class ASGScalingProcesses(Hook):
         if not isinstance(self.argument, string_types):
             raise InvalidHookArgumentTypeError(
                 'The argument "{0}" is the wrong type - asg_scaling_processes '
-                'hooks require arguments of type string.'.format(self.argument)
+                "hooks require arguments of type string.".format(self.argument)
             )
         if "::" not in str(self.argument):
             raise InvalidHookArgumentSyntaxError(
                 'Wrong syntax for the argument "{0}" - asg_scaling_processes '
-                'hooks use:'
-                '- !asg_scaling_processes <suspend|resume>::<process-name>'
-                .format(self.argument)
+                "hooks use:"
+                "- !asg_scaling_processes <suspend|resume>::<process-name>".format(
+                    self.argument
+                )
             )
 
         action, scaling_processes = self.argument.split("::")
@@ -45,8 +46,7 @@ class ASGScalingProcesses(Hook):
         if action not in ["resume", "suspend"]:
             raise InvalidHookArgumentValueError(
                 'The argument "{0}" is invalid - valid arguments for '
-                'asg_scaling_processes hooks are "resume" or "suspend".'
-                .format(action)
+                'asg_scaling_processes hooks are "resume" or "suspend".'.format(action)
             )
 
         action += "_processes"
@@ -58,8 +58,8 @@ class ASGScalingProcesses(Hook):
                 command=action,
                 kwargs={
                     "AutoScalingGroupName": autoscaling_group,
-                    "ScalingProcesses": [scaling_processes]
-                }
+                    "ScalingProcesses": [scaling_processes],
+                },
             )
 
     def _get_stack_resources(self):
@@ -70,7 +70,7 @@ class ASGScalingProcesses(Hook):
         response = self.stack.connection_manager.call(
             service="cloudformation",
             command="describe_stack_resources",
-            kwargs={"StackName": self.stack.external_name}
+            kwargs={"StackName": self.stack.external_name},
         )
         return response.get("StackResources", [])
 

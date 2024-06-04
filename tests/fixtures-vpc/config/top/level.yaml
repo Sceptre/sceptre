@@ -1,1 +1,2 @@
-template_path: somethingelse.py
+template:
+  path: somethingelse.py

@@ -72,7 +72,7 @@ SceptrePlanExecutor
 You won’t be able to interact with the ``SceptrePlanExecutor`` directly but
 this part of the code is responsible for taking a ``SceptrePlan`` and ensuring
 all commands on every stack, are executed in the correct order, concurrently.
-The executor algorithm focuses on correctness over maximal concurrency. It know
+The executor algorithm focuses on correctness over maximal concurrency. It knows
 what to execute and when based on a ``StackGraph`` which is created when a
 ``SceptrePlan`` is created.
 

@@ -7,14 +7,11 @@ from sceptre.resolvers.file_contents import FileContents
 
 
 class TestFileContentsResolver(object):
-
     def setup_method(self, test_method):
-        self.file_contents_resolver = FileContents(
-            argument=None
-        )
+        self.file_contents_resolver = FileContents(argument=None)
 
     def test_resolving_with_existing_file(self):
-        with tempfile.NamedTemporaryFile(mode='w+') as f:
+        with tempfile.NamedTemporaryFile(mode="w+") as f:
             f.write("file contents")
             f.seek(0)
             self.file_contents_resolver.argument = f.name
