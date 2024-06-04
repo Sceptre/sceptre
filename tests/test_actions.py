@@ -571,14 +571,15 @@ class TestStackActions(object):
             ]
         }
 
-    @patch("sceptre.plan.actions.StackActions._describe")
+    @patch("sceptre.plan.actions.StackActions.describe")
     def test_describe_outputs_sends_correct_request(self, mock_describe):
         mock_describe.return_value = {"Stacks": [{"Outputs": sentinel.outputs}]}
         response = self.actions.describe_outputs()
+
         mock_describe.assert_called_once_with()
         assert response == {self.stack.name: sentinel.outputs}
 
-    @patch("sceptre.plan.actions.StackActions._describe")
+    @patch("sceptre.plan.actions.StackActions.describe")
     def test_describe_outputs_handles_stack_with_no_outputs(self, mock_describe):
         mock_describe.return_value = {"Stacks": [{}]}
         response = self.actions.describe_outputs()
@@ -934,13 +935,13 @@ class TestStackActions(object):
             {"ParameterKey": "key2", "ParameterValue": "value4"},
         ]
 
-    @patch("sceptre.plan.actions.StackActions._describe")
+    @patch("sceptre.plan.actions.StackActions.describe")
     def test_get_status_with_created_stack(self, mock_describe):
         mock_describe.return_value = {"Stacks": [{"StackStatus": "CREATE_COMPLETE"}]}
         status = self.actions.get_status()
         assert status == "CREATE_COMPLETE"
 
-    @patch("sceptre.plan.actions.StackActions._describe")
+    @patch("sceptre.plan.actions.StackActions.describe")
     def test_get_status_with_non_existent_stack(self, mock_describe):
         mock_describe.side_effect = ClientError(
             {
@@ -953,7 +954,7 @@ class TestStackActions(object):
         )
         assert self.actions.get_status() == "PENDING"
 
-    @patch("sceptre.plan.actions.StackActions._describe")
+    @patch("sceptre.plan.actions.StackActions.describe")
     def test_get_status_with_unknown_clinet_error(self, mock_describe):
         mock_describe.side_effect = ClientError(
             {"Error": {"Code": "DoesNotExistException", "Message": "Boom!"}},
