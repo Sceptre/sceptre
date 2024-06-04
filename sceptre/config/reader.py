@@ -490,9 +490,11 @@ class ConfigReader(object):
             ) from err
 
         # Reset the template cache to avoid leakage between StackGroups (#937)
-        template_vars = {'var': self.templating_vars['var']}
-        if 'stack_group_config' in self.templating_vars:
-            template_vars['stack_group_config'] = self.templating_vars['stack_group_config']
+        template_vars = {"var": self.templating_vars["var"]}
+        if "stack_group_config" in self.templating_vars:
+            template_vars["stack_group_config"] = self.templating_vars[
+                "stack_group_config"
+            ]
         self.templating_vars = template_vars
 
         self.templating_vars.update(stack_group_config)

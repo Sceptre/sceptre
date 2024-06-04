@@ -645,7 +645,11 @@ class TestConfigReader(object):
 
             _ = config_reader._render("configs", basename, stack_group_config)
 
-            assert config_reader.templating_vars == {"someone_elses": "config", "stack_group_config": {"foo": "bar"}, "var": {"baz": "qux"}}
+            assert config_reader.templating_vars == {
+                "someone_elses": "config",
+                "stack_group_config": {"foo": "bar"},
+                "var": {"baz": "qux"},
+            }
 
     def test_render__invalid_jinja_template__raises_and_creates_debug_file(self):
         with self.runner.isolated_filesystem():
