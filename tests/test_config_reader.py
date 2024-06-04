@@ -621,6 +621,32 @@ class TestConfigReader(object):
 
             assert result == {"key": "value"}
 
+    def test_render__existing_config_file__stack_group_config_leaks(self):
+        with self.runner.isolated_filesystem():
+            project_path = os.path.abspath("./example")
+            config_dir = os.path.join(project_path, "config")
+            directory_path = os.path.join(config_dir, "configs")
+
+            os.makedirs(directory_path)
+
+            basename = "existing_config.yaml"
+            stack_group_config = {}
+
+            test_config_path = os.path.join(directory_path, basename)
+            test_config_content = "key: value\n"
+
+            with open(test_config_path, "w") as file:
+                file.write(test_config_content)
+
+            config_reader = ConfigReader(self.context)
+            config_reader.templating_vars["someone_elses"] = "config"
+            config_reader.templating_vars["stack_group_config"] = {"foo": "bar"}
+            config_reader.templating_vars["var"] = {"baz": "qux"}
+
+            _ = config_reader._render("configs", basename, stack_group_config)
+
+            assert config_reader.templating_vars == {"someone_elses": "config", "stack_group_config": {"foo": "bar"}, "var": {"baz": "qux"}}
+
     def test_render__invalid_jinja_template__raises_and_creates_debug_file(self):
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath("./example")
