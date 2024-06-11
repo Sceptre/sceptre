@@ -28,7 +28,7 @@ repos:
         exclude: |
           (?x)(
             ^integration-tests/sceptre-project/config/|
-            ^integration-tests/sceptre-project/templates/jinja/|
+            ^integration-tests/sceptre-project/templates/|
             ^tests/fixtures-vpc/config/|
             ^tests/fixtures/config/|
             ^temp/|
