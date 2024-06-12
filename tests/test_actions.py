@@ -377,9 +377,7 @@ class TestStackActions(object):
 
     @patch("sceptre.plan.actions.StackActions.create")
     @patch("sceptre.plan.actions.StackActions._get_status")
-    def test_launch_with_stack_that_does_not_exist(
-        self, mock_get_status, mock_create
-    ):
+    def test_launch_with_stack_that_does_not_exist(self, mock_get_status, mock_create):
         mock_get_status.side_effect = StackDoesNotExistError()
         mock_create.return_value = sentinel.launch_response
         response = self.actions.launch()
