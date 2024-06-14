@@ -102,7 +102,7 @@ class StackDiffer(Generic[DiffType]):
         "DELETE_COMPLETE",
     ]
 
-    NO_ECHO_REPLACEMENT = "***HIDDEN***"
+    NO_ECHO_REPLACEMENT = "****"
 
     def __init__(self, show_no_echo=False):
         """Initializes the StackDiffer.

@@ -175,7 +175,7 @@ configurations should be defined at a lower directory level.
 
 YAML files that define configuration settings with conflicting keys, the child
 configuration file will usually take precedence (see the specific config keys as documented
-for the inheritance strategy employed).
+for the inheritance strategy employed and `Inheritance Strategy Override`_).
 
 In the above directory structure, ``config/config.yaml`` will be read in first,
 followed by ``config/account-1/config.yaml``, followed by
@@ -184,6 +184,16 @@ followed by ``config/account-1/config.yaml``, followed by
 For example, if you wanted the ``dev`` StackGroup to build to a different
 region, this setting could be specified in the ``config/dev/config.yaml`` file,
 and would only be applied to builds in the ``dev`` StackGroup.
+
+Inheritance Strategy Override
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The inheritance strategy of some properties may be overridden by the stack group config.
+
+Strategy options:
+
+* ``merge``: Child config is merged with parent configs, with child taking precedence for conflicting dictionary keys.
+* ``override``: Overrides the parent config, if set.
 
 .. _setting_dependencies_for_stack_groups:
 
