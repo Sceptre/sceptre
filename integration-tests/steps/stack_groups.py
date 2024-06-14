@@ -204,13 +204,6 @@ def step_impl(context, stack_group_name, status):
         assert response in expected_response
 
 
-@then("no resources are described")
-def step_impl(context):
-    for stack_resources in context.response:
-        stack_name = next(iter(stack_resources))
-        assert stack_resources == {stack_name: []}
-
-
 @then('stack "{stack_name}" is described as "{status}"')
 def step_impl(context, stack_name, status):
     response = next(
