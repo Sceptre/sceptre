@@ -207,13 +207,23 @@ during development.
   to work with an AWS account that you have access to.  You can use the same user
   or role that you use for Github actions.
 
-_Note_: All integration tests are set up to run in `eu-west-*` region.  If you prefer
-to run in a different region you must update the region in each test before running it.
-
 #### run all tests
 
 ```bash
 $ AWS_DEFAULT_REGION=eu-west-1 poetry run behave integration-tests/features --junit --junit-directory build/behave
+```
+
+_Note_: All integration tests are set up to run in `eu-west-*` region.  If you prefer
+to run in a different region, you must update the region in each test before running it:
+
+```bash
+$ grep -r eu-west integration-tests
+```
+
+Edit the files.
+
+```bash
+$ AWS_DEFAULT_REGION=<your-preferred-default-region> poetry run behave integration-tests/features --junit --junit-directory build/behave
 ```
 
 #### run a specific feature
