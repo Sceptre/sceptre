@@ -624,6 +624,7 @@ class TestConfigReader(object):
     def test_render__existing_config_file__no_leak_between_multiple_stack_group_configs(
         self,
     ):
+        """ A test for bug #937 """
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath("./example")
 
@@ -663,21 +664,21 @@ class TestConfigReader(object):
                 "config/dir1", basename_1, stack_group_config_1
             )
             expected_result_1 = {"var": "initial_value", "param1": "value1"}
-            assert result_1 == expected_result_1
+            assert expected_result_1 == result_1
 
             # Run _render for the second stack group
             result_2 = config_reader._render(
                 "config/dir2", basename_2, stack_group_config_2
             )
             expected_result_2 = {"var": "initial_value", "param2": "value2"}
-            assert result_2 == expected_result_2
+            assert expected_result_2 == result_2
 
             # Ensure the templating_vars is not leaking
-            assert config_reader.templating_vars == {
+            assert {
                 "var": "initial_value",
                 "j2_environment": {},
                 "param2": "value2",
-            }
+            } == config_reader.templating_vars
 
     def test_render__invalid_jinja_template__raises_and_creates_debug_file(self):
         with self.runner.isolated_filesystem():
