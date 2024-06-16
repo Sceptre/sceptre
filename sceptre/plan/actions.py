@@ -20,20 +20,13 @@ from os import path
 
 from sceptre.connection_manager import ConnectionManager
 
-<<<<<<< HEAD
-from sceptre.exceptions import CannotUpdateFailedStackError
-from sceptre.exceptions import UnknownStackStatusError
-from sceptre.exceptions import UnknownStackChangeSetStatusError
-from sceptre.exceptions import StackDoesNotExistError
-from sceptre.exceptions import ProtectedStackError
-from sceptre.exceptions import InvalidParameterError
-=======
 from sceptre.exceptions import (
     CannotUpdateFailedStackError,
     ProtectedStackError,
     StackDoesNotExistError,
     UnknownStackChangeSetStatusError,
     UnknownStackStatusError,
+    InvalidParameterError,
 )
 from sceptre.helpers import extract_datetime_from_aws_response_headers
 from sceptre.hooks import add_stack_hooks, add_stack_hooks_with_aliases
@@ -44,7 +37,6 @@ from typing import Dict, Optional, Tuple, Union
 
 if typing.TYPE_CHECKING:
     from sceptre.diffing.stack_differ import StackDiff, StackDiffer
->>>>>>> master
 
 
 class StackActions:
@@ -80,17 +72,12 @@ class StackActions:
         self.logger.info("%s - Creating Stack", self.stack.name)
         create_stack_kwargs = {
             "StackName": self.stack.external_name,
-<<<<<<< HEAD
             "Parameters": self._format_parameters(self.stack.parameters, create=True),
-            "Capabilities": ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM', 'CAPABILITY_AUTO_EXPAND'],
-=======
-            "Parameters": self._format_parameters(self.stack.parameters),
             "Capabilities": [
                 "CAPABILITY_IAM",
                 "CAPABILITY_NAMED_IAM",
                 "CAPABILITY_AUTO_EXPAND",
             ],
->>>>>>> master
             "NotificationARNs": self.stack.notifications,
             "Tags": [
                 {"Key": str(k), "Value": str(v)} for k, v in self.stack.tags.items()
@@ -726,15 +713,23 @@ class StackActions:
                 initial_value = value.get("initial_value")
                 use_previous_value = value.get("use_previous_value", False)
                 if not isinstance(use_previous_value, bool):
-                    raise InvalidParameterError("'use_previous_value' must be a boolean")
-                if (create is True or use_previous_value is False) and initial_value is None:
-                    raise InvalidParameterError("'initial_value' is required when creating a new "
-                                                "stack or when 'use_previous_value' is false")
+                    raise InvalidParameterError(
+                        "'use_previous_value' must be a boolean"
+                    )
+                if (
+                    create is True or use_previous_value is False
+                ) and initial_value is None:
+                    raise InvalidParameterError(
+                        "'initial_value' is required when creating a new "
+                        "stack or when 'use_previous_value' is false"
+                    )
                 if create is True or use_previous_value is False:
                     if isinstance(initial_value, list):
                         formatted_parameter["ParameterValue"] = ",".join(initial_value)
                     else:
-                        formatted_parameter["ParameterValue"] = value.get("initial_value")
+                        formatted_parameter["ParameterValue"] = value.get(
+                            "initial_value"
+                        )
                 else:
                     formatted_parameter["UsePreviousValue"] = use_previous_value
             else:

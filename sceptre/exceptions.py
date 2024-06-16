@@ -195,6 +195,7 @@ class InvalidParameterError(SceptreException):
     """
     Error raised when parameters are invalid.
     """
+
     pass
 
 

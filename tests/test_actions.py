@@ -14,7 +14,7 @@ from sceptre.exceptions import (
     StackDoesNotExistError,
     UnknownStackChangeSetStatusError,
     UnknownStackStatusError,
-    InvalidParameterError
+    InvalidParameterError,
 )
 from sceptre.plan.actions import StackActions
 from sceptre.stack import Stack
@@ -821,16 +821,12 @@ class TestStackActions(object):
         assert sorted_formatted_parameters == []
 
     def test_format_parameters_with_empty_dict_value(self):
-        parameter = {
-            "key": dict()
-        }
+        parameter = {"key": dict()}
         with pytest.raises(InvalidParameterError):
             self.actions._format_parameters(parameter)
 
     def test_format_parameters_with_non_bool_previous_value(self):
-        parameter = {
-            "key": dict(use_previous_value='fosho')
-        }
+        parameter = {"key": dict(use_previous_value="fosho")}
         with pytest.raises(InvalidParameterError):
             self.actions._format_parameters(parameter)
 
@@ -908,57 +904,51 @@ class TestStackActions(object):
         ]
 
     def test_format_parameters_with_string_and_dict_values(self):
-        parameters = {
-            "key1": "value1",
-            "key2": {"initial_value": "value2"}
-        }
+        parameters = {"key1": "value1", "key2": {"initial_value": "value2"}}
         formatted_parameters = self.actions._format_parameters(parameters)
         sorted_formatted_parameters = sorted(
-            formatted_parameters,
-            key=lambda x: x["ParameterKey"]
+            formatted_parameters, key=lambda x: x["ParameterKey"]
         )
         assert sorted_formatted_parameters == [
             {"ParameterKey": "key1", "ParameterValue": "value1"},
-            {"ParameterKey": "key2", "ParameterValue": "value2"}
+            {"ParameterKey": "key2", "ParameterValue": "value2"},
         ]
 
     def test_format_parameters_with_dict_string_and_list_values(self):
         parameters = {
             "key1": {"initial_value": ["value1", "value2"]},
-            "key2": {"initial_value": "value3"}
+            "key2": {"initial_value": "value3"},
         }
         formatted_parameters = self.actions._format_parameters(parameters)
         sorted_formatted_parameters = sorted(
-            formatted_parameters,
-            key=lambda x: x["ParameterKey"]
+            formatted_parameters, key=lambda x: x["ParameterKey"]
         )
         assert sorted_formatted_parameters == [
             {"ParameterKey": "key1", "ParameterValue": "value1,value2"},
-            {"ParameterKey": "key2", "ParameterValue": "value3"}
+            {"ParameterKey": "key2", "ParameterValue": "value3"},
         ]
 
     def test_format_parameters_with_string_and_previous_values(self):
         parameters = {
             "key1": "value1",
             "key2": {"use_previous_value": True},
-            "key3": {"initial_value": "value3", "use_previous_value": True}
+            "key3": {"initial_value": "value3", "use_previous_value": True},
         }
         formatted_parameters = self.actions._format_parameters(parameters)
         sorted_formatted_parameters = sorted(
-            formatted_parameters,
-            key=lambda x: x["ParameterKey"]
+            formatted_parameters, key=lambda x: x["ParameterKey"]
         )
         assert sorted_formatted_parameters == [
             {"ParameterKey": "key1", "ParameterValue": "value1"},
             {"ParameterKey": "key2", "UsePreviousValue": True},
-            {"ParameterKey": "key3", "UsePreviousValue": True}
+            {"ParameterKey": "key3", "UsePreviousValue": True},
         ]
 
     def test_format_parameters_with_create_and_previous_without_initial_values(self):
         parameters = {
             "key1": "value1",
             "key2": {"use_previous_value": True},
-            "key3": {"initial_value": "value3", "use_previous_value": True}
+            "key3": {"initial_value": "value3", "use_previous_value": True},
         }
         with pytest.raises(InvalidParameterError):
             self.actions._format_parameters(parameters, create=True)
@@ -966,16 +956,15 @@ class TestStackActions(object):
     def test_format_parameters_with_create_and_previous_values(self):
         parameters = {
             "key1": "value1",
-            "key2": {"initial_value": "value2", "use_previous_value": True}
+            "key2": {"initial_value": "value2", "use_previous_value": True},
         }
         formatted_parameters = self.actions._format_parameters(parameters, create=True)
         sorted_formatted_parameters = sorted(
-            formatted_parameters,
-            key=lambda x: x["ParameterKey"]
+            formatted_parameters, key=lambda x: x["ParameterKey"]
         )
         assert sorted_formatted_parameters == [
             {"ParameterKey": "key1", "ParameterValue": "value1"},
-            {"ParameterKey": "key2", "ParameterValue": "value2"}
+            {"ParameterKey": "key2", "ParameterValue": "value2"},
         ]
 
     @patch("sceptre.plan.actions.StackActions._describe")
