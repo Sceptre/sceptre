@@ -624,7 +624,7 @@ class TestConfigReader(object):
     def test_render__existing_config_file__no_leak_between_multiple_stack_group_configs(
         self,
     ):
-        """ A test for bug #937 """
+        """A test for bug #937"""
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath("./example")
 
