@@ -1,0 +1,19 @@
+# The idea with this workflow is to allow core reviewers to trigger the
+# integration tests by pushing a branch to the sceptre repository.
+name: branch-integration-tests
+
+on:
+  push:
+    branches:
+      - '*'         # matches every branch that doesn't contain a '/'
+      - '*/*'       # matches every branch containing a single '/'
+      - '**'        # matches every branch
+      - '!master'   # excludes master
+
+jobs:
+  integration-tests:
+    if: ${{ github.ref != 'refs/heads/master' }}
+    uses: "./.github/workflows/integration-tests.yaml"
+    with:
+      # role generated from https://github.com/Sceptre/sceptre-aws/blob/master/config/prod/gh-oidc-sceptre-tests.yaml
+      role-to-assume: "arn:aws:iam::743644221192:role/gh-oidc-sceptre-tests"

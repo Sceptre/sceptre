@@ -3,8 +3,8 @@
 import logging
 
 
-__author__ = 'Cloudreach'
-__email__ = 'sceptre@cloudreach.com'
+__author__ = "Cloudreach"
+__email__ = "sceptre@cloudreach.com"
 
 
 # Set up logging to ``/dev/null`` like a library is supposed to.
@@ -14,4 +14,4 @@ class NullHandler(logging.Handler):  # pragma: no cover
         pass
 
 
-logging.getLogger('sceptre').addHandler(NullHandler())
+logging.getLogger("sceptre").addHandler(NullHandler())

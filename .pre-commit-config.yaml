@@ -1,0 +1,53 @@
+default_language_version:
+  python: python3
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: mixed-line-ending
+      - id: trailing-whitespace
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+  - repo: https://github.com/awslabs/cfn-python-lint
+    rev: v1.2.5a9
+    hooks:
+      - id: cfn-python-lint
+        args:
+          - "-i=E0000"
+          - "-i=E1001"
+          - "-i=E3012"
+          - "-i=W6001"
+        exclude: |
+          (?x)(
+            ^integration-tests/sceptre-project/config/|
+            ^integration-tests/sceptre-project/templates/|
+            ^tests/fixtures-vpc/config/|
+            ^tests/fixtures/config/|
+            ^temp/|
+            ^.github/|
+            ^.pre-commit-config.yaml
+          )
+  - repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+      - id: black
+  - repo: https://github.com/python-poetry/poetry
+    rev: '1.8.0'
+    hooks:
+      - id: poetry-check
+      - id: poetry-lock
+        language_version: python3.10
+        args: ['--check']
+  - repo: https://github.com/sirosen/check-jsonschema
+    rev: 0.28.4
+    hooks:
+      - id: check-github-workflows
+      - id: check-github-actions

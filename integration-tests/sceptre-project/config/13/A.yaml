@@ -1,0 +1,3 @@
+template:
+  path: valid_template.json
+  type: file

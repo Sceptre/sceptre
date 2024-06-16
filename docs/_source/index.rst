@@ -16,9 +16,11 @@
    docs/stack_group_config.rst
    docs/stack_config.rst
    docs/templates.rst
+   docs/template_handlers.rst
    docs/hooks.rst
    docs/resolvers.rst
    docs/architecture.rst
+   docs/permissions.rst
 
 .. toctree::
    :maxdepth: 3

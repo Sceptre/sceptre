@@ -45,7 +45,9 @@ Stack:
 
 .. code-block:: yaml
 
-    template_path: dns-extras.j2
+    template:
+      path: templates/dns-extras.j2
+      type: file
     dependencies:
     - prod/route53/domain-zone.yaml
     parameters:
@@ -156,6 +158,9 @@ Config file, Sceptre passes an empty ``dict``.
 Example
 ~~~~~~~
 
+Troposphere
+^^^^^^^^^^^
+
 This example is using `troposphere`_
 to generate CloudFormation Template as a `json` string.
 
@@ -176,4 +181,30 @@ to generate CloudFormation Template as a `json` string.
     def sceptre_handler(sceptre_user_data):
         return vpc(sceptre_user_data)
 
+.. note::
+  To generate templates using Troposphere you must install the
+  Troposphere library by running ``pip install sceptre[troposphere]``
+
 .. _troposphere: https://github.com/cloudtools/troposphere/
+
+AWS CDK
+^^^^^^^
+
+AWS CDK can be used to programmatically generate templates for your stacks and then Sceptre can
+deploy those stacks. Taking this approach leverages the best capabilities of CDK (simple template
+generation with sane defaults) and the best capabilities of Sceptre ("wiring together" stacks and
+deploying them as consistent environments, leveraging hooks and resolvers to dynamically connect them).
+
+In order to use CDK with Sceptre, you need to install the `sceptre_cdk_handler`_ package. You can find
+documentation and examples on how to use it on the `github repository`_.
+
+.. _sceptre_cdk_handler: https://pypi.org/project/sceptre-cdk-handler/
+.. _github repository: https://github.com/sceptre/sceptre-cdk-handler
+
+AWS SAM
+^^^^^^^
+There is now a SAM Template Handler that lets you incorporate SAM templates into environments that
+are managed and deployed using Sceptre. For more information on how to install and use SAM in your
+Sceptre project, see the `sceptre-sam-handler`_ page on PyPI.
+
+.. _sceptre-sam-handler: https://pypi.org/project/sceptre-sam-handler/

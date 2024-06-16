@@ -1,0 +1,16 @@
+[flake8]
+exclude =
+	.git,
+	__pycache__,
+	build,
+	dist,
+	.tox,
+	venv,
+	.venv,
+	.pytest_cache
+max-complexity = 12
+per-file-ignores =
+	docs/_api/conf.py: E265
+	integration-tests/steps/*: E501,F811,F403,F405
+extend-ignore = E201,E202,E203,E231
+max-line-length = 120

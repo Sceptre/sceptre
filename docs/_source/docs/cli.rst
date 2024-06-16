@@ -5,22 +5,19 @@ Sceptre can be used as a command line tool.
 Running Sceptre without a sub-command will display help, showing a list of the
 available commands.
 
-Running Sceptre without a subcommand will display help, showing a list of the
-available commands.
-
 Autocomplete
 ------------
 
 To enable CLI autocomplete for subcommands and parameters execute the
 following command:
 
-+----------+------------------------------------------------+
-| shell    | command                                        |
-+==========+================================================+
-| bash     | eval "$(_SCEPTRE_COMPLETE=source sceptre)"     |
-+----------+------------------------------------------------+
-| zsh      | eval "$(_SCEPTRE_COMPLETE=source_zsh sceptre)" |
-+----------+------------------------------------------------+
++----------+-------------------------------------------------+
+| shell    | command                                         |
++==========+=================================================+
+| bash     | eval "$(_SCEPTRE_COMPLETE=source_bash sceptre)" |
++----------+-------------------------------------------------+
+| zsh      | eval "$(_SCEPTRE_COMPLETE=source_zsh sceptre)"  |
++----------+-------------------------------------------------+
 
 Export Stack Outputs to Environment Variables
 ---------------------------------------------
@@ -42,7 +39,7 @@ Variable Handling
 
 You can pass variables into your project using ``--var-file`` and ``--var``.
 
-Varibles passed in with ``--var`` will overwrite any matching variables specified in
+Variables passed in with ``--var`` will overwrite any matching variables specified in
 ``--var-file``. If you use multiple ``--var`` flags then the right-most ``--var`` will
 overwrite any matching ``--vars`` to the left. For example, in the following command
 
@@ -73,6 +70,35 @@ we could overwrite ``nested: world`` to ``nested: hi`` using:
   provided to them - even if they are not in your ``command_path`` or are not
   a dependency. Using a --var-file with all variables set can help meet this
   requirement.
+
+It is also possible to have keys merged according to a deep merge
+algorithm from successive var files, by specifying ``--merge-vars``. So, if we
+had a second variable file "vars2.yaml":
+
+.. code-block:: yaml
+
+  # other_vars.yaml
+  ---
+  top:
+    middle3:
+      nested: more world
+
+
+We could merge all of this together using:
+
+``sceptre --merge-vars --var-file vars.yaml --var-file other_vars.yaml launch stack``
+
+The ``top`` dictionary would then be expected to contain:
+
+.. code-block:: python
+
+  {
+    "top": {
+      "middle": {"nested": "hello"},
+      "middle2": {"nested": "world"},
+      "middle3": {"nested": "more world"}
+    }
+  }
 
 Command reference
 -----------------

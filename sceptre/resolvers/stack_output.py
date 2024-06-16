@@ -1,21 +1,23 @@
 # -*- coding: utf-8 -*-
 
-import abc
-import six
+import functools
 import logging
 import shlex
 
 from botocore.exceptions import ClientError
 
+from sceptre.exceptions import (
+    DependencyStackMissingOutputError,
+    StackDoesNotExistError,
+    SceptreException,
+)
+
 from sceptre.helpers import normalise_path, sceptreise_path
 from sceptre.resolvers import Resolver
-from sceptre.exceptions import DependencyStackMissingOutputError
-from sceptre.exceptions import StackDoesNotExistError
 
 TEMPLATE_EXTENSION = ".yaml"
 
 
-@six.add_metaclass(abc.ABCMeta)
 class StackOutputBase(Resolver):
     """
     A abstract base class which provides methods for getting Stack outputs.
@@ -25,7 +27,9 @@ class StackOutputBase(Resolver):
         self.logger = logging.getLogger(__name__)
         super(StackOutputBase, self).__init__(*args, **kwargs)
 
-    def _get_output_value(self, stack_name, output_key, profile=None, region=None, iam_role=None):
+    def _get_output_value(
+        self, stack_name, output_key, profile=None, region=None, sceptre_role=None
+    ):
         """
         Attempts to get the Stack output named by ``output_key``
 
@@ -37,7 +41,7 @@ class StackOutputBase(Resolver):
         :rtype: str
         :raises: sceptre.exceptions.DependencyStackMissingOutputError
         """
-        outputs = self._get_stack_outputs(stack_name, profile, region, iam_role)
+        outputs = self._get_stack_outputs(stack_name, profile, region, sceptre_role)
 
         try:
             return outputs[output_key]
@@ -48,7 +52,10 @@ class StackOutputBase(Resolver):
                 )
             )
 
-    def _get_stack_outputs(self, stack_name, profile=None, region=None, iam_role=None):
+    @functools.lru_cache(maxsize=4096)
+    def _get_stack_outputs(
+        self, stack_name, profile=None, region=None, sceptre_role=None
+    ):
         """
         Communicates with AWS CloudFormation to fetch outputs from a specific
         Stack.
@@ -59,9 +66,7 @@ class StackOutputBase(Resolver):
         :rtype: dict
         :raises: sceptre.stack.DependencyStackNotLaunchedException
         """
-        self.logger.debug("Collecting outputs from '{0}'...".format(
-            stack_name
-        ))
+        self.logger.debug("Collecting outputs from '{0}'...".format(stack_name))
         connection_manager = self.stack.connection_manager
 
         try:
@@ -72,7 +77,7 @@ class StackOutputBase(Resolver):
                 profile=profile,
                 region=region,
                 stack_name=stack_name,
-                iam_role=iam_role
+                sceptre_role=sceptre_role,
             )
         except ClientError as e:
             if "does not exist" in e.response["Error"]["Message"]:
@@ -85,8 +90,7 @@ class StackOutputBase(Resolver):
         self.logger.debug("Outputs: {0}".format(outputs))
 
         formatted_outputs = dict(
-            (output["OutputKey"], output["OutputValue"])
-            for output in outputs
+            (output["OutputKey"], output["OutputValue"]) for output in outputs
         )
 
         return formatted_outputs
@@ -109,7 +113,13 @@ class StackOutput(StackOutputBase):
         """
         Adds dependency to a Stack.
         """
-        dep_stack_name, self.output_key = self.argument.split("::")
+        try:
+            dep_stack_name, self.output_key = self.argument.split("::")
+        except ValueError as err:
+            raise SceptreException(
+                "!stack_output arg should match STACK_NAME::OUTPUT_KEY"
+            ) from err
+
         self.dependency_stack_name = sceptreise_path(normalise_path(dep_stack_name))
         self.stack.dependencies.append(self.dependency_stack_name)
 
@@ -121,17 +131,25 @@ class StackOutput(StackOutputBase):
         :rtype: str
         """
         self.logger.debug("Resolving Stack output: {0}".format(self.argument))
-
         friendly_stack_name = self.dependency_stack_name.replace(TEMPLATE_EXTENSION, "")
 
         stack = next(
-            stack for stack in self.stack.dependencies if stack.name == friendly_stack_name
+            stack
+            for stack in self.stack.dependencies
+            if stack.name == friendly_stack_name
         )
 
-        stack_name = "-".join([stack.project_code, friendly_stack_name.replace("/", "-")])
+        stack_name = "-".join(
+            [stack.project_code, friendly_stack_name.replace("/", "-")]
+        )
 
-        return self._get_output_value(stack_name, self.output_key, profile=stack.profile,
-                                      region=stack.region, iam_role=stack.iam_role)
+        return self._get_output_value(
+            stack_name,
+            self.output_key,
+            profile=stack.profile,
+            region=stack.region,
+            sceptre_role=stack.sceptre_role,
+        )
 
 
 class StackOutputExternal(StackOutputBase):
@@ -153,22 +171,45 @@ class StackOutputExternal(StackOutputBase):
         :returns: The value of the Stack output.
         :rtype: str
         """
-        self.logger.debug(
-            "Resolving external Stack output: {0}".format(self.argument)
-        )
+        self.logger.debug("Resolving external Stack output: {0}".format(self.argument))
 
-        profile = None
-        region = None
-        iam_role = None
         arguments = shlex.split(self.argument)
 
-        stack_argument = arguments[0]
-        if len(arguments) > 1:
-            extra_args = arguments[1].split("::", 2)
-            profile, region, iam_role = extra_args + (3 - len(extra_args)) * [None]
+        if not arguments:
+            message = "!stack_output_external requires at least one argument"
+            raise SceptreException(message)
 
-        dependency_stack_name, output_key = stack_argument.split("::")
+        stack_argument = arguments[0]
+        stack_args = iter(stack_argument.split("::"))
+
+        try:
+            dependency_stack_name = next(stack_args)
+            output_key = next(stack_args)
+
+        except StopIteration as err:
+            message = "!stack_output_external arg should match STACK_NAME::OUTPUT_KEY"
+            raise SceptreException(message) from err
+
+        profile = region = sceptre_role = None
+
+        if len(arguments) > 1:
+            extra_args = iter(arguments[1].split("::"))
+
+            profile = next(extra_args, None)
+            region = next(extra_args, None)
+            sceptre_role = next(extra_args, None)
+
+            try:
+                next(extra_args)
+                message = (
+                    "!stack_output_external second arg should be "
+                    "in the format 'PROFILE[::REGION[::SCEPTRE_ROLE]]'"
+                )
+                raise SceptreException(message)
+
+            except StopIteration:
+                pass
+
         return self._get_output_value(
-            dependency_stack_name, output_key,
-            profile or None, region or None, iam_role or None
+            dependency_stack_name, output_key, profile, region, sceptre_role
         )

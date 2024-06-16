@@ -1,10 +1,7 @@
 import click
 
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import (
-    catch_exceptions,
-    write
-)
+from sceptre.cli.helpers import catch_exceptions, write
 from sceptre.plan.plan import SceptrePlan
 
 
@@ -23,16 +20,18 @@ def status_command(ctx, path):
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         no_colour=ctx.obj.get("no_colour"),
         output_format=ctx.obj.get("output_format"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
     )
 
     plan = SceptrePlan(context)
     responses = plan.get_status()
-    message = "\n".join("{}: {}".format(stack.name, status)
-                        for stack, status in responses.items())
+    message = "\n".join(
+        "{}: {}".format(stack.name, status) for stack, status in responses.items()
+    )
     write(message, no_colour=context.no_colour)

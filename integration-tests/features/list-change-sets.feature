@@ -17,5 +17,3 @@ Feature: List change sets
     and stack "1/A" has change set "A" using "updated_template.json"
     When the user lists change sets for stack "1/A" with ignore dependencies
     Then the change sets for stack "1/A" are listed
-
-

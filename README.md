@@ -1,24 +1,21 @@
 # Sceptre
 
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=Sceptre_sceptre&metric=bugs)](https://sonarcloud.io/dashboard?id=Sceptre_sceptre)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Sceptre_sceptre&metric=coverage)](https://sonarcloud.io/dashboard?id=Sceptre_sceptre)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=Sceptre_sceptre&metric=sqale_rating)](https://sonarcloud.io/dashboard?id=Sceptre_sceptre)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Sceptre_sceptre&metric=alert_status)](https://sonarcloud.io/dashboard?id=Sceptre_sceptre)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=Sceptre_sceptre&metric=reliability_rating)](https://sonarcloud.io/dashboard?id=Sceptre_sceptre)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=Sceptre_sceptre&metric=security_rating)](https://sonarcloud.io/dashboard?id=Sceptre_sceptre)
-[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=Sceptre_sceptre&metric=sqale_index)](https://sonarcloud.io/dashboard?id=Sceptre_sceptre)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=Sceptre_sceptre&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=Sceptre_sceptre)
-![image](https://circleci.com/gh/Sceptre/sceptre.png?style=shield)
-![image](https://badge.fury.io/py/sceptre.svg)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Sceptre/sceptre/gate.yaml)](https://github.com/Sceptre/sceptre/actions/workflows/gate.yaml)
+[![Docker Image Version (latest semver)](https://img.shields.io/docker/v/sceptreorg/sceptre?logo=docker&sort=semver)](https://hub.docker.com/r/sceptreorg/sceptre)
+[![PyPI](https://img.shields.io/pypi/v/sceptre?logo=pypi)](https://pypi.org/project/sceptre/)
+[![PyPI - Status](https://img.shields.io/pypi/status/sceptre?logo=pypi)](https://pypi.org/project/sceptre/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/sceptre?logo=pypi)](https://pypi.org/project/sceptre/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dm/sceptre?logo=pypi)](https://pypi.org/project/sceptre/)
+[![License](https://img.shields.io/pypi/l/sceptre?logo=apache)](https://github.com/Sceptre/sceptre/blob/master/LICENSE)
 
-# About
+## About
 
 Sceptre is a tool to drive
 [AWS CloudFormation](https://aws.amazon.com/cloudformation). It automates the
 mundane, repetitive and error-prone tasks, enabling you to concentrate on
 building better infrastructure.
 
-# Features
+## Features
 
 - Code reuse by separating a Stack's template and its configuration
 - Support for templates written in JSON, YAML, Jinja2 or Python DSLs such as
@@ -36,7 +33,7 @@ building better infrastructure.
 - Support for inserting dynamic values in templates via customisable Resolvers
 - Support for running arbitrary code as Hooks before/after Stack builds
 
-# Benefits
+## Benefits
 
 - Utilises cloud-native Infrastructure as Code engines (CloudFormation)
 - You do not need to manage state
@@ -46,35 +43,35 @@ building better infrastructure.
 - Simple CLI and API
 - Unopinionated - Sceptre does not force a specific project structure
 
-# Install
+## Install
 
-## Using pip
+### Using pip
 
 `$ pip install sceptre`
 
 More information on installing sceptre can be found in our
-[Installation Guide](https://sceptre.cloudreach.com/latest/docs/install.html)
+[Installation Guide](https://docs.sceptre-project.org/latest/docs/install.html)
 
-## Using Docker Image
+### Using Docker Image
 
-View our [Docker repository](https://hub.docker.com/r/cloudreach/sceptre).
+View our [Docker repository](https://hub.docker.com/repositories/sceptreorg).
 Images available from version 2.0.0 onward.
 
 To use our Docker image follow these instructions:
 
-1. Pull the image `docker pull cloudreach/sceptre:[SCEPTRE_VERSION_NUMBER]` e.g.
-   `docker pull cloudreach/sceptre:2.1.4`. Leave out the version number if you
-   wish to run `latest` or run `docker pull cloudreach/sceptre:latest`.
+1. Pull the image `docker pull sceptreorg/sceptre:[SCEPTRE_VERSION_NUMBER]` e.g.
+   `docker pull sceptreorg/sceptre:2.5.0`. Leave out the version number if you
+   wish to run `latest` or run `docker pull sceptreorg/sceptre:latest`.
 
 2. Run the image. You will need to mount the working directory where your
    project resides to a directory called `project`. You will also need to mount
    a volume with your AWS config to your docker container. E.g.
 
-`docker run -v $(pwd):/project -v /Users/me/.aws/:/root/.aws/:ro cloudreach/sceptre:latest --help`
+`docker run -v $(pwd):/project -v /Users/me/.aws/:/root/.aws/:ro sceptreorg/sceptre:latest --help`
 
 If you want to use a custom ENTRYPOINT simply amend the Docker command:
 
-`docker run -ti --entrypoint='' cloudreach:latest sh`
+`docker run -ti --entrypoint='' sceptreorg/sceptre:latest sh`
 
 The above command will enter you into the shell of the Docker container where
 you can execute sceptre commands - useful for development.
@@ -83,25 +80,13 @@ If you have any other environment variables in your non-docker shell you will
 need to pass these in on the Docker CLI using the `-e` flag. See Docker
 documentation on how to achieve this.
 
-# Migrate v1 to v2
-
-We have tried to make the migration to Sceptre v2 as simple as possible. For
-information about how to migration your v1 project please see our
-[Migration Guide](https://github.com/sceptre/project/wiki/Migration-Guide:-V1-to-V2)
-
-# V1 End of Life Notice
-
-Support for Version 1 will
-[end on June 1 2019](https://github.com/sceptre/sceptre/issues/593). For new
-projects we recommend using Version 2.
-
-# Example
+## Example
 
 Sceptre organises Stacks into "Stack Groups". Each Stack is represented by a
 YAML configuration file stored in a directory which represents the Stack Group.
 Here, we have two Stacks, `vpc` and `subnets`, in a Stack Group named `dev`:
 
-```
+```sh
 $ tree
 .
 ├── config
@@ -117,7 +102,7 @@ $ tree
 We can create a Stack with the `create` command. This `vpc` Stack contains a
 VPC.
 
-```
+```sh
 $ sceptre create dev/vpc.yaml
 
 dev/vpc - Creating stack dev/vpc
@@ -131,7 +116,7 @@ this, we need to pass the VPC ID, which is exposed as a Stack output of the
 `vpc` Stack, to a parameter of the `subnets` Stack. Sceptre automatically
 resolves this dependency for us.
 
-```
+```sh
 $ sceptre create dev/subnets.yaml
 dev/subnets - Creating stack
 dev/subnets Subnet AWS::EC2::Subnet CREATE_IN_PROGRESS
@@ -142,7 +127,7 @@ dev/subnets sceptre-demo-dev-subnets AWS::CloudFormation::Stack CREATE_COMPLETE
 Sceptre implements meta-operations, which allow us to find out information about
 our Stacks:
 
-```
+```sh
 $ sceptre list resources dev/subnets.yaml
 
 - LogicalResourceId: Subnet
@@ -156,7 +141,7 @@ Sceptre provides Stack Group level commands. This one deletes the whole `dev`
 Stack Group. The subnet exists within the vpc, so it must be deleted first.
 Sceptre handles this automatically:
 
-```
+```sh
 $ sceptre delete dev
 
 Deleting stack
@@ -174,7 +159,7 @@ dev/vpc - Stack deleted
 Sceptre can also handle cross Stack Group dependencies, take the following
 example project:
 
-```
+```sh
 $ tree
 .
 ├── config
@@ -213,22 +198,25 @@ Sceptre can be used from the CLI, or imported as a Python package.
 
 ## CLI
 
-```
+```text
 Usage: sceptre [OPTIONS] COMMAND [ARGS]...
 
   Sceptre is a tool to manage your cloud native infrastructure deployments.
 
 Options:
-  --version              Show the version and exit.
-  --debug                Turn on debug logging.
-  --dir TEXT             Specify sceptre directory.
-  --output [yaml|json]   The formatting style for command output.
-  --no-colour            Turn off output colouring.
-  --var TEXT             A variable to template into config files.
-  --var-file FILENAME    A YAML file of variables to template into config
-                         files.
-  --ignore-dependencies  Ignore dependencies when executing command.
-  --help                 Show this message and exit.
+  --version                  Show the version and exit.
+  --debug                    Turn on debug logging.
+  --dir TEXT                 Specify sceptre directory.
+  --output [text|yaml|json]  The formatting style for command output.
+  --no-colour                Turn off output colouring.
+  --var TEXT                 A variable to replace the value of an item in
+                             config file.
+  --var-file FILENAME        A YAML file of variables to replace the values
+                             of items in config files.
+  --ignore-dependencies      Ignore dependencies when executing command.
+  --merge-vars               Merge variables from successive --vars and var
+                             files.
+  --help                     Show this message and exit.
 
 Commands:
   create         Creates a stack or a change set.
@@ -269,13 +257,28 @@ plan.launch()
 ```
 
 Full API reference documentation can be found in the
-[Documentation](https://sceptre.cloudreach.com/)
+[Documentation](https://docs.sceptre-project.org/)
 
 ## Tutorial and Documentation
 
-- [Get Started](https://sceptre.cloudreach.com/latest/docs/get_started.html)
-- [Documentation](https://sceptre.cloudreach.com/)
+- [Get Started](https://docs.sceptre-project.org/latest/docs/get_started.html)
+- [Documentation](https://docs.sceptre-project.org/)
+
+## Communication
+
+Sceptre community discussions happen in the #sceptre chanel in the
+[og-aws Slack](https://github.com/open-guides/og-aws).  To join click
+on <http://slackhatesthe.cloud/> to create an account and join the
+#sceptre channel.
 
 ## Contributing
 
 See our [Contributing Guide](CONTRIBUTING.md)
+
+## Sponsors
+
+[![Sage Bionetworks](sponsors/sage_bionetworks_logo.png "Sage Bionetworks")](https://sagebionetworks.org)
+
+[![GoDaddy](sponsors/godaddy_logo.png "GoDaddy")](https://www.godaddy.com)
+
+[![Cloudreach](sponsors/cloudreach_logo.png "Cloudreach")](https://www.cloudreach.com)
