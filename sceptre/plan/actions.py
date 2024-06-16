@@ -721,13 +721,13 @@ class StackActions:
                     raise InvalidParameterError(
                         "'use_previous_value' must be a boolean"
                     )
-                if (create or not use_previous_value) and initial_value is None:
-                    raise InvalidParameterError(
-                        "'initial_value' is required when creating a new "
-                        "stack or when 'use_previous_value' is false"
-                    )
                 if create or not use_previous_value:
-                    if isinstance(initial_value, list):
+                    if initial_value is None:
+                        raise InvalidParameterError(
+                            "'initial_value' is required when creating a new "
+                            "stack or when 'use_previous_value' is false"
+                        )
+                    elif isinstance(initial_value, list):
                         formatted_parameter["ParameterValue"] = ",".join(initial_value)
                     else:
                         formatted_parameter["ParameterValue"] = value.get(
