@@ -699,6 +699,9 @@ class StackActions:
 
         :param parameters: A dictionary of parameters.
         :type parameters: dict
+        :param create: Flags if this is a stack create or update operation.
+        :type parameters: bool
+
         :returns: A list of the formatted parameters.
         :rtype: list
         """
@@ -706,7 +709,9 @@ class StackActions:
         for name, value in parameters.items():
             if value is None:
                 continue
+
             formatted_parameter = dict(ParameterKey=name)
+
             if isinstance(value, list):
                 formatted_parameter["ParameterValue"] = ",".join(value)
             elif isinstance(value, dict):
@@ -716,14 +721,12 @@ class StackActions:
                     raise InvalidParameterError(
                         "'use_previous_value' must be a boolean"
                     )
-                if (
-                    create is True or use_previous_value is False
-                ) and initial_value is None:
+                if (create or not use_previous_value) and initial_value is None:
                     raise InvalidParameterError(
                         "'initial_value' is required when creating a new "
                         "stack or when 'use_previous_value' is false"
                     )
-                if create is True or use_previous_value is False:
+                if create or not use_previous_value:
                     if isinstance(initial_value, list):
                         formatted_parameter["ParameterValue"] = ",".join(initial_value)
                     else:
@@ -734,6 +737,7 @@ class StackActions:
                     formatted_parameter["UsePreviousValue"] = use_previous_value
             else:
                 formatted_parameter["ParameterValue"] = value
+
             formatted_parameters.append(formatted_parameter)
 
         return formatted_parameters
