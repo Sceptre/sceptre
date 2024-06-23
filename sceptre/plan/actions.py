@@ -925,18 +925,17 @@ class StackActions:
         ] and cs_exec_status in ["UNAVAILABLE", "AVAILABLE"]:
             return StackChangeSetStatus.PENDING
         elif (
-                cs_status == "FAILED" and
-                cs_reason is not None and
-                self.change_set_creation_failed_due_to_no_changes(cs_reason)
+            cs_status == "FAILED"
+            and cs_reason is not None
+            and self.change_set_creation_failed_due_to_no_changes(cs_reason)
         ):
             return StackChangeSetStatus.NO_CHANGES
-        elif (
-                cs_status in ["DELETE_COMPLETE", "FAILED"] or
-                cs_exec_status in [
-                    "EXECUTE_IN_PROGRESS", "EXECUTE_COMPLETE",
-                    "EXECUTE_FAILED", "OBSOLETE"
-                ]
-        ):
+        elif cs_status in ["DELETE_COMPLETE", "FAILED"] or cs_exec_status in [
+            "EXECUTE_IN_PROGRESS",
+            "EXECUTE_COMPLETE",
+            "EXECUTE_FAILED",
+            "OBSOLETE",
+        ]:
             return StackChangeSetStatus.DEFUNCT
         else:  # pragma: no cover
             raise Exception("This else should not be reachable.")

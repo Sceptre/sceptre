@@ -515,7 +515,8 @@ class TestCli:
         assert result.exit_code == exit_code
 
     @pytest.mark.parametrize(
-        "change_set_status,yes_flag,exit_code,verbose_flag", [
+        "change_set_status,yes_flag,exit_code,verbose_flag",
+        [
             (StackChangeSetStatus.READY, True, 0, True),
             (StackChangeSetStatus.READY, True, 0, False),
             (StackChangeSetStatus.READY, False, 0, True),
@@ -528,9 +529,11 @@ class TestCli:
             (StackChangeSetStatus.DEFUNCT, False, 1, False),
             (StackChangeSetStatus.DEFUNCT, True, 1, False),
             (StackChangeSetStatus.DEFUNCT, False, 1, True),
-        ]
+        ],
     )
-    def test_update_with_change_set(self, change_set_status, yes_flag, exit_code, verbose_flag):
+    def test_update_with_change_set(
+        self, change_set_status, yes_flag, exit_code, verbose_flag
+    ):
         create_command = self.mock_stack_actions.create_change_set
         wait_command = self.mock_stack_actions.wait_for_cs_completion
         execute_command = self.mock_stack_actions.execute_change_set
@@ -556,10 +559,10 @@ class TestCli:
                         "Replacement": "Replacement",
                         "ResourceType": "ResourceType",
                         "Scope": "Scope",
-                        "VerboseProperty": "VerboseProperty"
+                        "VerboseProperty": "VerboseProperty",
                     }
                 }
-            ]
+            ],
         }
 
         if not verbose_flag:
@@ -581,14 +584,14 @@ class TestCli:
         result = self.runner.invoke(cli, **kwargs)
 
         change_set_name = create_command.call_args[0][0]
-        assert 'change-set' in change_set_name
+        assert "change-set" in change_set_name
 
-        assert wait_command.called_with(change_set_name)
-        assert delete_command.called_with(change_set_name)
+        wait_command.assert_called_once_with(change_set_name)
+        delete_command.assert_called_once_with(change_set_name)
 
         if change_set_status == StackChangeSetStatus.READY:
-            assert execute_command.called_with(change_set_name)
-            assert describe_command.called_with(change_set_name)
+            execute_command.assert_called_once_with(change_set_name)
+            describe_command.assert_called_once_with(change_set_name)
             output = result.output.splitlines()[0]
             assert yaml.safe_load(output) == response
 
@@ -601,7 +604,8 @@ class TestCli:
         assert result.exit_code == exit_code
 
     @pytest.mark.parametrize(
-        "command, ignore_dependencies", [
+        "command, ignore_dependencies",
+        [
             ("create", True),
             ("create", False),
             ("delete", True),

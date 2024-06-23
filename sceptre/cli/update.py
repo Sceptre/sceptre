@@ -66,7 +66,10 @@ def update_command(
 
             for status in list(statuses.values()):
                 # Exit if change set fails to create
-                if status not in (StackChangeSetStatus.READY, StackChangeSetStatus.NO_CHANGES):
+                if status not in (
+                    StackChangeSetStatus.READY,
+                    StackChangeSetStatus.NO_CHANGES,
+                ):
                     write("Failed to create change set", context.output_format)
                     exit(1)
 

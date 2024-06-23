@@ -1169,12 +1169,10 @@ class TestStackActions(object):
         mock_describe_change_set.return_value = {
             "Status": "FAILED",
             "StatusReason": "The submitted information didn't contain changes. "
-                            "Submit different information to create a change set.",
-            "ExecutionStatus": "UNAVAILABLE"
+            "Submit different information to create a change set.",
+            "ExecutionStatus": "UNAVAILABLE",
         }
-        response = self.actions._get_cs_status(
-            sentinel.change_set_name
-        )
+        response = self.actions._get_cs_status(sentinel.change_set_name)
         assert response == scss.NO_CHANGES
 
         for status in return_values["Status"]:
