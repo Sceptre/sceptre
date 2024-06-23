@@ -212,7 +212,11 @@ class StackActions:
 
         if existing_status == "PENDING":
             status = self.create()
-        elif existing_status in ["CREATE_FAILED", "ROLLBACK_COMPLETE"]:
+        elif existing_status in [
+            "CREATE_FAILED",
+            "ROLLBACK_COMPLETE",
+            "REVIEW_IN_PROGRESS",
+        ]:
             self.delete()
             status = self.create()
         elif existing_status.endswith("COMPLETE"):
@@ -303,16 +307,11 @@ class StackActions:
         :returns: A Stack description.
         :rtype: dict
         """
-        try:
-            return self.connection_manager.call(
-                service="cloudformation",
-                command="describe_stacks",
-                kwargs={"StackName": self.stack.external_name},
-            )
-        except botocore.exceptions.ClientError as e:
-            if e.response["Error"]["Message"].endswith("does not exist"):
-                return
-            raise
+        return self.connection_manager.call(
+            service="cloudformation",
+            command="describe_stacks",
+            kwargs={"StackName": self.stack.external_name},
+        )
 
     def describe_events(self):
         """
@@ -364,15 +363,11 @@ class StackActions:
         """
         Returns the Stack's outputs.
 
-        :returns: The Stack's outputs.
+        :returns: The stack's outputs.
         :rtype: list
         """
         self.logger.debug("%s - Describing stack outputs", self.stack.name)
-
-        try:
-            response = self._describe()
-        except botocore.exceptions.ClientError:
-            return []
+        response = self.describe()
 
         return {self.stack.name: response["Stacks"][0].get("Outputs", [])}
 
@@ -440,6 +435,21 @@ class StackActions:
         :param change_set_name: The name of the Change Set.
         :type change_set_name: str
         """
+        try:
+            existing_status = self._get_status()
+        except StackDoesNotExistError:
+            existing_status = "PENDING"
+
+        self.logger.info(
+            "%s - Stack is in the %s state", self.stack.name, existing_status
+        )
+
+        change_set_type = (
+            "CREATE"
+            if existing_status in ["PENDING", "REVIEW_IN_PROGRESS"]
+            else "UPDATE"
+        )
+
         create_change_set_kwargs = {
             "StackName": self.stack.external_name,
             "Parameters": self._format_parameters(self.stack.parameters),
@@ -449,6 +459,7 @@ class StackActions:
                 "CAPABILITY_AUTO_EXPAND",
             ],
             "ChangeSetName": change_set_name,
+            "ChangeSetType": change_set_type,
             "NotificationARNs": self.stack.notifications,
             "Tags": [
                 {"Key": str(k), "Value": str(v)} for k, v in self.stack.tags.items()
@@ -784,16 +795,9 @@ class StackActions:
 
         return status
 
-    def _describe(self):
-        return self.connection_manager.call(
-            service="cloudformation",
-            command="describe_stacks",
-            kwargs={"StackName": self.stack.external_name},
-        )
-
     def _get_status(self):
         try:
-            status = self._describe()["Stacks"][0]["StackStatus"]
+            status = self.describe()["Stacks"][0]["StackStatus"]
         except botocore.exceptions.ClientError as exp:
             if exp.response["Error"]["Message"].endswith("does not exist"):
                 raise StackDoesNotExistError(exp.response["Error"]["Message"])
@@ -889,6 +893,7 @@ class StackActions:
         cs_description = self.describe_change_set(change_set_name)
 
         cs_status = cs_description["Status"]
+        cs_reason = cs_description.get("StatusReason")
         cs_exec_status = cs_description["ExecutionStatus"]
         possible_statuses = [
             "CREATE_PENDING",
@@ -923,6 +928,12 @@ class StackActions:
             "CREATE_COMPLETE",
         ] and cs_exec_status in ["UNAVAILABLE", "AVAILABLE"]:
             return StackChangeSetStatus.PENDING
+        elif (
+            cs_status == "FAILED"
+            and cs_reason is not None
+            and self.change_set_creation_failed_due_to_no_changes(cs_reason)
+        ):
+            return StackChangeSetStatus.NO_CHANGES
         elif cs_status in ["DELETE_COMPLETE", "FAILED"] or cs_exec_status in [
             "EXECUTE_IN_PROGRESS",
             "EXECUTE_COMPLETE",

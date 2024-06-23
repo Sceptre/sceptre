@@ -281,6 +281,17 @@ class Stack:
     ) -> Dict[str, Union[str, List[Union[str, Resolver]], Resolver]]:
         """Ensure CloudFormation parameters are of valid types"""
 
+        def cast_value(value: Any) -> Union[str, List[Union[str, Resolver]], Resolver]:
+            if isinstance(value, bool):
+                return "true" if value else "false"
+            elif isinstance(value, (int, float)):
+                return str(value)
+            elif isinstance(value, list):
+                return [cast_value(item) for item in value]
+            elif isinstance(value, Resolver):
+                return value
+            return value
+
         def is_valid(value: Any) -> bool:
             return (
                 isinstance(value, str)
@@ -294,11 +305,13 @@ class Stack:
                 or isinstance(value, Resolver)
             )
 
-        if not all(is_valid(value) for value in parameters.values()):
+        casted_parameters = {k: cast_value(v) for k, v in parameters.items()}
+
+        if not all(is_valid(value) for value in casted_parameters.values()):
             raise InvalidConfigFileError(
-                f"{self.name}: Values for parameters must be strings, lists or resolvers, got {parameters}"
+                f"{self.name}: Values for parameters must be strings, lists or resolvers, got {casted_parameters}"
             )
-        return parameters
+        return casted_parameters
 
     def __repr__(self):
         return (

@@ -20,6 +20,8 @@ from sceptre.exceptions import SceptreException
 from sceptre.plan.actions import StackActions
 from sceptre.stack import Stack
 
+from botocore.exceptions import ClientError
+
 
 class ImplementedStackDiffer(StackDiffer):
     def __init__(self, command_capturer: Mock):
@@ -224,14 +226,22 @@ class TestStackDiffer:
         assert diff.is_deployed is True
 
     def test_diff__deployed_stack_does_not_exist__returns_is_deployed_as_false(self):
-        self.actions.describe.return_value = self.actions.describe.side_effect = None
+        self.actions.describe.side_effect = ClientError(
+            {"Error": {"Code": "Whatevs", "Message": "Stack does not exist"}},
+            "DescribeStacks",
+        )
+        self.actions.describe.return_value = None
         diff = self.differ.diff(self.actions)
         assert diff.is_deployed is False
 
     def test_diff__deployed_stack_does_not_exist__compares_none_to_generated_config(
         self,
     ):
-        self.actions.describe.return_value = self.actions.describe.side_effect = None
+        self.actions.describe.side_effect = ClientError(
+            {"Error": {"Code": "Whatevs", "Message": "Stack does not exist"}},
+            "DescribeStacks",
+        )
+        self.actions.describe.return_value = None
         self.differ.diff(self.actions)
 
         self.command_capturer.compare_stack_configurations.assert_called_with(

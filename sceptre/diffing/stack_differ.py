@@ -23,6 +23,8 @@ from sceptre.exceptions import SceptreException
 from sceptre.plan.actions import StackActions
 from sceptre.stack import Stack
 
+from botocore.exceptions import ClientError
+
 DiffType = TypeVar("DiffType")
 
 logger = logging.getLogger(__name__)
@@ -192,10 +194,12 @@ class StackDiffer(Generic[DiffType]):
     def _create_deployed_stack_config(
         self, stack_actions: StackActions
     ) -> Optional[StackConfiguration]:
-        description = stack_actions.describe()
-        if description is None:
+        try:
+            description = stack_actions.describe()
+        except ClientError as err:
             # This means the stack has not been deployed yet
-            return None
+            if err.response["Error"]["Message"].endswith("does not exist"):
+                return None
 
         stacks = description["Stacks"]
         for stack in stacks:
