@@ -64,7 +64,7 @@ def update_command(
 
             at_least_one_ready = False
 
-            for status in list(statuses.values()):
+            for status in statuses.values():
                 # Exit if change set fails to create
                 if status not in (
                     StackChangeSetStatus.READY,
