@@ -22,7 +22,7 @@ Resources:
     Properties:
       CidrBlock:
         Ref: CidrBlock
-      EnableDnsHostnames: 'true'
-      EnableDnsSupport: 'true'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
       InstanceTenancy: default
     Type: AWS::EC2::VPC

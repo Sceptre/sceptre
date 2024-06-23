@@ -107,7 +107,7 @@ Add the following configuration to ``config/dev/vpc.yaml``:
 .. code-block:: yaml
 
    template:
-     path: templates/vpc.yaml
+     path: vpc.yaml
      type: file
    parameters:
      CidrBlock: 10.0.0.0/16

@@ -21,10 +21,10 @@ def list_join(a, b):
     :rtype: list
     """
     if a and not isinstance(a, list):
-        raise TypeError('{} is not a list'.format(a))
+        raise TypeError("{} is not a list".format(a))
 
     if b and not isinstance(b, list):
-        raise TypeError('{} is not a list'.format(b))
+        raise TypeError("{} is not a list".format(b))
 
     if a is None:
         return deepcopy(b)
@@ -47,9 +47,9 @@ def dict_merge(a, b):
     :rtype: dict
     """
     if a and not isinstance(a, dict):
-        raise TypeError('{} is not a dict'.format(a))
+        raise TypeError("{} is not a dict".format(a))
     if b and not isinstance(b, dict):
-        raise TypeError('{} is not a dict'.format(b))
+        raise TypeError("{} is not a dict".format(b))
 
     if a is None:
         return deepcopy(b)
@@ -71,3 +71,26 @@ def child_wins(a, b):
     :returns: b
     """
     return b
+
+
+def child_or_parent(a, b):
+    """
+    Returns the second arg if it is not empty, else the first.
+
+    :param a: An object.
+    :type a: object
+    :param b: An object.
+    :type b: object
+    :returns: b
+    """
+    return b or a
+
+
+LIST_STRATEGIES = {
+    "merge": list_join,
+    "override": child_wins,
+}
+DICT_STRATEGIES = {
+    "merge": dict_merge,
+    "override": child_wins,
+}

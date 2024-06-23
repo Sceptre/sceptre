@@ -1,1 +1,2 @@
-template_path: sam_updated_template.yaml
+template:
+  path: sam_updated_template.yaml

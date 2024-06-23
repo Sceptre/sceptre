@@ -21,10 +21,8 @@ class S3(TemplateHandler):
     def schema(self):
         return {
             "type": "object",
-            "properties": {
-                "path": {"type": "string"}
-            },
-            "required": ["path"]
+            "properties": {"path": {"type": "string"}},
+            "required": ["path"],
         }
 
     def handle(self):
@@ -37,12 +35,15 @@ class S3(TemplateHandler):
         standard_template_suffix = [".json", ".yaml", ".template"]
         jinja_template_suffix = [".j2"]
         python_template_suffix = [".py"]
-        supported_suffix = standard_template_suffix + jinja_template_suffix + python_template_suffix
+        supported_suffix = (
+            standard_template_suffix + jinja_template_suffix + python_template_suffix
+        )
 
         if path.suffix not in supported_suffix:
             raise UnsupportedTemplateFileTypeError(
                 "Template has file extension %s. Only %s are supported.",
-                path.suffix, ",".join(supported_suffix)
+                path.suffix,
+                ",".join(supported_suffix),
             )
 
         try:
@@ -54,13 +55,14 @@ class S3(TemplateHandler):
                     f.seek(0)
                     f.read()
                     if path.suffix in jinja_template_suffix:
-                        template = helper.render_jinja_template(f.name,
-                                                                {"sceptre_user_data": self.sceptre_user_data},
-                                                                self.stack_group_config.get("j2_environment", {}))
+                        template = helper.render_jinja_template(
+                            f.name,
+                            {"sceptre_user_data": self.sceptre_user_data},
+                            self.stack_group_config.get("j2_environment", {}),
+                        )
                     elif path.suffix in python_template_suffix:
                         template = helper.call_sceptre_handler(
-                            f.name,
-                            self.sceptre_user_data
+                            f.name, self.sceptre_user_data
                         )
 
         except Exception as e:
@@ -86,12 +88,9 @@ class S3(TemplateHandler):
             response = self.connection_manager.call(
                 service="s3",
                 command="get_object",
-                kwargs={
-                    "Bucket": bucket,
-                    "Key": key
-                }
+                kwargs={"Bucket": bucket, "Key": key},
             )
             return response["Body"].read()
         except Exception as e:
-            self.logger.fatal(e)
+            self.logger.critical(e)
             raise e

@@ -1,30 +1,31 @@
 Hooks
 =====
 
-Hooks allows the ability for custom commands to be run when Sceptre actions
-occur.
+Hooks allows the ability for actions to be run when Sceptre actions occur.
 
 A hook is executed at a particular hook point when Sceptre is run.
 
-If required, users can create their own ``hooks``, as described in the section
-`Custom Hooks`_.
+If required, users can create their own ``hooks``, as described in the section `Custom Hooks`_.
 
 Hook points
 -----------
 
-``before_generate`` or ``after_generate`` - run hook before or after generating stack template.
-
-``before_create`` or ``after_create`` - run hook before or after Stack creation.
-
-``before_update`` or ``after_update`` - run hook before or after Stack update.
-
-``before_delete`` or ``after_delete`` - run hook before or after Stack deletion.
-
-``before_launch`` or ``after_launch`` - run hook before or after Stack launch.
-
-``before_validate`` or ``after_validate`` - run hook before or after Stack validation.
-
-``before_create_change_set`` or ``after_create_change_set`` - run hook before or after create change set.
+- ``before_create``/``after_create`` - Runs before/after Stack creation.
+- ``before_update``/``after_update`` - Runs before/after Stack update.
+- ``before_delete``/``after_delete`` - Runs before/after Stack deletion.
+- ``before_launch``/``after_launch`` - Runs before/after Stack launch.
+- ``before_create_change_set``/``after_create_change_set`` - Runs before/after create change set.
+- ``before_validate``/``after_validate`` - Runs before/after Stack validation.
+- ``before_diff``/``after_diff`` - Runs before/after diffing the deployed stack with the local
+  configuration.
+- ``before_drift_detect``/``after_drift_detect`` - Runs before/after detecting drift on the stack.
+- ``before_drift_show``/``after_drift_show`` - Runs before/after showing detected drift on the stack.
+- ``before_dump_config``/``after_dump_config`` - Runs before/after dumpint the Stack Config.
+- ``before_dump_template``/``after_dump_template`` - Runs before/after rendering the stack template.
+  This hook point is aliased to ``before/generate``/``after_generate``. This hook point will also
+  be triggered when diffing, since the template needs to be generated to diff the template.
+- ``before_generate``/``after_generate`` - Runs before/after rendering the stack template. This hook
+  point is aliased to ``before_dump_template``/``after_dump_template``.
 
 Syntax:
 
@@ -43,23 +44,105 @@ Available Hooks
 cmd
 ~~~
 
-Executes the argument string in the shell as a Python subprocess.
-
-For more information about how this works, see the `subprocess documentation`_
+Executes a command through the shell.
 
 Syntax:
 
 .. code-block:: yaml
 
+   # Default shell.
    <hook_point>:
      - !cmd <shell_command>
 
-Example:
+   # Another shell.
+   <hook_point>:
+     - !cmd
+         run: <shell_command>
+         shell: <shell_name_or_path>
+
+Pass the command string as the only argument to use the default shell.
+
+On POSIX the default shell is ``sh``. On Windows it's usually ``cmd.exe``, but ``%ComSpec%`` may
+override that.
+
+Write the command string as you would type it at the shell prompt. This includes quotes and
+backslashes to escape filenames with spaces in them. To minimize escaping, you can use YAML plain
+strings like the following examples.
 
 .. code-block:: yaml
 
-   before_create:
-     - !cmd "echo hello"
+   hooks:
+     before_update:
+       - !cmd echo "Hello, world!"
+
+A successful command prints its standard output messages between status messages from Sceptre.
+
+.. code-block::
+
+   [2023-09-03 01:06:28] - test - Launching Stack
+   [2023-09-03 01:06:29] - test - Stack is in the CREATE_COMPLETE state
+   Hello, world!
+   [2023-09-03 01:06:31] - test - Updating Stack
+   [2023-09-03 01:06:31] - test - No updates to perform.
+
+Pass named arguments to use a different shell. Here the command string is called ``run`` and the
+shell executable is called ``shell``.
+
+Write the executable name as you would type it at an interactive prompt to start the shell. For
+example, if Bash is in the system path, you can write ``bash``; otherwise, you need to write the
+absolute path such as ``/bin/bash``.
+
+.. code-block:: yaml
+
+   hooks:
+     before_update:
+       - !cmd
+           run: echo "Hello, $0!"
+           shell: bash
+
+.. code-block:: text
+
+   [2023-09-04 00:29:42] - test - Launching Stack
+   [2023-09-04 00:29:43] - test - Stack is in the CREATE_COMPLETE state
+   Hello, bash!
+   [2023-09-04 00:29:43] - test - Updating Stack
+   [2023-09-04 00:29:43] - test - No updates to perform.
+
+You can use PowerShell in the same way.
+
+.. code-block:: yaml
+
+   hooks:
+     before_update:
+       - !cmd
+           run: Write-Output "Hello, Posh!"
+           shell: pwsh
+
+.. code-block:: text
+
+   [2023-09-04 00:44:32] - test - Launching Stack
+   [2023-09-04 00:44:33] - test - Stack is in the CREATE_COMPLETE state
+   Hello, Posh!
+   [2023-09-04 00:44:34] - test - Updating Stack
+   [2023-09-04 00:44:34] - test - No updates to perform.
+
+If the shell command fails, so does Sceptre. Its output sits between Sceptre's status
+messages and a Python traceback.
+
+.. code-block:: yaml
+
+   hooks:
+     before_update:
+       - !cmd missing_command
+
+.. code-block:: text
+
+   [2023-09-04 00:46:25] - test - Launching Stack
+   [2023-09-04 00:46:26] - test - Stack is in the CREATE_COMPLETE state
+   /bin/sh: 1: missing_command: not found
+   Traceback (most recent call last):
+   <snip>
+   subprocess.CalledProcessError: Command 'missing_command' returned non-zero exit status 127.
 
 asg_scaling_processes
 ~~~~~~~~~~~~~~~~~~~~~
@@ -207,7 +290,9 @@ This hook can be used in a Stack config file with the following syntax:
 
 hook arguments
 ^^^^^^^^^^^^^^
-Hook arguments can be a simple string or a complex data structure.
+Hook arguments can be a simple string or a complex data structure. You can even use resolvers in
+hook arguments, so long as they're nested in a list or a dict.
+
 Assume a Sceptre `copy` hook that calls the `cp command`_:
 
 .. code-block:: yaml
@@ -224,10 +309,16 @@ Assume a Sceptre `copy` hook that calls the `cp command`_:
        - !copy
            options: "-r"
            source: "from_dir"
-           destination: "to_dir"
+           destination: !stack_output my/other/stack::CopyDestination
 
 .. _Custom Hooks: #custom-hooks
 .. _subprocess documentation: https://docs.python.org/3/library/subprocess.html
 .. _documentation: http://docs.aws.amazon.com/autoscaling/latest/userguide/as-suspend-resume-processes.html
 .. _this is great place to start: https://docs.python.org/3/distributing/
 .. _cp command: http://man7.org/linux/man-pages/man1/cp.1.html
+
+Calling AWS services in your custom hook
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For details on calling AWS services or invoking AWS-related third party tools in your hooks, see
+:ref:`using_connection_manager`

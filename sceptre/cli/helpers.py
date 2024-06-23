@@ -1,7 +1,11 @@
 import logging
 import sys
+
 from itertools import cycle
 from functools import partial, wraps
+
+from typing import Any, Optional
+from pathlib import Path
 
 import json
 import click
@@ -12,9 +16,12 @@ from boto3.exceptions import Boto3Error
 from botocore.exceptions import BotoCoreError, ClientError
 from jinja2.exceptions import TemplateError
 
+from sceptre.helpers import logging_level
 from sceptre.exceptions import SceptreException
 from sceptre.stack_status import StackStatus
 from sceptre.stack_status_colourer import StackStatusColourer
+
+logger = logging.getLogger(__name__)
 
 
 def catch_exceptions(func):
@@ -27,9 +34,6 @@ def catch_exceptions(func):
         simplified.
     :returns: The decorated function.
     """
-    def logging_level():
-        logger = logging.getLogger(__name__)
-        return logger.getEffectiveLevel()
 
     @wraps(func)
     def decorated(*args, **kwargs):
@@ -40,8 +44,13 @@ def catch_exceptions(func):
         """
         try:
             return func(*args, **kwargs)
-        except (SceptreException, BotoCoreError, ClientError, Boto3Error,
-                TemplateError) as error:
+        except (
+            SceptreException,
+            BotoCoreError,
+            ClientError,
+            Boto3Error,
+            TemplateError,
+        ) as error:
             if logging_level() == logging.DEBUG:
                 raise
             write(error)
@@ -50,32 +59,31 @@ def catch_exceptions(func):
     return decorated
 
 
-def confirmation(
-    command, ignore, command_path, change_set=None
-):
+def confirmation(command, ignore, command_path, change_set=None):
     if not ignore:
         msg = "Do you want to {} ".format(command)
         if change_set:
-            msg = msg + "change set '{0}' for '{1}'".format(
-                change_set, command_path
-            )
+            msg = msg + "change set '{0}' for '{1}'".format(change_set, command_path)
         else:
             msg = msg + "'{0}'".format(command_path)
         click.confirm(msg, abort=True)
 
 
-def write(var, output_format="json", no_colour=True):
+def write(
+    var: Any,
+    output_format: str = "json",
+    no_colour: bool = True,
+    file_path: Optional[Path] = None,
+) -> None:
     """
     Writes ``var`` to stdout. If output_format is set to "json" or "yaml",
     write ``var`` as a JSON or YAML string.
 
     :param var: The object to print
-    :type var: object
     :param output_format: The format to print the output as. Allowed values: \
     "text", "json", "yaml"
-    :type output_format: str
     :param no_colour: Whether to colour stack statuses
-    :type no_colour: bool
+    :param file_path: Optional path to a file to save the output
     """
     output = var
 
@@ -85,6 +93,16 @@ def write(var, output_format="json", no_colour=True):
         output = _generate_yaml(var)
     if output_format == "text":
         output = _generate_text(var)
+
+    if file_path:
+        dir_path = file_path.parent
+        dir_path.mkdir(parents=True, exist_ok=True)
+
+        with open(file_path, "w") as f:
+            f.write(output)
+
+        return
+
     if not no_colour:
         stack_status_colourer = StackStatusColourer()
         output = stack_status_colourer.colour(str(output))
@@ -113,27 +131,27 @@ def _generate_json(stream):
 
 
 def _generate_yaml(stream):
-    if isinstance(stream, list):
+    kwargs = {"default_flow_style": False, "explicit_start": True}
+
+    if isinstance(stream, (list, set)):
         items = []
         for item in stream:
             try:
                 if isinstance(item, dict):
-                    items.append(
-                        yaml.safe_dump(item, default_flow_style=False, explicit_start=True)
-                    )
+                    items.append(yaml.safe_dump(item, **kwargs))
                 else:
                     items.append(
-                        yaml.safe_dump(
-                            yaml.load(item, Loader=CfnYamlLoader),
-                            default_flow_style=False, explicit_start=True
-                        )
+                        yaml.safe_dump(yaml.load(item, Loader=CfnYamlLoader), **kwargs)
                     )
             except Exception:
                 print("An error occured whilst writing the YAML object.")
         return yaml.safe_dump(
-            [yaml.load(item, Loader=CfnYamlLoader) for item in items],
-            default_flow_style=False, explicit_start=True
+            [yaml.load(item, Loader=CfnYamlLoader) for item in items], **kwargs
         )
+
+    elif isinstance(stream, dict):
+        return yaml.dump(stream, **kwargs)
+
     else:
         try:
             return yaml.safe_loads(stream)
@@ -164,9 +182,9 @@ def _generate_text(stream):
         col_widths = [max(len(c) for c in b) for b in zip(*items)]
         rows = []
         for row in items:
-            rows.append("".join(
-                [field for field, width in zip(row, cycle(col_widths))]
-            ))
+            rows.append(
+                "".join([field for field, width in zip(row, cycle(col_widths))])
+            )
         return "\n".join(rows)
     return stream
 
@@ -209,7 +227,7 @@ def setup_vars(var_file, var, merge_vars, debug, no_colour):
 
     if var_file:
         for fh in var_file:
-            parsed = yaml.safe_load(fh.read())
+            parsed = yaml.safe_load(fh.read()) or {}
 
             if merge_vars:
                 return_value = _deep_merge(parsed, return_value)
@@ -226,10 +244,12 @@ def setup_vars(var_file, var, merge_vars, debug, no_colour):
 
                 if merge_vars:
                     message += "{0}. Using values from: {1}.".format(
-                        ", ".join(overloaded_keys), fh.name)
+                        ", ".join(overloaded_keys), fh.name
+                    )
                 else:
                     message += "{0}. Performing deep merge, {1} wins.".format(
-                        ", ".join(overloaded_keys), fh.name)
+                        ", ".join(overloaded_keys), fh.name
+                    )
 
                 logger.debug(message)
 
@@ -256,9 +276,7 @@ def _deep_merge(source, destination):
 
 
 def stack_status_exit_code(statuses):
-    if not all(
-            status == StackStatus.COMPLETE
-            for status in statuses):
+    if not all(status == StackStatus.COMPLETE for status in statuses):
         return 1
     else:
         return 0
@@ -299,8 +317,7 @@ def setup_logging(debug, no_colour):
     formatter_class = logging.Formatter if no_colour else ColouredFormatter
 
     formatter = formatter_class(
-        fmt="[%(asctime)s] - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
+        fmt="[%(asctime)s] - %(message)s", datefmt="%Y-%m-%d %H:%M:%S"
     )
 
     log_handler = logging.StreamHandler()
@@ -326,7 +343,7 @@ def simplify_change_set_description(response):
         "ExecutionStatus",
         "StackName",
         "Status",
-        "StatusReason"
+        "StatusReason",
     ]
     desired_resource_changes = [
         "Action",
@@ -334,12 +351,10 @@ def simplify_change_set_description(response):
         "PhysicalResourceId",
         "Replacement",
         "ResourceType",
-        "Scope"
+        "Scope",
     ]
     formatted_response = {
-        k: v
-        for k, v in response.items()
-        if k in desired_response_items
+        k: v for k, v in response.items() if k in desired_response_items
     }
     formatted_response["Changes"] = [
         {
@@ -352,6 +367,21 @@ def simplify_change_set_description(response):
         for change in response["Changes"]
     ]
     return formatted_response
+
+
+def deserialize_json_properties(value):
+    if isinstance(value, str):
+        is_json = (value.startswith("{") and value.endswith("}")) or (
+            value.startswith("[") and value.endswith("]")
+        )
+        if is_json:
+            return json.loads(value)
+        return value
+    if isinstance(value, dict):
+        return {key: deserialize_json_properties(val) for key, val in value.items()}
+    if isinstance(value, list):
+        return [deserialize_json_properties(item) for item in value]
+    return value
 
 
 class ColouredFormatter(logging.Formatter):
@@ -394,39 +424,38 @@ class CustomJsonEncoder(json.JSONEncoder):
 
 
 CFN_FNS = [
-    'And',
-    'Base64',
-    'Cidr',
-    'Equals',
-    'FindInMap',
-    'GetAtt',
-    'GetAZs',
-    'If',
-    'ImportValue',
-    'Join',
-    'Not',
-    'Or',
-    'Select',
-    'Split',
-    'Sub',
-    'Transform',
+    "And",
+    "Base64",
+    "Cidr",
+    "Equals",
+    "FindInMap",
+    "GetAtt",
+    "GetAZs",
+    "If",
+    "ImportValue",
+    "Join",
+    "Not",
+    "Or",
+    "Select",
+    "Split",
+    "Sub",
+    "Transform",
 ]
 
 CFN_TAGS = [
-    'Condition',
-    'Ref',
+    "Condition",
+    "Ref",
 ]
 
 
 def _getatt_constructor(loader, node):
     if isinstance(node.value, six.text_type):
-        return node.value.split('.', 1)
+        return node.value.split(".", 1)
     elif isinstance(node.value, list):
         seq = loader.construct_sequence(node)
         for item in seq:
             if not isinstance(item, six.text_type):
-                raise ValueError(
-                    "Fn::GetAtt does not support complex datastructures")
+                raise ValueError("Fn::GetAtt does not support complex datastructures")
         return seq
     else:
         raise ValueError("Fn::GetAtt only supports string or list values")
@@ -434,11 +463,13 @@ def _getatt_constructor(loader, node):
 
 def _tag_constructor(loader, tag_suffix, node):
     if tag_suffix not in CFN_FNS and tag_suffix not in CFN_TAGS:
-        raise ValueError("Bad tag: !{tag_suffix}. Supported tags are: "
-                         "{supported_tags}".format(
-                             tag_suffix=tag_suffix,
-                             supported_tags=", ".join(sorted(CFN_TAGS + CFN_FNS))
-                         ))
+        raise ValueError(
+            "Bad tag: !{tag_suffix}. Supported tags are: "
+            "{supported_tags}".format(
+                tag_suffix=tag_suffix,
+                supported_tags=", ".join(sorted(CFN_TAGS + CFN_FNS)),
+            )
+        )
 
     if tag_suffix in CFN_FNS:
         tag_suffix = "Fn::{tag_suffix}".format(tag_suffix=tag_suffix)
@@ -446,8 +477,8 @@ def _tag_constructor(loader, tag_suffix, node):
     data = {}
     yield data
 
-    if tag_suffix == 'Fn::GetAtt':
-        constructor = partial(_getatt_constructor, (loader, ))
+    if tag_suffix == "Fn::GetAtt":
+        constructor = partial(_getatt_constructor, (loader,))
     elif isinstance(node, yaml.ScalarNode):
         constructor = loader.construct_scalar
     elif isinstance(node, yaml.SequenceNode):

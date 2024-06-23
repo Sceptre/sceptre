@@ -2,6 +2,7 @@ from uuid import uuid1
 
 import click
 
+from typing import Optional
 from sceptre.context import SceptreContext
 from sceptre.cli.helpers import catch_exceptions, confirmation
 from sceptre.cli.helpers import write, stack_status_exit_code
@@ -13,18 +14,20 @@ from sceptre.plan.plan import SceptrePlan
 @click.command(name="update", short_help="Update a stack.")
 @click.argument("path")
 @click.option(
-    "-c", "--change-set", is_flag=True,
-    help="Create a change set before updating."
+    "-c", "--change-set", is_flag=True, help="Create a change set before updating."
 )
+@click.option("-v", "--verbose", is_flag=True, help="Display verbose output.")
+@click.option("-y", "--yes", is_flag=True, help="Assume yes to all questions.")
 @click.option(
-    "-v", "--verbose", is_flag=True, help="Display verbose output."
-)
-@click.option(
-    "-y", "--yes", is_flag=True, help="Assume yes to all questions."
+    "--disable-rollback/--enable-rollback",
+    default=None,
+    help="Disable or enable the cloudformation automatic rollback",
 )
 @click.pass_context
 @catch_exceptions
-def update_command(ctx, path, change_set, verbose, yes):
+def update_command(
+    ctx, path, change_set, verbose, yes, disable_rollback: Optional[bool]
+):
     """
     Updates a stack for a given config PATH. Or perform an update via
     change-set when the change-set flag is set.
@@ -42,11 +45,12 @@ def update_command(ctx, path, change_set, verbose, yes):
 
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         output_format=ctx.obj.get("output_format"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
     )
 
     plan = SceptrePlan(context)

@@ -9,8 +9,10 @@ from sceptre.plan.plan import SceptrePlan
 @click.argument("path")
 @click.argument("policy-file", required=False)
 @click.option(
-    "-b", "--built-in", type=click.Choice(["deny-all", "allow-all"]),
-    help="Specify a built in stack policy."
+    "-b",
+    "--built-in",
+    type=click.Choice(["deny-all", "allow-all"]),
+    help="Specify a built in stack policy.",
 )
 @click.pass_context
 @catch_exceptions
@@ -28,16 +30,17 @@ def set_policy_command(ctx, path, policy_file, built_in):
     """
     context = SceptreContext(
         command_path=path,
+        command_params=ctx.params,
         project_path=ctx.obj.get("project_path"),
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies")
+        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
     )
     plan = SceptrePlan(context)
 
-    if built_in == 'deny-all':
+    if built_in == "deny-all":
         plan.lock()
-    elif built_in == 'allow-all':
+    elif built_in == "allow-all":
         plan.unlock()
     else:
         plan.set_policy(policy_file)

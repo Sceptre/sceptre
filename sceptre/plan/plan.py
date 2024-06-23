@@ -6,49 +6,60 @@ sceptre.plan.plan
 This module implements a SceptrePlan, which is responsible for holding all
 nessessary information for a command to execute.
 """
-from os import path, walk
-from typing import Dict
+import functools
+import itertools
 
-from sceptre.diffing.stack_differ import StackDiff
-from sceptre.exceptions import ConfigFileNotFoundError
+from os import path, walk
+from typing import Dict, List, Set, Callable, Iterable, Optional
+
 from sceptre.config.graph import StackGraph
 from sceptre.config.reader import ConfigReader
-from sceptre.plan.executor import SceptrePlanExecutor
+from sceptre.context import SceptreContext
+from sceptre.diffing.stack_differ import StackDiff
+from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.helpers import sceptreise_path
+from sceptre.plan.executor import SceptrePlanExecutor
 from sceptre.stack import Stack
 
 
-class SceptrePlan(object):
+def require_resolved(func) -> Callable:
+    @functools.wraps(func)
+    def wrapped(self: "SceptrePlan", *args, **kwargs):
+        if self.launch_order is None:
+            raise RuntimeError(f"You cannot call {func.__name__}() before resolve().")
+        return func(self, *args, **kwargs)
 
-    def __init__(self, context):
+    return wrapped
+
+
+class SceptrePlan(object):
+    def __init__(self, context: SceptreContext):
         """
         Intialises a SceptrePlan and generates the Stacks, StackGraph and
         launch order of required.
 
         :param context: A SceptreContext
-        :type sceptre.context.SceptreContext:
         """
         self.context = context
         self.command = None
         self.reverse = None
-        self.launch_order = None
+        self.launch_order: Optional[List[Set[Stack]]] = None
 
-        config_reader = ConfigReader(context)
-        all_stacks, command_stacks = config_reader.construct_stacks()
+        self.config_reader = ConfigReader(context)
+        all_stacks, command_stacks = self.config_reader.construct_stacks()
         self.graph = StackGraph(all_stacks)
         self.command_stacks = command_stacks
 
+    @require_resolved
     def _execute(self, *args):
         executor = SceptrePlanExecutor(self.command, self.launch_order)
         return executor.execute(*args)
 
-    def _generate_launch_order(self, reverse=False):
+    def _generate_launch_order(self, reverse=False) -> List[Set[Stack]]:
         if self.context.ignore_dependencies:
             return [self.command_stacks]
 
         graph = self.graph.filtered(self.command_stacks, reverse)
-        if self.context.ignore_dependencies:
-            return [self.command_stacks]
 
         launch_order = []
         while graph.graph:
@@ -63,11 +74,38 @@ class SceptrePlan(object):
 
         if not launch_order:
             raise ConfigFileNotFoundError(
-                "No stacks detected from the given path '{}'. Valid stack paths are: {}"
-                .format(sceptreise_path(self.context.command_path), self._valid_stack_paths())
+                "No stacks detected from the given path '{}'. Valid stack paths are: {}".format(
+                    sceptreise_path(self.context.command_path),
+                    self._valid_stack_paths(),
+                )
             )
 
         return launch_order
+
+    @require_resolved
+    def __iter__(self) -> Iterable[Stack]:
+        """Iterates the stacks in the launch_order"""
+        # We cast it to list so it's "frozen" in time, in case the launch order is modified
+        # while iterating.
+        yield from list(itertools.chain.from_iterable(self.launch_order))
+
+    @require_resolved
+    def remove_stack_from_plan(self, stack: Stack):
+        for batch in self.launch_order:
+            if stack in batch:
+                batch.remove(stack)
+                return
+
+    @require_resolved
+    def filter(self, predicate: Callable[[Stack], bool]):
+        """Filters the plan's resolved launch_order to remove specific stacks.
+
+        :param predicate: This callable should take a single Stack and return True if it should stay
+            in the launch_order or False if it should be filtered out.
+        """
+        for stack in self:
+            if not predicate(stack):
+                self.remove_stack_from_plan(stack)
 
     def resolve(self, command, reverse=False):
         if command == self.command and reverse == self.reverse:
@@ -209,7 +247,7 @@ class SceptrePlan(object):
 
         :returns: A dictionary of Stacks
         :rtype: dict
-       """
+        """
         self.resolve(command=self.continue_update_rollback.__name__)
         return self._execute(*args)
 
@@ -342,7 +380,8 @@ class SceptrePlan(object):
 
     def generate(self, *args):
         """
-        Returns a generated Template for a given Stack
+        Returns a generated Template for a given Stack. An alias for
+        dump_template for historical reasons.
 
         :returns: A dictionary of Stacks and their template body.
         :rtype: dict
@@ -352,7 +391,9 @@ class SceptrePlan(object):
 
     def _valid_stack_paths(self):
         return [
-            sceptreise_path(path.relpath(path.join(dirpath, f), self.context.config_path))
+            sceptreise_path(
+                path.relpath(path.join(dirpath, f), self.context.config_path)
+            )
             for dirpath, dirnames, files in walk(self.context.config_path)
             for f in files
             if not f.endswith(self.context.config_file)
@@ -375,4 +416,37 @@ class SceptrePlan(object):
         :returns: A dict where the keys are Stack objects and the values are StackDiffs.
         """
         self.resolve(command=self.diff.__name__)
+        return self._execute(*args)
+
+    def drift_detect(self, *args) -> Dict[Stack, str]:
+        """
+        Show drift detection status of a stack.
+
+        :returns: A list of detected drift against running stacks.
+        """
+        self.resolve(command=self.drift_detect.__name__)
+        return self._execute(*args)
+
+    def drift_show(self, *args) -> Dict[Stack, str]:
+        """
+        Show stack drift for a running stack.
+
+        :returns: A list of detected drift against running stacks.
+        """
+        self.resolve(command=self.drift_show.__name__)
+        return self._execute(*args)
+
+    def dump_config(self, *args):
+        """
+        Dump the config for a stack.
+        """
+        self.resolve(command=self.dump_config.__name__)
+        return self._execute(*args)
+
+    def dump_template(self, *args):
+        """
+        Dump the template for a stack. An alias
+        for generate for historical reasons.
+        """
+        self.resolve(command=self.dump_template.__name__)
         return self._execute(*args)
