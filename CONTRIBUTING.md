@@ -223,7 +223,7 @@ $ grep -r eu-west integration-tests
 Edit the files.
 
 ```bash
-$ AWS_DEFAULT_REGION=<your-preferred-default-region> poetry run behave integration-tests/features --junit --junit-directory build/behave
+$ AWS_PROFILE=<your-profile> AWS_DEFAULT_REGION=<your-preferred-default-region> poetry run behave integration-tests/features --junit --junit-directory build/behave
 ```
 
 #### run a specific feature
