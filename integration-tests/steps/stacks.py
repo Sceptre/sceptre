@@ -132,7 +132,7 @@ def step_impl(context, stack_name):
     )
     yaml_file = Path(sceptre_context.full_config_path()) / f"{stack_name}.yaml"
     with yaml_file.open(mode="r") as f:
-        loaded = yaml.load(f)
+        loaded = yaml.load(f, yaml.Loader)
 
     original_config = deepcopy(loaded)
     loaded["stack_tags"] = {"NewTag": "NewValue"}
@@ -360,12 +360,6 @@ def step_impl(context, stack_name, region_name, desired_status):
 @then('stack "{stack_name}" exists in "{desired_status}" state')
 def step_impl(context, stack_name, desired_status):
     full_name = get_cloudformation_stack_name(context, stack_name)
-    sceptre_context = SceptreContext(
-        command_path=stack_name + ".yaml", project_path=context.sceptre_dir
-    )
-
-    sceptre_plan = SceptrePlan(sceptre_context)
-    status = sceptre_plan.get_status()
     status = get_stack_status(context, full_name)
     assert status == desired_status
 

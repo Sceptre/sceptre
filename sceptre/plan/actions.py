@@ -12,15 +12,14 @@ import logging
 import time
 import typing
 import urllib
-from datetime import datetime, timedelta
-from os import path
-from typing import Dict, Optional, Tuple, Union
-
 import botocore
-from dateutil.tz import tzutc
 
-from sceptre.config.reader import ConfigReader
+from datetime import datetime, timedelta
+from dateutil.tz import tzutc
+from os import path
+
 from sceptre.connection_manager import ConnectionManager
+
 from sceptre.exceptions import (
     CannotUpdateFailedStackError,
     ProtectedStackError,
@@ -28,16 +27,18 @@ from sceptre.exceptions import (
     UnknownStackChangeSetStatusError,
     UnknownStackStatusError,
 )
-from sceptre.helpers import extract_datetime_from_aws_response_headers, normalise_path
-from sceptre.hooks import add_stack_hooks
+from sceptre.helpers import extract_datetime_from_aws_response_headers
+from sceptre.hooks import add_stack_hooks, add_stack_hooks_with_aliases
 from sceptre.stack import Stack
 from sceptre.stack_status import StackChangeSetStatus, StackStatus
+
+from typing import Dict, Optional, Tuple, Union
 
 if typing.TYPE_CHECKING:
     from sceptre.diffing.stack_differ import StackDiff, StackDiffer
 
 
-class StackActions(object):
+class StackActions:
     """
     StackActions stores the operations a Stack can take, such as creating or
     deleting the Stack.
@@ -54,8 +55,8 @@ class StackActions(object):
             self.stack.region,
             self.stack.profile,
             self.stack.external_name,
-            self.stack.iam_role,
-            self.stack.iam_role_session_duration,
+            self.stack.sceptre_role,
+            self.stack.sceptre_role_session_duration,
         )
 
     @add_stack_hooks
@@ -624,12 +625,12 @@ class StackActions(object):
 
         return new_summaries
 
-    @add_stack_hooks
     def generate(self):
         """
-        Returns the Template for the Stack
+        Returns the Template for the Stack. An alias for
+        dump_template for historical reasons.
         """
-        return self.stack.template.body
+        return self.dump_template()
 
     @add_stack_hooks
     def validate(self):
@@ -719,8 +720,8 @@ class StackActions(object):
         :returns: The a Role ARN
         :rtype: dict
         """
-        if self.stack.role_arn:
-            return {"RoleARN": self.stack.role_arn}
+        if self.stack.cloudformation_service_role:
+            return {"RoleARN": self.stack.cloudformation_service_role}
         else:
             return {}
 
@@ -839,17 +840,23 @@ class StackActions(object):
         events.reverse()
         new_events = [event for event in events if event["Timestamp"] > after_datetime]
         for event in new_events:
-            self.logger.info(
-                " ".join(
+            stack_event_status = [
+                self.stack.name,
+                event["LogicalResourceId"],
+                event["ResourceType"],
+                event["ResourceStatus"],
+                event.get("ResourceStatusReason", ""),
+            ]
+            if "HookStatus" in event:
+                stack_event_status.extend(
                     [
-                        self.stack.name,
-                        event["LogicalResourceId"],
-                        event["ResourceType"],
-                        event["ResourceStatus"],
-                        event.get("ResourceStatusReason", ""),
+                        event["HookType"],
+                        event["HookStatus"],
+                        event.get("HookStatusReason", ""),
+                        event["HookFailureMode"],
                     ]
                 )
-            )
+            self.logger.info(" ".join(stack_event_status))
             after_datetime = event["Timestamp"]
         return after_datetime
 
@@ -1146,9 +1153,16 @@ class StackActions(object):
         return result
 
     @add_stack_hooks
-    def dump_config(self, config_reader: ConfigReader):
+    def dump_config(self):
         """
         Dump the config for a stack.
         """
-        stack_path = normalise_path(self.stack.name + ".yaml")
-        return config_reader.read(stack_path)
+        return self.stack.config
+
+    @add_stack_hooks_with_aliases([generate.__name__])
+    def dump_template(self):
+        """
+        Dump the template for the Stack. An alias for generate
+        for historical reasons.
+        """
+        return self.stack.template.body

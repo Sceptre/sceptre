@@ -1,12 +1,41 @@
 # -*- coding: utf-8 -*-
+
 from contextlib import contextmanager
 from datetime import datetime
 from os import sep
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Tuple, Union
 
 import dateutil.parser
+import deprecation
+import logging
+import tempfile
 
 from sceptre.exceptions import PathConversionError
+from sceptre import __version__
+
+
+def logging_level():
+    """
+    Return the logging level.
+    """
+    logger = logging.getLogger(__name__)
+    return logger.getEffectiveLevel()
+
+
+def write_debug_file(content: str, prefix: str) -> str:
+    """
+    Write some content to a temp file for debug purposes.
+
+    :param content: the file content to write.
+    :returns: the full path to the temp file.
+    """
+    with tempfile.NamedTemporaryFile(
+        mode="w", delete=False, prefix=prefix
+    ) as temp_file:
+        temp_file.write(content)
+        temp_file.flush()
+
+    return temp_file.name
 
 
 def get_external_stack_name(project_code, stack_name):
@@ -64,6 +93,28 @@ def _call_func_on_values(func, attr, cls):
         for index, value in enumerate(attr):
             func_on_instance(index)
     return attr
+
+
+Container = Union[list, dict]
+Key = Union[str, int]
+
+
+def delete_keys_from_containers(keys_to_delete: List[Tuple[Container, Key]]):
+    """Removes the indicated keys/indexes from their paired containers."""
+    list_items_to_delete = []
+    for container, key in keys_to_delete:
+        if isinstance(container, list):
+            # If it's a list, we want to gather up the items to remove from the list.
+            # We don't want to modify the list length yet, since removals will change all the other
+            # list indexes. Instead, we'll get the actual items at those indexes to remove later.
+            list_items_to_delete.append((container, container[key]))
+        else:
+            del container[key]
+
+    # Finally, now that we have all the items we want to remove the lists, we'll remove those
+    # items specifically from the lists.
+    for containing_list, item in list_items_to_delete:
+        containing_list.remove(item)
 
 
 def normalise_path(path):
@@ -152,3 +203,44 @@ def gen_repr(instance: Any, class_label: str = None, attributes: List[str] = [])
         [f"{a}={repr(instance.__getattribute__(a))}" for a in attributes]
     )
     return f"{class_label}({attr_str})"
+
+
+def create_deprecated_alias_property(
+    alias_from: str, alias_to: str, deprecated_in: str, removed_in: Optional[str]
+) -> property:
+    """Creates a property object with a deprecated getter and a deprecated setter that emit warnings
+    when used, aliasing to their renamed property names.
+
+    :param alias_from: The name of the attribute that is deprecated and that needs to be aliased
+    :param alias_to: The name of the attribute to alias the deprecated field to.
+    :param deprecated_in: The version in which the property is deprecated.
+    :param removed_in: The version when it will be removed, after which the alias will no longer work.
+        This value can be None, indicating that removal is not yet planned.
+    :return: A property object to be assigned directly onto a class.
+    """
+
+    def getter(self):
+        return getattr(self, alias_to)
+
+    getter.__name__ = alias_from
+
+    def setter(self, value):
+        setattr(self, alias_to, value)
+
+    setter.__name__ = alias_from
+
+    deprecation_kwargs = dict(
+        deprecated_in=deprecated_in,
+        removed_in=removed_in,
+        current_version=__version__,
+        details=(
+            f'It is being renamed to "{alias_to}". You should migrate all uses of "{alias_from}" to '
+            f"that in order to avoid future breakage."
+        ),
+    )
+
+    deprecated_getter = deprecation.deprecated(**deprecation_kwargs)(getter)
+    deprecated_setter = deprecation.deprecated(**deprecation_kwargs)(setter)
+
+    deprecated_property = property(deprecated_getter, deprecated_setter)
+    return deprecated_property

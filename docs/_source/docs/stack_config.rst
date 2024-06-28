@@ -15,20 +15,28 @@ particular Stack. The available keys are listed below.
 
 -  `template_path`_ or `template`_ *(required)*
 -  `dependencies`_ *(optional)*
+-  `dependencies_inheritance`_ *(optional)*
 -  `hooks`_ *(optional)*
+-  `hooks_inheritance`_ *(optional)*
 -  `ignore`_ *(optional)*
 -  `notifications`_ *(optional)*
 -  `obsolete`_ *(optional)*
 -  `on_failure`_ *(optional)*
 -  `disable_rollback`_ *(optional)*
 -  `parameters`_ *(optional)*
+-  `parameters_inheritance`_ *(optional)*
 -  `protected`_ *(optional)*
 -  `role_arn`_ *(optional)*
+-  `cloudformation_service_role`_ *(optional)*
 -  `iam_role`_ *(optional)*
+-  `sceptre_role`_ (*optional)*
 -  `iam_role_session_duration`_ *(optional)*
+-  `sceptre_role_session_duration`_ *(optional)*
 -  `sceptre_user_data`_ *(optional)*
+-  `sceptre_user_data_inheritance`_ *(optional)*
 -  `stack_name`_ *(optional)*
 -  `stack_tags`_ *(optional)*
+-  `stack_tags_inheritance`_ *(optional)*
 -  `stack_timeout`_ *(optional)*
 
 It is not possible to define both `template_path`_ and `template`_. If you do so,
@@ -47,7 +55,7 @@ from the Stack config filename.
 
 .. warning::
 
-   This key is deprecated in favor of the `template`_ key.
+   This key is deprecated in favor of the `template`_ key. It will be removed in version 5.0.0.
 
 template
 ~~~~~~~~
@@ -77,7 +85,7 @@ dependencies
 ~~~~~~~~~~~~
 * Resolvable: No
 * Can be inherited from StackGroup: Yes
-* Inheritance strategy: Appended to parent's dependencies
+* Inheritance strategy: Appended to parent's dependencies. Configurable with ``dependencies_inheritance`` parameter.
 
 A list of other Stacks in the environment that this Stack depends on. Note that
 if a Stack fetches an output value from another Stack using the
@@ -94,14 +102,38 @@ and that Stack need not be added as an explicit dependency.
    situation by either (a) setting those ``dependencies`` on individual Stack Configs rather than the
    the StackGroup Config, or (b) moving those dependency stacks outside of the StackGroup.
 
-hooks
-~~~~~
+dependencies_inheritance
+~~~~~~~~~~~~~~~~~~~~~~~~
 * Resolvable: No
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
+This configuration will override the default inheritance strategy of `dependencies`.
+
+The default value for this is ``merge``.
+
+Valid values for this config are: ``merge``, or ``override``.
+
+hooks
+~~~~~
+* Resolvable: No (but you can use resolvers _in_ hook arguments!)
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set. Configurable with ``hooks_inheritance`` parameter.
+
 A list of arbitrary shell or Python commands or scripts to run. Find out more
 in the :doc:`hooks` section.
+
+hooks_inheritance
+~~~~~~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This configuration will override the default inheritance strategy of `hooks`.
+
+The default value for this is ``override``.
+
+Valid values for this config are: ``merge``, or ``override``.
 
 ignore
 ~~~~~~
@@ -152,7 +184,7 @@ notifications
 
 List of SNS topic ARNs to publish Stack related events to. A maximum of 5 ARNs
 can be specified per Stack. This configuration will be used by the ``create``,
-``update``, and ``delete`` commands. More information about Stack notifications
+``update``, or ``delete`` commands. More information about Stack notifications
 can found under the relevant section in the `AWS CloudFormation API
 documentation`_.
 
@@ -228,7 +260,7 @@ parameters
 ~~~~~~~~~~
 * Resolvable: Yes
 * Can be inherited from StackGroup: Yes
-* Inheritance strategy: Overrides parent if set
+* Inheritance strategy: Overrides parent if set. Configurable with ``parameters_inheritance`` parameter.
 
 .. warning::
 
@@ -238,7 +270,7 @@ parameters
    environment variable resolver.
 
 A dictionary of key-value pairs to be supplied to a template as parameters. The
-keys must match up with the name of the parameter, and the value must be of the
+keys must match up with the name of the parameter, or the value must be of the
 type as defined in the template.
 
 .. note::
@@ -289,6 +321,18 @@ Example:
        - !stack_output security-groups.yaml::BaseSecurityGroupId
        - !file_contents /file/with/security_group_id.txt
 
+parameters_inheritance
+~~~~~~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This configuration will override the default inheritance strategy of `parameters`.
+
+The default value for this is ``override``.
+
+Valid values for this config are: ``merge``, or ``override``.
+
 protected
 ~~~~~~~~~
 * Resolvable: No
@@ -312,9 +356,19 @@ role_arn
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
+.. warning::
+   This field is deprecated as of v4.0.0 and will be removed in v5.0.0. It has been renamed to
+   `cloudformation_service_role`_ as a clearer name for its purpose.
+
+cloudformation_service_role
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Resolvable: Yes
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
 The ARN of a `CloudFormation Service Role`_ that is assumed by *CloudFormation* (not Sceptre)
 to create, update or delete resources. For more information on this configuration, its implications,
-and its uses see :ref:`Sceptre and IAM: role_arn <role_arn_permissions>`.
+and its uses see :ref:`Sceptre and IAM: cloudformation_service_role <cloudformation_service_role_permissions>`.
 
 iam_role
 ~~~~~~~~
@@ -322,21 +376,32 @@ iam_role
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
+.. warning::
+   This field is deprecated as of v4.0.0 and will be removed in v5.0.0. It has been renamed to
+   `sceptre_role`_ as a clearer name for its purpose.
+
+sceptre_role
+~~~~~~~~~~~~
+* Resolvable: Yes
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
 This is the IAM Role ARN that **Sceptre** should *assume* using AWS STS when executing any actions
 on the Stack.
 
-This is different from the ``role_arn`` option, which sets a CloudFormation service role for the
-stack. The ``iam_role`` configuration does not configure anything on the stack itself.
+This is different from the ``cloudformation_service_role`` option, which sets a CloudFormation
+service role for the stack. The ``sceptre_role`` configuration does not configure anything on the
+stack itself.
 
 .. warning::
 
-   If you set the value of ``iam_role`` with ``!stack_output``, that ``iam_role``
+   If you set the value of ``sceptre_role`` with ``!stack_output``, that ``sceptre_role``
    will not actually be used to obtain the stack_output, but it *WILL* be used for all subsequent stack
    actions. Therefore, it is important that the user executing the stack action have permissions to get
-   stack outputs for the stack outputting the ``iam_role``.
+   stack outputs for the stack outputting the ``sceptre_role``.
 
 For more information on this configuration, its implications, and its uses, see
-:ref:`Sceptre and IAM: iam_role <iam_role_permissions>`.
+:ref:`Sceptre and IAM: sceptre_role <sceptre_role_permissions>`.
 
 iam_role_session_duration
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -344,27 +409,46 @@ iam_role_session_duration
 * Can be inherited from StackGroup: Yes
 * Inheritance strategy: Overrides parent if set
 
-This is the session duration when **Sceptre** *assumes* the **iam_role** IAM Role using AWS STS when
+.. warning::
+   This field is deprecated as of v4.0.0 and will be removed in v5.0.0. It has been renamed to
+   `sceptre_role_session_duration`_ as a clearer name for its purpose.
+
+sceptre_role_session_duration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This is the session duration when **Sceptre** *assumes* the **sceptre_role** IAM Role using AWS STS when
 executing any actions on the Stack.
 
 .. warning::
 
-   If you set the value of ``iam_role_session_duration`` to a number that *GREATER* than 3600, you
-   will need to make sure that the ``iam_role`` has a configuration of ``MaxSessionDuration``, and
-   its value is *GREATER* than or equal to the value of ``iam_role_session_duration``.
-
-For more information on this configuration, its implications, and its uses, see
-:ref:`Sceptre and IAM: iam_role_session_duration <iam_role_permissions>`.
+   If you set the value of ``sceptre_role_session_duration`` to a number that *GREATER* than 3600, you
+   will need to make sure that the ``sceptre_role`` has a configuration of ``MaxSessionDuration``, and
+   its value is *GREATER* than or equal to the value of ``sceptre_role_session_duration``.
 
 sceptre_user_data
 ~~~~~~~~~~~~~~~~~
 * Resolvable: Yes
 * Can be inherited from StackGroup: Yes
-* Inheritance strategy: Overrides parent if set
+* Inheritance strategy: Overrides parent if set. Configurable with ``sceptre_user_data_inheritance`` parameter.
 
 Represents data to be passed to the ``sceptre_handler(sceptre_user_data)``
 function in Python templates or accessible under ``sceptre_user_data`` variable
 key within Jinja2 templates.
+
+sceptre_user_data_inheritance
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This configuration will override the default inheritance strategy of `sceptre_user_data`.
+
+The default value for this is ``override``.
+
+Valid values for this config are: ``merge``, or ``override``.
 
 stack_name
 ~~~~~~~~~~
@@ -405,9 +489,21 @@ stack_tags
 ~~~~~~~~~~
 * Resolvable: Yes
 * Can be inherited from StackGroup: Yes
-* Inheritance strategy: Overrides parent if set
+* Inheritance strategy: Overrides parent if set. Configurable with ``stack_tags_inheritance`` parameter.
 
 A dictionary of `CloudFormation Tags`_ to be applied to the Stack.
+
+stack_tags_inheritance
+~~~~~~~~~~~~~~~~~~~~~~~~
+* Resolvable: No
+* Can be inherited from StackGroup: Yes
+* Inheritance strategy: Overrides parent if set
+
+This configuration will override the default inheritance strategy of `stack_tags`.
+
+The default value for this is ``override``.
+
+Valid values for this config are: ``merge``, or ``override``.
 
 stack_timeout
 ~~~~~~~~~~~~~
@@ -525,7 +621,8 @@ order:
 A common point of confusion tends to be around the distinction between **"render time"** (phase 3, when
 Jinja logic is applied) and **"resolve time"** (phase 6, when resolvers are resolved). You cannot use
 a resolver via Jinja during "render time", since the resolver won't exist or be ready to use yet. You can,
-however, use Jinja logic to indicate *whether*, *which*, or *how* a resolver is configured.
+however, use Jinja logic to indicate *whether*, *which*, or *how* a resolver is configured. You can
+also use resolvers like ``!sub`` to interpolate resolved values when Jinja isn't available.
 
 For example, you **can** do something like this:
 
@@ -535,6 +632,11 @@ For example, you **can** do something like this:
      {% if var.use_my_parameter %}
        my_parameter: !stack_output {{ var.stack_name }}::{{ var.output_name }}
      {% endif %}
+       # !sub will let you combine outputs of multiple resolvers into a single string
+       my_combined_parameter: !sub
+         - "{fist_part} - {second_part}"
+         - first_part: !stack_output my/stack/name.yaml::Output
+         - second_part: {{ var.second_part }}
 
 Accessing resolved values in other fields
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

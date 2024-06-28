@@ -1,8 +1,8 @@
 import logging
 import webbrowser
-
 import click
 
+from sceptre.cli.dump import dump_template
 from sceptre.cli.helpers import catch_exceptions, write
 from sceptre.context import SceptreContext
 from sceptre.helpers import null_context
@@ -65,34 +65,19 @@ def validate_command(ctx, no_placeholders, path):
 @click.argument("path")
 @click.pass_context
 @catch_exceptions
-def generate_command(ctx, no_placeholders, path):
+def generate_command(ctx: click.Context, no_placeholders: bool, path: str):
     """
     Prints the template used for stack in PATH.
+
+    This command is aliased to the dump template command for legacy support reasons. It's the same
+    as running `sceptre dump template`.
+
     \f
-
+    :param no_placeholders: If True, will disable placeholders for unresolvable resolvers. By
+        default, placeholders will be active.
     :param path: Path to execute the command on.
-    :type path: str
     """
-    context = SceptreContext(
-        command_path=path,
-        command_params=ctx.params,
-        project_path=ctx.obj.get("project_path"),
-        user_variables=ctx.obj.get("user_variables"),
-        options=ctx.obj.get("options"),
-        output_format=ctx.obj.get("output_format"),
-        ignore_dependencies=ctx.obj.get("ignore_dependencies"),
-    )
-
-    plan = SceptrePlan(context)
-
-    execution_context = (
-        null_context() if no_placeholders else use_resolver_placeholders_on_error()
-    )
-    with execution_context:
-        responses = plan.generate()
-
-    output = [template for template in responses.values()]
-    write(output, context.output_format)
+    ctx.forward(dump_template)
 
 
 @click.command(name="estimate-cost", short_help="Estimates the cost of the template.")

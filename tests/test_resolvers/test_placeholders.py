@@ -8,6 +8,11 @@ from sceptre.resolvers.placeholders import (
 )
 
 
+class MyResolver(Resolver):
+    def resolve(self):
+        return self.argument
+
+
 class TestPlaceholders:
     def test_are_placeholders_enabled__returns_false(self):
         assert are_placeholders_enabled() is False
@@ -52,6 +57,12 @@ class TestPlaceholders:
                 id="explicit dict argument",
             ),
             pytest.param(
+                PlaceholderType.explicit,
+                {"some_key": MyResolver("some value")},
+                "{ !MyResolver({'some_key': !MyResolver(some value)}) }",
+                id="explicit with nested resolvers",
+            ),
+            pytest.param(
                 PlaceholderType.alphanum, None, "MyResolver", id="alphanum no argument"
             ),
             pytest.param(
@@ -66,14 +77,18 @@ class TestPlaceholders:
                 "MyResolverkeyvalue",
                 id="alphanum dict argument",
             ),
-            pytest.param(PlaceholderType.none, "something", None),
+            pytest.param(
+                PlaceholderType.alphanum,
+                {"some_key": MyResolver("some value")},
+                "MyResolversomekeyMyResolversomevalue",
+                id="alphanum with nested resolvers",
+            ),
+            pytest.param(
+                PlaceholderType.none, "something", None, id="none type placeholder type"
+            ),
         ],
     )
     def test_create_placeholder_value(self, placeholder_type, argument, expected):
-        class MyResolver(Resolver):
-            def resolve(self):
-                pass
-
         resolver = MyResolver(argument)
 
         with use_resolver_placeholders_on_error():

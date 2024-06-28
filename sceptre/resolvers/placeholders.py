@@ -65,10 +65,7 @@ def _create_explicit_resolver_placeholder(resolver: "resolvers.Resolver") -> str
     :param resolver: The resolver to create a placeholder for
     :return: The placeholder value
     """
-    base = f"!{type(resolver).__name__}"
-    suffix = f"({resolver.argument})" if resolver.argument is not None else ""
-    # double-braces in an f-string is just an escaped single brace
-    return f"{{ {base}{suffix} }}"
+    return f"{{ {resolver} }}"
 
 
 def _create_alphanumeric_placeholder(resolver: "resolvers.Resolver") -> str:

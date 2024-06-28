@@ -1,33 +1,21 @@
 import abc
 import logging
 from functools import wraps
+from typing import TYPE_CHECKING, List
 
 from sceptre.helpers import _call_func_on_values
+from sceptre.resolvers import CustomYamlTagBase
+
+if TYPE_CHECKING:
+    from sceptre.stack import Stack
 
 
-class Hook(object):
+class Hook(CustomYamlTagBase, metaclass=abc.ABCMeta):
     """
-    Hook is an abstract base class that should be inherited by all hooks.
-
-    :param argument: The argument of the hook.
-    :type argument: str
-    :param stack: The associated stack of the hook.
-    :type stack: sceptre.stack.Stack
+    Hook is an abstract base class that should be subclassed by all hooks.
     """
 
-    __metaclass__ = abc.ABCMeta
-
-    def __init__(self, argument=None, stack=None):
-        self.logger = logging.getLogger(__name__)
-        self.argument = argument
-        self.stack = stack
-
-    def setup(self):
-        """
-        setup is a method that may be overwritten by inheriting classes. Allows
-        hooks to run so initalisation steps when config is first read.
-        """
-        pass  # pragma: no cover
+    logger = logging.getLogger(__name__)
 
     @abc.abstractmethod
     def run(self):
@@ -61,16 +49,16 @@ class HookProperty(object):
         """
         return getattr(instance, self.name)
 
-    def __set__(self, instance, value):
+    def __set__(self, instance: "Stack", value):
         """
         Attribute setter which adds a stack reference to any hooks in the
         data structure `value` and calls the setup method.
 
         """
 
-        def setup(attr, key, value):
-            value.stack = instance
-            value.setup()
+        def setup(attr, key, value: Hook):
+            attr[key] = clone = value.clone_for_stack(instance)
+            clone.setup()
 
         _call_func_on_values(setup, value, Hook)
         setattr(instance, self.name, value)
@@ -110,3 +98,33 @@ def add_stack_hooks(func):
         return response
 
     return decorated
+
+
+def add_stack_hooks_with_aliases(function_aliases: List[str]):
+    """
+    Returns a decorator to trigger the before and after hooks, relative to the decorated function's
+    name AS WELL AS the passed function alias names.
+    :param function_aliases: The list of OTHER functions to trigger hooks around.
+    :return: The hook-triggering decorator.
+    """
+
+    def decorator(func):
+        all_hook_names = [func.__name__] + function_aliases
+
+        @wraps(func)
+        def decorated(self, *args, **kwargs):
+            for hook in all_hook_names:
+                before_hook_name = f"before_{hook}"
+                execute_hooks(self.stack.hooks.get(before_hook_name))
+
+            response = func(self, *args, **kwargs)
+
+            for hook in all_hook_names:
+                after_hook_name = f"after_{hook}"
+                execute_hooks(self.stack.hooks.get(after_hook_name))
+
+            return response
+
+        return decorated
+
+    return decorator

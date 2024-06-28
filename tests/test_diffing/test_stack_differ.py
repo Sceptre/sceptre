@@ -16,6 +16,7 @@ from sceptre.diffing.stack_differ import (
     DeepDiffStackDiffer,
     DifflibStackDiffer,
 )
+from sceptre.exceptions import SceptreException
 from sceptre.plan.actions import StackActions
 from sceptre.stack import Stack
 
@@ -38,7 +39,7 @@ class TestStackDiffer:
     def setup_method(self, method):
         self.name = "my/stack"
         self.external_name = "full-stack-name"
-        self.role_arn = "role_arn"
+        self.cloudformation_service_role = "cloudformation_service_role"
         self.parameters_on_stack_config = {"param": "some_value"}
         self.tags = {"tag_name": "tag_value"}
         self.notifications = ["notification_arn1"]
@@ -51,7 +52,7 @@ class TestStackDiffer:
         self.local_no_echo_parameters = []
         self.deployed_tags = dict(self.tags)
         self.deployed_notification_arns = list(self.notifications)
-        self.deployed_role_arn = self.role_arn
+        self.deployed_cloudformation_service_role = self.cloudformation_service_role
 
         self.command_capturer = Mock()
         self.differ = ImplementedStackDiffer(self.command_capturer)
@@ -74,7 +75,7 @@ class TestStackDiffer:
                 spec=Stack,
                 external_name=self.external_name,
                 _parameters=self.parameters_on_stack,
-                role_arn=self.role_arn,
+                cloudformation_service_role=self.cloudformation_service_role,
                 tags=self.tags,
                 notifications=self.notifications,
                 __sceptre_user_data=self.sceptre_user_data,
@@ -114,7 +115,7 @@ class TestStackDiffer:
                     ],
                     "StackStatus": self.stack_status,
                     "NotificationARNs": self.deployed_notification_arns,
-                    "RoleARN": self.deployed_role_arn,
+                    "RoleARN": self.deployed_cloudformation_service_role,
                     "Tags": [
                         {"Key": key, "Value": value}
                         for key, value in self.deployed_tags.items()
@@ -158,20 +159,20 @@ class TestStackDiffer:
     def expected_generated_config(self):
         return StackConfiguration(
             stack_name=self.external_name,
-            parameters=self.parameters_on_stack_config,
+            parameters=deepcopy(self.parameters_on_stack_config),
             stack_tags=deepcopy(self.tags),
             notifications=deepcopy(self.notifications),
-            role_arn=self.role_arn,
+            cloudformation_service_role=self.cloudformation_service_role,
         )
 
     @property
     def expected_deployed_config(self):
         return StackConfiguration(
             stack_name=self.external_name,
-            parameters=self.deployed_parameters,
+            parameters=deepcopy(self.deployed_parameters),
             stack_tags=deepcopy(self.deployed_tags),
             notifications=deepcopy(self.deployed_notification_arns),
-            role_arn=self.deployed_role_arn,
+            cloudformation_service_role=self.deployed_cloudformation_service_role,
         )
 
     def test_diff__compares_deployed_template_to_generated_template(self):
@@ -179,7 +180,7 @@ class TestStackDiffer:
 
         self.command_capturer.compare_templates.assert_called_with(
             self.actions.fetch_remote_template.return_value,
-            self.actions.generate.return_value,
+            self.actions.dump_template.return_value,
         )
 
     def test_diff__template_diff_is_value_returned_by_implemented_differ(self):
@@ -216,7 +217,7 @@ class TestStackDiffer:
 
     def test_diff__returns_generated_template(self):
         diff = self.differ.diff(self.actions)
-        assert diff.generated_template == self.actions.generate.return_value
+        assert diff.generated_template == self.actions.dump_template.return_value
 
     def test_diff__deployed_stack_exists__returns_is_deployed_as_true(self):
         diff = self.differ.diff(self.actions)
@@ -244,7 +245,7 @@ class TestStackDiffer:
         self.differ.diff(self.actions)
 
         self.command_capturer.compare_templates.assert_called_with(
-            "{}", self.actions.generate.return_value
+            "{}", self.actions.dump_template.return_value
         )
 
     @pytest.mark.parametrize(
@@ -285,7 +286,7 @@ class TestStackDiffer:
         self.stack_status = status
         self.differ.diff(self.actions)
         self.command_capturer.compare_templates.assert_called_with(
-            "{}", self.actions.generate.return_value
+            "{}", self.actions.dump_template.return_value
         )
 
     def test_diff__deployed_stack_has_default_values__doesnt_pass_parameter__compares_identical_configs(
@@ -331,6 +332,28 @@ class TestStackDiffer:
         self.command_capturer.compare_stack_configurations.assert_called_with(
             self.expected_deployed_config, self.expected_generated_config
         )
+
+    def test_diff__generated_stack_has_none_for_parameter_value__its_treated_like_its_not_specified(
+        self,
+    ):
+        self.parameters_on_stack_config["new"] = None
+        expected_generated = self.expected_generated_config
+        del expected_generated.parameters["new"]
+        self.differ.diff(self.actions)
+        self.command_capturer.compare_stack_configurations.assert_called_with(
+            self.expected_deployed_config, expected_generated
+        )
+
+    def test_diff__generated_stack_has_a_bool(
+        self,
+    ):
+        self.parameters_on_stack_config["new"] = True
+        message = (
+            "Parameter 'new' whose value is True is of type "
+            "<class 'bool'> and not expected here"
+        )
+        with pytest.raises(SceptreException, match=message):
+            self.differ.diff(self.actions)
 
     def test_diff__stack_exists_with_same_config_but_template_does_not__compares_identical_configs(
         self,
@@ -410,9 +433,9 @@ class TestStackDiffer:
         self.local_no_echo_parameters.append("hide_me")
 
         expected_generated_config = self.expected_generated_config
-        expected_generated_config.parameters[
-            "hide_me"
-        ] = StackDiffer.NO_ECHO_REPLACEMENT
+        expected_generated_config.parameters["hide_me"] = (
+            StackDiffer.NO_ECHO_REPLACEMENT
+        )
 
         self.differ.diff(self.actions)
 
@@ -444,7 +467,7 @@ class TestDeepDiffStackDiffer:
             parameters={"pk1": "pv1"},
             stack_tags={"tk1": "tv1"},
             notifications=["notification"],
-            role_arn=None,
+            cloudformation_service_role=None,
         )
 
         self.config2 = StackConfiguration(
@@ -452,7 +475,7 @@ class TestDeepDiffStackDiffer:
             parameters={"pk1": "pv1", "pk2": "pv2"},
             stack_tags={"tk1": "tv1"},
             notifications=["notification"],
-            role_arn="new_role",
+            cloudformation_service_role="new_role",
         )
 
         self.template_dict_1 = {
@@ -544,7 +567,7 @@ class TestDifflibStackDiffer:
             parameters={"pk1": "pv1"},
             stack_tags={"tk1": "tv1"},
             notifications=["notification"],
-            role_arn=None,
+            cloudformation_service_role=None,
         )
 
         self.config2 = StackConfiguration(
@@ -552,7 +575,7 @@ class TestDifflibStackDiffer:
             parameters={"pk1": "pv1", "pk2": "pv2"},
             stack_tags={"tk1": "tv1"},
             notifications=["notification"],
-            role_arn="new_role",
+            cloudformation_service_role="new_role",
         )
 
         self.template_dict_1 = {
@@ -632,7 +655,7 @@ class TestDifflibStackDiffer:
             parameters={},
             stack_tags={},
             notifications=[],
-            role_arn=None,
+            cloudformation_service_role=None,
         )
         comparison = self.differ.compare_stack_configurations(None, empty_config)
 

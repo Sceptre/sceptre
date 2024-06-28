@@ -175,7 +175,7 @@ configurations should be defined at a lower directory level.
 
 YAML files that define configuration settings with conflicting keys, the child
 configuration file will usually take precedence (see the specific config keys as documented
-for the inheritance strategy employed).
+for the inheritance strategy employed and `Inheritance Strategy Override`_).
 
 In the above directory structure, ``config/config.yaml`` will be read in first,
 followed by ``config/account-1/config.yaml``, followed by
@@ -184,6 +184,16 @@ followed by ``config/account-1/config.yaml``, followed by
 For example, if you wanted the ``dev`` StackGroup to build to a different
 region, this setting could be specified in the ``config/dev/config.yaml`` file,
 and would only be applied to builds in the ``dev`` StackGroup.
+
+Inheritance Strategy Override
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The inheritance strategy of some properties may be overridden by the stack group config.
+
+Strategy options:
+
+* ``merge``: Child config is merged with parent configs, with child taking precedence for conflicting dictionary keys.
+* ``override``: Overrides the parent config, if set.
 
 .. _setting_dependencies_for_stack_groups:
 
@@ -195,8 +205,8 @@ and concerns of the project. These include:
 * The S3 bucket where templates are uploaded to and then referenced from for stack actions (i.e. the
   ``template_bucket_name`` config key).
 * The CloudFormation service role added to the stack(s) that CloudFormation uses to execute stack
-  actions (i.e. the ``role_arn`` config key).
-* The role that Sceptre will assume to execute stack actions (i.e. the ``iam_role`` config key).
+  actions (i.e. the ``cloudformation_service_role`` config key).
+* The role that Sceptre will assume to execute stack actions (i.e. the ``sceptre_role`` config key).
 * SNS topics that cloudformation will notify with the results of stack actions (i.e. the
   ``notifications`` config key).
 
@@ -212,7 +222,7 @@ dependencies.
 .. warning::
 
    You might have already considered that this might cause a circular dependency for those
-   dependency stacks, the ones that output the template bucket name, role arn, iam_role, or topic arns.
+   dependency stacks, the ones that output the template bucket name, role arn, sceptre_role, or topic arns.
    In order to avoid the circular dependency issue, you can either:
 
    1. Set the value of those configurations to ``!no_value`` in the actual stacks that define those

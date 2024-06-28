@@ -9,6 +9,7 @@ nessessary information for a command to execute.
 import functools
 import itertools
 import pathlib
+
 from os import path, walk
 from typing import Dict, List, Set, Callable, Iterable, Optional
 
@@ -395,7 +396,8 @@ class SceptrePlan(object):
 
     def generate(self, *args):
         """
-        Returns a generated Template for a given Stack
+        Returns a generated Template for a given Stack. An alias for
+        dump_template for historical reasons.
 
         :returns: A dictionary of Stacks and their template body.
         :rtype: dict
@@ -455,4 +457,12 @@ class SceptrePlan(object):
         Dump the config for a stack.
         """
         self.resolve(command=self.dump_config.__name__)
-        return self._execute(self.config_reader, *args)
+        return self._execute(*args)
+
+    def dump_template(self, *args):
+        """
+        Dump the template for a stack. An alias
+        for generate for historical reasons.
+        """
+        self.resolve(command=self.dump_template.__name__)
+        return self._execute(*args)

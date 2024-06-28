@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import json
+import sys
 from unittest.mock import patch, sentinel, Mock, call, ANY
 
 import pytest
@@ -37,7 +38,7 @@ class TestStackActions(object):
             hooks={},
             s3_details=None,
             dependencies=sentinel.dependencies,
-            role_arn=sentinel.role_arn,
+            cloudformation_service_role=sentinel.cloudformation_service_role,
             protected=False,
             tags={"tag1": "val1"},
             external_name=sentinel.external_name,
@@ -121,7 +122,7 @@ class TestStackActions(object):
                     "CAPABILITY_NAMED_IAM",
                     "CAPABILITY_AUTO_EXPAND",
                 ],
-                "RoleARN": sentinel.role_arn,
+                "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [sentinel.notification],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
                 "OnFailure": sentinel.on_failure,
@@ -154,7 +155,7 @@ class TestStackActions(object):
                     "CAPABILITY_NAMED_IAM",
                     "CAPABILITY_AUTO_EXPAND",
                 ],
-                "RoleARN": sentinel.role_arn,
+                "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [sentinel.notification],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
                 "DisableRollback": True,
@@ -186,7 +187,7 @@ class TestStackActions(object):
                     "CAPABILITY_NAMED_IAM",
                     "CAPABILITY_AUTO_EXPAND",
                 ],
-                "RoleARN": sentinel.role_arn,
+                "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
                 "OnFailure": sentinel.on_failure,
@@ -217,7 +218,7 @@ class TestStackActions(object):
                     "CAPABILITY_NAMED_IAM",
                     "CAPABILITY_AUTO_EXPAND",
                 ],
-                "RoleARN": sentinel.role_arn,
+                "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [sentinel.notification],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
             },
@@ -265,7 +266,7 @@ class TestStackActions(object):
                     "CAPABILITY_NAMED_IAM",
                     "CAPABILITY_AUTO_EXPAND",
                 ],
-                "RoleARN": sentinel.role_arn,
+                "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [sentinel.notification],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
             },
@@ -296,7 +297,7 @@ class TestStackActions(object):
                         "CAPABILITY_NAMED_IAM",
                         "CAPABILITY_AUTO_EXPAND",
                     ],
-                    "RoleARN": sentinel.role_arn,
+                    "RoleARN": sentinel.cloudformation_service_role,
                     "NotificationARNs": [sentinel.notification],
                     "Tags": [{"Key": "tag1", "Value": "val1"}],
                 },
@@ -335,7 +336,7 @@ class TestStackActions(object):
                     "CAPABILITY_NAMED_IAM",
                     "CAPABILITY_AUTO_EXPAND",
                 ],
-                "RoleARN": sentinel.role_arn,
+                "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
             },
@@ -458,7 +459,10 @@ class TestStackActions(object):
         self.actions.connection_manager.call.assert_called_with(
             service="cloudformation",
             command="delete_stack",
-            kwargs={"StackName": sentinel.external_name, "RoleARN": sentinel.role_arn},
+            kwargs={
+                "StackName": sentinel.external_name,
+                "RoleARN": sentinel.cloudformation_service_role,
+            },
         )
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
@@ -570,7 +574,10 @@ class TestStackActions(object):
         self.actions.connection_manager.call.assert_called_with(
             service="cloudformation",
             command="continue_update_rollback",
-            kwargs={"StackName": sentinel.external_name, "RoleARN": sentinel.role_arn},
+            kwargs={
+                "StackName": sentinel.external_name,
+                "RoleARN": sentinel.cloudformation_service_role,
+            },
         )
 
     def test_set_stack_policy_sends_correct_request(self):
@@ -624,7 +631,7 @@ class TestStackActions(object):
                     "CAPABILITY_AUTO_EXPAND",
                 ],
                 "ChangeSetName": sentinel.change_set_name,
-                "RoleARN": sentinel.role_arn,
+                "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [sentinel.notification],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
             },
@@ -651,7 +658,7 @@ class TestStackActions(object):
                     "CAPABILITY_AUTO_EXPAND",
                 ],
                 "ChangeSetName": sentinel.change_set_name,
-                "RoleARN": sentinel.role_arn,
+                "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
             },
@@ -913,12 +920,14 @@ class TestStackActions(object):
         with pytest.raises(ClientError):
             self.actions.get_status()
 
-    def test_get_role_arn_without_role(self):
-        self.actions.stack.role_arn = None
+    def test_get_cloudformation_service_role_without_role(self):
+        self.actions.stack.cloudformation_service_role = None
         assert self.actions._get_role_arn() == {}
 
     def test_get_role_arn_with_role(self):
-        assert self.actions._get_role_arn() == {"RoleARN": sentinel.role_arn}
+        assert self.actions._get_role_arn() == {
+            "RoleARN": sentinel.cloudformation_service_role
+        }
 
     def test_protect_execution_without_protection(self):
         # Function should do nothing if protect == False
@@ -942,7 +951,13 @@ class TestStackActions(object):
 
         self.actions._wait_for_completion()
         mock_log_new_events.assert_called_once()
-        assert type(mock_log_new_events.mock_calls[0].args[0]) is datetime.datetime
+
+        if sys.version_info < (3, 8):
+            mock_call_type = mock_log_new_events.mock_calls[0][1][0]
+        else:
+            mock_call_type = mock_log_new_events.mock_calls[0].args[0]
+
+        assert type(mock_call_type) is datetime.datetime
 
     @pytest.mark.parametrize(
         "test_input,expected",
@@ -966,36 +981,114 @@ class TestStackActions(object):
     @patch("sceptre.plan.actions.StackActions.describe_events")
     def test_log_new_events_calls_describe_events(self, mock_describe_events):
         mock_describe_events.return_value = {"StackEvents": []}
-        self.actions._log_new_events(datetime.datetime.utcnow())
+        self.actions._log_new_events(datetime.datetime.now(datetime.timezone.utc))
         self.actions.describe_events.assert_called_once_with()
 
     @patch("sceptre.plan.actions.StackActions.describe_events")
-    def test_log_new_events_prints_correct_event(self, mock_describe_events):
-        self.actions.stack.name = "stack-name"
-        mock_describe_events.return_value = {
-            "StackEvents": [
-                {
-                    "Timestamp": datetime.datetime(
-                        2016, 3, 15, 14, 2, 0, 0, tzinfo=tzutc()
-                    ),
-                    "LogicalResourceId": "id-2",
-                    "ResourceType": "type-2",
-                    "ResourceStatus": "resource-status",
-                },
-                {
-                    "Timestamp": datetime.datetime(
-                        2016, 3, 15, 14, 1, 0, 0, tzinfo=tzutc()
-                    ),
-                    "LogicalResourceId": "id-1",
-                    "ResourceType": "type-1",
-                    "ResourceStatus": "resource",
-                    "ResourceStatusReason": "User Initiated",
-                },
-            ]
-        }
-        self.actions._log_new_events(
-            datetime.datetime(2016, 3, 15, 14, 0, 0, 0, tzinfo=tzutc())
-        )
+    def test_log_new_events_prints_correct_event(self, mock_describe_events, caplog):
+        with caplog.at_level("DEBUG"):
+            self.actions.stack.name = "stack-name"
+            mock_describe_events.return_value = {
+                "StackEvents": [
+                    {
+                        "Timestamp": datetime.datetime(
+                            2016, 3, 15, 14, 1, 0, 0, tzinfo=tzutc()
+                        ),
+                        "LogicalResourceId": "id-1",
+                        "ResourceType": "type-1",
+                        "ResourceStatus": "resource",
+                        "ResourceStatusReason": "User Initiated",
+                    },
+                    {
+                        "Timestamp": datetime.datetime(
+                            2016, 3, 15, 14, 2, 0, 0, tzinfo=tzutc()
+                        ),
+                        "LogicalResourceId": "id-2",
+                        "ResourceType": "type-2",
+                        "ResourceStatus": "resource-status",
+                    },
+                ]
+            }
+            self.actions._log_new_events(
+                datetime.datetime(2016, 3, 15, 14, 0, 0, 0, tzinfo=tzutc())
+            )
+            assert len(self.actions.describe_events()["StackEvents"]) == 2
+            assert [
+                self.actions.stack.name,
+                self.actions.describe_events()["StackEvents"][1]["LogicalResourceId"],
+                self.actions.describe_events()["StackEvents"][1]["ResourceType"],
+                self.actions.describe_events()["StackEvents"][1]["ResourceStatus"],
+                self.actions.describe_events()["StackEvents"][1][
+                    "ResourceStatusReason"
+                ],
+            ].sort() == caplog.messages[0].split().sort()
+            assert [
+                self.actions.stack.name,
+                self.actions.describe_events()["StackEvents"][0]["LogicalResourceId"],
+                self.actions.describe_events()["StackEvents"][0]["ResourceType"],
+                self.actions.describe_events()["StackEvents"][0]["ResourceStatus"],
+            ].sort() == caplog.messages[1].split().sort()
+
+    @patch("sceptre.plan.actions.StackActions.describe_events")
+    def test_log_new_events_with_hook_status_prints_correct_event(
+        self, mock_describe_events, caplog
+    ):
+        with caplog.at_level("DEBUG"):
+            self.actions.stack.name = "stack-name-with-hook-status"
+            mock_describe_events.return_value = {
+                "StackEvents": [
+                    {
+                        "Timestamp": datetime.datetime(
+                            2023, 8, 15, 14, 3, 0, 0, tzinfo=tzutc()
+                        ),
+                        "LogicalResourceId": "id-3",
+                        "ResourceType": "type-3",
+                        "ResourceStatus": "resource-with-cf-hook",
+                        "HookType": "type-3",
+                        "HookStatus": "HOOK_COMPLETE_SUCCEEDED",
+                        "HookFailureMode": "WARN",
+                    },
+                    {
+                        "Timestamp": datetime.datetime(
+                            2023, 8, 15, 14, 4, 0, 0, tzinfo=tzutc()
+                        ),
+                        "LogicalResourceId": "id-4",
+                        "ResourceType": "type-4",
+                        "ResourceStatus": "another-resource-with-cf-hook",
+                        "ResourceStatusReason": "User Initiated",
+                        "HookType": "type-4",
+                        "HookStatus": "HOOK_IN_PROGRESS",
+                        "HookStatusReason": "Good hook",
+                        "HookFailureMode": "WARN",
+                    },
+                ]
+            }
+            self.actions._log_new_events(
+                datetime.datetime(2023, 8, 15, 14, 0, 0, 0, tzinfo=tzutc())
+            )
+            assert len(self.actions.describe_events()["StackEvents"]) == 2
+            assert [
+                self.actions.stack.name,
+                self.actions.describe_events()["StackEvents"][1]["LogicalResourceId"],
+                self.actions.describe_events()["StackEvents"][1]["ResourceType"],
+                self.actions.describe_events()["StackEvents"][1]["ResourceStatus"],
+                self.actions.describe_events()["StackEvents"][1]["HookType"],
+                self.actions.describe_events()["StackEvents"][1]["HookStatus"],
+                self.actions.describe_events()["StackEvents"][1]["HookFailureMode"],
+            ].sort() == caplog.messages[0].split().sort()
+            assert [
+                self.actions.stack.name,
+                self.actions.describe_events()["StackEvents"][0]["LogicalResourceId"],
+                self.actions.describe_events()["StackEvents"][0]["ResourceType"],
+                self.actions.describe_events()["StackEvents"][0]["ResourceStatus"],
+                self.actions.describe_events()["StackEvents"][0][
+                    "ResourceStatusReason"
+                ],
+                self.actions.describe_events()["StackEvents"][0]["HookType"],
+                self.actions.describe_events()["StackEvents"][0]["HookStatus"],
+                self.actions.describe_events()["StackEvents"][0]["HookStatusReason"],
+                self.actions.describe_events()["StackEvents"][0]["HookFailureMode"],
+            ].sort() == caplog.messages[1].split().sort()
 
     @patch("sceptre.plan.actions.StackActions._get_cs_status")
     def test_wait_for_cs_completion_calls_get_cs_status(self, mock_get_cs_status):

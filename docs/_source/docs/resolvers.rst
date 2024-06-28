@@ -5,6 +5,9 @@ Sceptre implements resolvers, which can be used to resolve a value of a
 CloudFormation ``parameter`` or ``sceptre_user_data`` value at runtime. This is
 most commonly used to chain the outputs of one Stack to the inputs of another.
 
+You can use resolvers with any resolvable property on a StackConfig, as well as in the arguments
+of hooks and other resolvers.
+
 If required, users can create their own resolvers, as described in the section
 on `Custom Resolvers`_.
 
@@ -52,6 +55,27 @@ file_contents
 
 **deprecated**: Consider using the `file`_ resolver instead.
 
+join
+~~~~
+
+This resolver allows you to join multiple strings together to form a single string. This is great
+for combining the outputs of multiple resolvers. This resolver works just like CloudFormation's
+``!Join`` intrinsic function.
+
+The argument for this resolver should be a list with two elements: (1) A string to join the elements
+on and (2) a list of items to join.
+
+Example:
+
+.. code-block:: yaml
+
+   parameters:
+     BaseUrl: !join
+       - ":"
+       - - !stack_output my/app/stack.yaml::HostName
+         - !stack_output my/other/stack.yaml::Port
+
+
 no_value
 ~~~~~~~~
 
@@ -78,6 +102,48 @@ rcmd
 A resolver to execute any shell command.
 
 Refer to `sceptre-resolver-cmd <https://github.com/Sceptre/sceptre-resolver-cmd/>`_ for documentation.
+
+select
+~~~~~~
+
+This resolver allows you to select a specific index of a list of items. This is great for combining
+with the ``!split`` resolver to obtain part of a string. This function works almost the same as
+CloudFormation's ``!Select`` intrinsic function, **except you can use this with negative indices to
+select from the end of a list**.
+
+The argument for this resolver should be a list with two elements: (1) A numerical index and (2) a
+list of items to select out of. If the index is negative, it will select from the end of the list.
+For example, "-1" would select the last element and "-2" would select the second-to-last element.
+
+Example:
+
+.. code-block:: yaml
+
+   sceptre_user_data:
+     # This selects the last element after you split the connection string on "/"
+     DatabaseName: !select
+       - -1
+       - !split ["/", !stack_output my/database/stack.yaml::ConnectionString]
+
+split
+~~~~~
+
+This resolver will split a value on a given delimiter string. This is great when combining with the
+``!select`` resolver. This function works the same as CloudFormation's ``!Split`` intrinsic function.
+
+Note: The return value of this resolver is a *list*, not a string. This will not work to set Stack
+configurations that expect strings, but it WILL work to set Stack configurations that expect lists.
+
+The argument for this resolver should be a list with two elements: (1) The delimiter to split on and
+(2) a string to split.
+
+Example:
+
+.. code-block:: yaml
+
+   notifications: !split
+     - ";"
+     - !stack_output my/sns/topics.yaml::SemicolonDelimitedArns
 
 .. _stack_attr_resolver:
 
@@ -117,13 +183,13 @@ nested values in dicts and lists using "." to separate key/index segments. For e
            - "some random value"
            - "the value we want to select"
 
-   iam_role: !stack_output roles.yaml::RoleArn
+   sceptre_role: !stack_output roles.yaml::RoleArn
 
    parameters:
        # This will pass the value of "the value we want to select" for my_parameter
        my_parameter: !stack_attr sceptre_user_data.key.1
        # You can also access the value of another resolvable property like this:
-       use_role_arn: !stack_attr iam_role
+       use_role: !stack_attr sceptre_role
 
 
 stack_output
@@ -180,6 +246,67 @@ Example:
 
    parameters:
      VpcIdParameter: !stack_output_external prj-network-vpc::VpcIdOutput prod
+
+
+sub
+~~~
+
+This resolver allows you to create a string using Python string format syntax. This functions as a
+great way to combine together a number of resolver outputs into a single string. This functions
+similarly to Cloudformation's ``!Sub`` intrinsic function.
+
+It should be noted that Jinja2 syntax is far more capable of interpolating values than this resolver,
+so you should use Jinja2 if all you need is to interpolate raw values from environment variables,
+variables from stack group configs, var files, and ``--var`` arguments. **The one thing that Jinja2
+interpolation can't do is interpolate resolver arguments into a string.** And that's what ``!sub``
+can do. For more information on why Jinja2 can't reference resolvers directly, see
+:ref:`resolution_order`.
+
+The argument to this resolver should be a two-element list: (1) Is the format string, using
+curly-brace templates to indicate variables, and (2) a dictionary where the keys are the format
+string's variable names and the values are the variable values.
+
+Example:
+
+.. code-block:: yaml
+
+   parameters:
+     ConnectionString: !sub
+       - "postgres://{username}:{password}@{hostname}:{port}/{database}"
+       # Notice how we're interpolating a username and database via Jinja2? Technically it's not
+       # necessary to pass them this way. They could be interpolated directly. But it might be
+       # easier to read this way if you pass them explicitly like this. See example below for the
+       # other way this can be done.
+       - username: {{ var.username }}
+         password: !ssm /my/ssm/password
+         hostname: !stack_output my/database/stack.yaml::HostName
+         port: !stack_output my/database/stack.yaml::Port
+         database: {{var.database}}
+
+
+It's relevant to note that this functions similarly to the *more verbose* form of CloudFormation's
+``!Sub`` intrinsic function, where you use a list argument and supply the interpolated values as a
+second list item in a dictionary. **Important**: Sceptre's ``!sub`` resolver will not work without
+a list argument. It does **not** directly reference variables without you directly passing them
+in the second list item in its argument.
+
+You *can* combine Jinja2 syntax with this resolver if you want to interpolate in other variables
+that Jinja2 has access to.
+
+Example:
+
+.. code-block:: yaml
+
+   parameters:
+     ConnectionString: !sub
+       # Notice the double-curly braces. That's Jinja2 syntax. Jinja2 will render the username into
+       # the string even before the yaml is loaded. If you use Jinja2 to interpolate the value, then
+       # it's not a template string variable you need to pass in the second list item passed to
+       # !sub.
+       - "postgres://{{ var.username }}:{password}@{hostname}:{port}/{{ stack_group_config.database }}"
+       - password: !ssm /my/ssm/password
+         hostname: !stack_output my/database/stack.yaml::HostName
+         port: !stack_output my/database/stack.yaml::Port
 
 Custom Resolvers
 ----------------
@@ -306,18 +433,22 @@ For details on calling AWS services or invoking AWS-related third party tools in
 
 Resolver arguments
 ^^^^^^^^^^^^^^^^^^
-Resolver arguments can be a simple string or a complex data structure.
+Resolver arguments can be a simple string or a complex data structure. You can even use
+other resolvers in the arguments to resolvers! (Note: Other resolvers can only be passed in
+arguments when they're passed in lists and dicts.)
 
 .. code-block:: yaml
 
    template:
      path: <...>
      type: <...>
-    parameters:
-      Param1: !ssm "/dev/DbPassword"
-      Param2: !ssm {"name": "/dev/DbPassword"}
-      Param3: !ssm
-        name: "/dev/DbPassword"
+   parameters:
+     Param1: !ssm "/dev/DbPassword"
+     Param2: !ssm {"name": "/dev/DbPassword"}
+     Param3: !ssm
+       name: "/dev/DbPassword"
+     Param4: !ssm
+       name: !stack_output my/other/stack.yaml::MySsmParameterName
 
 .. _Custom Resolvers: #custom-resolvers
 .. _this is great place to start: https://docs.python.org/3/distributing/
@@ -325,7 +456,7 @@ Resolver arguments can be a simple string or a complex data structure.
 Resolving to nothing
 ^^^^^^^^^^^^^^^^^^^^
 When a resolver returns ``None``, this means that it resolves to "nothing". For resolvers set for
-single values (such as for ``template_bucket_name`` or ``role_arn``), this just means the value is
+single values (such as for ``template_bucket_name`` or ``cloudformation_service_role``), this just means the value is
 ``None`` and treated like those values aren't actually set. But for resolvers inside of containers
 like lists or dicts, when they resolve to "nothing", that item gets completely removed from their
 containing list or dict.
@@ -345,7 +476,7 @@ have not yet been deployed. During normal deployment operations (using the ``lau
 ensure that order is followed, so everything works as expected.
 
 But there are other commands that will not actually deploy dependencies of a stack config before
-operating on that Stack Config. These commands include ``generate``, ``validate``, and ``diff``.
+operating on that Stack Config. These commands include ``dump template``, ``validate``, and ``diff``.
 If you have used resolvers to reverence other stacks, it is possible that a resolver might not be able
 to be resolved when performing that command's operations and will trigger an error. This is not likely
 to happen when you have only used resolvers in a stack's ``parameters``, but it is much more likely
@@ -360,12 +491,12 @@ A few examples...
   and you run the ``diff`` command before other_stack.yaml has been deployed, the diff output will
   show the value of that parameter to be ``"{ !StackOutput(other_stack.yaml::OutputName) }"``.
 * If you have a ``sceptre_user_data`` value used in a Jinja template referencing
-  ``!stack_output other_stack.yaml::OutputName`` and you run the ``generate`` command, the generated
+  ``!stack_output other_stack.yaml::OutputName`` and you run the ``dump template`` command, the generated
   template will replace that value with ``"StackOutputotherstackyamlOutputName"``. This isn't as
   "pretty" as the sort of placeholder used for stack parameters, but the use of sceptre_user_data is
   broader, so it placeholder values can only be alphanumeric to reduce chances of it breaking the
   template.
-* Resolvable properties that are *always* used when performing template operations (like ``iam_role``
+* Resolvable properties that are *always* used when performing template operations (like ``sceptre_role``
   and ``template_bucket_name``) will resolve to ``None`` and not be used for those operations if they
   cannot be resolved.
 

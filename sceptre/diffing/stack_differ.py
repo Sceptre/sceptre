@@ -19,6 +19,7 @@ import yaml
 from cfn_tools import ODict
 from yaml import Dumper
 
+from sceptre.exceptions import SceptreException
 from sceptre.plan.actions import StackActions
 from sceptre.stack import Stack
 
@@ -34,7 +35,7 @@ class StackConfiguration(NamedTuple):
     parameters: Dict[str, Union[str, List[str]]]
     stack_tags: Dict[str, str]
     notifications: List[str]
-    role_arn: Optional[str]
+    cloudformation_service_role: Optional[str]
 
 
 class StackDiff(NamedTuple):
@@ -101,7 +102,7 @@ class StackDiffer(Generic[DiffType]):
         "DELETE_COMPLETE",
     ]
 
-    NO_ECHO_REPLACEMENT = "***HIDDEN***"
+    NO_ECHO_REPLACEMENT = "****"
 
     def __init__(self, show_no_echo=False):
         """Initializes the StackDiffer.
@@ -153,7 +154,7 @@ class StackDiffer(Generic[DiffType]):
             parameters=parameters,
             stack_tags=stack.tags,
             notifications=stack.notifications,
-            role_arn=stack.role_arn,
+            cloudformation_service_role=stack.cloudformation_service_role,
         )
 
         return stack_configuration
@@ -167,9 +168,24 @@ class StackDiffer(Generic[DiffType]):
         """
         formatted_parameters = {}
         for key, value in stack.parameters.items():
-            if isinstance(value, list):
-                value = ",".join(item.rstrip("\n") for item in value)
-            formatted_parameters[key] = value.rstrip("\n")
+            # When boto3 receives "None" for a cloudformation parameter, it treats it as if the
+            # value is not passed at all. To be consistent in our diffing, we need to skip Nones
+            # altogether.
+            if value is None:
+                continue
+
+            try:
+                if isinstance(value, list):
+                    value = ",".join(item.rstrip("\n") for item in value)
+                formatted_parameters[key] = value.rstrip("\n")
+            # Other unexpected data can get through and this would blow up the differ
+            # and lead to quite confusing exceptions being raised. This check here could
+            # be removed in a future version of Sceptre if the reader class did sanity checking.
+            except AttributeError:
+                raise SceptreException(
+                    f"Parameter '{key}' whose value is {value} "
+                    f"is of type {type(value)} and not expected here"
+                )
 
         return formatted_parameters
 
@@ -193,7 +209,7 @@ class StackDiffer(Generic[DiffType]):
                 stack_tags={tag["Key"]: tag["Value"] for tag in stack["Tags"]},
                 stack_name=stack["StackName"],
                 notifications=stack["NotificationARNs"],
-                role_arn=stack.get("RoleARN"),
+                cloudformation_service_role=stack.get("RoleARN"),
             )
 
     def _handle_special_parameter_situations(
@@ -219,6 +235,7 @@ class StackDiffer(Generic[DiffType]):
             self._remove_deployed_default_parameters_that_arent_passed(
                 deployed_template_summary, generated_config, deployed_config
             )
+
         if not self.show_no_echo:
             # We don't actually want to show parameters Sceptre is passing that the local template
             # marks as NoEcho parameters (unless show_no_echo is set to true). Therefore those
@@ -306,7 +323,7 @@ class StackDiffer(Generic[DiffType]):
                 generated_config.parameters[key] = self.NO_ECHO_REPLACEMENT
 
     def _generate_template(self, stack_actions: StackActions) -> str:
-        return stack_actions.generate()
+        return stack_actions.dump_template()
 
     def _get_deployed_template(
         self, stack_actions: StackActions, is_deployed: bool
@@ -354,7 +371,7 @@ class DeepDiffStackDiffer(StackDiffer[deepdiff.DeepDiff]):
         self,
         show_no_echo=False,
         *,
-        universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load
+        universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load,
     ):
         """Initializes a DeepDiffStackDiffer.
 
@@ -402,7 +419,7 @@ class DifflibStackDiffer(StackDiffer[List[str]]):
         self,
         show_no_echo=False,
         *,
-        universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load
+        universal_template_loader: Callable[[str], Tuple[dict, str]] = cfn_flip.load,
     ):
         """Initializes a DifflibStackDiffer.
 

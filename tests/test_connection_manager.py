@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
+import warnings
+import pytest
 
+from collections import defaultdict
 from typing import Union
 from unittest.mock import Mock, patch, sentinel, create_autospec
+from deprecation import fail_if_not_removed
 
-import pytest
 from boto3.session import Session
 from botocore.exceptions import ClientError
-from moto import mock_s3
 
 from sceptre.connection_manager import (
     ConnectionManager,
     _retry_boto_call,
-    STACK_DEFAULT,
 )
 from sceptre.exceptions import RetryLimitExceededError, InvalidAWSCredentialsError
 
@@ -20,8 +21,8 @@ class TestConnectionManager(object):
     def setup_method(self, test_method):
         self.stack_name = None
         self.profile = None
-        self.iam_role = None
-        self.iam_role_session_duration = 3600
+        self.sceptre_role = None
+        self.sceptre_role_session_duration = 3600
         self.region = "eu-west-1"
 
         self.environment_variables = {
@@ -39,7 +40,7 @@ class TestConnectionManager(object):
             region=self.region,
             stack_name=self.stack_name,
             profile=self.profile,
-            iam_role=self.iam_role,
+            sceptre_role=self.sceptre_role,
             session_class=self.session_class,
             get_envs_func=lambda: self.environment_variables,
         )
@@ -59,44 +60,44 @@ class TestConnectionManager(object):
             region=self.region,
             stack_name="stack",
             profile="profile",
-            iam_role="iam_role",
-            iam_role_session_duration=21600,
+            sceptre_role="sceptre_role",
+            sceptre_role_session_duration=21600,
         )
 
         assert connection_manager.stack_name == "stack"
         assert connection_manager.profile == "profile"
-        assert connection_manager.iam_role == "iam_role"
-        assert connection_manager.iam_role_session_duration == 21600
+        assert connection_manager.sceptre_role == "sceptre_role"
+        assert connection_manager.sceptre_role_session_duration == 21600
         assert connection_manager.region == self.region
         assert connection_manager._boto_sessions == {}
         assert connection_manager._clients == {}
         assert connection_manager._stack_keys == {
-            "stack": (self.region, "profile", "iam_role")
+            "stack": (self.region, "profile", "sceptre_role")
         }
 
     def test_repr(self):
         self.connection_manager.stack_name = "stack"
         self.connection_manager.profile = "profile"
         self.connection_manager.region = "region"
-        self.connection_manager.iam_role = "iam_role"
+        self.connection_manager.sceptre_role = "sceptre_role"
         response = self.connection_manager.__repr__()
         assert (
             response == "sceptre.connection_manager.ConnectionManager("
             "region='region', profile='profile', stack_name='stack', "
-            "iam_role='iam_role', iam_role_session_duration='None')"
+            "sceptre_role='sceptre_role', sceptre_role_session_duration='None')"
         )
 
-    def test_repr_with_iam_role_session_duration(self):
+    def test_repr_with_sceptre_role_session_duration(self):
         self.connection_manager.stack_name = "stack"
         self.connection_manager.profile = "profile"
         self.connection_manager.region = "region"
-        self.connection_manager.iam_role = "iam_role"
-        self.connection_manager.iam_role_session_duration = 21600
+        self.connection_manager.sceptre_role = "sceptre_role"
+        self.connection_manager.sceptre_role_session_duration = 21600
         response = self.connection_manager.__repr__()
         assert (
             response == "sceptre.connection_manager.ConnectionManager("
             "region='region', profile='profile', stack_name='stack', "
-            "iam_role='iam_role', iam_role_session_duration='21600')"
+            "sceptre_role='sceptre_role', sceptre_role_session_duration='21600')"
         )
 
     def test_boto_session_with_cache(self):
@@ -107,7 +108,7 @@ class TestConnectionManager(object):
 
     def test__get_session__no_args__no_defaults__makes_boto_session_with_defaults(self):
         self.connection_manager.profile = None
-        self.connection_manager.iam_role = None
+        self.connection_manager.sceptre_role = None
 
         boto_session = self.connection_manager.get_session()
 
@@ -122,7 +123,7 @@ class TestConnectionManager(object):
 
     def test_get_session__no_args__connection_manager_has_profile__uses_profile(self):
         self.connection_manager.profile = "fancy"
-        self.connection_manager.iam_role = None
+        self.connection_manager.sceptre_role = None
 
         boto_session = self.connection_manager.get_session()
 
@@ -167,19 +168,21 @@ class TestConnectionManager(object):
         )
         assert boto_session == self.mock_session
 
-    def test_get_session__no_iam_role_passed__no_iam_role_on_connection_manager__does_not_assume_role(
+    def test_get_session__no_sceptre_role_passed__no_sceptre_role_on_connection_manager__does_not_assume_role(
         self,
     ):
-        self.connection_manager.iam_role = None
+        self.connection_manager.sceptre_role = None
 
         self.connection_manager.get_session()
         self.mock_session.client.assert_not_called()
 
-    def test_get_session__none_passed_for_iam_role__iam_role_on_connection_manager__does_not_assume_role(
+    def test_get_session__none_passed_for_sceptre_role__sceptre_role_on_connection_manager__does_not_assume_role(
         self,
     ):
-        self.connection_manager.iam_role = "arn:aws:iam::123456:role/my-path/other-role"
-        self.connection_manager.get_session(iam_role=None)
+        self.connection_manager.sceptre_role = (
+            "arn:aws:iam::123456:role/my-path/other-role"
+        )
+        self.connection_manager.get_session(sceptre_role=None)
 
         self.mock_session.client.assert_not_called()
 
@@ -188,7 +191,7 @@ class TestConnectionManager(object):
         [
             pytest.param(
                 "arn:aws:iam::123456:role/my-path/my-role",
-                STACK_DEFAULT,
+                ConnectionManager.STACK_DEFAULT,
                 id="role on connection manager",
             ),
             pytest.param(
@@ -198,17 +201,21 @@ class TestConnectionManager(object):
             ),
         ],
     )
-    def test_get_session__iam_role__assumes_that_role(self, connection_manager, arg):
-        self.connection_manager.iam_role = connection_manager
+    def test_get_session__sceptre_role__assumes_that_role(
+        self, connection_manager, arg
+    ):
+        self.connection_manager.sceptre_role = connection_manager
 
         kwargs = {}
-        if arg != STACK_DEFAULT:
-            kwargs["iam_role"] = arg
+        if arg != self.connection_manager.STACK_DEFAULT:
+            kwargs["sceptre_role"] = arg
 
         self.connection_manager.get_session(**kwargs)
 
         self.mock_session.client.assert_called_once_with("sts")
-        expected_role = arg if arg != STACK_DEFAULT else connection_manager
+        expected_role = (
+            arg if arg != self.connection_manager.STACK_DEFAULT else connection_manager
+        )
         self.mock_session.client.return_value.assume_role.assert_called_once_with(
             RoleArn=expected_role, RoleSessionName="my-role-session"
         )
@@ -222,44 +229,44 @@ class TestConnectionManager(object):
             aws_session_token=credentials["SessionToken"],
         )
 
-    def test_get_session__iam_role_and_session_duration_on_connection_manager__uses_session_duration(
+    def test_get_session__sceptre_role_and_session_duration_on_connection_manager__uses_session_duration(
         self,
     ):
-        self.connection_manager.iam_role = "iam_role"
-        self.connection_manager.iam_role_session_duration = 21600
+        self.connection_manager.sceptre_role = "sceptre_role"
+        self.connection_manager.sceptre_role_session_duration = 21600
 
         self.connection_manager.get_session()
 
         self.mock_session.client.return_value.assume_role.assert_called_once_with(
-            RoleArn=self.connection_manager.iam_role,
+            RoleArn=self.connection_manager.sceptre_role,
             RoleSessionName="{0}-session".format(
-                self.connection_manager.iam_role.split("/")[-1]
+                self.connection_manager.sceptre_role.split("/")[-1]
             ),
             DurationSeconds=21600,
         )
 
-    def test_get_session__with_iam_role__returning_empty_credentials__raises_invalid_aws_credentials_error(
+    def test_get_session__with_sceptre_role__returning_empty_credentials__raises_invalid_aws_credentials_error(
         self,
     ):
         self.connection_manager._boto_sessions = {}
-        self.connection_manager.iam_role = "iam_role"
+        self.connection_manager.sceptre_role = "sceptre_role"
 
         self.mock_session.get_credentials.return_value = None
 
         with pytest.raises(InvalidAWSCredentialsError):
             self.connection_manager.get_session(
-                self.profile, self.region, self.connection_manager.iam_role
+                self.profile, self.region, self.connection_manager.sceptre_role
             )
 
     def test_get_client_with_no_pre_existing_clients(self):
         service = "s3"
         region = "eu-west-1"
         profile = None
-        iam_role = None
+        sceptre_role = None
         stack = self.stack_name
 
         client = self.connection_manager._get_client(
-            service, region, profile, stack, iam_role
+            service, region, profile, stack, sceptre_role
         )
         expected_client = self.mock_session.client.return_value
         assert client == expected_client
@@ -268,15 +275,15 @@ class TestConnectionManager(object):
     def test_get_client_with_existing_client(self):
         service = "cloudformation"
         region = "eu-west-1"
-        iam_role = None
+        sceptre_role = None
         profile = None
         stack = self.stack_name
 
         client_1 = self.connection_manager._get_client(
-            service, region, profile, stack, iam_role
+            service, region, profile, stack, sceptre_role
         )
         client_2 = self.connection_manager._get_client(
-            service, region, profile, stack, iam_role
+            service, region, profile, stack, sceptre_role
         )
         assert client_1 == client_2
         assert self.mock_session.client.call_count == 1
@@ -287,37 +294,397 @@ class TestConnectionManager(object):
     ):
         service = "cloudformation"
         region = "eu-west-1"
-        iam_role = None
+        sceptre_role = None
         profile = None
         stack = self.stack_name
 
         self.connection_manager.profile = None
         client_1 = self.connection_manager._get_client(
-            service, region, profile, stack, iam_role
+            service, region, profile, stack, sceptre_role
         )
         client_2 = self.connection_manager._get_client(
-            service, region, profile, stack, iam_role
+            service, region, profile, stack, sceptre_role
         )
         assert client_1 == client_2
 
-    @mock_s3
-    def test_call_with_valid_service_and_call(self):
+    def test_call__profile_region_and_role_are_stack_default__uses_instance_settings(
+        self,
+    ):
         service = "s3"
         command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = None
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+        expected_client = self.set_up_expected_client(
+            service, stack_name, instance_profile, self.region, instance_role
+        )
 
-        connection_manager = ConnectionManager(region=self.region)
-        return_value = connection_manager.call(service, command, {})
-        assert return_value["ResponseMetadata"]["HTTPStatusCode"] == 200
+        self.connection_manager.call(service, command)
+        expected_client.list_buckets.assert_any_call()
 
-    @mock_s3
-    def test_call_with_valid_service_and_stack_name_call(self):
+    def set_connection_manager_vars(self, profile, region, sceptre_role):
+        self.connection_manager.region = region
+        self.connection_manager.profile = profile
+        self.connection_manager.sceptre_role = sceptre_role
+
+    def set_up_expected_client(
+        self, service, stack_name, profile, region, sceptre_role
+    ):
+        self.connection_manager._clients = clients = defaultdict(Mock)
+        clients[(service, region, profile, stack_name, sceptre_role)] = expected = Mock(
+            name="expected"
+        )
+        return expected
+
+    def set_target_stack_settings(self, stack_name, profile, region, role):
+        self.connection_manager._stack_keys = settings = defaultdict(
+            lambda: ("wrong", "wrong", "wrong")
+        )
+        settings[stack_name] = (region, profile, role)
+
+    def test_call__profile_region_set__role_is_stack_default__uses_instance_role(self):
         service = "s3"
         command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = None
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
 
-        connection_manager = ConnectionManager(region=self.region, stack_name="stack")
+        expected_profile = "new profile"
+        expected_region = "us-west-800"
+        expected_client = self.set_up_expected_client(
+            service, stack_name, expected_profile, expected_region, instance_role
+        )
 
-        return_value = connection_manager.call(service, command, {}, stack_name="stack")
-        assert return_value["ResponseMetadata"]["HTTPStatusCode"] == 200
+        self.connection_manager.call(
+            service, command, profile=expected_profile, region=expected_region
+        )
+        expected_client.list_buckets.assert_any_call()
+
+    def test_call__profile_region_set__role_is_none__nullifies_role(self):
+        service = "s3"
+        command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = None
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+
+        expected_profile = "new profile"
+        expected_region = "us-west-800"
+        expected_role = None
+        expected_client = self.set_up_expected_client(
+            service, stack_name, expected_profile, expected_region, expected_role
+        )
+
+        self.connection_manager.call(
+            service,
+            command,
+            profile=expected_profile,
+            region=expected_region,
+            sceptre_role=expected_role,
+        )
+        expected_client.list_buckets.assert_any_call()
+
+    def test_call__stack_name_set_and_cached__profile_region_and_role_are_stack_default__uses_target_stack_settings(
+        self,
+    ):
+        service = "s3"
+        command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = "target"
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+
+        target_profile = "new profile"
+        target_region = "us-west-800"
+        target_role = "roley role"
+        self.set_target_stack_settings(
+            stack_name, target_profile, target_region, target_role
+        )
+        expected_client = self.set_up_expected_client(
+            service, stack_name, target_profile, target_region, target_role
+        )
+
+        self.connection_manager.call(
+            service,
+            command,
+            stack_name=stack_name,
+        )
+        expected_client.list_buckets.assert_any_call()
+
+    def test_call__stack_name_set_not_cached__profile_region_and_role_are_stack_default__uses_target_stack_settings(
+        self,
+    ):
+        service = "s3"
+        command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = "target"
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+
+        expected_client = self.set_up_expected_client(
+            service, stack_name, instance_profile, self.region, instance_role
+        )
+
+        self.connection_manager.call(
+            service,
+            command,
+            stack_name=stack_name,
+        )
+        expected_client.list_buckets.assert_any_call()
+
+    def test_call__stack_name_set_and_cached__profile_region_and_role_are_none__uses_current_stack_settings(
+        self,
+    ):
+        service = "s3"
+        command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = "target"
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+
+        target_profile = "new profile"
+        target_region = "us-west-800"
+        target_role = "roley role"
+        self.set_target_stack_settings(
+            stack_name, target_profile, target_region, target_role
+        )
+        expected_client = self.set_up_expected_client(
+            service, stack_name, target_profile, target_region, target_role
+        )
+
+        self.connection_manager.call(
+            service,
+            command,
+            stack_name=stack_name,
+            profile=None,
+            region=None,
+            sceptre_role=None,
+        )
+        expected_client.list_buckets.assert_any_call()
+
+    def test_call__stack_name_set_not_cached__profile_region_and_role_are_none__uses_current_stack_settings(
+        self,
+    ):
+        service = "s3"
+        command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = "target"
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+
+        expected_client = self.set_up_expected_client(
+            service, stack_name, instance_profile, self.region, instance_role
+        )
+
+        self.connection_manager.call(
+            service,
+            command,
+            stack_name=stack_name,
+            profile=None,
+            region=None,
+            sceptre_role=None,
+        )
+        expected_client.list_buckets.assert_any_call()
+
+    def test_call__stack_name_set_and_cached__profile_and_region_are_stack_default_and_role_is_none__nullifies_role(
+        self,
+    ):
+        service = "s3"
+        command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = "target"
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+
+        target_profile = "new profile"
+        target_region = "us-west-800"
+        target_role = "roley role"
+        self.set_target_stack_settings(
+            stack_name, target_profile, target_region, target_role
+        )
+
+        expected_client = self.set_up_expected_client(
+            service, stack_name, target_profile, target_region, None
+        )
+
+        self.connection_manager.call(
+            service,
+            command,
+            stack_name=stack_name,
+            sceptre_role=None,
+        )
+        expected_client.list_buckets.assert_any_call()
+
+    def test_call__stack_name_set_not_cached__profile_and_region_are_stack_default_and_role_is_none__nullifies_role(
+        self,
+    ):
+        service = "s3"
+        command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = "target"
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+
+        expected_client = self.set_up_expected_client(
+            service, stack_name, instance_profile, self.region, None
+        )
+
+        self.connection_manager.call(
+            service,
+            command,
+            stack_name=stack_name,
+            sceptre_role=None,
+        )
+        expected_client.list_buckets.assert_any_call()
+
+    def test_call__invoked_with_iam_role_kwarg__emits_deprecation_warning(self):
+        service = "s3"
+        command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = None
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+        self.set_up_expected_client(
+            service, stack_name, instance_profile, self.region, instance_role
+        )
+
+        with warnings.catch_warnings(record=True) as recorded:
+            self.connection_manager.call(service, command, iam_role="new role")
+
+        assert len(recorded) == 1
+        assert issubclass(recorded[0].category, DeprecationWarning)
+
+    def test_call__stack_name_set_and_cached__invoked_with_iam_role_kwarg__emits_deprecation_warning(
+        self,
+    ):
+        service = "s3"
+        command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = "target"
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+
+        target_profile = "new profile"
+        target_region = "us-west-800"
+        target_role = "roley role"
+        self.set_target_stack_settings(
+            stack_name, target_profile, target_region, target_role
+        )
+        self.set_up_expected_client(
+            service, stack_name, target_profile, target_region, target_role
+        )
+        with warnings.catch_warnings(record=True) as recorded:
+            self.connection_manager.call(
+                service,
+                command,
+                stack_name=stack_name,
+                profile=None,
+                region=None,
+                iam_role=None,
+            )
+
+        assert len(recorded) == 1
+        assert issubclass(recorded[0].category, DeprecationWarning)
+
+    def test_call__stack_name_set_not_cached__invoked_with_iam_role_kwarg__emits_deprecation_warning(
+        self,
+    ):
+        service = "s3"
+        command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = "target"
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+
+        self.set_up_expected_client(
+            service, stack_name, instance_profile, self.region, instance_role
+        )
+        with warnings.catch_warnings(record=True) as recorded:
+            self.connection_manager.call(
+                service,
+                command,
+                stack_name=stack_name,
+                profile=None,
+                region=None,
+                iam_role=None,
+            )
+
+        assert len(recorded) == 1
+        assert issubclass(recorded[0].category, DeprecationWarning)
+
+    def test_call__invoked_with_iam_role__uses_that_as_sceptre_role(self):
+        service = "s3"
+        command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = None
+        expected_role = "new role"
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+        expected_client = self.set_up_expected_client(
+            service, stack_name, instance_profile, self.region, expected_role
+        )
+
+        with warnings.catch_warnings():
+            self.connection_manager.call(service, command, iam_role=expected_role)
+
+        expected_client.list_buckets.assert_any_call()
+
+    def test_call__stack_name_set_and_cached__invoked_with_iam_role__uses_that_as_sceptre_role(
+        self,
+    ):
+        service = "s3"
+        command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = "target"
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+
+        target_profile = "new profile"
+        target_region = "us-west-800"
+        target_role = "roley role"
+        self.set_target_stack_settings(
+            stack_name, target_profile, target_region, target_role
+        )
+
+        expected_role = "new role"
+        expected_client = self.set_up_expected_client(
+            service, stack_name, target_profile, target_region, expected_role
+        )
+
+        with warnings.catch_warnings():
+            self.connection_manager.call(
+                service,
+                command,
+                stack_name=stack_name,
+                iam_role=expected_role,
+            )
+        expected_client.list_buckets.assert_any_call()
+
+    def test_call__stack_name_set_not_cached__invoked_with_iam_role__uses_that_as_sceptre_role(
+        self,
+    ):
+        service = "s3"
+        command = "list_buckets"
+        instance_profile = "profile"
+        instance_role = "role"
+        stack_name = "target"
+        self.set_connection_manager_vars(instance_profile, self.region, instance_role)
+
+        expected_role = "new role"
+        expected_client = self.set_up_expected_client(
+            service, stack_name, instance_profile, self.region, expected_role
+        )
+
+        with warnings.catch_warnings():
+            self.connection_manager.call(
+                service,
+                command,
+                stack_name=stack_name,
+                iam_role=expected_role,
+            )
+        expected_client.list_buckets.assert_any_call()
 
     def test_create_session_environment_variables__no_token__returns_envs_dict(self):
         self.mock_session.configure_mock(
@@ -418,6 +785,23 @@ class TestConnectionManager(object):
             "AWS_REGION": "us-west-2",
         }
         assert expected == result
+
+    @fail_if_not_removed
+    def test_iam_role__is_removed_on_removal_version(self):
+        self.connection_manager.iam_role
+
+    @fail_if_not_removed
+    def test_iam_role_session_duration__is_removed_on_removal_version(self):
+        self.connection_manager.iam_role_session_duration
+
+    def test_init__iam_role_fields_resolve_to_sceptre_role_fields(self):
+        connection_manager = ConnectionManager(
+            region="us-west-2",
+            sceptre_role="sceptre_role",
+            sceptre_role_session_duration=123456,
+        )
+        assert connection_manager.iam_role == "sceptre_role"
+        assert connection_manager.iam_role_session_duration == 123456
 
 
 class TestRetry:

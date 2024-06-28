@@ -4,6 +4,155 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 4.4.2 (2024.01.13)
+ - Add support for python 3.12 (#1390)
+ - Drop support for Python 3.7 (#1382)
+ - [Resolves #1327] Setup readthedocs (#1404)
+ - [Resolves #1377] Remove auto announcements to twitter (#1385)
+ - [Resolves #1383] Simplify stderr test for cmd hook (#1387)
+ - Remove project Makefile (#1403)
+ - docs: Update instructions to generate docs and remove requirements file for docs (#1398) (#1405)
+ - ci: use matrix for unit tests (#1395)
+
+## 4.3.0 (2023.10.07)
+ - [Resolve #1351] Add debugging to Jinja rendering (#1375)
+ - [Resolves #1356] Add export=stackoutput and stackoutputexternal feature to list outputs (#1357)
+ - [Resolves #1213] Add shell option to cmd hook (#1372)
+ - [Resolve #1370] Use Python 3.11 for Black (#1371)
+ - Documentation updates (#1355) (#1373)
+
+## 4.2.2 (2023.07.18)
+ - [Resolve #1358] Updating PyYaml to ^6.0 (#1359)
+
+## 4.2.1 (2023.06.14)
+ - [Resolve #1344] Addressing issue with Generate hook and its deprecation (#1346)
+   Here is what this includes:
+     * The `dump_template` action ALSO triggers `before_generate` and
+       `after_generate`
+     * The `generate` action ALSO triggers `before_dump_template` and
+       `after_dump_template`
+     * The StackDiffer invokes `dump_template` rather than `generate`, preventing
+       our own code from triggering deprecation warnings.
+     * The documentation for hook points is updated to include all current hooks,
+       including notes about the aliasing.
+     * Deprecation of `generate` is removed after discussion in Slack. This
+       deprecation would be too disruptive to many users, and we agreed instead
+       to support a permanent alias of `generate` => `dump_template`.
+
+## 4.2.0 (2023.05.25)
+
+ - [Resolves #894] Switch to using poetry (#1323)
+ - Remove Moto dependency (#1330)
+ - Write rendered template to a temp file (#1321)
+ - [Resolve #1319] Add colouring for missing state DELETE_SKIPPED
+ - [Resolve #1291] Fix attribute error caused by a relative project path
+ - [Resolve #1318] Implement dump template and write output files
+ - [Resolve #1336] Add bugfix in Stack Differ (#1337)
+
+## 4.1.0 (2023.04.17)
+### Added
+ - [Resolve #1304] Adding StackLoggerAdapter to hooks, resolvers, and template handler
+ - [Resolve #1263] Stack output caching
+ - [Resolve #1252] Supporting resolvers in Hook and Resolver arguments, with new
+   !substitute, !join, !split, and !select resolvers!
+
+### Nonfunctional
+ - add a pre-commit linter to validate circleci configs
+
+## 4.0.2 (2023.02.20)
+### Fixed
+ - [Resolve #1307] Fixing Connection Manager bug (#1308)
+
+## 4.0.1 (2023.02.12)
+
+### Changed
+ - Supporting `!rcmd` resolver up to v2
+
+## 4.0.0 (2023.02.08)
+
+### Added
+ - [Resolve #1283] Introducing `sceptre_role`, `cloudformation_service_role` (#1295)
+   - These are just iam_role and role_arn renamed to be a lot clearer. See "Deprecations" below.
+
+
+### Changed
+ - [Resolve #1299] Making the ConnectionManager a more "friendly" interface for hooks, resolvers,
+   and template handlers (#1287, #1300)
+   - This creates adds the public `get_session()` and
+     `create_session_environment_variables()` methods to make AWS interactions
+     easier and more consistent with individual stack configurations for
+     iam_role, profile, and region configurations.
+   - The `call()` method now properly distinguishes between default stack
+     configurations for profile, region, and `sceptre_role` and setting those to
+     `None` to nullify them.
+ - Preventing Duplicate Deprecation Warnings from being emitted (#1297)
+
+#### _Potentially_ Breaking Changes
+ - The !cmd hook now invokes the passed command using the AWS environment
+   variables that correspond with the stack's IAM configurations (i.e. iam_role,
+   profile, region). This means that the hook will operate the same as every
+   other part of Sceptre and regard how the stack is configured. This should make
+   it easier to invoke other tools like AWS CLI with your hooks. However, if
+   your project is setting environment variables with the intent to change how
+   the command authenticates with AWS (such as a different token, profile, or
+   region), these environment variables will be overridden. To maintain the same
+   functionality, you should prefix your command with
+   `export AWS_SESSION_TOKEN={{environment_variable.AWS_SESSION_TOKEN}} &&` (or
+   whatever other environment variable(s) you need to explicitly set).
+
+### Deprecations
+ - [Resolve #1283] Deprecating `iam_role`, `role_arn`, and `template_path` (#1295)
+   - `iam_role` and `role_arn` have been aliased to `sceptre_role` and
+      `cloudformation_service_role`. Using these fields will result in a
+      DeprecationWarning.
+   - `template_path` has actually been slated for removal since v2.7. `template`
+      should be used instead. Using `template_path` will result in a
+      DeprecationWarning.
+   - All three deprecated StackConfig fields will be removed in v5.0.0.
+
+## 3.3.0 (2023.02.06)
+
+### Added
+ - [Resolve #1261] Add coloured differ (#1260)
+   - Implements coloured diffs for the diff (difflib) command. Responds to --no-color.
+ - [Resolves #1271] Extend stack colourer to include "IMPORT" states (#1272)
+ - [Resolves #1179] cloudformation disable-rollback option (#1282)
+   - Allow user to disable a cloudformation rollback on a sceptre deployment.
+
+### Changed
+ - [Resolve #1098] Deploy docker container to sceptreorg repo (#1265)
+   - Deploy sceptre docker images to dockerhub sceptreorg repo instead of cloudreach repo
+ - Updating Setuptools and wheel versions to avert security issues
+ - [Resolve #1293] Improve the Stack Config Jinja Syntax Error Message to include the Stack Name (#1294)
+ - [Resolves #1267] Improve the Stack Config Jinja Error Message to include the Stack Name (#1269)
+
+### Fixed
+ - [Resolve #1273] Events start from response time (#1275)
+   - Resolves #1273 by starting event filtering from the timestamp returned in
+     the AWS response headers rather than relying on the workstation clock.
+ - [Resolve #1253] Failed downloads raise error (#1277)
+   - Throwing an informative error when the template fails to download instead
+     of passing the error message to CloudFormation.
+ - [Resolves #1179] Changed disable-rollback default to None (#1288)
+   - We want the default value to be None to represent "Do whatever's configured
+     in the StackConfig" and True/False will override the StackConfig.
+
+### Nonfunctional
+ - Add tweet-release to CircleCI config (#1259)
+ - [Resolves #1276] Adopt Black Auto-formatter (#1278)
+   - Reformatting all Python files using the Black code formatter. This also
+     delivers a new function for generating `__repr__` methods which was needed
+     to deal with a line-too-long issue in Template. Per discussion in #1276 this
+     PR also disables E203 in flake8.
+ - Update sceptre-circleci docker image (#1284)
+   - Update to build and test with a docker image that's based on the official
+     circleci python docker image.
+ - [Resolve #1264] Updating the CDK docs to point to the new sceptre-cdk-handler
+   (#1285)
+   - This updates our docs to no longer reference the old CDK approach (which
+     didn't work with CDK assets). In its place, it references the new
+     sceptre-cdk-handler package that covers that functionality.
+
 ## 3.2.0 (2022.09.20)
 
 ### Added

@@ -5,6 +5,8 @@ from unittest.mock import MagicMock, patch, sentinel
 
 from sceptre.exceptions import DependencyStackMissingOutputError
 from sceptre.exceptions import StackDoesNotExistError
+from sceptre.exceptions import SceptreException
+
 from botocore.exceptions import ClientError
 
 from sceptre.connection_manager import ConnectionManager
@@ -20,6 +22,7 @@ class TestStackOutputResolver(object):
     @patch("sceptre.resolvers.stack_output.StackOutput._get_output_value")
     def test_resolver(self, mock_get_output_value):
         stack = MagicMock(spec=Stack)
+        stack.name = "my/stack"
         stack.dependencies = []
         stack.project_code = "project-code"
         stack._connection_manager = MagicMock(spec=ConnectionManager)
@@ -29,7 +32,7 @@ class TestStackOutputResolver(object):
         dependency.name = "account/dev/vpc"
         dependency.profile = "dependency_profile"
         dependency.region = "dependency_region"
-        dependency.iam_role = "dependency_iam_role"
+        dependency.sceptre_role = "dependency_sceptre_role"
 
         mock_get_output_value.return_value = "output_value"
 
@@ -46,12 +49,26 @@ class TestStackOutputResolver(object):
             "VpcId",
             profile="dependency_profile",
             region="dependency_region",
-            iam_role="dependency_iam_role",
+            sceptre_role="dependency_sceptre_role",
         )
+
+    @patch("sceptre.resolvers.stack_output.StackOutput._get_output_value")
+    def test_resolver__badly_formatted(self, mock_get_output_value):
+        stack = MagicMock(spec=Stack)
+        stack.name = "my/stack"
+
+        stack_output_resolver = StackOutput("not_a_valid_stack_output", stack)
+
+        with pytest.raises(
+            SceptreException,
+            match="!stack_output arg should match STACK_NAME::OUTPUT_KEY",
+        ):
+            stack_output_resolver.setup()
 
     @patch("sceptre.resolvers.stack_output.StackOutput._get_output_value")
     def test_resolver_with_existing_dependencies(self, mock_get_output_value):
         stack = MagicMock(spec=Stack)
+        stack.name = "my/stack"
         stack.dependencies = ["existing"]
         stack.project_code = "project-code"
         stack._connection_manager = MagicMock(spec=ConnectionManager)
@@ -61,7 +78,7 @@ class TestStackOutputResolver(object):
         dependency.name = "account/dev/vpc"
         dependency.profile = "dependency_profile"
         dependency.region = "dependency_region"
-        dependency.iam_role = "dependency_iam_role"
+        dependency.sceptre_role = "dependency_sceptre_role"
 
         mock_get_output_value.return_value = "output_value"
 
@@ -78,12 +95,13 @@ class TestStackOutputResolver(object):
             "VpcId",
             profile="dependency_profile",
             region="dependency_region",
-            iam_role="dependency_iam_role",
+            sceptre_role="dependency_sceptre_role",
         )
 
     @patch("sceptre.resolvers.stack_output.StackOutput._get_output_value")
     def test_resolve_with_implicit_stack_reference(self, mock_get_output_value):
         stack = MagicMock(spec=Stack)
+        stack.name = "my/stack"
         stack.dependencies = []
         stack.project_code = "project-code"
         stack.name = "account/dev/stack"
@@ -94,7 +112,7 @@ class TestStackOutputResolver(object):
         dependency.name = "account/dev/vpc"
         dependency.profile = "dependency_profile"
         dependency.region = "dependency_region"
-        dependency.iam_role = "dependency_iam_role"
+        dependency.sceptre_role = "dependency_sceptre_role"
 
         mock_get_output_value.return_value = "output_value"
 
@@ -111,7 +129,7 @@ class TestStackOutputResolver(object):
             "VpcId",
             profile="dependency_profile",
             region="dependency_region",
-            iam_role="dependency_iam_role",
+            sceptre_role="dependency_sceptre_role",
         )
 
     @patch("sceptre.resolvers.stack_output.StackOutput._get_output_value")
@@ -119,6 +137,7 @@ class TestStackOutputResolver(object):
         self, mock_get_output_value
     ):
         stack = MagicMock(spec=Stack)
+        stack.name = "my/stack"
         stack.dependencies = []
         stack.project_code = "project-code"
         stack.name = "stack"
@@ -129,7 +148,7 @@ class TestStackOutputResolver(object):
         dependency.name = "vpc"
         dependency.profile = "dependency_profile"
         dependency.region = "dependency_region"
-        dependency.iam_role = "dependency_iam_role"
+        dependency.sceptre_role = "dependency_sceptre_role"
 
         mock_get_output_value.return_value = "output_value"
 
@@ -146,7 +165,7 @@ class TestStackOutputResolver(object):
             "VpcId",
             profile="dependency_profile",
             region="dependency_region",
-            iam_role="dependency_iam_role",
+            sceptre_role="dependency_sceptre_role",
         )
 
 
@@ -154,6 +173,7 @@ class TestStackOutputExternalResolver(object):
     @patch("sceptre.resolvers.stack_output.StackOutputExternal._get_output_value")
     def test_resolve(self, mock_get_output_value):
         stack = MagicMock(spec=Stack)
+        stack.name = "my/stack"
         stack.dependencies = []
         stack._connection_manager = MagicMock(spec=ConnectionManager)
         stack_output_external_resolver = StackOutputExternal(
@@ -166,18 +186,34 @@ class TestStackOutputExternalResolver(object):
         )
         assert stack.dependencies == []
 
+    @patch("sceptre.resolvers.stack_output.StackOutput._get_output_value")
+    def test_resolve__badly_formatted(self, mock_get_output_value):
+        stack = MagicMock(spec=Stack)
+        stack.name = "my/stack"
+
+        stack_output_external_resolver = StackOutputExternal(
+            "not_a_valid_stack_output", stack
+        )
+
+        with pytest.raises(
+            SceptreException,
+            match="!stack_output_external arg should match STACK_NAME::OUTPUT_KEY",
+        ):
+            stack_output_external_resolver.resolve()
+
     @patch("sceptre.resolvers.stack_output.StackOutputExternal._get_output_value")
     def test_resolve_with_args(self, mock_get_output_value):
         stack = MagicMock(spec=Stack)
+        stack.name = "my/stack"
         stack.dependencies = []
         stack._connection_manager = MagicMock(spec=ConnectionManager)
         stack_output_external_resolver = StackOutputExternal(
-            "another/account-vpc::VpcId region::profile::iam_role", stack
+            "another/account-vpc::VpcId region::profile::sceptre_role", stack
         )
         mock_get_output_value.return_value = "output_value"
         stack_output_external_resolver.resolve()
         mock_get_output_value.assert_called_once_with(
-            "another/account-vpc", "VpcId", "region", "profile", "iam_role"
+            "another/account-vpc", "VpcId", "region", "profile", "sceptre_role"
         )
         assert stack.dependencies == []
 
@@ -200,6 +236,7 @@ class MockStackOutputBase(StackOutputBase):
 class TestStackOutputBaseResolver(object):
     def setup_method(self, test_method):
         self.stack = MagicMock(spec=Stack)
+        self.stack.name = "my/stack.yaml"
         self.stack._connection_manager = MagicMock(spec=ConnectionManager)
         self.base_stack_output_resolver = MockStackOutputBase(None, self.stack)
 

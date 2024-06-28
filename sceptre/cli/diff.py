@@ -88,7 +88,7 @@ def diff_command(
     \b
       * parameters
       * notifications
-      * role_arn
+      * cloudformation_service_role
       * stack_tags
 
     Important: There are resolvers (notably !stack_output) that rely on other stacks

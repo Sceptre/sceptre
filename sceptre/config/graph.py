@@ -90,14 +90,18 @@ class StackGraph(object):
         :param stack: A Sceptre Stack
         :param dependencies: a collection of dependency paths
         """
-        self.logger.debug("Generate dependencies for stack {0}".format(stack))
+        self.logger.debug(f"Generate dependencies for stack {stack}")
         for dependency in set(dependencies):
             self.graph.add_edge(dependency, stack)
-            if not nx.is_directed_acyclic_graph(self.graph):
+            try:
+                cycle = nx.find_cycle(self.graph, orientation="original")
+                cycle_str = ", ".join([f"{edge[0]} -> {edge[1]}" for edge in cycle])
                 raise CircularDependenciesError(
-                    f"Dependency cycle detected: {stack} {dependency}"
+                    f"Dependency cycle detected: {cycle_str}"
                 )
-            self.logger.debug("  Added dependency: {}".format(dependency))
+            except nx.NetworkXNoCycle:
+                pass  # No cycle, continue
+            self.logger.debug(f"  Added dependency: {dependency}")
 
         if not dependencies:
             self.graph.add_node(stack)

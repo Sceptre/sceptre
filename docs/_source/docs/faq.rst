@@ -90,14 +90,14 @@ How do I call AWS services or use AWS-based tools in my custom hook/resolver/tem
 In order to call AWS services in your custom hook/resolver/template handler properly, you should use
 the IAM configurations of the stack where the resolver is being used (unless you need to use a
 different configuration for a specific reason). This means your hook/resolver/handler should honor the
-``profile``, ``region``, and ``iam_role`` configurations as set for your project and/or Stack Config.
+``profile``, ``region``, and ``sceptre_role`` configurations as set for your project and/or Stack Config.
 Simply invoking ``boto3.client('s3')`` is _not_ going to regard those and could end up using the
 wrong credentials or not even working.
 
 There is a simple interface available for doing this properly, the
 :py:class:`sceptre.connection_manager.ConnectionManager`. The ConnectionManager is an interface that
-will be pre-configured with each stack's profile, region, and iam_role and will be ready for you to use.
-If you are using an `iam_role`, it will automatically assume that role via STS for making calls to
+will be pre-configured with each stack's profile, region, and sceptre_role and will be ready for you to use.
+If you are using an ``sceptre_role``, it will automatically assume that role via STS for making calls to
 AWS so you can just use it the way you want. It is accessible on hooks and resolvers via
 ``self.stack.connection_manager`` and on template_handlers via ``self.connection_manager``.
 

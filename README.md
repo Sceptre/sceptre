@@ -1,12 +1,12 @@
 # Sceptre
 
-[![CircleCI](https://img.shields.io/circleci/build/github/Sceptre/sceptre?logo=circleci)](https://app.circleci.com/pipelines/github/Sceptre)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Sceptre/sceptre/gate.yaml)](https://github.com/Sceptre/sceptre/actions/workflows/gate.yaml)
 [![Docker Image Version (latest semver)](https://img.shields.io/docker/v/sceptreorg/sceptre?logo=docker&sort=semver)](https://hub.docker.com/r/sceptreorg/sceptre)
 [![PyPI](https://img.shields.io/pypi/v/sceptre?logo=pypi)](https://pypi.org/project/sceptre/)
 [![PyPI - Status](https://img.shields.io/pypi/status/sceptre?logo=pypi)](https://pypi.org/project/sceptre/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/sceptre?logo=pypi)](https://pypi.org/project/sceptre/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/sceptre?logo=pypi)](https://pypi.org/project/sceptre/)
-[![License](https://img.shields.io/pypi/l/sceptre?logo=apache)](https://github.com/Sceptre/sceptre/blob/main/LICENSE)
+[![License](https://img.shields.io/pypi/l/sceptre?logo=apache)](https://github.com/Sceptre/sceptre/blob/master/LICENSE)
 
 ## About
 
@@ -271,12 +271,9 @@ Sceptre community discussions happen in the #sceptre chanel in the
 on <http://slackhatesthe.cloud/> to create an account and join the
 #sceptre channel.
 
-Follow the [SceptreOrg Twitter account](https://twitter.com/SceptreOrg) to get announcements on the latest releases.
-
 ## Contributing
 
 See our [Contributing Guide](CONTRIBUTING.md)
-
 
 ## Sponsors
 
