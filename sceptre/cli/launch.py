@@ -90,6 +90,30 @@ class Launcher:
             pruner = self._make_pruner(self._context, self._make_plan)
             pruner.print_operations()
 
+        dependencies = ""
+        for stack in deploy_plan:
+            if stack.ignore or (stack.obsolete and not prune):
+                dependencies += "{}Skip:\t{}{}\n".format(
+                    Fore.LIGHTWHITE_EX,
+                    stack.name,
+                    Style.RESET_ALL,
+                )
+            elif stack.obsolete and prune:
+                dependencies += "{}Delete:\t{}{}\n".format(
+                    Fore.RED,
+                    stack.name,
+                    Style.RESET_ALL,
+                )
+            else:
+                dependencies += "{}Deploy:\t{}{}\n".format(
+                    Fore.YELLOW,
+                    stack.name,
+                    Style.RESET_ALL,
+                )
+
+        print("The following operations will occur, in the following order:")
+        print(dependencies)
+
     def launch(self, prune: bool) -> int:
         deploy_plan = self._create_deploy_plan()
         stacks_to_skip = self._get_stacks_to_skip(deploy_plan, prune)
