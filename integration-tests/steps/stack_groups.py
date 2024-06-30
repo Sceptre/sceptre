@@ -97,68 +97,6 @@ def step_impl(context, stack_group_name):
     sceptre_plan.delete()
 
 
-@when('the user describes stack_group "{stack_group_name}"')
-def step_impl(context, stack_group_name):
-    sceptre_context = SceptreContext(
-        command_path=stack_group_name, project_path=context.sceptre_dir
-    )
-
-    sceptre_plan = SceptrePlan(sceptre_context)
-    responses = sceptre_plan.describe()
-
-    stack_names = get_full_stack_names(context, stack_group_name)
-    cfn_stacks = {}
-
-    for response in responses.values():
-        if response is None:
-            continue
-        for stack in response["Stacks"]:
-            cfn_stacks[stack["StackName"]] = stack["StackStatus"]
-
-    context.response = [
-        {short_name: cfn_stacks[full_name]}
-        for short_name, full_name in stack_names.items()
-        if cfn_stacks.get(full_name)
-    ]
-
-
-@when('the user describes stack_group "{stack_group_name}" with ignore dependencies')
-def step_impl(context, stack_group_name):
-    sceptre_context = SceptreContext(
-        command_path=stack_group_name,
-        project_path=context.sceptre_dir,
-        ignore_dependencies=True,
-    )
-
-    sceptre_plan = SceptrePlan(sceptre_context)
-    responses = sceptre_plan.describe()
-
-    stack_names = get_full_stack_names(context, stack_group_name)
-    cfn_stacks = {}
-
-    for response in responses.values():
-        if response is None:
-            continue
-        for stack in response["Stacks"]:
-            cfn_stacks[stack["StackName"]] = stack["StackStatus"]
-
-    context.response = [
-        {short_name: cfn_stacks[full_name]}
-        for short_name, full_name in stack_names.items()
-        if cfn_stacks.get(full_name)
-    ]
-
-
-@when('the user describes resources in stack_group "{stack_group_name}"')
-def step_impl(context, stack_group_name):
-    sceptre_context = SceptreContext(
-        command_path=stack_group_name, project_path=context.sceptre_dir
-    )
-
-    sceptre_plan = SceptrePlan(sceptre_context)
-    context.response = sceptre_plan.describe_resources().values()
-
-
 @when(
     'the user describes resources in stack_group "{stack_group_name}" with ignore dependencies'
 )
@@ -196,21 +134,6 @@ def step_impl(context, stack_group_name):
     check_stack_status(context, full_stack_names, None)
 
 
-@then('all stacks in stack_group "{stack_group_name}" are described as "{status}"')
-def step_impl(context, stack_group_name, status):
-    stacks_names = get_stack_names(context, stack_group_name)
-    expected_response = [{stack_name: status} for stack_name in stacks_names]
-    for response in context.response:
-        assert response in expected_response
-
-
-@then("no resources are described")
-def step_impl(context):
-    for stack_resources in context.response:
-        stack_name = next(iter(stack_resources))
-        assert stack_resources == {stack_name: []}
-
-
 @then('stack "{stack_name}" is described as "{status}"')
 def step_impl(context, stack_name, status):
     response = next(
@@ -219,51 +142,6 @@ def step_impl(context, stack_name, status):
     )
 
     assert response[stack_name] == status
-
-
-@then('only all resources in stack_group "{stack_group_name}" are described')
-def step_impl(context, stack_group_name):
-    stacks_names = get_full_stack_names(context, stack_group_name)
-    expected_resources = {}
-    sceptre_response = []
-    for stack_resources in context.response:
-        for resource in stack_resources.values():
-            sceptre_response.append(resource[0]["PhysicalResourceId"])
-
-    for short_name, full_name in stacks_names.items():
-        time.sleep(1)
-        response = retry_boto_call(
-            context.client.describe_stack_resources, StackName=full_name
-        )
-        expected_resources[short_name] = response["StackResources"]
-
-    for short_name, resources in expected_resources.items():
-        for resource in resources:
-            sceptre_response.remove(resource["PhysicalResourceId"])
-
-    assert sceptre_response == []
-
-
-@then('only resources in stack "{stack_name}" are described')
-def step_impl(context, stack_name):
-    expected_resources = {}
-    sceptre_response = []
-    for stack_resources in context.response:
-        for resource in stack_resources.values():
-            if resource:
-                sceptre_response.append(resource[0].get("PhysicalResourceId"))
-
-    response = retry_boto_call(
-        context.client.describe_stack_resources,
-        StackName=get_cloudformation_stack_name(context, stack_name),
-    )
-    expected_resources[stack_name] = response["StackResources"]
-
-    for short_name, resources in expected_resources.items():
-        for resource in resources:
-            sceptre_response.remove(resource["PhysicalResourceId"])
-
-    assert sceptre_response == []
 
 
 @then('that stack "{first_stack}" was created before "{second_stack}"')
