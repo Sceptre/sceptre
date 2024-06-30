@@ -191,6 +191,14 @@ class InvalidAWSCredentialsError(SceptreException):
     pass
 
 
+class InvalidParameterError(SceptreException):
+    """
+    Error raised when parameters are invalid.
+    """
+
+    pass
+
+
 class TemplateHandlerNotFoundError(SceptreException):
     """
     Error raised when a Template Handler of a certain type is not found
