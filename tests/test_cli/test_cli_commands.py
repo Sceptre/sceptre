@@ -35,7 +35,7 @@ from sceptre.diffing.stack_differ import (
 from sceptre.exceptions import SceptreException
 from sceptre.plan.actions import StackActions
 from sceptre.stack import Stack
-from sceptre.stack_status import StackStatus
+from sceptre.stack_status import StackChangeSetStatus, StackStatus
 
 
 class TestCli:
@@ -513,6 +513,116 @@ class TestCli:
 
         run_command.assert_called_with()
         assert result.exit_code == exit_code
+
+    @pytest.mark.parametrize("verbose_flag", [True, False])
+    def test_update_with_change_set_ready(self, verbose_flag):
+        create_command = self.mock_stack_actions.create_change_set
+        wait_command = self.mock_stack_actions.wait_for_cs_completion
+        execute_command = self.mock_stack_actions.execute_change_set
+        delete_command = self.mock_stack_actions.delete_change_set
+        describe_command = self.mock_stack_actions.describe_change_set
+
+        change_set_status = StackChangeSetStatus.READY
+        wait_command.return_value = change_set_status
+
+        response = {
+            "VerboseProperty": "VerboseProperty",
+            "ChangeSetName": "ChangeSetName",
+            "CreationTime": "CreationTime",
+            "ExecutionStatus": "ExecutionStatus",
+            "StackName": "StackName",
+            "Status": "Status",
+            "StatusReason": "StatusReason",
+            "Changes": [
+                {
+                    "ResourceChange": {
+                        "Action": "Action",
+                        "LogicalResourceId": "LogicalResourceId",
+                        "PhysicalResourceId": "PhysicalResourceId",
+                        "Replacement": "Replacement",
+                        "ResourceType": "ResourceType",
+                        "Scope": "Scope",
+                        "VerboseProperty": "VerboseProperty",
+                    }
+                }
+            ],
+        }
+
+        if not verbose_flag:
+            del response["VerboseProperty"]
+            del response["Changes"][0]["ResourceChange"]["VerboseProperty"]
+
+        describe_command.return_value = response
+
+        kwargs = {"args": ["update", "--change-set", "dev/vpc.yaml", "-y"]}
+        if verbose_flag:
+            kwargs["args"].append("-v")
+
+        result = self.runner.invoke(cli, **kwargs)
+
+        change_set_name = create_command.call_args[0][0]
+        assert "change-set" in change_set_name
+
+        wait_command.assert_called_once_with(change_set_name)
+        delete_command.assert_called_once_with(change_set_name)
+        execute_command.assert_called_once_with(change_set_name)
+        describe_command.assert_called_once_with(change_set_name)
+
+        output = result.output.splitlines()[0]
+        assert yaml.safe_load(output) == response
+        assert result.exit_code == 0
+
+    @pytest.mark.parametrize("yes_flag", [True, False])
+    def test_update_with_change_set_defunct(self, yes_flag):
+        create_command = self.mock_stack_actions.create_change_set
+        wait_command = self.mock_stack_actions.wait_for_cs_completion
+        delete_command = self.mock_stack_actions.delete_change_set
+
+        change_set_status = StackChangeSetStatus.DEFUNCT
+        wait_command.return_value = change_set_status
+
+        kwargs = {"args": ["update", "--change-set", "dev/vpc.yaml"]}
+        if yes_flag:
+            kwargs["args"].append("-y")
+        else:
+            kwargs["input"] = "y\n"
+
+        result = self.runner.invoke(cli, **kwargs)
+
+        change_set_name = create_command.call_args[0][0]
+        assert "change-set" in change_set_name
+
+        wait_command.assert_called_once_with(change_set_name)
+        delete_command.assert_called_once_with(change_set_name)
+
+        assert "Failed to create change set" in result.output
+        assert result.exit_code == 1
+
+    @pytest.mark.parametrize("yes_flag", [True, False])
+    def test_update_with_change_set_no_changes(self, yes_flag):
+        create_command = self.mock_stack_actions.create_change_set
+        wait_command = self.mock_stack_actions.wait_for_cs_completion
+        delete_command = self.mock_stack_actions.delete_change_set
+
+        change_set_status = StackChangeSetStatus.NO_CHANGES
+        wait_command.return_value = change_set_status
+
+        kwargs = {"args": ["update", "--change-set", "dev/vpc.yaml"]}
+        if yes_flag:
+            kwargs["args"].append("-y")
+        else:
+            kwargs["input"] = "y\n"
+
+        result = self.runner.invoke(cli, **kwargs)
+
+        change_set_name = create_command.call_args[0][0]
+        assert "change-set" in change_set_name
+
+        wait_command.assert_called_once_with(change_set_name)
+        delete_command.assert_called_once_with(change_set_name)
+
+        assert "No changes detected" in result.output
+        assert result.exit_code == 0
 
     @pytest.mark.parametrize(
         "command, ignore_dependencies",
