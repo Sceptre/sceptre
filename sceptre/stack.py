@@ -292,17 +292,6 @@ class Stack:
                 return value
             return value
 
-        def cast_value(value: Any) -> Union[str, List[Union[str, Resolver]], Resolver]:
-            if isinstance(value, bool):
-                return "true" if value else "false"
-            elif isinstance(value, (int, float)):
-                return str(value)
-            elif isinstance(value, list):
-                return [cast_value(item) for item in value]
-            elif isinstance(value, Resolver):
-                return value
-            return value
-
         def is_valid(value: Any) -> bool:
             return (
                 isinstance(value, str)
