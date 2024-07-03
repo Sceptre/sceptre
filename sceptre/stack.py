@@ -263,7 +263,7 @@ class Stack:
         )
 
         self.s3_details = s3_details
-        self.parameters = self._ensure_parameters(parameters or {})
+        self.parameters = self._cast_parameters(parameters or {})
         self.sceptre_user_data = sceptre_user_data or {}
         self.notifications = notifications or []
 
@@ -276,10 +276,21 @@ class Stack:
             )
         return value
 
-    def _ensure_parameters(
+    def _cast_parameters(
         self, parameters: Dict[str, Any]
     ) -> Dict[str, Union[str, List[Union[str, Resolver]], Resolver]]:
-        """Ensure CloudFormation parameters are of valid types"""
+        """Cast CloudFormation parameters to valid types"""
+
+        def cast_value(value: Any) -> Union[str, List[Union[str, Resolver]], Resolver]:
+            if isinstance(value, bool):
+                return "true" if value else "false"
+            elif isinstance(value, (int, float)):
+                return str(value)
+            elif isinstance(value, list):
+                return [cast_value(item) for item in value]
+            elif isinstance(value, Resolver):
+                return value
+            return value
 
         def cast_value(value: Any) -> Union[str, List[Union[str, Resolver]], Resolver]:
             if isinstance(value, bool):
@@ -311,6 +322,7 @@ class Stack:
             raise InvalidConfigFileError(
                 f"{self.name}: Values for parameters must be strings, lists or resolvers, got {casted_parameters}"
             )
+
         return casted_parameters
 
     def __repr__(self):

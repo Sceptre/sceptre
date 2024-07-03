@@ -310,30 +310,6 @@ def step_impl(context, stack_name):
     launch_stack(context, stack_name, False, True)
 
 
-@when('the user describes the resources of stack "{stack_name}"')
-def step_impl(context, stack_name):
-    sceptre_context = SceptreContext(
-        command_path=stack_name + ".yaml", project_path=context.sceptre_dir
-    )
-
-    sceptre_plan = SceptrePlan(sceptre_context)
-    context.output = list(sceptre_plan.describe_resources().values())
-
-
-@when(
-    'the user describes the resources of stack "{stack_name}" with ignore dependencies'
-)
-def step_impl(context, stack_name):
-    sceptre_context = SceptreContext(
-        command_path=stack_name + ".yaml",
-        project_path=context.sceptre_dir,
-        ignore_dependencies=True,
-    )
-
-    sceptre_plan = SceptrePlan(sceptre_context)
-    context.output = list(sceptre_plan.describe_resources().values())
-
-
 @when('the user diffs stack "{stack_name}" with "{diff_type}"')
 def step_impl(context, stack_name, diff_type):
     sceptre_context = SceptreContext(
@@ -379,21 +355,6 @@ def step_impl(context, stack_name):
     full_name = get_cloudformation_stack_name(context, stack_name)
     status = get_stack_status(context, full_name)
     assert status is None
-
-
-@then('the resources of stack "{stack_name}" are described')
-def step_impl(context, stack_name):
-    full_name = get_cloudformation_stack_name(context, stack_name)
-    response = retry_boto_call(
-        context.client.describe_stack_resources, StackName=full_name
-    )
-    properties = {"LogicalResourceId", "PhysicalResourceId"}
-    formatted_response = [
-        {k: v for k, v in item.items() if k in properties}
-        for item in response["StackResources"]
-    ]
-
-    assert [{stack_name: formatted_response}] == context.output
 
 
 @then(
