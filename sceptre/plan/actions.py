@@ -212,7 +212,11 @@ class StackActions:
 
         if existing_status == "PENDING":
             status = self.create()
-        elif existing_status in ["CREATE_FAILED", "ROLLBACK_COMPLETE"]:
+        elif existing_status in [
+            "CREATE_FAILED",
+            "ROLLBACK_COMPLETE",
+            "REVIEW_IN_PROGRESS",
+        ]:
             self.delete()
             status = self.create()
         elif existing_status.endswith("COMPLETE"):
@@ -431,6 +435,21 @@ class StackActions:
         :param change_set_name: The name of the Change Set.
         :type change_set_name: str
         """
+        try:
+            existing_status = self._get_status()
+        except StackDoesNotExistError:
+            existing_status = "PENDING"
+
+        self.logger.info(
+            "%s - Stack is in the %s state", self.stack.name, existing_status
+        )
+
+        change_set_type = (
+            "CREATE"
+            if existing_status in ["PENDING", "REVIEW_IN_PROGRESS"]
+            else "UPDATE"
+        )
+
         create_change_set_kwargs = {
             "StackName": self.stack.external_name,
             "Parameters": self._format_parameters(self.stack.parameters),
@@ -440,6 +459,7 @@ class StackActions:
                 "CAPABILITY_AUTO_EXPAND",
             ],
             "ChangeSetName": change_set_name,
+            "ChangeSetType": change_set_type,
             "NotificationARNs": self.stack.notifications,
             "Tags": [
                 {"Key": str(k), "Value": str(v)} for k, v in self.stack.tags.items()

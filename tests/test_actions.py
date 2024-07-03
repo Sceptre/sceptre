@@ -397,6 +397,19 @@ class TestStackActions(object):
         mock_create.assert_called_once_with()
         assert response == sentinel.launch_response
 
+    @patch("sceptre.plan.actions.StackActions.create")
+    @patch("sceptre.plan.actions.StackActions.delete")
+    @patch("sceptre.plan.actions.StackActions._get_status")
+    def test_launch_with_stack_in_review_in_progress(
+        self, mock_get_status, mock_delete, mock_create
+    ):
+        mock_get_status.return_value = "REVIEW_IN_PROGRESS"
+        mock_create.return_value = sentinel.launch_response
+        response = self.actions.launch()
+        mock_delete.assert_called_once_with()
+        mock_create.assert_called_once_with()
+        assert response == sentinel.launch_response
+
     @patch("sceptre.plan.actions.StackActions.update")
     @patch("sceptre.plan.actions.StackActions._get_status")
     def test_launch_with_complete_stack_with_updates_to_perform(
@@ -632,6 +645,7 @@ class TestStackActions(object):
                     "CAPABILITY_AUTO_EXPAND",
                 ],
                 "ChangeSetName": sentinel.change_set_name,
+                "ChangeSetType": "UPDATE",
                 "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [sentinel.notification],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
@@ -659,8 +673,34 @@ class TestStackActions(object):
                     "CAPABILITY_AUTO_EXPAND",
                 ],
                 "ChangeSetName": sentinel.change_set_name,
+                "ChangeSetType": "UPDATE",
                 "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [],
+                "Tags": [{"Key": "tag1", "Value": "val1"}],
+            },
+        )
+
+    @patch("sceptre.plan.actions.StackActions._get_status")
+    def test_create_change_set_with_non_existent_stack(self, mock_get_status):
+        mock_get_status.side_effect = StackDoesNotExistError()
+        self.template._body = sentinel.template
+        self.actions.create_change_set(sentinel.change_set_name)
+        self.actions.connection_manager.call.assert_called_with(
+            service="cloudformation",
+            command="create_change_set",
+            kwargs={
+                "StackName": sentinel.external_name,
+                "TemplateBody": sentinel.template,
+                "Parameters": [{"ParameterKey": "key1", "ParameterValue": "val1"}],
+                "Capabilities": [
+                    "CAPABILITY_IAM",
+                    "CAPABILITY_NAMED_IAM",
+                    "CAPABILITY_AUTO_EXPAND",
+                ],
+                "ChangeSetName": sentinel.change_set_name,
+                "ChangeSetType": "CREATE",
+                "RoleARN": sentinel.cloudformation_service_role,
+                "NotificationARNs": [sentinel.notification],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
             },
         )
