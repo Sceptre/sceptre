@@ -305,6 +305,11 @@ class Stack:
                 or isinstance(value, Resolver)
             )
 
+        if not isinstance(parameters, dict):
+            raise InvalidConfigFileError(
+                f"{self.name}: parameters must be a dictionary of key-value apirs, got {parameters}"
+            )
+
         casted_parameters = {k: cast_value(v) for k, v in parameters.items()}
 
         if not all(is_valid(value) for value in casted_parameters.values()):
