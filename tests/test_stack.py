@@ -204,6 +204,20 @@ class TestStack(object):
 
     @pytest.mark.parametrize(
         "parameters",
+        [["this", "is", "a", "list"], "a_string"],
+    )
+    def test_init__invalid_parameters__parameters_a_list(self, parameters):
+        with pytest.raises(InvalidConfigFileError):
+            Stack(
+                name="stack_name",
+                project_code="project_code",
+                template_handler_config={"type": "file"},
+                region="region",
+                parameters=parameters,
+            )
+
+    @pytest.mark.parametrize(
+        "parameters",
         [
             {"IntAsString": "1"},
             {"Int": 1},
