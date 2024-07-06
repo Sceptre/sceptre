@@ -591,7 +591,7 @@ class StackActions:
 
         return_val = 0
 
-        if status == "FAILED" and self._change_set_failed_no_changes(reason):
+        if status == "FAILED" and self.change_set_creation_failed_due_to_no_changes(reason):
             self.logger.info(
                 "Skipping ChangeSet on Stack: {} - there are no changes".format(
                     change_set.get("StackName")
@@ -626,7 +626,7 @@ class StackActions:
         status = self._wait_for_completion(boto_response=response)
         return status
 
-    def _change_set_failed_no_changes(self, reason: str) -> bool:
+    def change_set_creation_failed_due_to_no_changes(self, reason: str) -> bool:
         """Indicates the change set failed when it was created because there were actually
         no changes introduced from the change set.
 
