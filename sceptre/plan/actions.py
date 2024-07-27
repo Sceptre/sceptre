@@ -480,9 +480,6 @@ class StackActions:
             )
 
     def _create_change_set(self, change_set_name, create_change_set_kwargs):
-        """
-        Wrap create_change_set.
-        """
         self.logger.debug(
             "%s - Creating Change Set '%s'", self.stack.name, change_set_name
         )
@@ -524,9 +521,6 @@ class StackActions:
             )
 
     def _delete_change_set(self, change_set_name):
-        """
-        Wrap delete_change_set.
-        """
         self.logger.debug(
             "%s - Deleting Change Set '%s'", self.stack.name, change_set_name
         )
@@ -591,9 +585,7 @@ class StackActions:
 
         return_val = 0
 
-        if status == "FAILED" and self.change_set_creation_failed_due_to_no_changes(
-            reason
-        ):
+        if status == "FAILED" and self._change_set_creation_failed_due_to_no_changes(reason):
             self.logger.info(
                 "Skipping ChangeSet on Stack: {} - there are no changes".format(
                     change_set.get("StackName")
@@ -628,8 +620,9 @@ class StackActions:
         status = self._wait_for_completion(boto_response=response)
         return status
 
-    def change_set_creation_failed_due_to_no_changes(self, reason: str) -> bool:
-        """Indicates the change set failed when it was created because there were actually
+    def _change_set_creation_failed_due_to_no_changes(self, reason: str) -> bool:
+        """
+        Indicates the change set failed when it was created because there were actually
         no changes introduced from the change set.
 
         :param reason: The reason reported by CloudFormation for the Change Set failure
@@ -1164,9 +1157,6 @@ class StackActions:
                 self.logger.debug(f"{self.stack.name} - {key} - {response[key]}")
 
     def _detect_stack_drift(self) -> dict:
-        """
-        Run detect_stack_drift.
-        """
         self.logger.info(f"{self.stack.name} - Detecting Stack Drift")
 
         return self.connection_manager.call(
@@ -1176,9 +1166,6 @@ class StackActions:
         )
 
     def _describe_stack_drift_detection_status(self, detection_id: str) -> dict:
-        """
-        Run describe_stack_drift_detection_status.
-        """
         self.logger.info(f"{self.stack.name} - Describing Stack Drift Detection Status")
 
         return self.connection_manager.call(
