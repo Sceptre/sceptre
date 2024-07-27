@@ -585,7 +585,9 @@ class StackActions:
 
         return_val = 0
 
-        if status == "FAILED" and self._change_set_creation_failed_due_to_no_changes(reason):
+        if status == "FAILED" and self._change_set_creation_failed_due_to_no_changes(
+            reason
+        ):
             self.logger.info(
                 "Skipping ChangeSet on Stack: {} - there are no changes".format(
                     change_set.get("StackName")
