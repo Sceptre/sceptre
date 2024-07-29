@@ -1,4 +1,5 @@
 # Sceptre
+## Insert info about 605 fork and reasons for here
 
 [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/Sceptre/sceptre/gate.yaml)](https://github.com/Sceptre/sceptre/actions/workflows/gate.yaml)
 [![Docker Image Version (latest semver)](https://img.shields.io/docker/v/sceptreorg/sceptre?logo=docker&sort=semver)](https://hub.docker.com/r/sceptreorg/sceptre)
