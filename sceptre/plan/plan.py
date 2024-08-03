@@ -8,6 +8,7 @@ nessessary information for a command to execute.
 """
 import functools
 import itertools
+import pathlib
 
 from os import path, walk
 from typing import Dict, List, Set, Callable, Iterable, Optional
@@ -55,6 +56,26 @@ class SceptrePlan(object):
         executor = SceptrePlanExecutor(self.command, self.launch_order)
         return executor.execute(*args)
 
+    def _raise_no_launch_order_error(self):
+        MAX_VALID_STACK_PATH_COUNT = 10
+
+        error_text = f"No stacks detected from the given path '{sceptreise_path(self.context.command_path)}'."
+        command_path_parent = pathlib.PurePath(self.context.command_path).parent
+
+        all_paths = self._valid_stack_paths()
+        filtered_valid_stack_paths = [
+            p for p in all_paths if pathlib.PurePath(p).parent == command_path_parent
+        ] or all_paths
+        if (
+            filtered_valid_stack_paths
+            and len(filtered_valid_stack_paths) < MAX_VALID_STACK_PATH_COUNT
+        ):
+            error_text += (
+                f" Valid stack paths under '{sceptreise_path(str(command_path_parent))}' "
+                + f"are: {filtered_valid_stack_paths}"
+            )
+        raise ConfigFileNotFoundError(error_text)
+
     def _generate_launch_order(self, reverse=False) -> List[Set[Stack]]:
         if self.context.ignore_dependencies:
             return [self.command_stacks]
@@ -73,12 +94,7 @@ class SceptrePlan(object):
                 graph.remove_stack(stack)
 
         if not launch_order:
-            raise ConfigFileNotFoundError(
-                "No stacks detected from the given path '{}'. Valid stack paths are: {}".format(
-                    sceptreise_path(self.context.command_path),
-                    self._valid_stack_paths(),
-                )
-            )
+            self._raise_no_launch_order_error()
 
         return launch_order
 

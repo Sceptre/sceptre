@@ -621,6 +621,65 @@ class TestConfigReader(object):
 
             assert result == {"key": "value"}
 
+    def test_render__existing_config_file__no_leak_between_multiple_stack_group_configs(
+        self,
+    ):
+        """A test for bug #937"""
+        with self.runner.isolated_filesystem():
+            project_path = os.path.abspath("./example")
+
+            self.context.project_path = project_path
+
+            config_dir = os.path.join(project_path, "config")
+
+            stack_group_config_1 = {"j2_environment": {}, "param1": "value1"}
+            stack_group_config_2 = {"j2_environment": {}, "param2": "value2"}
+
+            directory_path_1 = os.path.join(config_dir, "dir1")
+            directory_path_2 = os.path.join(config_dir, "dir2")
+            os.makedirs(directory_path_1)
+            os.makedirs(directory_path_2)
+
+            config_reader = ConfigReader(self.context)
+
+            # First config file
+            basename_1 = "file1.yaml"
+            test_config_path_1 = os.path.join(directory_path_1, basename_1)
+            test_config_content_1 = "var: initial_value\nparam1: value1"
+            with open(test_config_path_1, "w") as file:
+                file.write(test_config_content_1)
+
+            # Second config file
+            basename_2 = "file2.yaml"
+            test_config_path_2 = os.path.join(directory_path_2, basename_2)
+            test_config_content_2 = "var: initial_value\nparam2: value2"
+            with open(test_config_path_2, "w") as file:
+                file.write(test_config_content_2)
+
+            config_reader.full_config_path = project_path
+            config_reader.templating_vars = {"var": "initial_value"}
+
+            # Run _render for the first stack group
+            result_1 = config_reader._render(
+                "config/dir1", basename_1, stack_group_config_1
+            )
+            expected_result_1 = {"var": "initial_value", "param1": "value1"}
+            assert expected_result_1 == result_1
+
+            # Run _render for the second stack group
+            result_2 = config_reader._render(
+                "config/dir2", basename_2, stack_group_config_2
+            )
+            expected_result_2 = {"var": "initial_value", "param2": "value2"}
+            assert expected_result_2 == result_2
+
+            # Ensure the templating_vars is not leaking
+            assert {
+                "var": "initial_value",
+                "j2_environment": {},
+                "param2": "value2",
+            } == config_reader.templating_vars
+
     def test_render__invalid_jinja_template__raises_and_creates_debug_file(self):
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath("./example")
