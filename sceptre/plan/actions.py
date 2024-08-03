@@ -139,6 +139,10 @@ class StackActions:
                     {"Key": str(k), "Value": str(v)} for k, v in self.stack.tags.items()
                 ],
             }
+
+            if self.stack.disable_rollback:
+                update_stack_kwargs.update({"DisableRollback": self.stack.disable_rollback})
+
             update_stack_kwargs.update(self.stack.template.get_boto_call_parameter())
             update_stack_kwargs.update(self._get_role_arn())
             response = self.connection_manager.call(
