@@ -949,6 +949,7 @@ class StackActions:
         cs_description = self.describe_change_set(change_set_name)
 
         cs_status = cs_description["Status"]
+        cs_reason = cs_description.get("StatusReason")
         cs_exec_status = cs_description["ExecutionStatus"]
         possible_statuses = [
             "CREATE_PENDING",
@@ -983,6 +984,12 @@ class StackActions:
             "CREATE_COMPLETE",
         ] and cs_exec_status in ["UNAVAILABLE", "AVAILABLE"]:
             return StackChangeSetStatus.PENDING
+        elif (
+            cs_status == "FAILED"
+            and cs_reason is not None
+            and self._change_set_creation_failed_due_to_no_changes(cs_reason)
+        ):
+            return StackChangeSetStatus.NO_CHANGES
         elif cs_status in ["DELETE_COMPLETE", "FAILED"] or cs_exec_status in [
             "EXECUTE_IN_PROGRESS",
             "EXECUTE_COMPLETE",
