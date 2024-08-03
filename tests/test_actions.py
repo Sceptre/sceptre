@@ -309,7 +309,9 @@ class TestStackActions(object):
                 "DisableRollback": True,
             },
         )
-        mock_wait_for_completion.assert_called_once_with(sentinel.stack_timeout, boto_response=ANY)
+        mock_wait_for_completion.assert_called_once_with(
+            sentinel.stack_timeout, boto_response=ANY
+        )
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
     def test_update_cancels_after_timeout(self, mock_wait_for_completion):
