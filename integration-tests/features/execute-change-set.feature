@@ -11,8 +11,7 @@ Feature: Execute change set
     Given stack "1/A" exists in "CREATE_COMPLETE" state
     And stack "1/A" does not have change set "A"
     When the user executes change set "A" for stack "1/A"
-    Then a "ClientError" is raised
-    And the user is told "change set does not exist"
+    Then the user is told "change set does not exist"
 
   Scenario: execute a change set that exists with ignore dependencies
     Given stack "1/A" exists in "CREATE_COMPLETE" state

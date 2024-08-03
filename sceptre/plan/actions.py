@@ -465,8 +465,21 @@ class StackActions:
                 {"Key": str(k), "Value": str(v)} for k, v in self.stack.tags.items()
             ],
         }
+
         create_change_set_kwargs.update(self.stack.template.get_boto_call_parameter())
         create_change_set_kwargs.update(self._get_role_arn())
+
+        try:
+            self._create_change_set(change_set_name, create_change_set_kwargs)
+        except Exception as err:
+            self.logger.info(
+                "%s - Failed creating Change Set '%s'\n%s",
+                self.stack.name,
+                change_set_name,
+                err,
+            )
+
+    def _create_change_set(self, change_set_name, create_change_set_kwargs):
         self.logger.debug(
             "%s - Creating Change Set '%s'", self.stack.name, change_set_name
         )
@@ -490,6 +503,24 @@ class StackActions:
         :param change_set_name: The name of the Change Set.
         :type change_set_name: str
         """
+        # If the call successfully completes, AWS CloudFormation
+        # successfully deleted the Change Set.
+        try:
+            self._delete_change_set(change_set_name)
+            self.logger.info(
+                "%s - Successfully deleted Change Set '%s'",
+                self.stack.name,
+                change_set_name,
+            )
+        except Exception as err:
+            self.logger.info(
+                "%s - Failed deleting Change Set '%s'\n%s",
+                self.stack.name,
+                change_set_name,
+                err,
+            )
+
+    def _delete_change_set(self, change_set_name):
         self.logger.debug(
             "%s - Deleting Change Set '%s'", self.stack.name, change_set_name
         )
@@ -501,13 +532,6 @@ class StackActions:
                 "StackName": self.stack.external_name,
             },
         )
-        # If the call successfully completes, AWS CloudFormation
-        # successfully deleted the Change Set.
-        self.logger.info(
-            "%s - Successfully deleted Change Set '%s'",
-            self.stack.name,
-            change_set_name,
-        )
 
     def describe_change_set(self, change_set_name):
         """
@@ -518,6 +542,21 @@ class StackActions:
         :returns: The description of the Change Set.
         :rtype: dict
         """
+        return_val = {}
+
+        try:
+            return_val = self._describe_change_set(change_set_name)
+        except Exception as err:
+            self.logger.info(
+                "%s - Failed describing Change Set '%s'\n%s",
+                self.stack.name,
+                change_set_name,
+                err,
+            )
+
+        return return_val
+
+    def _describe_change_set(self, change_set_name):
         self.logger.debug(
             "%s - Describing Change Set '%s'", self.stack.name, change_set_name
         )
@@ -543,7 +582,10 @@ class StackActions:
         change_set = self.describe_change_set(change_set_name)
         status = change_set.get("Status")
         reason = change_set.get("StatusReason")
-        if status == "FAILED" and self.change_set_creation_failed_due_to_no_changes(
+
+        return_val = 0
+
+        if status == "FAILED" and self._change_set_creation_failed_due_to_no_changes(
             reason
         ):
             self.logger.info(
@@ -551,8 +593,21 @@ class StackActions:
                     change_set.get("StackName")
                 )
             )
-            return 0
+            return return_val
 
+        try:
+            return_val = self._execute_change_set(change_set_name)
+        except Exception as err:
+            self.logger.info(
+                "%s - Failed describing Change Set '%s'\n%s",
+                self.stack.name,
+                change_set_name,
+                err,
+            )
+
+        return return_val
+
+    def _execute_change_set(self, change_set_name):
         self.logger.debug(
             "%s - Executing Change Set '%s'", self.stack.name, change_set_name
         )
@@ -567,8 +622,9 @@ class StackActions:
         status = self._wait_for_completion(boto_response=response)
         return status
 
-    def change_set_creation_failed_due_to_no_changes(self, reason: str) -> bool:
-        """Indicates the change set failed when it was created because there were actually
+    def _change_set_creation_failed_due_to_no_changes(self, reason: str) -> bool:
+        """
+        Indicates the change set failed when it was created because there were actually
         no changes introduced from the change set.
 
         :param reason: The reason reported by CloudFormation for the Change Set failure
@@ -1103,9 +1159,6 @@ class StackActions:
                 self.logger.debug(f"{self.stack.name} - {key} - {response[key]}")
 
     def _detect_stack_drift(self) -> dict:
-        """
-        Run detect_stack_drift.
-        """
         self.logger.info(f"{self.stack.name} - Detecting Stack Drift")
 
         return self.connection_manager.call(
@@ -1115,9 +1168,6 @@ class StackActions:
         )
 
     def _describe_stack_drift_detection_status(self, detection_id: str) -> dict:
-        """
-        Run describe_stack_drift_detection_status.
-        """
         self.logger.info(f"{self.stack.name} - Describing Stack Drift Detection Status")
 
         return self.connection_manager.call(
