@@ -17,14 +17,15 @@ def step_impl(context, message):
         msg = context.error.response["Error"]["Message"]
         assert msg.endswith("does not exist")
     elif message == "change set does not exist":
-        msg = context.error.response["Error"]["Message"]
-        assert msg.endswith("does not exist")
+        assert context.log_capture.find_event("does not exist")
     elif message == "the template is valid":
         for stack, status in context.response.items():
             assert status["ResponseMetadata"]["HTTPStatusCode"] == 200
     elif message == "the template is malformed":
         msg = context.error.response["Error"]["Message"]
         assert msg.startswith("Template format error")
+    elif message == "Failed describing Change Set":
+        assert context.log_capture.find_event(message)
     else:
         raise Exception("Step has incorrect message")
 
