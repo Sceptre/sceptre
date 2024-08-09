@@ -276,6 +276,44 @@ class TestStackActions(object):
         )
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
+    @patch("sceptre.plan.actions.StackActions._get_stack_timeout")
+    def test_update_disable_rollback_overrides_on_failure(
+        self, mock_get_stack_timeout, mock_wait_for_completion
+    ):
+        self.actions.stack._template = Mock(spec=Template)
+        self.actions.stack._template.get_boto_call_parameter.return_value = {
+            "Template": sentinel.template
+        }
+
+        self.actions.stack.on_failure = "ROLLBACK"
+        self.actions.stack.disable_rollback = True
+
+        mock_get_stack_timeout.return_value = {"TimeoutInMinutes": sentinel.timeout}
+
+        self.actions.update()
+        self.actions.connection_manager.call.assert_called_with(
+            service="cloudformation",
+            command="update_stack",
+            kwargs={
+                "StackName": sentinel.external_name,
+                "Template": sentinel.template,
+                "Parameters": [{"ParameterKey": "key1", "ParameterValue": "val1"}],
+                "Capabilities": [
+                    "CAPABILITY_IAM",
+                    "CAPABILITY_NAMED_IAM",
+                    "CAPABILITY_AUTO_EXPAND",
+                ],
+                "RoleARN": sentinel.cloudformation_service_role,
+                "NotificationARNs": [sentinel.notification],
+                "Tags": [{"Key": "tag1", "Value": "val1"}],
+                "DisableRollback": True,
+            },
+        )
+        mock_wait_for_completion.assert_called_once_with(
+            sentinel.stack_timeout, boto_response=ANY
+        )
+
+    @patch("sceptre.plan.actions.StackActions._wait_for_completion")
     def test_update_cancels_after_timeout(self, mock_wait_for_completion):
         self.actions.stack._template = Mock(spec=Template)
         self.actions.stack._template.get_boto_call_parameter.return_value = {
