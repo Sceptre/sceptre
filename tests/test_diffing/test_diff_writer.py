@@ -57,7 +57,7 @@ class TestDiffWriter:
         self.output_stream = StringIO()
 
         self.diff_detected_message = (
-            f"--> Difference detected for stack {self.stack_name}!"
+            f"==> Difference detected for stack {self.stack_name}!"
         )
 
     @property
@@ -133,11 +133,11 @@ class TestDiffWriter:
             DiffWriter.STAR_BAR,
             self.diff_detected_message,
             "This stack is not deployed yet!",
-            DiffWriter.LINE_BAR,
+            DiffWriter.TILDE_BAR,
             "New Config:",
             "",
             config_serializer(dict(self.generated_config._asdict())),
-            DiffWriter.LINE_BAR,
+            DiffWriter.TILDE_BAR,
             "New Template:",
             "",
             self.generated_template,
@@ -152,11 +152,11 @@ class TestDiffWriter:
         self.assert_expected_output(
             DiffWriter.STAR_BAR,
             self.diff_detected_message,
-            DiffWriter.LINE_BAR,
+            DiffWriter.TILDE_BAR,
             f"Config difference for {self.stack_name}:",
             "",
             self.diff_output,
-            DiffWriter.LINE_BAR,
+            DiffWriter.TILDE_BAR,
             "No template difference",
         )
 
@@ -169,9 +169,9 @@ class TestDiffWriter:
         self.assert_expected_output(
             DiffWriter.STAR_BAR,
             self.diff_detected_message,
-            DiffWriter.LINE_BAR,
+            DiffWriter.TILDE_BAR,
             "No stack config difference",
-            DiffWriter.LINE_BAR,
+            DiffWriter.TILDE_BAR,
             f"Template difference for {self.stack_name}:",
             "",
             self.diff_output,
@@ -186,11 +186,11 @@ class TestDiffWriter:
         self.assert_expected_output(
             DiffWriter.STAR_BAR,
             self.diff_detected_message,
-            DiffWriter.LINE_BAR,
+            DiffWriter.TILDE_BAR,
             f"Config difference for {self.stack_name}:",
             "",
             self.diff_output,
-            DiffWriter.LINE_BAR,
+            DiffWriter.TILDE_BAR,
             f"Template difference for {self.stack_name}:",
             "",
             self.diff_output,
