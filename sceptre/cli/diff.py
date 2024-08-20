@@ -189,12 +189,12 @@ def output_buffer_with_normalized_bar_lengths(
     max_length = len(max(buffer, key=len))
     buffer.seek(0)
     full_length_star_bar = "*" * max_length
-    full_length_line_bar = "-" * max_length
+    full_length_tilde_bar = "~" * max_length
     for line in buffer:
         if DiffWriter.STAR_BAR in line:
             line = line.replace(DiffWriter.STAR_BAR, full_length_star_bar)
-        if DiffWriter.LINE_BAR in line:
-            line = line.replace(DiffWriter.LINE_BAR, full_length_line_bar)
+        if DiffWriter.TILDE_BAR in line:
+            line = line.replace(DiffWriter.TILDE_BAR, full_length_tilde_bar)
         output_stream.write(line)
 
 

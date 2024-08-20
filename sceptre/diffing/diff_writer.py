@@ -25,7 +25,7 @@ class DiffWriter(Generic[DiffType]):
     """
 
     STAR_BAR = "*" * 80
-    LINE_BAR = "-" * 80
+    TILDE_BAR = "~" * 80
 
     def __init__(
         self, stack_diff: StackDiff, output_stream: TextIO, output_format: str
@@ -59,26 +59,26 @@ class DiffWriter(Generic[DiffType]):
             self._output(f"No difference to deployed stack {self.stack_name}")
             return
 
-        self._output(f"--> Difference detected for stack {self.stack_name}!")
+        self._output(f"==> Difference detected for stack {self.stack_name}!")
 
         if not self.is_deployed:
             self._write_new_stack_details()
             return
 
-        self._output(self.LINE_BAR)
+        self._output(self.TILDE_BAR)
         self._write_config_difference()
-        self._output(self.LINE_BAR)
+        self._output(self.TILDE_BAR)
         self._write_template_difference()
 
     def _write_new_stack_details(self):
         stack_config_text = self._dump_stack_config(self.stack_diff.generated_config)
         self._output(
             "This stack is not deployed yet!",
-            self.LINE_BAR,
+            self.TILDE_BAR,
             "New Config:",
             "",
             stack_config_text,
-            self.LINE_BAR,
+            self.TILDE_BAR,
             "New Template:",
             "",
             self.stack_diff.generated_template,
