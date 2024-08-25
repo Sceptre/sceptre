@@ -41,6 +41,7 @@ def update_command(
     :type verbose: bool
     :param yes: A flag to answer 'yes' to all CLI questions.
     :type yes: bool
+    :param disable_rollback: A flag to disable cloudformation rollback.
     """
 
     context = SceptreContext(
