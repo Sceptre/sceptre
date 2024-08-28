@@ -4,6 +4,11 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 4.5.1 (2024.08.29)
+
+### Fixed
+ - [Resolve #1503] Dependency conflict with packaging
+
 ## 4.5.0 (2024.08.28)
 
 ### Added
