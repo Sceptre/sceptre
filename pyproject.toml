@@ -52,7 +52,7 @@ deprecation = "^2.0"
 jinja2 = "^3.0"
 jsonschema = "~3.2"
 networkx = "~2.6"
-packaging = "^24.1"
+packaging = ">=16.8,<25.0"  # Some old tools in the Sceptre ecosystem pin packaging to 16.8.
 pyyaml = "^6.0"
 sceptre-cmd-resolver = "^2.0"
 sceptre-file-resolver = "^1.0"
