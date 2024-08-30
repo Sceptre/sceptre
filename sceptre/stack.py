@@ -354,30 +354,6 @@ class Stack:
     def __str__(self):
         return self.name
 
-    def __eq__(self, stack):
-        # We should not use any resolvable properties in __eq__, since it is used when adding the
-        # Stack to a set, which is done very early in plan resolution. Trying to reference resolvers
-        # before the plan is fully resolved can potentially blow up.
-        return (
-            self.name == stack.name
-            and self.external_name == stack.external_name
-            and self.project_code == stack.project_code
-            and self.template_path == stack.template_path
-            and self.region == stack.region
-            and self.template_key_prefix == stack.template_key_prefix
-            and self.required_version == stack.required_version
-            and self.sceptre_role_session_duration
-            == stack.sceptre_role_session_duration
-            and self.profile == stack.profile
-            and self.dependencies == stack.dependencies
-            and self.protected == stack.protected
-            and self.on_failure == stack.on_failure
-            and self.disable_rollback == stack.disable_rollback
-            and self.stack_timeout == stack.stack_timeout
-            and self.ignore == stack.ignore
-            and self.obsolete == stack.obsolete
-        )
-
     def __hash__(self):
         return hash(str(self))
 
