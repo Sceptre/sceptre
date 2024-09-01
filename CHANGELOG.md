@@ -4,6 +4,11 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 4.5.2 (2024.08.31)
+
+### Fixed
+ - [Resolve #1506] Remove unused __eq__ method
+
 ## 4.5.1 (2024.08.29)
 
 ### Fixed
