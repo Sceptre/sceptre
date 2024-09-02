@@ -17,7 +17,7 @@ repos:
     hooks:
       - id: yamllint
   - repo: https://github.com/awslabs/cfn-python-lint
-    rev: v1.10.3
+    rev: v1.11.1
     hooks:
       - id: cfn-python-lint
         args:
