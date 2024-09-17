@@ -1125,7 +1125,6 @@ class TestStackActions(object):
                         "ResourceStatus": "resource-with-cf-hook",
                         "HookType": "type-3",
                         "HookStatus": "HOOK_COMPLETE_SUCCEEDED",
-                        "HookFailureMode": "WARN",
                     },
                     {
                         "Timestamp": datetime.datetime(
@@ -1138,7 +1137,6 @@ class TestStackActions(object):
                         "HookType": "type-4",
                         "HookStatus": "HOOK_IN_PROGRESS",
                         "HookStatusReason": "Good hook",
-                        "HookFailureMode": "WARN",
                     },
                 ]
             }
@@ -1153,7 +1151,6 @@ class TestStackActions(object):
                 self.actions.describe_events()["StackEvents"][1]["ResourceStatus"],
                 self.actions.describe_events()["StackEvents"][1]["HookType"],
                 self.actions.describe_events()["StackEvents"][1]["HookStatus"],
-                self.actions.describe_events()["StackEvents"][1]["HookFailureMode"],
             ].sort() == caplog.messages[0].split().sort()
             assert [
                 self.actions.stack.name,
@@ -1166,7 +1163,6 @@ class TestStackActions(object):
                 self.actions.describe_events()["StackEvents"][0]["HookType"],
                 self.actions.describe_events()["StackEvents"][0]["HookStatus"],
                 self.actions.describe_events()["StackEvents"][0]["HookStatusReason"],
-                self.actions.describe_events()["StackEvents"][0]["HookFailureMode"],
             ].sort() == caplog.messages[1].split().sort()
 
     @patch("sceptre.plan.actions.StackActions._get_cs_status")
