@@ -919,7 +919,6 @@ class StackActions:
                         event["HookType"],
                         event["HookStatus"],
                         event.get("HookStatusReason", ""),
-                        event["HookFailureMode"],
                     ]
                 )
             self.logger.info(" ".join(stack_event_status))
