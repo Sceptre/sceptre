@@ -147,14 +147,21 @@ def test_hook_writes_to_stderr(stack, capfd):
 def test_default_shell_is_sh(stack, capfd):
     Cmd("echo $0", stack).run()
     cap = capfd.readouterr()
-    assert cap.out.strip() == "/bin/sh"
+    assert cap.out.strip().split("/")[-2:] == ["bin", "sh"]
     assert cap.err.strip() == ""
 
 
 def test_shell_parameter_sets_the_shell(stack, capfd):
-    Cmd({"run": "echo $0", "shell": "/bin/bash"}, stack).run()
+    # Determine the local path to bash (it's not always /bin/bash)
+    Cmd("echo $0", stack).run()
     cap = capfd.readouterr()
-    assert cap.out.strip() == "/bin/bash"
+    assert cap.err.strip() == ""
+    bash = cap.out.strip()
+
+    # Confirm the correct shell is used in the sub-process
+    Cmd({"run": "echo $0", "shell": bash}, stack).run()
+    cap = capfd.readouterr()
+    assert cap.out.strip() == bash
     assert cap.err.strip() == ""
 
 
