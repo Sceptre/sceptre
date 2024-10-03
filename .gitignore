@@ -143,3 +143,5 @@ tags
 
 # temp files
 temp/
+/.direnv/
+/.envrc
