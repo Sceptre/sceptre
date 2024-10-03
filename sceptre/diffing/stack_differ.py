@@ -197,9 +197,18 @@ class StackDiffer(Generic[DiffType]):
         try:
             description = stack_actions.describe()
         except ClientError as err:
+            # Check for AWS access exceptions
+            if err.response["Error"]["Code"] == "ForbiddenException":
+                raise SceptreException(
+                    "ForbiddenException: Confirm your current AWS profile is authenticated."
+                )
+
             # This means the stack has not been deployed yet
             if err.response["Error"]["Message"].endswith("does not exist"):
                 return None
+
+            # Unknown error, raise it as-is
+            raise err
 
         stacks = description["Stacks"]
         for stack in stacks:

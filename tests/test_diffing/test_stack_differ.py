@@ -63,6 +63,7 @@ class TestStackDiffer:
         self._stack = None
         self._actions = None
         self._parameters = None
+        self._describe_fn = self.describe_stack_success
 
     @property
     def parameters_on_stack(self):
@@ -103,6 +104,9 @@ class TestStackDiffer:
         return self._actions
 
     def describe_stack(self):
+        return self._describe_fn()
+
+    def describe_stack_success(self):
         return {
             "Stacks": [
                 {
@@ -176,6 +180,17 @@ class TestStackDiffer:
             notifications=deepcopy(self.deployed_notification_arns),
             cloudformation_service_role=self.deployed_cloudformation_service_role,
         )
+
+    def test__create_deployed_stack_config__wraps_aws_ForbiddenException(self):
+        def fail_with_ForbiddenException():
+            raise ClientError(
+                {"Error": {"Code": "ForbiddenException", "Message": "No access"}},
+                "describe",
+            )
+
+        self._describe_fn = fail_with_ForbiddenException
+        with pytest.raises(SceptreException):
+            self.differ._create_deployed_stack_config(self.actions)
 
     def test_diff__compares_deployed_template_to_generated_template(self):
         self.differ.diff(self.actions)
@@ -443,9 +458,9 @@ class TestStackDiffer:
         self.local_no_echo_parameters.append("hide_me")
 
         expected_generated_config = self.expected_generated_config
-        expected_generated_config.parameters["hide_me"] = (
-            StackDiffer.NO_ECHO_REPLACEMENT
-        )
+        expected_generated_config.parameters[
+            "hide_me"
+        ] = StackDiffer.NO_ECHO_REPLACEMENT
 
         self.differ.diff(self.actions)
 
