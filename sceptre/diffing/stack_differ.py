@@ -201,7 +201,7 @@ class StackDiffer(Generic[DiffType]):
             if err.response["Error"]["Code"] == "ForbiddenException":
                 raise SceptreException(
                     "ForbiddenException: Confirm your current AWS profile is authenticated",
-                    "and has the necessary access."
+                    "and has the necessary access.",
                 )
 
             # This means the stack has not been deployed yet
