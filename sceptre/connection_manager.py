@@ -15,12 +15,17 @@ import time
 import warnings
 from typing import Optional, Dict, Tuple, Any
 
-import boto3
 import deprecation
+
+import boto3
 from botocore.credentials import Credentials
 from botocore.exceptions import ClientError
 
-from sceptre.exceptions import InvalidAWSCredentialsError, RetryLimitExceededError
+from sceptre.exceptions import (
+    InvalidAWSCredentialsError,
+    RetryLimitExceededError,
+    SceptreException,
+)
 from sceptre.helpers import mask_key, create_deprecated_alias_property
 
 
@@ -463,8 +468,21 @@ class ConnectionManager(object):
         if kwargs is None:  # pragma: no cover
             kwargs = {}
 
-        client = self._get_client(service, region, profile, stack_name, sceptre_role)
-        return getattr(client, command)(**kwargs)
+        # Centralised exception handling where he catch some confusing errors from the Boto3
+        # client and send back hints on how to fix.
+        try:
+            client = self._get_client(
+                service, region, profile, stack_name, sceptre_role
+            )
+            return getattr(client, command)(**kwargs)
+        except ClientError as err:
+            if err.response["Error"]["Code"] == "ForbiddenException":
+                raise SceptreException(
+                    "ForbiddenException: Confirm your current AWS profile is authenticated",
+                    "and has the necessary access.",
+                )
+            else:
+                raise
 
     def _coalesce_sceptre_role(self, iam_role: str, sceptre_role: str) -> str:
         """Evaluates the iam_role and sceptre_role parameters as passed to determine which value to
