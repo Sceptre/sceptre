@@ -480,7 +480,7 @@ class ConnectionManager(object):
                 raise SceptreException(
                     "ForbiddenException: Confirm your current AWS profile is authenticated",
                     "and has the necessary access.",
-                )
+                ) from err
             else:
                 raise
 
