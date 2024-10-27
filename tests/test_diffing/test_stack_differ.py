@@ -181,17 +181,6 @@ class TestStackDiffer:
             cloudformation_service_role=self.deployed_cloudformation_service_role,
         )
 
-    def test__create_deployed_stack_config__wraps_aws_ForbiddenException(self):
-        def fail_with_ForbiddenException():
-            raise ClientError(
-                {"Error": {"Code": "ForbiddenException", "Message": "No access"}},
-                "describe",
-            )
-
-        self._describe_fn = fail_with_ForbiddenException
-        with pytest.raises(SceptreException):
-            self.differ._create_deployed_stack_config(self.actions)
-
     def test_diff__compares_deployed_template_to_generated_template(self):
         self.differ.diff(self.actions)
 
