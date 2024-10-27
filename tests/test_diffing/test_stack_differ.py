@@ -63,7 +63,6 @@ class TestStackDiffer:
         self._stack = None
         self._actions = None
         self._parameters = None
-        self._describe_fn = self.describe_stack_success
 
     @property
     def parameters_on_stack(self):
@@ -104,9 +103,6 @@ class TestStackDiffer:
         return self._actions
 
     def describe_stack(self):
-        return self._describe_fn()
-
-    def describe_stack_success(self):
         return {
             "Stacks": [
                 {
