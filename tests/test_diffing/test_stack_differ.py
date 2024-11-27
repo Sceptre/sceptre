@@ -234,6 +234,14 @@ class TestStackDiffer:
         diff = self.differ.diff(self.actions)
         assert diff.is_deployed is False
 
+    def test_diff__raises_some_other_client_error(self):
+        self.actions.describe.side_effect = ClientError(
+            {"Error": {"Code": "ForbiddenException", "Message": "No access"}},
+            "DescribeStacks",
+        )
+        with pytest.raises(ClientError, match="No access"):
+            self.differ.diff(self.actions)
+
     def test_diff__deployed_stack_does_not_exist__compares_none_to_generated_config(
         self,
     ):
