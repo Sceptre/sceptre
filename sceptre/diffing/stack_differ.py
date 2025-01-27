@@ -201,6 +201,9 @@ class StackDiffer(Generic[DiffType]):
             if err.response["Error"]["Message"].endswith("does not exist"):
                 return None
 
+            # Unknown error, raise it as-is
+            raise err
+
         stacks = description["Stacks"]
         for stack in stacks:
             if stack["StackStatus"] in self.STACK_STATUSES_INDICATING_NOT_DEPLOYED:
