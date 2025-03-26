@@ -29,12 +29,6 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Python
-        id: setup-python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: 'poetry'
       - name: Install Poetry
         uses: snok/install-poetry@v1
       - name: Install dependencies
@@ -42,6 +36,12 @@ jobs:
       # Update poetry for https://github.com/python-poetry/poetry/issues/7184
       - name: update poetry
         run: poetry self update --no-ansi
+      - name: Setup Python
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'poetry'
       - name: Assume AWS role
         uses: aws-actions/configure-aws-credentials@v4
         with:
