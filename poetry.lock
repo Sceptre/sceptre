@@ -1634,4 +1634,4 @@ troposphere = ["troposphere"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.9"
-content-hash = "43a2a2c55e1d761bcefa91ae02fdbdaf8c7eb9af25311d8becd109f42c4bb5f4"
+content-hash = "c6f968e55d030fe75c1a97a376143c669a178ead7ca0dacf47c0deb6e4f759ab"
