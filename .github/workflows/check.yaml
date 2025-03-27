@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: pre-commit/action@v3.0.1
         with:
-          extra_args: poetry-lock
+          extra_args: poetry-lock --all-files
 
   packaging:
     runs-on: ubuntu-latest
