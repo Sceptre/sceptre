@@ -4,6 +4,13 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 4.5.3 (2025.03.27)
+- [Resolve #1517] Updated the Cloudformation Hook logging message
+- [resolves #1514] Update docs for docker repo (#1515)
+- [Resolve #1520] Replace hard-coded shell paths (#1523)
+- [Resolve #1539] Drop Python 3.8 support (#1540)
+- [Resolves #1541] Update deepdiff to support numpy2.0 (#1542)
+
 ## 4.5.2 (2024.08.31)
 
 ### Fixed
