@@ -1,5 +1,6 @@
 ci:
   autoupdate_schedule: monthly
+  skip: ["poetry-lock"] # work around for https://github.com/pre-commit-ci/issues/issues/241
 
 default_language_version:
   python: python3
