@@ -1,5 +1,6 @@
 ci:
   autoupdate_schedule: monthly
+  skip: ["poetry-lock"] # work around for https://github.com/pre-commit-ci/issues/issues/241
 
 default_language_version:
   python: python3
@@ -12,15 +13,15 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
   - repo: https://github.com/PyCQA/flake8
-    rev: 7.1.1
+    rev: 7.1.2
     hooks:
       - id: flake8
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.35.1
+    rev: v1.37.0
     hooks:
       - id: yamllint
   - repo: https://github.com/awslabs/cfn-python-lint
-    rev: v1.20.1
+    rev: v1.32.1
     hooks:
       - id: cfn-python-lint
         args:
@@ -39,18 +40,16 @@ repos:
             ^.pre-commit-config.yaml
           )
   - repo: https://github.com/psf/black
-    rev: 24.10.0
+    rev: 25.1.0
     hooks:
       - id: black
   - repo: https://github.com/python-poetry/poetry
-    rev: '1.8.0'
+    rev: '2.1.1'
     hooks:
       - id: poetry-check
       - id: poetry-lock
-        language_version: python3.10
-        args: ['--check']
   - repo: https://github.com/sirosen/check-jsonschema
-    rev: 0.30.0
+    rev: 0.32.1
     hooks:
       - id: check-github-workflows
       - id: check-github-actions
