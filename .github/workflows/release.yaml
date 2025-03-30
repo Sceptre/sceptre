@@ -19,14 +19,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
       # docker convention: latest tag refers to the last stable release
-      - name: Build and push Docker image to sceptreorg/sceptre:latest
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: sceptreorg/sceptre:latest
-          labels: ${{ steps.meta.outputs.labels }}
-      - name: Build and push Docker image to sceptreorg/sceptre:${{ steps.meta.outputs.tags }}
+      - name: Build and push image with latest and sceptreorg/sceptre:${{ steps.meta.outputs.tags }} tags
         uses: docker/build-push-action@v5
         with:
           context: .
