@@ -151,12 +151,15 @@ def test_default_shell_is_sh(stack, capfd):
     assert cap.err.strip() == ""
 
 
+# The default shell is sh, though people often want to use bash or something else.
+# bash is usually symlinked at /bin/bash, but not always.
+# First use which to find bash, then check the Cmd hook actually uses that shell.
 def test_shell_parameter_sets_the_shell(stack, capfd):
-    # Determine the local path to bash (it's not always /bin/bash)
-    Cmd("echo $0", stack).run()
+    Cmd("which bash", stack).run()
     cap = capfd.readouterr()
     assert cap.err.strip() == ""
     bash = cap.out.strip()
+    assert bash.endswith("/bash")
 
     # Confirm the correct shell is used in the sub-process
     Cmd({"run": "echo $0", "shell": bash}, stack).run()
