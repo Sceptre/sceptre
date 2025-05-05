@@ -13,15 +13,15 @@ repos:
       - id: mixed-line-ending
       - id: trailing-whitespace
   - repo: https://github.com/PyCQA/flake8
-    rev: 7.1.2
+    rev: 7.2.0
     hooks:
       - id: flake8
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.37.0
+    rev: v1.37.1
     hooks:
       - id: yamllint
   - repo: https://github.com/awslabs/cfn-python-lint
-    rev: v1.32.1
+    rev: v1.34.2
     hooks:
       - id: cfn-python-lint
         args:
@@ -44,12 +44,12 @@ repos:
     hooks:
       - id: black
   - repo: https://github.com/python-poetry/poetry
-    rev: '2.1.1'
+    rev: '2.1.3'
     hooks:
       - id: poetry-check
       - id: poetry-lock
   - repo: https://github.com/sirosen/check-jsonschema
-    rev: 0.32.1
+    rev: 0.33.0
     hooks:
       - id: check-github-workflows
       - id: check-github-actions
