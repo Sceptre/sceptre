@@ -44,6 +44,10 @@ class SceptreContext(object):
     :param full_scan: Specify whether folder scan the config files\
             True for scan all the config files and False for scan only in the command path
     :type full_scan: bool
+
+    :param max_concurrency: Specify maximum number of stacks to launch concurrently\
+            Integer value with max number of concurrent stacks
+    :type max_concurrency: int
     """
 
     def __init__(
@@ -57,6 +61,7 @@ class SceptreContext(object):
         no_colour=False,
         ignore_dependencies=False,
         full_scan=False,
+        max_concurrency=None,
     ):
         # project_path: absolute path to the base sceptre project folder
         # e.g. absolute_path/to/sceptre_directory
@@ -92,6 +97,8 @@ class SceptreContext(object):
             ignore_dependencies if ignore_dependencies is True else False
         )
         self.full_scan = full_scan if full_scan is True else False
+
+        self.max_concurrency = max_concurrency
 
     def full_config_path(self):
         """
