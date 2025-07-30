@@ -54,7 +54,9 @@ class SceptrePlan(object):
 
     @require_resolved
     def _execute(self, *args):
-        executor = SceptrePlanExecutor(self.command, self.launch_order, max_concurrency=self.max_concurrency)
+        executor = SceptrePlanExecutor(
+            self.command, self.launch_order, max_concurrency=self.max_concurrency
+        )
         return executor.execute(*args)
 
     def _raise_no_launch_order_error(self):

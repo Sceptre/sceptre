@@ -38,7 +38,12 @@ logger = logging.getLogger(__name__)
 @click.pass_context
 @catch_exceptions
 def launch_command(
-        ctx: Context, path: str, yes: bool, prune: bool, disable_rollback: Optional[bool], max_concurrency: Optional[int],
+    ctx: Context,
+    path: str,
+    yes: bool,
+    prune: bool,
+    disable_rollback: Optional[bool],
+    max_concurrency: Optional[int],
 ):
     """
     Launch a Stack or StackGroup for a given config PATH. This command is intended as a catch-all

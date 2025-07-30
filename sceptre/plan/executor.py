@@ -15,7 +15,12 @@ from sceptre.stack import Stack
 
 
 class SceptrePlanExecutor(object):
-    def __init__(self, command: str, launch_order: List[Set[Stack]], max_concurrency: int,):
+    def __init__(
+        self,
+        command: str,
+        launch_order: List[Set[Stack]],
+        max_concurrency: int,
+    ):
         """
         Initialises a SceptrePlanExecutor, generates the launch order, threads
         and intial Stack Statuses.
@@ -31,7 +36,9 @@ class SceptrePlanExecutor(object):
         # Select the number of threads based upon the max batch size,
         # or use 1 if all batches are empty
         if max_concurrency:
-            self.num_threads = min(max_concurrency, len(max(launch_order, key=len)) or 1)
+            self.num_threads = min(
+                max_concurrency, len(max(launch_order, key=len)) or 1
+            )
         else:
             self.num_threads = len(max(launch_order, key=len)) or 1
 
