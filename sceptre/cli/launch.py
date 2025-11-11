@@ -31,9 +31,9 @@ logger = logging.getLogger(__name__)
 )
 @click.option(
     "--max-concurrency",
-    type=int,
+    type=click.IntRange(min=1),
     default=None,
-    help="Maximum number of stacks to launch concurrently",
+    help="Maximum number of stacks to launch concurrently (minimum: 1)",
 )
 @click.pass_context
 @catch_exceptions

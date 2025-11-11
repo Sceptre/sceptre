@@ -46,8 +46,8 @@ class SceptreContext(object):
     :type full_scan: bool
 
     :param max_concurrency: Specify maximum number of stacks to launch concurrently\
-            Integer value with max number of concurrent stacks
-    :type max_concurrency: int
+            Integer value with max number of concurrent stacks, or None for no limit
+    :type max_concurrency: Optional[int]
     """
 
     def __init__(

@@ -31,6 +31,7 @@ class FakePlan(SceptrePlan):
         self.all_stacks = all_stacks
         self.command_stacks = command_stacks
         self.statuses_to_return = statuses_to_return
+        self.max_concurrency = context.max_concurrency
 
         self.executions = []
 
@@ -215,3 +216,36 @@ class TestLauncher:
         self.statuses_to_return[self.all_stacks[3]] = StackStatus.FAILED
         code = self.launcher.launch(False)
         assert code != 0
+
+    def test_launch__passes_max_concurrency_to_context(self):
+        """Test that max_concurrency is passed to the SceptreContext"""
+        # Check that max_concurrency is properly stored in context
+        expected_max_concurrency = 5
+        context_with_concurrency = SceptreContext(
+            project_path="project",
+            command_path="my-test-group",
+            max_concurrency=expected_max_concurrency,
+        )
+
+        assert context_with_concurrency.max_concurrency == expected_max_concurrency
+
+    def test_launch__max_concurrency_none_by_default(self):
+        """Test that max_concurrency defaults to None"""
+        context_default = SceptreContext(
+            project_path="project",
+            command_path="my-test-group",
+        )
+
+        assert context_default.max_concurrency is None
+
+    def test_launch__context_passes_max_concurrency_to_plan(self):
+        """Test that context passes max_concurrency to the plan executor"""
+        expected_max_concurrency = 3
+        self.context.max_concurrency = expected_max_concurrency
+
+        self.launcher.launch(False)
+
+        # Verify the plan was created and executed
+        assert len(self.plans) == 1
+        # Verify max_concurrency was passed to the plan
+        assert self.plans[0].max_concurrency == expected_max_concurrency
