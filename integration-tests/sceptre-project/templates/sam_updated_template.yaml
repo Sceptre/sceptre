@@ -5,5 +5,5 @@ Resources:
     Type: 'AWS::Serverless::Function'
     Properties:
       Handler: index.handler
-      Runtime: python3.12
+      Runtime: python3.10
       InlineCode: "print('Hello Again World!')"
