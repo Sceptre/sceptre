@@ -62,17 +62,41 @@ def step_impl(context, stack_group_name):
     launch_stack_group(context, stack_group_name, False, True)
 
 
+@when(
+    'the user launches stack_group "{stack_group_name}" with max-concurrency {max_concurrency:d}'
+)
+def step_impl(context, stack_group_name, max_concurrency):
+    launch_stack_group(context, stack_group_name, False, False, max_concurrency)
+
+
 def launch_stack_group(
-    context, stack_group_name, prune=False, ignore_dependencies=False
+    context,
+    stack_group_name,
+    prune=False,
+    ignore_dependencies=False,
+    max_concurrency=None,
 ):
     sceptre_context = SceptreContext(
         command_path=stack_group_name,
         project_path=context.sceptre_dir,
         ignore_dependencies=ignore_dependencies,
+        max_concurrency=max_concurrency,
     )
 
     launcher = Launcher(sceptre_context)
-    launcher.launch(prune)
+
+    # Patch the executor to capture the number of threads used
+    from unittest.mock import patch
+    from sceptre.plan.executor import SceptrePlanExecutor
+
+    original_init = SceptrePlanExecutor.__init__
+
+    def patched_init(self, *args, **kwargs):
+        original_init(self, *args, **kwargs)
+        context.executor_num_threads = self.num_threads
+
+    with patch.object(SceptrePlanExecutor, "__init__", patched_init):
+        launcher.launch(prune)
 
 
 @when('the user deletes stack_group "{stack_group_name}"')
@@ -153,6 +177,28 @@ def step_impl(context, first_stack, second_stack):
     creation_times = get_stack_creation_times(context, stacks)
 
     assert creation_times[stacks[0]] < creation_times[stacks[1]]
+
+
+@then("the executor used {num_threads:d} thread")
+@then("the executor used {num_threads:d} threads")
+def step_impl(context, num_threads):
+    assert hasattr(
+        context, "executor_num_threads"
+    ), "Executor thread count was not captured"
+    assert (
+        context.executor_num_threads == num_threads
+    ), f"Expected {num_threads} threads but executor used {context.executor_num_threads}"
+
+
+@then("the executor used at least {min_threads:d} thread")
+@then("the executor used at least {min_threads:d} threads")
+def step_impl(context, min_threads):
+    assert hasattr(
+        context, "executor_num_threads"
+    ), "Executor thread count was not captured"
+    assert (
+        context.executor_num_threads >= min_threads
+    ), f"Expected at least {min_threads} threads but executor used {context.executor_num_threads}"
 
 
 @when('the user diffs stack group "{group_name}" with "{diff_type}"')
