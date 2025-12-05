@@ -13,7 +13,6 @@ from sceptre.helpers import (
     create_deprecated_alias_property,
     delete_keys_from_containers,
 )
-from sceptre.cli.helpers import _generate_yaml
 from sceptre.helpers import normalise_path
 from sceptre.helpers import sceptreise_path
 from sceptre.helpers import extract_datetime_from_aws_response_headers, gen_repr
@@ -195,7 +194,3 @@ class TestHelpers(object):
         delete_keys_from_containers(arg)
         expected = ["keep me", "keep me"]
         assert a == b == expected
-
-    def test_generate_yaml_str_passthrough(self):
-        s = "---\na: 1\nb: [2,3]\n"
-        assert _generate_yaml(s) == s
