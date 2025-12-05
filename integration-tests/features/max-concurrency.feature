@@ -5,7 +5,7 @@ Feature: Max Concurrency
     And stack "14/B" does not exist
     And the template for stack "14/A" is "valid_template.json"
     And the template for stack "14/B" is "valid_template.json"
-    When the user launches stack_group "1" with max-concurrency 1
+    When the user launches stack_group "14" with max-concurrency 1
     Then the executor used 1 thread
     And stack "14/A" exists in "CREATE_COMPLETE" state
     And stack "14/B" exists in "CREATE_COMPLETE" state
@@ -15,7 +15,7 @@ Feature: Max Concurrency
     And stack "14/B" does not exist
     And the template for stack "14/A" is "valid_template.json"
     And the template for stack "14/B" is "valid_template.json"
-    When the user launches stack_group "1" with max-concurrency 2
+    When the user launches stack_group "14" with max-concurrency 2
     Then the executor used 2 threads
     And stack "14/A" exists in "CREATE_COMPLETE" state
     And stack "14/B" exists in "CREATE_COMPLETE" state
@@ -25,7 +25,7 @@ Feature: Max Concurrency
     And stack "14/B" does not exist
     And the template for stack "14/A" is "valid_template.json"
     And the template for stack "14/B" is "valid_template.json"
-    When the user launches stack_group "1"
+    When the user launches stack_group "14"
     Then the executor used at least 1 thread
     And stack "14/A" exists in "CREATE_COMPLETE" state
     And stack "14/B" exists in "CREATE_COMPLETE" state
