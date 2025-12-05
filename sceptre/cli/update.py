@@ -23,10 +23,22 @@ from sceptre.plan.plan import SceptrePlan
     default=None,
     help="Disable or enable the cloudformation automatic rollback",
 )
+@click.option(
+    "--max-concurrency",
+    type=click.IntRange(min=1),
+    default=None,
+    help="Maximum number of stacks to update concurrently (minimum: 1)",
+)
 @click.pass_context
 @catch_exceptions
 def update_command(
-    ctx, path, change_set, verbose, yes, disable_rollback: Optional[bool]
+    ctx,
+    path,
+    change_set,
+    verbose,
+    yes,
+    disable_rollback: Optional[bool],
+    max_concurrency: Optional[int],
 ):
     """
     Updates a stack for a given config PATH. Or perform an update via
@@ -52,6 +64,7 @@ def update_command(
         options=ctx.obj.get("options"),
         output_format=ctx.obj.get("output_format"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies"),
+        max_concurrency=max_concurrency,
     )
 
     plan = SceptrePlan(context)

@@ -50,10 +50,13 @@ class SceptrePlan(object):
         all_stacks, command_stacks = self.config_reader.construct_stacks()
         self.graph = StackGraph(all_stacks)
         self.command_stacks = command_stacks
+        self.max_concurrency = self.context.max_concurrency
 
     @require_resolved
     def _execute(self, *args):
-        executor = SceptrePlanExecutor(self.command, self.launch_order)
+        executor = SceptrePlanExecutor(
+            self.command, self.launch_order, max_concurrency=self.max_concurrency
+        )
         return executor.execute(*args)
 
     def _raise_no_launch_order_error(self):

@@ -100,6 +100,32 @@ The ``top`` dictionary would then be expected to contain:
     }
   }
 
+Concurrency Control
+-------------------
+
+Sceptre supports limiting the number of stacks that are processed concurrently during operations like ``launch``, ``create``, and ``update``. By default, Sceptre will process stacks concurrently based on their dependency relationships, which can result in a large number of concurrent operations for stacks with few dependencies.
+
+To limit concurrency, use the ``--max-concurrency`` option:
+
+.. code-block:: text
+
+   sceptre launch my-stack-group --max-concurrency 5
+
+This will ensure that no more than 5 stacks are processed concurrently, which can be useful when:
+
+* Working with services that have rate limits (e.g., LocalStack during testing)
+* Managing resource consumption on the machine running Sceptre
+* Avoiding overwhelming downstream services with too many concurrent requests
+
+The ``--max-concurrency`` option is available for the following commands:
+
+* ``launch`` - Limit concurrent stack launches
+* ``create`` - Limit concurrent stack creations
+* ``update`` - Limit concurrent stack updates
+
+.. note::
+   The concurrency limit applies within each dependency batch. Sceptre will still respect stack dependencies and process stacks in the correct order, but will limit the number of concurrent operations within each batch of independent stacks.
+
 Command reference
 -----------------
 

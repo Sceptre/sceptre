@@ -8,14 +8,19 @@ executing the command specified in a SceptrePlan.
 """
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import List, Set
+from typing import List, Set, Optional
 
 from sceptre.plan.actions import StackActions
 from sceptre.stack import Stack
 
 
 class SceptrePlanExecutor(object):
-    def __init__(self, command: str, launch_order: List[Set[Stack]]):
+    def __init__(
+        self,
+        command: str,
+        launch_order: List[Set[Stack]],
+        max_concurrency: Optional[int],
+    ):
         """
         Initialises a SceptrePlanExecutor, generates the launch order, threads
         and intial Stack Statuses.
@@ -23,6 +28,9 @@ class SceptrePlanExecutor(object):
         :param command: The command to execute on the Stack.
 
         :param launch_order: A list containing sets of Stacks that can be executed concurrently.
+
+        :param max_concurrency: Maximum number of threads to use for concurrent execution.
+                                If None, uses the natural concurrency limit based on the largest batch.
         """
 
         self.logger = logging.getLogger(__name__)
@@ -30,7 +38,11 @@ class SceptrePlanExecutor(object):
         self.launch_order = launch_order
         # Select the number of threads based upon the max batch size,
         # or use 1 if all batches are empty
-        self.num_threads = len(max(launch_order, key=len)) or 1
+        natural_concurrency = len(max(launch_order, key=len)) or 1
+        if max_concurrency is not None and max_concurrency > 0:
+            self.num_threads = min(max_concurrency, natural_concurrency)
+        else:
+            self.num_threads = natural_concurrency
 
     def execute(self, *args):
         """
