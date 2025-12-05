@@ -153,7 +153,10 @@ def _generate_yaml(stream):
         return yaml.dump(stream, **kwargs)
 
     else:
-        return stream
+        try:
+            return yaml.safe_loads(stream)
+        except Exception:
+            return stream
 
 
 def _generate_text(stream):
