@@ -22,6 +22,7 @@ from sceptre.cli.helpers import (
     write,
     ColouredFormatter,
     deserialize_json_properties,
+    _generate_yaml,
 )
 
 from sceptre.config.reader import ConfigReader
@@ -1047,6 +1048,22 @@ class TestCli:
         encoder = CustomJsonEncoder()
         response = encoder.encode(datetime.datetime(2016, 5, 3))
         assert response == '"2016-05-03 00:00:00"'
+
+    def test_generate_yaml_with_string(self):
+        # Test that _generate_yaml properly dumps a string to YAML format
+        result = _generate_yaml("test string")
+        assert result == "--- test string\n...\n"
+
+    def test_generate_yaml_with_dict(self):
+        # Test that _generate_yaml properly dumps a dict to YAML format
+        result = _generate_yaml({"key": "value"})
+        assert result == "---\nkey: value\n"
+
+    def test_generate_yaml_with_list(self):
+        # Test that _generate_yaml properly dumps a list to YAML format
+        result = _generate_yaml([{"key1": "value1"}, {"key2": "value2"}])
+        assert "- key1: value1\n" in result
+        assert "- key2: value2\n" in result
 
     def test_diff_command__diff_type_is_deepdiff__passes_deepdiff_stack_differ_to_actions(
         self,
