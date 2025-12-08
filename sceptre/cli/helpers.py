@@ -154,7 +154,7 @@ def _generate_yaml(stream):
 
     else:
         try:
-            return yaml.safe_loads(stream)
+            return yaml.safe_dump(stream, **kwargs)
         except Exception:
             return stream
 
