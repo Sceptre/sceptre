@@ -16,9 +16,22 @@ from sceptre.cli.helpers import stack_status_exit_code
     default=None,
     help="Disable or enable the cloudformation automatic rollback",
 )
+@click.option(
+    "--max-concurrency",
+    type=click.IntRange(min=1),
+    default=None,
+    help="Maximum number of stacks to create concurrently (minimum: 1)",
+)
 @click.pass_context
 @catch_exceptions
-def create_command(ctx, path, change_set_name, yes, disable_rollback: Optional[bool]):
+def create_command(
+    ctx,
+    path,
+    change_set_name,
+    yes,
+    disable_rollback: Optional[bool],
+    max_concurrency: Optional[int],
+):
     """
     Creates a stack for a given config PATH. Or if CHANGE_SET_NAME is specified
     creates a change set for stack in PATH.
@@ -39,6 +52,7 @@ def create_command(ctx, path, change_set_name, yes, disable_rollback: Optional[b
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies"),
+        max_concurrency=max_concurrency,
     )
 
     action = "create"
