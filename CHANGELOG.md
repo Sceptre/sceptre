@@ -4,6 +4,11 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 4.6.0 (2025.12.09)
+- [Resolves #1568] Adding concurrency options to throttle deployments (#1560)
+- [Resolve #1562] Fix safe loads path (#1563)
+- [Resolve #1482] Make shell optional in cmd hook (#1554)
+
 ## 4.5.3 (2025.03.27)
 - [Resolve #1517] Updated the Cloudformation Hook logging message
 - [resolves #1514] Update docs for docker repo (#1515)
