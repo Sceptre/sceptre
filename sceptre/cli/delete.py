@@ -22,7 +22,7 @@ def delete_command(ctx, path, change_set_name, yes):
     """
     Deletes a stack for a given config PATH. Or if CHANGE_SET_NAME is specified
     deletes a change set for stack in PATH.
-    
+
     Supports path patterns via installed plugins.
     \f
 
@@ -38,7 +38,7 @@ def delete_command(ctx, path, change_set_name, yes):
     path, force_confirm, matched_files = process_path(
         path, project_path, "config", "delete"
     )
-    
+
     # If plugin forces confirmation, override --yes flag
     if force_confirm:
         yes = False

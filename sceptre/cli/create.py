@@ -40,7 +40,7 @@ def create_command(
     """
     Creates a stack for a given config PATH. Or if CHANGE_SET_NAME is specified
     creates a change set for stack in PATH.
-    
+
     Supports path patterns via installed plugins.
     \f
 

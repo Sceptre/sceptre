@@ -48,7 +48,7 @@ def update_command(
     """
     Updates a stack for a given config PATH. Or perform an update via
     change-set when the change-set flag is set.
-    
+
     Supports path patterns via installed plugins.
     \f
 
