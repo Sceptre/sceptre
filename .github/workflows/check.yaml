@@ -1,0 +1,88 @@
+# Execute sanity checks
+name: check
+
+on:
+  push:
+    branches:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pre-commit/action@v3.0.1
+        with:
+          extra_args: poetry-lock --all-files
+
+  packaging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: build package
+        run: poetry build
+
+  documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Install dependencies
+        run: poetry install --no-interaction --all-extras
+      - name: build documentation
+        run: poetry run make html --directory docs
+
+  # use https://github.com/medmunds/tox-gh-matrix to export tox envlist to GH actions
+  get-tox-envlist:
+    runs-on: ubuntu-latest
+    outputs:
+      envlist: ${{ steps.generate-envlist.outputs.envlist }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Install dependencies
+        run: poetry install --no-interaction --all-extras
+      - id: generate-envlist
+        run: poetry run tox --gh-matrix
+
+  unit-tests:
+    needs: get-tox-envlist
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        tox: ${{ fromJSON(needs.get-tox-envlist.outputs.envlist) }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Setup Python
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.tox.python.spec }}
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Install dependencies
+        run: poetry install --no-interaction --all-extras
+      - name: run python tests
+        run: poetry run tox -e ${{ matrix.tox.name }}
+      - name: run python test report
+        run: poetry run tox -e report
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Build Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .

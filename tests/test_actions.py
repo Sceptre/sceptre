@@ -276,6 +276,44 @@ class TestStackActions(object):
         )
 
     @patch("sceptre.plan.actions.StackActions._wait_for_completion")
+    @patch("sceptre.plan.actions.StackActions._get_stack_timeout")
+    def test_update_disable_rollback_overrides_on_failure(
+        self, mock_get_stack_timeout, mock_wait_for_completion
+    ):
+        self.actions.stack._template = Mock(spec=Template)
+        self.actions.stack._template.get_boto_call_parameter.return_value = {
+            "Template": sentinel.template
+        }
+
+        self.actions.stack.on_failure = "ROLLBACK"
+        self.actions.stack.disable_rollback = True
+
+        mock_get_stack_timeout.return_value = {"TimeoutInMinutes": sentinel.timeout}
+
+        self.actions.update()
+        self.actions.connection_manager.call.assert_called_with(
+            service="cloudformation",
+            command="update_stack",
+            kwargs={
+                "StackName": sentinel.external_name,
+                "Template": sentinel.template,
+                "Parameters": [{"ParameterKey": "key1", "ParameterValue": "val1"}],
+                "Capabilities": [
+                    "CAPABILITY_IAM",
+                    "CAPABILITY_NAMED_IAM",
+                    "CAPABILITY_AUTO_EXPAND",
+                ],
+                "RoleARN": sentinel.cloudformation_service_role,
+                "NotificationARNs": [sentinel.notification],
+                "Tags": [{"Key": "tag1", "Value": "val1"}],
+                "DisableRollback": True,
+            },
+        )
+        mock_wait_for_completion.assert_called_once_with(
+            sentinel.stack_timeout, boto_response=ANY
+        )
+
+    @patch("sceptre.plan.actions.StackActions._wait_for_completion")
     def test_update_cancels_after_timeout(self, mock_wait_for_completion):
         self.actions.stack._template = Mock(spec=Template)
         self.actions.stack._template.get_boto_call_parameter.return_value = {
@@ -391,6 +429,19 @@ class TestStackActions(object):
         self, mock_get_status, mock_delete, mock_create
     ):
         mock_get_status.return_value = "CREATE_FAILED"
+        mock_create.return_value = sentinel.launch_response
+        response = self.actions.launch()
+        mock_delete.assert_called_once_with()
+        mock_create.assert_called_once_with()
+        assert response == sentinel.launch_response
+
+    @patch("sceptre.plan.actions.StackActions.create")
+    @patch("sceptre.plan.actions.StackActions.delete")
+    @patch("sceptre.plan.actions.StackActions._get_status")
+    def test_launch_with_stack_in_review_in_progress(
+        self, mock_get_status, mock_delete, mock_create
+    ):
+        mock_get_status.return_value = "REVIEW_IN_PROGRESS"
         mock_create.return_value = sentinel.launch_response
         response = self.actions.launch()
         mock_delete.assert_called_once_with()
@@ -556,14 +607,15 @@ class TestStackActions(object):
             ]
         }
 
-    @patch("sceptre.plan.actions.StackActions._describe")
+    @patch("sceptre.plan.actions.StackActions.describe")
     def test_describe_outputs_sends_correct_request(self, mock_describe):
         mock_describe.return_value = {"Stacks": [{"Outputs": sentinel.outputs}]}
         response = self.actions.describe_outputs()
+
         mock_describe.assert_called_once_with()
         assert response == {self.stack.name: sentinel.outputs}
 
-    @patch("sceptre.plan.actions.StackActions._describe")
+    @patch("sceptre.plan.actions.StackActions.describe")
     def test_describe_outputs_handles_stack_with_no_outputs(self, mock_describe):
         mock_describe.return_value = {"Stacks": [{}]}
         response = self.actions.describe_outputs()
@@ -631,6 +683,7 @@ class TestStackActions(object):
                     "CAPABILITY_AUTO_EXPAND",
                 ],
                 "ChangeSetName": sentinel.change_set_name,
+                "ChangeSetType": "UPDATE",
                 "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [sentinel.notification],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
@@ -658,8 +711,34 @@ class TestStackActions(object):
                     "CAPABILITY_AUTO_EXPAND",
                 ],
                 "ChangeSetName": sentinel.change_set_name,
+                "ChangeSetType": "UPDATE",
                 "RoleARN": sentinel.cloudformation_service_role,
                 "NotificationARNs": [],
+                "Tags": [{"Key": "tag1", "Value": "val1"}],
+            },
+        )
+
+    @patch("sceptre.plan.actions.StackActions._get_status")
+    def test_create_change_set_with_non_existent_stack(self, mock_get_status):
+        mock_get_status.side_effect = StackDoesNotExistError()
+        self.template._body = sentinel.template
+        self.actions.create_change_set(sentinel.change_set_name)
+        self.actions.connection_manager.call.assert_called_with(
+            service="cloudformation",
+            command="create_change_set",
+            kwargs={
+                "StackName": sentinel.external_name,
+                "TemplateBody": sentinel.template,
+                "Parameters": [{"ParameterKey": "key1", "ParameterValue": "val1"}],
+                "Capabilities": [
+                    "CAPABILITY_IAM",
+                    "CAPABILITY_NAMED_IAM",
+                    "CAPABILITY_AUTO_EXPAND",
+                ],
+                "ChangeSetName": sentinel.change_set_name,
+                "ChangeSetType": "CREATE",
+                "RoleARN": sentinel.cloudformation_service_role,
+                "NotificationARNs": [sentinel.notification],
                 "Tags": [{"Key": "tag1", "Value": "val1"}],
             },
         )
@@ -892,13 +971,13 @@ class TestStackActions(object):
             {"ParameterKey": "key2", "ParameterValue": "value4"},
         ]
 
-    @patch("sceptre.plan.actions.StackActions._describe")
+    @patch("sceptre.plan.actions.StackActions.describe")
     def test_get_status_with_created_stack(self, mock_describe):
         mock_describe.return_value = {"Stacks": [{"StackStatus": "CREATE_COMPLETE"}]}
         status = self.actions.get_status()
         assert status == "CREATE_COMPLETE"
 
-    @patch("sceptre.plan.actions.StackActions._describe")
+    @patch("sceptre.plan.actions.StackActions.describe")
     def test_get_status_with_non_existent_stack(self, mock_describe):
         mock_describe.side_effect = ClientError(
             {
@@ -911,7 +990,7 @@ class TestStackActions(object):
         )
         assert self.actions.get_status() == "PENDING"
 
-    @patch("sceptre.plan.actions.StackActions._describe")
+    @patch("sceptre.plan.actions.StackActions.describe")
     def test_get_status_with_unknown_clinet_error(self, mock_describe):
         mock_describe.side_effect = ClientError(
             {"Error": {"Code": "DoesNotExistException", "Message": "Boom!"}},
@@ -981,7 +1060,7 @@ class TestStackActions(object):
     @patch("sceptre.plan.actions.StackActions.describe_events")
     def test_log_new_events_calls_describe_events(self, mock_describe_events):
         mock_describe_events.return_value = {"StackEvents": []}
-        self.actions._log_new_events(datetime.datetime.utcnow())
+        self.actions._log_new_events(datetime.datetime.now(datetime.timezone.utc))
         self.actions.describe_events.assert_called_once_with()
 
     @patch("sceptre.plan.actions.StackActions.describe_events")
@@ -1046,7 +1125,6 @@ class TestStackActions(object):
                         "ResourceStatus": "resource-with-cf-hook",
                         "HookType": "type-3",
                         "HookStatus": "HOOK_COMPLETE_SUCCEEDED",
-                        "HookFailureMode": "WARN",
                     },
                     {
                         "Timestamp": datetime.datetime(
@@ -1059,7 +1137,6 @@ class TestStackActions(object):
                         "HookType": "type-4",
                         "HookStatus": "HOOK_IN_PROGRESS",
                         "HookStatusReason": "Good hook",
-                        "HookFailureMode": "WARN",
                     },
                 ]
             }
@@ -1074,7 +1151,6 @@ class TestStackActions(object):
                 self.actions.describe_events()["StackEvents"][1]["ResourceStatus"],
                 self.actions.describe_events()["StackEvents"][1]["HookType"],
                 self.actions.describe_events()["StackEvents"][1]["HookStatus"],
-                self.actions.describe_events()["StackEvents"][1]["HookFailureMode"],
             ].sort() == caplog.messages[0].split().sort()
             assert [
                 self.actions.stack.name,
@@ -1087,7 +1163,6 @@ class TestStackActions(object):
                 self.actions.describe_events()["StackEvents"][0]["HookType"],
                 self.actions.describe_events()["StackEvents"][0]["HookStatus"],
                 self.actions.describe_events()["StackEvents"][0]["HookStatusReason"],
-                self.actions.describe_events()["StackEvents"][0]["HookFailureMode"],
             ].sort() == caplog.messages[1].split().sort()
 
     @patch("sceptre.plan.actions.StackActions._get_cs_status")
@@ -1165,6 +1240,15 @@ class TestStackActions(object):
                 }
                 response = self.actions._get_cs_status(sentinel.change_set_name)
                 assert response == returns[i]
+
+        mock_describe_change_set.return_value = {
+            "Status": "FAILED",
+            "StatusReason": "The submitted information didn't contain changes. "
+            "Submit different information to create a change set.",
+            "ExecutionStatus": "UNAVAILABLE",
+        }
+        response = self.actions._get_cs_status(sentinel.change_set_name)
+        assert response == scss.NO_CHANGES
 
         for status in return_values["Status"]:
             mock_describe_change_set.return_value = {

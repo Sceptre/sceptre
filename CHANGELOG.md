@@ -4,6 +4,99 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+## 4.6.0 (2025.12.09)
+- [Resolves #1568] Adding concurrency options to throttle deployments (#1560)
+- [Resolve #1562] Fix safe loads path (#1563)
+- [Resolve #1482] Make shell optional in cmd hook (#1554)
+
+## 4.5.3 (2025.03.27)
+- [Resolve #1517] Updated the Cloudformation Hook logging message
+- [resolves #1514] Update docs for docker repo (#1515)
+- [Resolve #1520] Replace hard-coded shell paths (#1523)
+- [Resolve #1539] Drop Python 3.8 support (#1540)
+- [Resolves #1541] Update deepdiff to support numpy2.0 (#1542)
+
+## 4.5.2 (2024.08.31)
+
+### Fixed
+ - [Resolve #1506] Remove unused __eq__ method
+
+## 4.5.1 (2024.08.29)
+
+### Fixed
+ - [Resolve #1503] Dependency conflict with packaging
+
+## 4.5.0 (2024.08.28)
+
+### Added
+ - [Resolve #915] Support ChangeSetType CREATE (#1469)
+ - [Resolves #1187] Add configuration for inheritance strategies for list and dict configs (#1445)
+ - [Resolve #1443] Add parameter type checking (#1442)
+
+#### Changed
+ - [Resolve #1498] Tweak diff output (#1499)
+ - [Resolve #1446] Print edges in cyclical dependency (#1447)
+
+### Fixed
+ - [Resolve #1493] Complete DisableRollback implementation
+ - [Resolve #723] Fix update command with change sets for multiple stacks (#1480)
+ - [Resolve #1483] Handle errors in change sets (#1486)
+ - [Resolve #1484] Gracefully handle invalid parameters (#1485)
+ - [Resolves #1268] Modify ConfigFileNotFound Error to Conditionally Include Valid Stack Paths (#1270)
+ - [Resolve #1451] Stop suppressing ClientError in describe_outputs (#1452)
+ - [Resolve #1468] Cast parameters to strings (#1471)
+ - [Resolve #937] Reset Jinja2 variable cache between config files (#1472)
+ - [Resolves #1460] Update `NO_ECHO_REPLACEMENT` (#1461)
+ - [Resolves #1388] Handle failures gracefully in stack outputs (#1391)
+ - [Resolve #1436] Handle exception in differ (#1437)
+
+### Nonfunctional
+ - [Resolve #1478] Update to latest packaging
+ - [Resolves #841] Add documented entry for ASG hook (#1374)
+ - chore: remove github workflow (#1479)
+ - A minor clarification to the docs on running integration tests (#1475)
+ - Fix release workflow: GH actions uses globs instead of regex
+ - Fix integration test workflow (#1439)
+ - Remove classifiers (#1438)
+ - Remove removed_in version of deprecated settings (#1423)
+ - CI: add comments to GH workflows
+ - stop duplicate gate workflow runs (#1433)
+ - run gate workflow on branch creation
+ - Update CI and doc
+ - CI: add integration test workflow (#1430)
+ - Disable concurrent integration test runs (#1426)
+ - Refactor GH workflows (#1416)
+ - CI: Remove install dependencies (#1428)
+ - reconfigure pre-commit validation (#1427)
+ - Remove an external resolver integration test (#1425)
+ - Generate github test matrix from tox (#1422)
+ - CI: fix github event reference (#1424)
+ - Fix integration tests (#1420)
+ - ci: fix docker release dependency
+ - pypi release should run in parallel to docker release
+ - update docker push workflow
+ - fix ci: add user/app to docker tags deployments
+ - fix deployment to dockerhub (#1415)
+ - ci: attempt unit test fix (#1414)
+ - [Resolves #1401] Move CI to github actions (#1412)
+ - ci: install poetry dependencies
+ - ci: install poetry
+ - another tag regex fix
+ - fix tag regex for ci
+ - fix ci: GH action file needs to be in workflows folder
+ - bootstrap GH action CI (#1413)
+ - [Resolves #1327] Remove docs build and publish (#1407)
+
+## 4.4.2 (2024.01.13)
+ - Add support for python 3.12 (#1390)
+ - Drop support for Python 3.7 (#1382)
+ - [Resolves #1327] Setup readthedocs (#1404)
+ - [Resolves #1377] Remove auto announcements to twitter (#1385)
+ - [Resolves #1383] Simplify stderr test for cmd hook (#1387)
+ - Remove project Makefile (#1403)
+ - docs: Update instructions to generate docs and remove requirements file for docs (#1398) (#1405)
+ - ci: use matrix for unit tests (#1395)
+
 ## 4.3.0 (2023.10.07)
  - [Resolve #1351] Add debugging to Jinja rendering (#1375)
  - [Resolves #1356] Add export=stackoutput and stackoutputexternal feature to list outputs (#1357)

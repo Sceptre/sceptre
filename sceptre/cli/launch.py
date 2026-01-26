@@ -34,10 +34,21 @@ logger = logging.getLogger(__name__)
     default=None,
     help="Disable or enable the cloudformation automatic rollback",
 )
+@click.option(
+    "--max-concurrency",
+    type=click.IntRange(min=1),
+    default=None,
+    help="Maximum number of stacks to launch concurrently (minimum: 1)",
+)
 @click.pass_context
 @catch_exceptions
 def launch_command(
-    ctx: Context, path: str, yes: bool, prune: bool, disable_rollback: Optional[bool]
+    ctx: Context,
+    path: str,
+    yes: bool,
+    prune: bool,
+    disable_rollback: Optional[bool],
+    max_concurrency: Optional[int],
 ):
     """
     Launch a Stack or StackGroup for a given config PATH. This command is intended as a catch-all
@@ -65,6 +76,7 @@ def launch_command(
         user_variables=ctx.obj.get("user_variables"),
         options=ctx.obj.get("options"),
         ignore_dependencies=ctx.obj.get("ignore_dependencies"),
+        max_concurrency=max_concurrency,
     )
     launcher = Launcher(context)
     launcher.print_operations(prune)

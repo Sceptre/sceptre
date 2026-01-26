@@ -40,6 +40,11 @@ def stack_factory(**kwargs):
     return Stack(**call_kwargs)
 
 
+class FakeResolver(Resolver):
+    def resolve(self):
+        return "Fake"
+
+
 class TestStack(object):
     def setup_method(self, test_method):
         self.stack = Stack(
@@ -183,6 +188,58 @@ class TestStack(object):
                 obsolete="true",
             )
 
+    @pytest.mark.parametrize(
+        "parameters",
+        [{"Dict": {"foo": "bar"}}, {"List": ["of", "stuff", {"including": "aDict"}]}],
+    )
+    def test_init__invalid_parameters_raise_invalid_config_file_error(self, parameters):
+        with pytest.raises(InvalidConfigFileError):
+            Stack(
+                name="stack_name",
+                project_code="project_code",
+                template_handler_config={"type": "file"},
+                region="region",
+                parameters=parameters,
+            )
+
+    @pytest.mark.parametrize(
+        "parameters",
+        [["this", "is", "a", "list"], "a_string"],
+    )
+    def test_init__invalid_parameters__parameters_a_list(self, parameters):
+        with pytest.raises(InvalidConfigFileError):
+            Stack(
+                name="stack_name",
+                project_code="project_code",
+                template_handler_config={"type": "file"},
+                region="region",
+                parameters=parameters,
+            )
+
+    @pytest.mark.parametrize(
+        "parameters",
+        [
+            {"IntAsString": "1"},
+            {"Int": 1},
+            {"BoolAsString": "true"},
+            {"Bool": True},
+            {"List": ["aStringAndA", FakeResolver()]},
+            {"ListOfInts": [1, 2, 3]},
+            {"Resolver": FakeResolver()},
+        ],
+    )
+    def test_init__valid_parameters_do_not_raise_invalid_config_file_error(
+        self, parameters
+    ):
+        stack = Stack(
+            name="stack_name",
+            project_code="project_code",
+            template_handler_config={"type": "file"},
+            region="region",
+            parameters=parameters,
+        )
+        assert isinstance(stack, Stack)
+
     def test_stack_repr(self):
         assert (
             self.stack.__repr__() == "sceptre.stack.Stack("
@@ -248,14 +305,10 @@ class TestStack(object):
     def test_configuration_manager__sceptre_role_returns_value__returns_connection_manager_with_that_role(
         self,
     ):
-        class FakeResolver(Resolver):
-            def resolve(self):
-                return "role"
-
         self.stack.sceptre_role = FakeResolver()
 
         connection_manager = self.stack.connection_manager
-        assert connection_manager.sceptre_role == "role"
+        assert connection_manager.sceptre_role == "Fake"
 
     @fail_if_not_removed
     def test_iam_role__is_removed_on_removal_version(self):

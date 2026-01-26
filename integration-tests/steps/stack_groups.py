@@ -62,17 +62,41 @@ def step_impl(context, stack_group_name):
     launch_stack_group(context, stack_group_name, False, True)
 
 
+@when(
+    'the user launches stack_group "{stack_group_name}" with max-concurrency {max_concurrency:d}'
+)
+def step_impl(context, stack_group_name, max_concurrency):
+    launch_stack_group(context, stack_group_name, False, False, max_concurrency)
+
+
 def launch_stack_group(
-    context, stack_group_name, prune=False, ignore_dependencies=False
+    context,
+    stack_group_name,
+    prune=False,
+    ignore_dependencies=False,
+    max_concurrency=None,
 ):
     sceptre_context = SceptreContext(
         command_path=stack_group_name,
         project_path=context.sceptre_dir,
         ignore_dependencies=ignore_dependencies,
+        max_concurrency=max_concurrency,
     )
 
     launcher = Launcher(sceptre_context)
-    launcher.launch(prune)
+
+    # Patch the executor to capture the number of threads used
+    from unittest.mock import patch
+    from sceptre.plan.executor import SceptrePlanExecutor
+
+    original_init = SceptrePlanExecutor.__init__
+
+    def patched_init(self, *args, **kwargs):
+        original_init(self, *args, **kwargs)
+        context.executor_num_threads = self.num_threads
+
+    with patch.object(SceptrePlanExecutor, "__init__", patched_init):
+        launcher.launch(prune)
 
 
 @when('the user deletes stack_group "{stack_group_name}"')
@@ -95,68 +119,6 @@ def step_impl(context, stack_group_name):
 
     sceptre_plan = SceptrePlan(sceptre_context)
     sceptre_plan.delete()
-
-
-@when('the user describes stack_group "{stack_group_name}"')
-def step_impl(context, stack_group_name):
-    sceptre_context = SceptreContext(
-        command_path=stack_group_name, project_path=context.sceptre_dir
-    )
-
-    sceptre_plan = SceptrePlan(sceptre_context)
-    responses = sceptre_plan.describe()
-
-    stack_names = get_full_stack_names(context, stack_group_name)
-    cfn_stacks = {}
-
-    for response in responses.values():
-        if response is None:
-            continue
-        for stack in response["Stacks"]:
-            cfn_stacks[stack["StackName"]] = stack["StackStatus"]
-
-    context.response = [
-        {short_name: cfn_stacks[full_name]}
-        for short_name, full_name in stack_names.items()
-        if cfn_stacks.get(full_name)
-    ]
-
-
-@when('the user describes stack_group "{stack_group_name}" with ignore dependencies')
-def step_impl(context, stack_group_name):
-    sceptre_context = SceptreContext(
-        command_path=stack_group_name,
-        project_path=context.sceptre_dir,
-        ignore_dependencies=True,
-    )
-
-    sceptre_plan = SceptrePlan(sceptre_context)
-    responses = sceptre_plan.describe()
-
-    stack_names = get_full_stack_names(context, stack_group_name)
-    cfn_stacks = {}
-
-    for response in responses.values():
-        if response is None:
-            continue
-        for stack in response["Stacks"]:
-            cfn_stacks[stack["StackName"]] = stack["StackStatus"]
-
-    context.response = [
-        {short_name: cfn_stacks[full_name]}
-        for short_name, full_name in stack_names.items()
-        if cfn_stacks.get(full_name)
-    ]
-
-
-@when('the user describes resources in stack_group "{stack_group_name}"')
-def step_impl(context, stack_group_name):
-    sceptre_context = SceptreContext(
-        command_path=stack_group_name, project_path=context.sceptre_dir
-    )
-
-    sceptre_plan = SceptrePlan(sceptre_context)
-    context.response = sceptre_plan.describe_resources().values()
 
 
 @when(
@@ -196,21 +158,6 @@ def step_impl(context, stack_group_name):
     check_stack_status(context, full_stack_names, None)
 
 
-@then('all stacks in stack_group "{stack_group_name}" are described as "{status}"')
-def step_impl(context, stack_group_name, status):
-    stacks_names = get_stack_names(context, stack_group_name)
-    expected_response = [{stack_name: status} for stack_name in stacks_names]
-    for response in context.response:
-        assert response in expected_response
-
-
-@then("no resources are described")
-def step_impl(context):
-    for stack_resources in context.response:
-        stack_name = next(iter(stack_resources))
-        assert stack_resources == {stack_name: []}
-
-
 @then('stack "{stack_name}" is described as "{status}"')
 def step_impl(context, stack_name, status):
     response = next(
@@ -219,51 +166,6 @@ def step_impl(context, stack_name, status):
     )
 
     assert response[stack_name] == status
-
-
-@then('only all resources in stack_group "{stack_group_name}" are described')
-def step_impl(context, stack_group_name):
-    stacks_names = get_full_stack_names(context, stack_group_name)
-    expected_resources = {}
-    sceptre_response = []
-    for stack_resources in context.response:
-        for resource in stack_resources.values():
-            sceptre_response.append(resource[0]["PhysicalResourceId"])
-
-    for short_name, full_name in stacks_names.items():
-        time.sleep(1)
-        response = retry_boto_call(
-            context.client.describe_stack_resources, StackName=full_name
-        )
-        expected_resources[short_name] = response["StackResources"]
-
-    for short_name, resources in expected_resources.items():
-        for resource in resources:
-            sceptre_response.remove(resource["PhysicalResourceId"])
-
-    assert sceptre_response == []
-
-
-@then('only resources in stack "{stack_name}" are described')
-def step_impl(context, stack_name):
-    expected_resources = {}
-    sceptre_response = []
-    for stack_resources in context.response:
-        for resource in stack_resources.values():
-            if resource:
-                sceptre_response.append(resource[0].get("PhysicalResourceId"))
-
-    response = retry_boto_call(
-        context.client.describe_stack_resources,
-        StackName=get_cloudformation_stack_name(context, stack_name),
-    )
-    expected_resources[stack_name] = response["StackResources"]
-
-    for short_name, resources in expected_resources.items():
-        for resource in resources:
-            sceptre_response.remove(resource["PhysicalResourceId"])
-
-    assert sceptre_response == []
 
 
 @then('that stack "{first_stack}" was created before "{second_stack}"')
@@ -275,6 +177,28 @@ def step_impl(context, first_stack, second_stack):
     creation_times = get_stack_creation_times(context, stacks)
 
     assert creation_times[stacks[0]] < creation_times[stacks[1]]
+
+
+@then("the executor used {num_threads:d} thread")
+@then("the executor used {num_threads:d} threads")
+def step_impl(context, num_threads):
+    assert hasattr(
+        context, "executor_num_threads"
+    ), "Executor thread count was not captured"
+    assert (
+        context.executor_num_threads == num_threads
+    ), f"Expected {num_threads} threads but executor used {context.executor_num_threads}"
+
+
+@then("the executor used at least {min_threads:d} thread")
+@then("the executor used at least {min_threads:d} threads")
+def step_impl(context, min_threads):
+    assert hasattr(
+        context, "executor_num_threads"
+    ), "Executor thread count was not captured"
+    assert (
+        context.executor_num_threads >= min_threads
+    ), f"Expected at least {min_threads} threads but executor used {context.executor_num_threads}"
 
 
 @when('the user diffs stack group "{group_name}" with "{diff_type}"')

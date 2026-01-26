@@ -9,7 +9,7 @@ This module implements a Stack class, which stores a Stack's data.
 
 import logging
 
-from typing import List, Any, Optional
+from typing import List, Dict, Union, Any, Optional
 from deprecation import deprecated
 
 from sceptre import __version__
@@ -26,6 +26,7 @@ from sceptre.resolvers import (
     ResolvableValueProperty,
     RecursiveResolve,
     PlaceholderType,
+    Resolver,
 )
 from sceptre.template import Template
 
@@ -42,7 +43,7 @@ class Stack:
     :param template_path: The relative path to the CloudFormation, Jinja2,
             or Python template to build the Stack from. If this is filled,
             `template_handler_config` should not be filled. This field has been deprecated since
-            version 4.0.0 and will be removed in version 5.0.0.
+            version 4.0.0 and will be removed eventually.
 
     :param template_handler_config: Configuration for a Template Handler that can resolve
             its arguments to a template string. Should contain the `type` property to specify
@@ -92,15 +93,15 @@ class Stack:
 
     :param iam_role: The ARN of a role for Sceptre to assume before interacting
             with the environment. If not supplied, Sceptre uses the user's AWS CLI
-            credentials. This field has been deprecated since version 4.0.0 and will be removed in
-            version 5.0.0.
+            credentials. This field has been deprecated since version 4.0.0 and will be removed
+            eventually.
 
     :param sceptre_role: The ARN of a role for Sceptre to assume before interacting\
             with the environment. If not supplied, Sceptre uses the user's AWS CLI\
             credentials.
 
     :param iam_role_session_duration: The duration in seconds of the assumed IAM role session.
-            This field has been deprecated since version 4.0.0 and will be removed in version 5.0.0.
+            This field has been deprecated since version 4.0.0 and will be removed eventually.
 
     :param sceptre_role_session_duration: The duration in seconds of the assumed IAM role session.
 
@@ -154,14 +155,23 @@ class Stack:
     hooks = HookProperty("hooks")
 
     iam_role = create_deprecated_alias_property(
-        "iam_role", "sceptre_role", "4.0.0", "5.0.0"
+        "iam_role",
+        "sceptre_role",
+        deprecated_in="4.0.0",
+        removed_in=None,
     )
     role_arn = create_deprecated_alias_property(
-        "role_arn", "cloudformation_service_role", "4.0.0", "5.0.0"
+        "role_arn",
+        "cloudformation_service_role",
+        deprecated_in="4.0.0",
+        removed_in=None,
     )
     sceptre_role_session_duration = None
     iam_role_session_duration = create_deprecated_alias_property(
-        "iam_role_session_duration", "sceptre_role_session_duration", "4.0.0", "5.0.0"
+        "iam_role_session_duration",
+        "sceptre_role_session_duration",
+        deprecated_in="4.0.0",
+        removed_in=None,
     )
 
     def __init__(
@@ -253,7 +263,7 @@ class Stack:
         )
 
         self.s3_details = s3_details
-        self.parameters = parameters or {}
+        self.parameters = self._cast_parameters(parameters or {})
         self.sceptre_user_data = sceptre_user_data or {}
         self.notifications = notifications or []
 
@@ -265,6 +275,49 @@ class Stack:
                 f"{self.name}: Value for {config_name} must be a boolean, not a {type(value).__name__}"
             )
         return value
+
+    def _cast_parameters(
+        self, parameters: Dict[str, Any]
+    ) -> Dict[str, Union[str, List[Union[str, Resolver]], Resolver]]:
+        """Cast CloudFormation parameters to valid types"""
+
+        def cast_value(value: Any) -> Union[str, List[Union[str, Resolver]], Resolver]:
+            if isinstance(value, bool):
+                return "true" if value else "false"
+            elif isinstance(value, (int, float)):
+                return str(value)
+            elif isinstance(value, list):
+                return [cast_value(item) for item in value]
+            elif isinstance(value, Resolver):
+                return value
+            return value
+
+        def is_valid(value: Any) -> bool:
+            return (
+                isinstance(value, str)
+                or (
+                    isinstance(value, list)
+                    and all(
+                        isinstance(item, str) or isinstance(item, Resolver)
+                        for item in value
+                    )
+                )
+                or isinstance(value, Resolver)
+            )
+
+        if not isinstance(parameters, dict):
+            raise InvalidConfigFileError(
+                f"{self.name}: parameters must be a dictionary of key-value pairs, got {parameters}"
+            )
+
+        casted_parameters = {k: cast_value(v) for k, v in parameters.items()}
+
+        if not all(is_valid(value) for value in casted_parameters.values()):
+            raise InvalidConfigFileError(
+                f"{self.name}: Values for parameters must be strings, lists or resolvers, got {casted_parameters}"
+            )
+
+        return casted_parameters
 
     def __repr__(self):
         return (
@@ -300,30 +353,6 @@ class Stack:
 
     def __str__(self):
         return self.name
-
-    def __eq__(self, stack):
-        # We should not use any resolvable properties in __eq__, since it is used when adding the
-        # Stack to a set, which is done very early in plan resolution. Trying to reference resolvers
-        # before the plan is fully resolved can potentially blow up.
-        return (
-            self.name == stack.name
-            and self.external_name == stack.external_name
-            and self.project_code == stack.project_code
-            and self.template_path == stack.template_path
-            and self.region == stack.region
-            and self.template_key_prefix == stack.template_key_prefix
-            and self.required_version == stack.required_version
-            and self.sceptre_role_session_duration
-            == stack.sceptre_role_session_duration
-            and self.profile == stack.profile
-            and self.dependencies == stack.dependencies
-            and self.protected == stack.protected
-            and self.on_failure == stack.on_failure
-            and self.disable_rollback == stack.disable_rollback
-            and self.stack_timeout == stack.stack_timeout
-            and self.ignore == stack.ignore
-            and self.obsolete == stack.obsolete
-        )
 
     def __hash__(self):
         return hash(str(self))
@@ -388,7 +417,10 @@ class Stack:
 
     @property
     @deprecated(
-        "4.0.0", "5.0.0", __version__, "Use the template Stack Config key instead."
+        deprecated_in="4.0.0",
+        removed_in=None,
+        current_version=__version__,
+        details="Use the template Stack Config key instead.",
     )
     def template_path(self) -> str:
         """The path argument from the template_handler config. This field is deprecated as of v4.0.0
@@ -398,7 +430,10 @@ class Stack:
 
     @template_path.setter
     @deprecated(
-        "4.0.0", "5.0.0", __version__, "Use the template Stack Config key instead."
+        deprecated_in="4.0.0",
+        removed_in=None,
+        current_version=__version__,
+        details="Use the template Stack Config key instead.",
     )
     def template_path(self, value: str):
         self.template_handler_config = {"type": "file", "path": value}
@@ -421,7 +456,7 @@ class Stack:
 
         if preferred_value and deprecated_value:
             raise InvalidConfigFileError(
-                f"Both '{preferred_config_name}' and '{deprecated_config_name}' are set; You should only set a "
+                f"Both '{preferred_config_name}' and '{deprecated_config_name}' are set. You should only set a "
                 f"value for {preferred_config_name} because {deprecated_config_name} is deprecated."
             )
         elif preferred_value:

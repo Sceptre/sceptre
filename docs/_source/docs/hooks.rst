@@ -54,6 +54,11 @@ Syntax:
    <hook_point>:
      - !cmd <shell_command>
 
+   # Default shell with resolvers.
+   <hook_point>:
+     - !cmd
+         run: <shell_command>
+
    # Another shell.
    <hook_point>:
      - !cmd
@@ -85,12 +90,28 @@ A successful command prints its standard output messages between status messages
    [2023-09-03 01:06:31] - test - Updating Stack
    [2023-09-03 01:06:31] - test - No updates to perform.
 
+Use the dict format with the ``run`` key to leverage resolvers while still using the default shell.
+This is useful when you need to build dynamic commands without worrying about cross-platform shell
+compatibility.
+
+.. code-block:: yaml
+
+   hooks:
+     before_update:
+       - !cmd
+           run: !join
+             - " "
+             - - "aws s3 cp ../some_local_file.py"
+               - !stack_output_external another_stack::BucketLocation
+
 Pass named arguments to use a different shell. Here the command string is called ``run`` and the
 shell executable is called ``shell``.
 
 Write the executable name as you would type it at an interactive prompt to start the shell. For
 example, if Bash is in the system path, you can write ``bash``; otherwise, you need to write the
 absolute path such as ``/bin/bash``.
+
+The ``shell`` parameter is optional. When omitted or set to ``None``, the default shell is used.
 
 .. code-block:: yaml
 

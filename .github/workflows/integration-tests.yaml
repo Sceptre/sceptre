@@ -1,0 +1,55 @@
+name: integration-tests
+
+on:
+  workflow_call:
+    inputs:
+      aws-region:
+        type: string
+        default: us-east-1
+      role-to-assume:
+        required: true
+        type: string
+      role-duration-seconds:
+        type: number
+        default: 3600
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    # There is only one AWS account for running integration tests and the tests are not designed
+    # to run concurrently in one account which is why we are disabling concurrency.
+    # The intention is to have all triggered integration tests execute serially in one queue,
+    # all triggered integration tests should wait in the queue however github is canceling
+    # waiting jobs in the queue. Github currently does not support the desired use case,
+    # more info at https://github.com/orgs/community/discussions/41518
+    concurrency:
+      group: integration-tests
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Install dependencies
+        run: poetry install --no-interaction --all-extras
+      # Update poetry for https://github.com/python-poetry/poetry/issues/7184
+      - name: update poetry
+        run: poetry self update --no-ansi
+      - name: Setup Python
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'poetry'
+      - name: Assume AWS role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: ${{ inputs.role-to-assume }}
+          role-session-name: GHA-${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}
+          role-duration-seconds: ${{ inputs.role-duration-seconds }}
+      - name: run tests
+        run: poetry run behave integration-tests/features --junit --junit-directory build/behave
+        env:
+          AWS_DEFAULT_REGION: eu-west-1

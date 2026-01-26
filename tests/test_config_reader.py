@@ -2,6 +2,7 @@
 
 import errno
 import os
+import string
 from unittest.mock import patch, sentinel, MagicMock, ANY
 
 import pytest
@@ -13,6 +14,7 @@ from glob import glob
 
 from sceptre.config.reader import ConfigReader
 from sceptre.context import SceptreContext
+from sceptre.resolvers.stack_attr import StackAttr
 
 from sceptre.exceptions import (
     DependencyDoesNotExistError,
@@ -295,7 +297,7 @@ class TestConfigReader(object):
             sceptre_user_data={},
             hooks={},
             s3_details=sentinel.s3_details,
-            dependencies=["child/level", "top/level"],
+            dependencies=["top/level", "child/level"],
             iam_role=None,
             sceptre_role=None,
             iam_role_session_duration=None,
@@ -619,6 +621,65 @@ class TestConfigReader(object):
 
             assert result == {"key": "value"}
 
+    def test_render__existing_config_file__no_leak_between_multiple_stack_group_configs(
+        self,
+    ):
+        """A test for bug #937"""
+        with self.runner.isolated_filesystem():
+            project_path = os.path.abspath("./example")
+
+            self.context.project_path = project_path
+
+            config_dir = os.path.join(project_path, "config")
+
+            stack_group_config_1 = {"j2_environment": {}, "param1": "value1"}
+            stack_group_config_2 = {"j2_environment": {}, "param2": "value2"}
+
+            directory_path_1 = os.path.join(config_dir, "dir1")
+            directory_path_2 = os.path.join(config_dir, "dir2")
+            os.makedirs(directory_path_1)
+            os.makedirs(directory_path_2)
+
+            config_reader = ConfigReader(self.context)
+
+            # First config file
+            basename_1 = "file1.yaml"
+            test_config_path_1 = os.path.join(directory_path_1, basename_1)
+            test_config_content_1 = "var: initial_value\nparam1: value1"
+            with open(test_config_path_1, "w") as file:
+                file.write(test_config_content_1)
+
+            # Second config file
+            basename_2 = "file2.yaml"
+            test_config_path_2 = os.path.join(directory_path_2, basename_2)
+            test_config_content_2 = "var: initial_value\nparam2: value2"
+            with open(test_config_path_2, "w") as file:
+                file.write(test_config_content_2)
+
+            config_reader.full_config_path = project_path
+            config_reader.templating_vars = {"var": "initial_value"}
+
+            # Run _render for the first stack group
+            result_1 = config_reader._render(
+                "config/dir1", basename_1, stack_group_config_1
+            )
+            expected_result_1 = {"var": "initial_value", "param1": "value1"}
+            assert expected_result_1 == result_1
+
+            # Run _render for the second stack group
+            result_2 = config_reader._render(
+                "config/dir2", basename_2, stack_group_config_2
+            )
+            expected_result_2 = {"var": "initial_value", "param2": "value2"}
+            assert expected_result_2 == result_2
+
+            # Ensure the templating_vars is not leaking
+            assert {
+                "var": "initial_value",
+                "j2_environment": {},
+                "param2": "value2",
+            } == config_reader.templating_vars
+
     def test_render__invalid_jinja_template__raises_and_creates_debug_file(self):
         with self.runner.isolated_filesystem():
             project_path = os.path.abspath("./example")
@@ -667,3 +728,167 @@ class TestConfigReader(object):
             with pytest.raises(ValueError, match="Error parsing .*"):
                 config_reader._render("configs", basename, stack_group_config)
                 assert len(glob("/tmp/rendered_*")) == 1
+
+    @pytest.mark.parametrize(
+        "config_key", ("parameters", "sceptre_user_data", "stack_tags")
+    )
+    @pytest.mark.parametrize(
+        "inheritance_at,values,expected_value",
+        [
+            (
+                0,
+                [{"a": "a"}, {"b": "b"}, {"c": "c"}, {}],
+                {"a": "a", "b": "b", "c": "c"},
+            ),
+            (
+                1,
+                [{"a": "a"}, {"b": "b"}, {"c": "c"}, {}],
+                {"a": "a", "b": "b", "c": "c"},
+            ),
+            (
+                0,
+                [{"a": "a"}, {"b": "b"}, {"c": "c"}, {"d": "d"}],
+                {"a": "a", "b": "b", "c": "c", "d": "d"},
+            ),
+            (
+                2,
+                [{"a": "a"}, {"b": "b"}, {"c": "c"}, {}],
+                {"b": "b", "c": "c"},
+            ),
+            (
+                3,
+                [{"a": "a"}, {"b": "b"}, {"c": "c"}, {}],
+                {"c": "c"},
+            ),
+            (
+                99,
+                [{"a": "a"}, {"b": "b"}, {"c": "c"}, {}],
+                {},
+            ),
+            (
+                99,
+                [{"a": "a"}, {"b": "b"}, {"c": "c"}, {"d": "d"}],
+                {"d": "d"},
+            ),
+            (
+                3,
+                [{"a": "a"}, {"b": "b"}, {"c": "c"}, {"c": "x", "d": "d"}],
+                {"c": "x", "d": "d"},
+            ),
+        ],
+    )
+    def test_inheritance_strategy_override_dict_merge(
+        self,
+        config_key,
+        inheritance_at,
+        values,
+        expected_value,
+    ):
+        project_path, config_dir = self.create_project()
+        filepaths = [
+            "/".join(string.ascii_uppercase[:i]) + "/config.yaml"
+            for i in range(1, len(values))
+        ]
+        filepaths.append(
+            "/".join(string.ascii_uppercase[: len(values) - 1]) + "/1.yaml"
+        )
+
+        for i, (stack_path, stack_values) in enumerate(zip(filepaths, values)):
+            params = {config_key: stack_values}
+            if i == inheritance_at:
+                params[f"{config_key}_inheritance"] = "merge"
+            config = {
+                "region": "region",
+                "project_code": "project_code",
+                "template": {
+                    "path": stack_path,
+                },
+                **params,
+            }
+            abs_path = os.path.join(config_dir, stack_path)
+            self.write_config(abs_path, config)
+
+        self.context.project_path = project_path
+        config_reader = ConfigReader(self.context)
+        stack = list(config_reader.construct_stacks()[0])[-1]
+        stack_key = StackAttr.STACK_ATTR_MAP.get(config_key, config_key)
+        assert getattr(stack, stack_key) == expected_value
+
+    # "dependencies" is not included here as it has other tests and testing
+    # it requires configs to be created which makes setup harder.
+    @pytest.mark.parametrize("config_key", ("hooks", "notifications"))
+    @pytest.mark.parametrize(
+        "inheritance_at,values,expected_value",
+        [
+            (0, [["a"], ["b"], ["c"], []], ["a", "b", "c"]),
+            (1, [["a"], ["b"], ["c"], []], ["a", "b", "c"]),
+            (2, [["a"], ["b"], ["c"], []], ["b", "c"]),
+            (3, [["a"], ["b"], ["c"], ["d"]], ["c", "d"]),
+            (99, [["a"], ["b"], ["c"], ["d"]], ["d"]),
+        ],
+    )
+    def test_inheritance_strategy_override_list_join(
+        self,
+        config_key,
+        inheritance_at,
+        values,
+        expected_value,
+    ):
+        project_path, config_dir = self.create_project()
+        filepaths = [
+            "/".join(string.ascii_uppercase[:i]) + "/config.yaml"
+            for i in range(1, len(values))
+        ]
+        filepaths.append(
+            "/".join(string.ascii_uppercase[: len(values) - 1]) + "/1.yaml"
+        )
+
+        for i, (stack_path, stack_values) in enumerate(zip(filepaths, values)):
+            params = {config_key: stack_values}
+            if i == inheritance_at:
+                params[f"{config_key}_inheritance"] = "merge"
+            config = {
+                "region": "region",
+                "project_code": "project_code",
+                "template": {
+                    "path": stack_path,
+                },
+                **params,
+            }
+            abs_path = os.path.join(config_dir, stack_path)
+            self.write_config(abs_path, config)
+
+        self.context.project_path = project_path
+        config_reader = ConfigReader(self.context)
+        stack = list(config_reader.construct_stacks()[0])[-1]
+        stack_key = StackAttr.STACK_ATTR_MAP.get(config_key, config_key)
+        assert getattr(stack, stack_key) == expected_value
+
+    @pytest.mark.parametrize(
+        "config_key,strategy",
+        (
+            ("hooks", "foo"),
+            ("hooks", "deepcopy"),
+            ("hooks", "child_or_parent"),
+            ("stack_tags", "foo"),
+        ),
+    )
+    def test_inheritance_strategy_override_errors_on_invalid_strategy(
+        self, config_key, strategy
+    ):
+        project_path, config_dir = self.create_project()
+        stack_path = "A/1.yaml"
+        config = {
+            "region": "region",
+            "project_code": "project_code",
+            "template": {
+                "path": stack_path,
+            },
+            f"{config_key}_inheritance": strategy,
+        }
+        abs_path = os.path.join(config_dir, stack_path)
+        self.write_config(abs_path, config)
+        self.context.project_path = project_path
+        config_reader = ConfigReader(self.context)
+        with pytest.raises(SceptreException):
+            config_reader.construct_stacks()

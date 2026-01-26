@@ -154,7 +154,7 @@ def _generate_yaml(stream):
 
     else:
         try:
-            return yaml.safe_loads(stream)
+            return yaml.safe_dump(stream, **kwargs)
         except Exception:
             return stream
 
@@ -337,6 +337,9 @@ def simplify_change_set_description(response):
     :returns: A more concise description of the change set.
     :rtype: dict
     """
+    if not response:
+        return {"ChangeSetName": "ChangeSetNotFound"}
+
     desired_response_items = [
         "ChangeSetName",
         "CreationTime",

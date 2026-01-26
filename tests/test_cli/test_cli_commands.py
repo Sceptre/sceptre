@@ -22,6 +22,7 @@ from sceptre.cli.helpers import (
     write,
     ColouredFormatter,
     deserialize_json_properties,
+    _generate_yaml,
 )
 
 from sceptre.config.reader import ConfigReader
@@ -35,7 +36,7 @@ from sceptre.diffing.stack_differ import (
 from sceptre.exceptions import SceptreException
 from sceptre.plan.actions import StackActions
 from sceptre.stack import Stack
-from sceptre.stack_status import StackStatus
+from sceptre.stack_status import StackChangeSetStatus, StackStatus
 
 
 class TestCli:
@@ -514,6 +515,116 @@ class TestCli:
         run_command.assert_called_with()
         assert result.exit_code == exit_code
 
+    @pytest.mark.parametrize("verbose_flag", [True, False])
+    def test_update_with_change_set_ready(self, verbose_flag):
+        create_command = self.mock_stack_actions.create_change_set
+        wait_command = self.mock_stack_actions.wait_for_cs_completion
+        execute_command = self.mock_stack_actions.execute_change_set
+        delete_command = self.mock_stack_actions.delete_change_set
+        describe_command = self.mock_stack_actions.describe_change_set
+
+        change_set_status = StackChangeSetStatus.READY
+        wait_command.return_value = change_set_status
+
+        response = {
+            "VerboseProperty": "VerboseProperty",
+            "ChangeSetName": "ChangeSetName",
+            "CreationTime": "CreationTime",
+            "ExecutionStatus": "ExecutionStatus",
+            "StackName": "StackName",
+            "Status": "Status",
+            "StatusReason": "StatusReason",
+            "Changes": [
+                {
+                    "ResourceChange": {
+                        "Action": "Action",
+                        "LogicalResourceId": "LogicalResourceId",
+                        "PhysicalResourceId": "PhysicalResourceId",
+                        "Replacement": "Replacement",
+                        "ResourceType": "ResourceType",
+                        "Scope": "Scope",
+                        "VerboseProperty": "VerboseProperty",
+                    }
+                }
+            ],
+        }
+
+        if not verbose_flag:
+            del response["VerboseProperty"]
+            del response["Changes"][0]["ResourceChange"]["VerboseProperty"]
+
+        describe_command.return_value = response
+
+        kwargs = {"args": ["update", "--change-set", "dev/vpc.yaml", "-y"]}
+        if verbose_flag:
+            kwargs["args"].append("-v")
+
+        result = self.runner.invoke(cli, **kwargs)
+
+        change_set_name = create_command.call_args[0][0]
+        assert "change-set" in change_set_name
+
+        wait_command.assert_called_once_with(change_set_name)
+        delete_command.assert_called_once_with(change_set_name)
+        execute_command.assert_called_once_with(change_set_name)
+        describe_command.assert_called_once_with(change_set_name)
+
+        output = result.output.splitlines()[0]
+        assert yaml.safe_load(output) == response
+        assert result.exit_code == 0
+
+    @pytest.mark.parametrize("yes_flag", [True, False])
+    def test_update_with_change_set_defunct(self, yes_flag):
+        create_command = self.mock_stack_actions.create_change_set
+        wait_command = self.mock_stack_actions.wait_for_cs_completion
+        delete_command = self.mock_stack_actions.delete_change_set
+
+        change_set_status = StackChangeSetStatus.DEFUNCT
+        wait_command.return_value = change_set_status
+
+        kwargs = {"args": ["update", "--change-set", "dev/vpc.yaml"]}
+        if yes_flag:
+            kwargs["args"].append("-y")
+        else:
+            kwargs["input"] = "y\n"
+
+        result = self.runner.invoke(cli, **kwargs)
+
+        change_set_name = create_command.call_args[0][0]
+        assert "change-set" in change_set_name
+
+        wait_command.assert_called_once_with(change_set_name)
+        delete_command.assert_called_once_with(change_set_name)
+
+        assert "Failed to create change set" in result.output
+        assert result.exit_code == 1
+
+    @pytest.mark.parametrize("yes_flag", [True, False])
+    def test_update_with_change_set_no_changes(self, yes_flag):
+        create_command = self.mock_stack_actions.create_change_set
+        wait_command = self.mock_stack_actions.wait_for_cs_completion
+        delete_command = self.mock_stack_actions.delete_change_set
+
+        change_set_status = StackChangeSetStatus.NO_CHANGES
+        wait_command.return_value = change_set_status
+
+        kwargs = {"args": ["update", "--change-set", "dev/vpc.yaml"]}
+        if yes_flag:
+            kwargs["args"].append("-y")
+        else:
+            kwargs["input"] = "y\n"
+
+        result = self.runner.invoke(cli, **kwargs)
+
+        change_set_name = create_command.call_args[0][0]
+        assert "change-set" in change_set_name
+
+        wait_command.assert_called_once_with(change_set_name)
+        delete_command.assert_called_once_with(change_set_name)
+
+        assert "No changes detected" in result.output
+        assert result.exit_code == 0
+
     @pytest.mark.parametrize(
         "command, ignore_dependencies",
         [
@@ -937,6 +1048,22 @@ class TestCli:
         encoder = CustomJsonEncoder()
         response = encoder.encode(datetime.datetime(2016, 5, 3))
         assert response == '"2016-05-03 00:00:00"'
+
+    def test_generate_yaml_with_string(self):
+        # Test that _generate_yaml properly dumps a string to YAML format
+        result = _generate_yaml("test string")
+        assert "test string\n" in result
+
+    def test_generate_yaml_with_dict(self):
+        # Test that _generate_yaml properly dumps a dict to YAML format
+        result = _generate_yaml({"key": "value"})
+        assert "key: value\n" in result
+
+    def test_generate_yaml_with_list(self):
+        # Test that _generate_yaml properly dumps a list to YAML format
+        result = _generate_yaml([{"key1": "value1"}, {"key2": "value2"}])
+        assert "- key1: value1\n" in result
+        assert "- key2: value2\n" in result
 
     def test_diff_command__diff_type_is_deepdiff__passes_deepdiff_stack_differ_to_actions(
         self,

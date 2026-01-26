@@ -7,9 +7,13 @@ from sceptre.exceptions import InvalidHookArgumentTypeError
 from sceptre.hooks.cmd import Cmd
 from sceptre.stack import Stack
 
-ERROR_MESSAGE = (
-    r"^A cmd hook requires either a string argument or an object with `run` and "
-    r"`shell` keys with string values\. You gave `{0}`\.$"
+RUN_ERROR_MESSAGE = (
+    r"^A cmd hook requires either a string argument or an object with a `run` "
+    r"key and a string value\. You gave `{0}`\.$"
+)
+
+SHELL_ERROR_MESSAGE = (
+    r"^A cmd hook requires a `shell` key with a non-empty string\. You gave `{0}`\.$"
 )
 
 
@@ -32,37 +36,31 @@ def stack():
 
 
 def test_null_input_raises_exception(stack):
-    message = ERROR_MESSAGE.format(r"None")
+    message = RUN_ERROR_MESSAGE.format(r"None")
     with pytest.raises(InvalidHookArgumentTypeError, match=message):
         Cmd(None, stack).run()
 
 
 def test_empty_string_raises_exception(stack):
-    message = ERROR_MESSAGE.format(r"''")
+    message = RUN_ERROR_MESSAGE.format(r"''")
     with pytest.raises(InvalidHookArgumentTypeError, match=message):
         Cmd("", stack).run()
 
 
 def test_list_raises_exception(stack):
-    message = ERROR_MESSAGE.format(r"\['echo', 'hello'\]")
+    message = RUN_ERROR_MESSAGE.format(r"\['echo', 'hello'\]")
     with pytest.raises(InvalidHookArgumentTypeError, match=message):
         Cmd(["echo", "hello"], stack).run()
 
 
-def test_dict_without_shell_raises_exception(stack):
-    message = ERROR_MESSAGE.format(r"\{'run': 'echo hello'\}")
-    with pytest.raises(InvalidHookArgumentTypeError, match=message):
-        Cmd({"run": "echo hello"}, stack).run()
-
-
 def test_dict_without_run_raises_exception(stack):
-    message = ERROR_MESSAGE.format(r"\{'shell': '/bin/bash'\}")
+    message = RUN_ERROR_MESSAGE.format(r"\{'shell': '/bin/bash'\}")
     with pytest.raises(InvalidHookArgumentTypeError, match=message):
         Cmd({"shell": "/bin/bash"}, stack).run()
 
 
 def test_dict_with_list_run_raises_exception(stack):
-    message = ERROR_MESSAGE.format(
+    message = RUN_ERROR_MESSAGE.format(
         r"\{'run': \['echo', 'hello'\], 'shell': '/bin/bash'\}"
     )
     with pytest.raises(InvalidHookArgumentTypeError, match=message):
@@ -70,30 +68,27 @@ def test_dict_with_list_run_raises_exception(stack):
 
 
 def test_dict_with_empty_run_raises_exception(stack):
-    message = ERROR_MESSAGE.format(r"\{'run': '', 'shell': '/bin/bash'\}")
+    message = RUN_ERROR_MESSAGE.format(r"\{'run': '', 'shell': '/bin/bash'\}")
     with pytest.raises(InvalidHookArgumentTypeError, match=message):
         Cmd({"run": "", "shell": "/bin/bash"}, stack).run()
 
 
 def test_dict_with_null_run_raises_exception(stack):
-    message = ERROR_MESSAGE.format(r"\{'run': None, 'shell': '/bin/bash'\}")
+    message = RUN_ERROR_MESSAGE.format(r"\{'run': None, 'shell': '/bin/bash'\}")
     with pytest.raises(InvalidHookArgumentTypeError, match=message):
         Cmd({"run": None, "shell": "/bin/bash"}, stack).run()
 
 
 def test_dict_with_list_shell_raises_exception(stack):
-    message = ERROR_MESSAGE.format(r"\{'run': 'echo hello', 'shell': \['/bin/bash'\]\}")
+    message = SHELL_ERROR_MESSAGE.format(
+        r"\{'run': 'echo hello', 'shell': \['/bin/bash'\]\}"
+    )
     with pytest.raises(InvalidHookArgumentTypeError, match=message):
         Cmd({"run": "echo hello", "shell": ["/bin/bash"]}, stack).run()
 
 
 def test_dict_with_typo_shell_raises_exception(stack):
-    import platform
-
-    if platform.python_version().startswith("3.7."):
-        message = r"^\[Errno 2\] No such file or directory: '/bin/bsah': '/bin/bsah'$"
-    else:
-        message = r"^\[Errno 2\] No such file or directory: '/bin/bsah'$"
+    message = r"^\[Errno 2\] No such file or directory: '/bin/bsah'$"
     with pytest.raises(FileNotFoundError, match=message):
         typo = "/bin/bsah"
         Cmd({"run": "echo hello", "shell": typo}, stack).run()
@@ -106,21 +101,15 @@ def test_dict_with_non_executable_shell_raises_exception(stack):
 
 
 def test_dict_with_empty_shell_raises_exception(stack):
-    message = ERROR_MESSAGE.format(r"\{'run': 'echo hello', 'shell': ''\}")
+    message = SHELL_ERROR_MESSAGE.format(r"\{'run': 'echo hello', 'shell': ''\}")
     with pytest.raises(InvalidHookArgumentTypeError, match=message):
         Cmd({"run": "echo hello", "shell": ""}, stack).run()
-
-
-def test_dict_with_null_shell_raises_exception(stack):
-    message = ERROR_MESSAGE.format(r"\{'run': 'echo hello', 'shell': None\}")
-    with pytest.raises(InvalidHookArgumentTypeError, match=message):
-        Cmd({"run": "echo hello", "shell": None}, stack).run()
 
 
 def test_input_exception_reprs_input(stack):
     import datetime
 
-    exception_message = ERROR_MESSAGE.format(r"datetime.date\(2023, 8, 31\)")
+    exception_message = RUN_ERROR_MESSAGE.format(r"datetime.date\(2023, 8, 31\)")
     with pytest.raises(InvalidHookArgumentTypeError, match=exception_message):
         Cmd(datetime.date(2023, 8, 31), stack).run()
 
@@ -143,24 +132,46 @@ def test_hook_writes_to_stdout(stack, capfd):
 
 
 def test_hook_writes_to_stderr(stack, capfd):
-    with pytest.raises(Exception):
-        Cmd("missing_command", stack).run()
+    Cmd("echo hello >&2", stack).run()
     cap = capfd.readouterr()
     assert cap.out.strip() == ""
-    assert cap.err.strip() == "/bin/sh: 1: missing_command: not found"
+    assert cap.err.strip() == "hello"
 
 
 def test_default_shell_is_sh(stack, capfd):
     Cmd("echo $0", stack).run()
     cap = capfd.readouterr()
-    assert cap.out.strip() == "/bin/sh"
+    assert cap.out.strip().split("/")[-2:] == ["bin", "sh"]
     assert cap.err.strip() == ""
 
 
+def test_dict_without_shell_uses_default_shell(stack, capfd):
+    Cmd("echo $0", stack).run()
+    cap1 = capfd.readouterr()
+    Cmd({"run": "echo $0"}, stack).run()
+    cap2 = capfd.readouterr()
+    assert cap1 == cap2
+
+
+def test_dict_with_null_shell_uses_default_shell(stack, capfd):
+    Cmd("echo $0", stack).run()
+    cap1 = capfd.readouterr()
+    Cmd({"run": "echo $0", "shell": None}, stack).run()
+    cap2 = capfd.readouterr()
+    assert cap1 == cap2
+
+
 def test_shell_parameter_sets_the_shell(stack, capfd):
-    Cmd({"run": "echo $0", "shell": "/bin/bash"}, stack).run()
+    # Determine the local path to bash (it's not always /bin/bash)
+    Cmd("echo $0", stack).run()
     cap = capfd.readouterr()
-    assert cap.out.strip() == "/bin/bash"
+    assert cap.err.strip() == ""
+    bash = cap.out.strip()
+
+    # Confirm the correct shell is used in the sub-process
+    Cmd({"run": "echo $0", "shell": bash}, stack).run()
+    cap = capfd.readouterr()
+    assert cap.out.strip() == bash
     assert cap.err.strip() == ""
 
 

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sceptre"
-version = "4.3.0"
+version = "4.6.0"
 packages = [{ include = "sceptre" }]
 readme = "README.md"
 homepage = "https://github.com/Sceptre/sceptre"
@@ -15,11 +15,6 @@ classifiers = [
   "Intended Audience :: Developers",
   "Natural Language :: English",
   "Environment :: Console",
-  "Programming Language :: Python :: 3.7",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11"
 ]
 
 [tool.poetry.scripts]
@@ -27,6 +22,7 @@ classifiers = [
 
 [tool.poetry.plugins."sceptre.hooks"]
 "asg_scheduled_actions" = "sceptre.hooks.asg_scaling_processes:ASGScalingProcesses"
+"asg_scaling_processes" = "sceptre.hooks.asg_scaling_processes:ASGScalingProcesses"
 "cmd" = "sceptre.hooks.cmd:Cmd"
 
 [tool.poetry.plugins."sceptre.resolvers"]
@@ -47,16 +43,16 @@ classifiers = [
 "http" = "sceptre.template_handlers.http:Http"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
+python = "^3.10"
 boto3 = "^1.20.27"
 click = ">=7.0,<9.0"
 cfn-flip = "^1.2.3"
-deepdiff = "^5.5"
+deepdiff = "^8.0"
 deprecation = "^2.0"
 jinja2 = "^3.0"
 jsonschema = "~3.2"
 networkx = "~2.6"
-packaging = ">=16.8,<22.0"
+packaging = ">=16.8,<25.0"  # Some old tools in the Sceptre ecosystem pin packaging to 16.8.
 pyyaml = "^6.0"
 sceptre-cmd-resolver = "^2.0"
 sceptre-file-resolver = "^1.0"
@@ -81,17 +77,18 @@ docs = [
 ]
 
 [tool.poetry.group.dev.dependencies]
-pre-commit = "^2.21.0"
-behave = "^1.2.5"
-freezegun = ">=0.3.12,<0.4.0"
+pre-commit = "^4.2"
+behave = "^1.2"
+freezegun = ">=1.5.0,<1.5.1"
 pygments = "^2.2"
-pytest = "^6.2"
+pytest = "^7.4.3"
 pytest-cov = "^2.11.1"
 pytest-sugar = "^0.9.4"
 readme-renderer = "^24.0"
 requests-mock = "^1.9.3"
 tox = "^3.23.0"
 troposphere = "^4"
+tox-gh-matrix = "^0.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

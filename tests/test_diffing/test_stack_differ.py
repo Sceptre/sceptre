@@ -16,8 +16,11 @@ from sceptre.diffing.stack_differ import (
     DeepDiffStackDiffer,
     DifflibStackDiffer,
 )
+from sceptre.exceptions import SceptreException
 from sceptre.plan.actions import StackActions
 from sceptre.stack import Stack
+
+from botocore.exceptions import ClientError
 
 
 class ImplementedStackDiffer(StackDiffer):
@@ -223,14 +226,30 @@ class TestStackDiffer:
         assert diff.is_deployed is True
 
     def test_diff__deployed_stack_does_not_exist__returns_is_deployed_as_false(self):
-        self.actions.describe.return_value = self.actions.describe.side_effect = None
+        self.actions.describe.side_effect = ClientError(
+            {"Error": {"Code": "Whatevs", "Message": "Stack does not exist"}},
+            "DescribeStacks",
+        )
+        self.actions.describe.return_value = None
         diff = self.differ.diff(self.actions)
         assert diff.is_deployed is False
+
+    def test_diff__raises_some_other_client_error(self):
+        self.actions.describe.side_effect = ClientError(
+            {"Error": {"Code": "ForbiddenException", "Message": "No access"}},
+            "DescribeStacks",
+        )
+        with pytest.raises(ClientError, match="No access"):
+            self.differ.diff(self.actions)
 
     def test_diff__deployed_stack_does_not_exist__compares_none_to_generated_config(
         self,
     ):
-        self.actions.describe.return_value = self.actions.describe.side_effect = None
+        self.actions.describe.side_effect = ClientError(
+            {"Error": {"Code": "Whatevs", "Message": "Stack does not exist"}},
+            "DescribeStacks",
+        )
+        self.actions.describe.return_value = None
         self.differ.diff(self.actions)
 
         self.command_capturer.compare_stack_configurations.assert_called_with(
@@ -343,6 +362,17 @@ class TestStackDiffer:
             self.expected_deployed_config, expected_generated
         )
 
+    def test_diff__generated_stack_has_a_bool(
+        self,
+    ):
+        self.parameters_on_stack_config["new"] = True
+        message = (
+            "Parameter 'new' whose value is True is of type "
+            "<class 'bool'> and not expected here"
+        )
+        with pytest.raises(SceptreException, match=message):
+            self.differ.diff(self.actions)
+
     def test_diff__stack_exists_with_same_config_but_template_does_not__compares_identical_configs(
         self,
     ):
@@ -421,9 +451,9 @@ class TestStackDiffer:
         self.local_no_echo_parameters.append("hide_me")
 
         expected_generated_config = self.expected_generated_config
-        expected_generated_config.parameters[
-            "hide_me"
-        ] = StackDiffer.NO_ECHO_REPLACEMENT
+        expected_generated_config.parameters["hide_me"] = (
+            StackDiffer.NO_ECHO_REPLACEMENT
+        )
 
         self.differ.diff(self.actions)
 
