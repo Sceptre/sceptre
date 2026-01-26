@@ -1,18 +1,27 @@
 """
 Path processor plugin system for Sceptre CLI.
 
-This module provides a plugin architecture for processing stack paths,
-enabling extensions like wildcard pattern matching through installed plugins.
+This module provides a plugin architecture that allows external packages to
+register path processors that can transform or expand path arguments passed
+to Sceptre CLI commands.
+
+Path processors can implement features like:
+- Wildcard/glob expansion
+- Tag-based filtering
+- Regex pattern matching
+- Dynamic path generation
+
+Plugins register themselves via entry points in their pyproject.toml:
+
+    [project.entry-points."sceptre.cli.path_processors"]
+    myprocessor = "my_package:register_plugin"
+
+The register_plugin function should return a PathProcessor class (not instance).
 """
 
 import logging
-from typing import List, Optional, Tuple, Type
-
-try:
-    from importlib.metadata import entry_points
-except ImportError:
-    # Python < 3.8
-    from importlib_metadata import entry_points
+from typing import Dict, Type, Tuple, Optional, List
+from importlib.metadata import entry_points
 
 logger = logging.getLogger(__name__)
 
@@ -21,189 +30,123 @@ class PathProcessor:
     """
     Base class for path processors.
     
-    Path processors can transform or validate stack paths before they are
-    passed to Sceptre's core functionality. This enables features like
-    wildcard expansion, regex patterns, or custom path resolution.
+    Path processors can transform or expand path arguments before they are
+    used by Sceptre commands.
     """
-    
-    name = "base"
-    priority = 0
     
     def can_process(self, path: str) -> bool:
         """
         Check if this processor can handle the given path.
         
-        :param path: The path to check
-        :type path: str
-        :returns: True if this processor can handle the path
-        :rtype: bool
+        :param path: The path string to check
+        :return: True if this processor should handle the path
         """
-        return False
+        raise NotImplementedError("Subclasses must implement can_process()")
     
     def process(
         self,
         path: str,
         project_path: str,
-        config_path: str = "config"
-    ) -> Tuple[str, Optional[List[str]]]:
-        """
-        Process the path and return the expanded command path.
-        
-        :param path: The path to process
-        :type path: str
-        :param project_path: The absolute path to the project root
-        :type project_path: str
-        :param config_path: The config directory name
-        :type config_path: str
-        :returns: Tuple of (processed_path, matched_files)
-        :rtype: Tuple[str, Optional[List[str]]]
-        """
-        return path, None
-    
-    def should_force_confirmation(self, command_name: str) -> bool:
-        """
-        Determine if this processor should force confirmation for a command.
-        
-        :param command_name: The name of the command being executed
-        :type command_name: str
-        :returns: True if confirmation should be forced
-        :rtype: bool
-        """
-        return False
-
-
-class PathProcessorManager:
-    """
-    Manager for path processor plugins.
-    
-    This class discovers and loads path processor plugins via entry points,
-    and provides methods to process paths using registered processors.
-    """
-    
-    def __init__(self):
-        """Initialize the path processor manager."""
-        self._processors: List[PathProcessor] = []
-        self._loaded = False
-    
-    def load_processors(self):
-        """
-        Load all registered path processor plugins.
-        
-        Discovers plugins via the 'sceptre.cli.path_processors' entry point
-        group and instantiates them.
-        """
-        if self._loaded:
-            return
-        
-        try:
-            # Python 3.10+
-            eps = entry_points(group='sceptre.cli.path_processors')
-        except TypeError:
-            # Python 3.8-3.9
-            eps = entry_points().get('sceptre.cli.path_processors', [])
-        
-        for ep in eps:
-            try:
-                # Load the entry point (gets the register_plugin function)
-                register_func = ep.load()
-                
-                # Call the registration function to get the processor class
-                processor_class = register_func()
-                
-                # Instantiate the processor
-                processor = processor_class()
-                
-                self._processors.append(processor)
-                logger.debug(f"Loaded path processor plugin: {processor.name}")
-                
-            except Exception as e:
-                logger.warning(f"Failed to load path processor plugin {ep.name}: {e}")
-        
-        # Sort processors by priority (highest first)
-        self._processors.sort(key=lambda p: p.priority, reverse=True)
-        
-        self._loaded = True
-        
-        if self._processors:
-            logger.info(f"Loaded {len(self._processors)} path processor plugin(s)")
-    
-    def process_path(
-        self,
-        path: str,
-        project_path: str,
-        config_path: str = "config",
-        command_name: Optional[str] = None
+        search_dir: str,
+        command: str
     ) -> Tuple[str, bool, Optional[List[str]]]:
         """
-        Process a path using registered processors.
+        Process the path and return transformation results.
         
-        Iterates through registered processors (in priority order) and uses
-        the first one that can handle the path.
-        
-        :param path: The path to process
-        :type path: str
-        :param project_path: The absolute path to the project root
-        :type project_path: str
-        :param config_path: The config directory name
-        :type config_path: str
-        :param command_name: The name of the command being executed (optional)
-        :type command_name: Optional[str]
-        :returns: Tuple of (processed_path, force_confirmation, matched_files)
-        :rtype: Tuple[str, bool, Optional[List[str]]]
+        :param path: The original path string
+        :param project_path: The Sceptre project root path
+        :param search_dir: The directory to search in (e.g., 'config')
+        :param command: The command being executed (e.g., 'launch', 'delete')
+        :return: Tuple of (processed_path, force_confirm, matched_files)
+            - processed_path: The transformed path
+            - force_confirm: Whether to force confirmation dialogs
+            - matched_files: List of matched files (for display), or None
         """
-        # Ensure processors are loaded
-        self.load_processors()
+        raise NotImplementedError("Subclasses must implement process()")
+
+
+def get_registered_processors() -> Dict[str, Type[PathProcessor]]:
+    """
+    Discover and load all registered path processor plugins.
+    
+    Looks for entry points in the 'sceptre.cli.path_processors' group.
+    Each entry point should reference a function that returns a PathProcessor class.
+    
+    :return: Dictionary mapping processor names to their classes
+    """
+    processors = {}
+    
+    try:
+        # Get all entry points for path processors
+        eps = entry_points()
+        processor_entries = eps.select(group='sceptre.cli.path_processors')
         
-        # Try each processor in priority order
-        for processor in self._processors:
-            if processor.can_process(path):
-                logger.debug(f"Processing path with {processor.name} processor")
+        for entry_point in processor_entries:
+            try:
+                # Load the entry point (calls the register function)
+                register_func = entry_point.load()
+                processor_class = register_func()
                 
-                # Process the path
-                processed_path, matched_files = processor.process(
-                    path, project_path, config_path
+                # Validate it's a proper PathProcessor subclass
+                if not issubclass(processor_class, PathProcessor):
+                    logger.warning(
+                        f"Plugin '{entry_point.name}' did not return a PathProcessor subclass. Skipping."
+                    )
+                    continue
+                
+                processors[entry_point.name] = processor_class
+                logger.debug(f"Registered path processor: {entry_point.name}")
+                
+            except Exception as e:
+                logger.warning(
+                    f"Failed to load path processor plugin '{entry_point.name}': {e}"
                 )
-                
-                # Check if confirmation should be forced
-                force_confirmation = False
-                if command_name:
-                    force_confirmation = processor.should_force_confirmation(command_name)
-                
-                return processed_path, force_confirmation, matched_files
-        
-        # No processor handled the path, return as-is
-        return path, False, None
-
-
-# Global instance
-_manager = PathProcessorManager()
+                continue
+    
+    except Exception as e:
+        logger.debug(f"Error discovering path processor plugins: {e}")
+    
+    return processors
 
 
 def process_path(
     path: str,
     project_path: str,
-    config_path: str = "config",
-    command_name: Optional[str] = None
+    search_dir: str = "config",
+    command: str = "generic"
 ) -> Tuple[str, bool, Optional[List[str]]]:
     """
     Process a path using registered path processors.
     
-    This is the main entry point for path processing. It will automatically
-    load and use any installed path processor plugins.
+    Discovers all registered processors, checks which one can handle the path,
+    and delegates processing to that processor. If no processor can handle it,
+    returns the path unchanged.
     
     :param path: The path to process
-    :type path: str
-    :param project_path: The absolute path to the project root
-    :type project_path: str
-    :param config_path: The config directory name (default: 'config')
-    :type config_path: str
-    :param command_name: The name of the command being executed (optional)
-    :type command_name: Optional[str]
-    :returns: Tuple of (processed_path, force_confirmation, matched_files)
-    :rtype: Tuple[str, bool, Optional[List[str]]]
-    
-    Example:
-        >>> path, force_confirm, files = process_path("dev/*.yaml", "/project")
-        >>> # path might be "dev", files might be ["dev/vpc.yaml", "dev/app.yaml"]
+    :param project_path: The Sceptre project root path
+    :param search_dir: The directory to search in (default: 'config')
+    :param command: The command being executed (default: 'generic')
+    :return: Tuple of (processed_path, force_confirm, matched_files)
+        - processed_path: The transformed path or original if no processor matched
+        - force_confirm: Whether to force confirmation (False if no processor)
+        - matched_files: List of matched files or None if no processor
     """
-    return _manager.process_path(path, project_path, config_path, command_name)
+    processors = get_registered_processors()
+    
+    for name, processor_class in processors.items():
+        try:
+            # Instantiate the processor
+            processor = processor_class()
+            
+            # Check if this processor can handle the path
+            if processor.can_process(path):
+                logger.debug(f"Using path processor: {name}")
+                return processor.process(path, project_path, search_dir, command)
+        
+        except Exception as e:
+            logger.warning(f"Error in path processor '{name}': {e}")
+            continue
+    
+    # No processor matched, return path unchanged
+    logger.debug("No path processor matched, using path as-is")
+    return path, False, None
