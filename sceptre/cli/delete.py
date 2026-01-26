@@ -1,9 +1,12 @@
 import click
 
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import catch_exceptions
-from sceptre.cli.helpers import confirmation
-from sceptre.cli.helpers import stack_status_exit_code
+from sceptre.cli.helpers import (
+    catch_exceptions,
+    confirmation,
+    stack_status_exit_code,
+)
+from sceptre.cli.path_processor import process_path
 from sceptre.plan.plan import SceptrePlan
 
 from colorama import Fore, Style
@@ -19,6 +22,8 @@ def delete_command(ctx, path, change_set_name, yes):
     """
     Deletes a stack for a given config PATH. Or if CHANGE_SET_NAME is specified
     deletes a change set for stack in PATH.
+    
+    Supports path patterns via installed plugins.
     \f
 
     :param path: Path to execute command on.
@@ -28,6 +33,16 @@ def delete_command(ctx, path, change_set_name, yes):
     :param yes: Flag to answer yes to all CLI questions.
     :type yes: bool
     """
+    # Process path using registered plugins (e.g., wildcard expansion)
+    project_path = ctx.obj.get("project_path")
+    path, force_confirm, matched_files = process_path(
+        path, project_path, "config", "delete"
+    )
+    
+    # If plugin forces confirmation, override --yes flag
+    if force_confirm:
+        yes = False
+
     context = SceptreContext(
         command_path=path,
         command_params=ctx.params,

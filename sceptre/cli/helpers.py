@@ -4,7 +4,7 @@ import sys
 from itertools import cycle
 from functools import partial, wraps
 
-from typing import Any, Optional
+from typing import Any, Optional, List
 from pathlib import Path
 
 import json
