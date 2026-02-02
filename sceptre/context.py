@@ -6,6 +6,7 @@ sceptre.context
 This module implements the SceptreContext class which holds details about the
 paths used in a Sceptre project.
 """
+
 from copy import deepcopy
 from os import path
 

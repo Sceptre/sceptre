@@ -6,6 +6,7 @@ sceptre.plan.executor
 This module implements a SceptrePlanExecutor, which is responsible for
 executing the command specified in a SceptrePlan.
 """
+
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Set, Optional
