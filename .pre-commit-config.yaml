@@ -17,11 +17,11 @@ repos:
     hooks:
       - id: flake8
   - repo: https://github.com/adrienverge/yamllint
-    rev: v1.37.1
+    rev: v1.38.0
     hooks:
       - id: yamllint
   - repo: https://github.com/awslabs/cfn-python-lint
-    rev: v1.42.0
+    rev: v1.43.4
     hooks:
       - id: cfn-python-lint
         args:
@@ -40,16 +40,16 @@ repos:
             ^.pre-commit-config.yaml
           )
   - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 25.11.0
+    rev: 26.1.0
     hooks:
       - id: black
   - repo: https://github.com/python-poetry/poetry
-    rev: '2.2.1'
+    rev: '2.3.2'
     hooks:
       - id: poetry-check
       - id: poetry-lock
   - repo: https://github.com/sirosen/check-jsonschema
-    rev: 0.35.0
+    rev: 0.36.1
     hooks:
       - id: check-github-workflows
       - id: check-github-actions
