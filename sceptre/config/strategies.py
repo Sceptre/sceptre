@@ -6,6 +6,7 @@ sceptre.config.strategies
 This module contains the implementations of the strategies used to merge config
 attributes.
 """
+
 from copy import deepcopy
 
 

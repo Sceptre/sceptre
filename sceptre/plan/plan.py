@@ -6,6 +6,7 @@ sceptre.plan.plan
 This module implements a SceptrePlan, which is responsible for holding all
 nessessary information for a command to execute.
 """
+
 import functools
 import itertools
 import pathlib

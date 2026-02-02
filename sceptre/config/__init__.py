@@ -2,7 +2,6 @@
 
 import logging
 
-
 __author__ = "Cloudreach"
 __email__ = "sceptre@cloudreach.com"
 
