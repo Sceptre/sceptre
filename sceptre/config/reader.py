@@ -581,9 +581,9 @@ class ConfigReader(object):
                 [
                     sceptreise_path(stack_name),
                     "{time_stamp}.json".format(
-                        time_stamp=datetime.datetime.utcnow().strftime(
-                            "%Y-%m-%d-%H-%M-%S-%fZ"
-                        )
+                        time_stamp=datetime.datetime.now(
+                            datetime.timezone.utc
+                        ).strftime("%Y-%m-%d-%H-%M-%S-%fZ")
                     ),
                 ]
             )
