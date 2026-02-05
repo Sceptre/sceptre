@@ -1140,6 +1140,41 @@ sceptre = ">=2.7"
 test = ["pytest (>=3.2)"]
 
 [[package]]
+name = "sceptre_s3_packager"
+version = "0.5.0"
+description = "S3 packager for Sceptre 2"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = []
+develop = true
+
+[package.dependencies]
+sceptre = ">=2"
+
+[package.source]
+type = "git"
+url = "https://github.com/wieshka/sceptre-s3-packager"
+reference = "HEAD"
+resolved_reference = "31c7b2b641b0b1262d841acbc5e4e4ca1837a1f9"
+
+[[package]]
+name = "sceptre-s3-universal"
+version = "0.0.1"
+description = "Custom hook for sceptre which handles uploads of files and/or directories to sceptre s3 bucket"
+optional = false
+python-versions = "^3.9"
+groups = ["main"]
+files = []
+develop = true
+
+[package.source]
+type = "git"
+url = "https://github.com/wieshka/sceptre-s3-universal"
+reference = "HEAD"
+resolved_reference = "a2536642854c7d2c1935175412012b1165d13e5d"
+
+[[package]]
 name = "setuptools"
 version = "75.3.0"
 description = "Easily download, build, install, upgrade, and uninstall Python packages"

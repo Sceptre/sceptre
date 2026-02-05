@@ -2,7 +2,12 @@ import click
 
 from typing import Optional
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import catch_exceptions, confirmation
+from sceptre.cli.helpers import (
+    catch_exceptions,
+    confirmation,
+    stack_status_exit_code,
+)
+from sceptre.cli.path_processor import process_path
 from sceptre.plan.plan import SceptrePlan
 from sceptre.cli.helpers import stack_status_exit_code
 
@@ -35,6 +40,8 @@ def create_command(
     """
     Creates a stack for a given config PATH. Or if CHANGE_SET_NAME is specified
     creates a change set for stack in PATH.
+
+    Supports path patterns via installed plugins.
     \f
 
     :param path: Path to a Stack or StackGroup
@@ -45,6 +52,12 @@ def create_command(
     :type yes: bool
     :param disable_rollback: A flag to disable cloudformation rollback.
     """
+    # Process path using registered plugins (e.g., wildcard expansion)
+    project_path = ctx.obj.get("project_path")
+    path, force_confirm, matched_files = process_path(
+        path, project_path, "config", "create"
+    )
+
     context = SceptreContext(
         command_path=path,
         command_params=ctx.params,
