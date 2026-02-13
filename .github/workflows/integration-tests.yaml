@@ -65,15 +65,21 @@ jobs:
       - name: Get feature files for this shard
         id: features
         run: |
-          features=(integration-tests/features/*.feature)
+          # Get all feature files as an array
+          mapfile -t features < <(ls integration-tests/features/*.feature | sort)
           total=${#features[@]}
           per_shard=$((($total + 3) / 4))  # Divide by 4 shards, round up
-          start=$(((matrix.shard - 1) * per_shard))
-          end=$((start + per_shard))
-          shard_features="${features[@]:$start:$per_shard}"
-          echo "features=$shard_features" >> $GITHUB_OUTPUT
-        env:
-          matrix.shard: ${{ matrix.shard }}
+          start=$((${{ matrix.shard }} - 1))
+
+          # Get features for this shard
+          shard_features=()
+          for ((i=start; i<total; i+=4)); do
+            shard_features+=("${features[$i]}")
+          done
+
+          echo "Total features: $total"
+          echo "Shard ${{ matrix.shard }} running: ${shard_features[@]}"
+          echo "features=${shard_features[*]}" >> $GITHUB_OUTPUT
 
       - name: run tests
         run: |
