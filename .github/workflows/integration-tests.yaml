@@ -14,42 +14,85 @@ on:
         default: 3600
 
 jobs:
+  # Split tests into parallel shards
   tests:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
-    # There is only one AWS account for running integration tests and the tests are not designed
-    # to run concurrently in one account which is why we are disabling concurrency.
-    # The intention is to have all triggered integration tests execute serially in one queue,
-    # all triggered integration tests should wait in the queue however github is canceling
-    # waiting jobs in the queue. Github currently does not support the desired use case,
-    # more info at https://github.com/orgs/community/discussions/41518
+    strategy:
+      fail-fast: false  # Continue other jobs if one fails
+      matrix:
+        shard: [1, 2, 3, 4]  # 4 parallel jobs
     concurrency:
-      group: integration-tests
+      group: integration-tests-shard-${{ matrix.shard }}-${{ github.ref }}
       cancel-in-progress: false
+
     steps:
       - uses: actions/checkout@v4
+
+      # Cache Poetry dependencies
+      - name: Cache Poetry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            .venv
+          key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
       - name: Install Poetry
         uses: snok/install-poetry@v1
-      - name: Install dependencies
-        run: poetry install --no-interaction --all-extras
-      # Update poetry for https://github.com/python-poetry/poetry/issues/7184
-      - name: update poetry
-        run: poetry self update --no-ansi
+
       - name: Setup Python
-        id: setup-python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'poetry'
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --all-extras
+
       - name: Assume AWS role
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ inputs.aws-region }}
           role-to-assume: ${{ inputs.role-to-assume }}
-          role-session-name: GHA-${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}
+          role-session-name: GHA-shard-${{ matrix.shard }}-${{ github.run_id }}
           role-duration-seconds: ${{ inputs.role-duration-seconds }}
+
+      # Get list of features and shard them
+      - name: Get feature files for this shard
+        id: features
+        run: |
+          # Get all feature files as an array
+          mapfile -t features < <(ls integration-tests/features/*.feature | sort)
+          total=${#features[@]}
+          per_shard=$((($total + 3) / 4))  # Divide by 4 shards, round up
+          start=$((${{ matrix.shard }} - 1))
+
+          # Get features for this shard
+          shard_features=()
+          for ((i=start; i<total; i+=4)); do
+            shard_features+=("${features[$i]}")
+          done
+
+          echo "Total features: $total"
+          echo "Shard ${{ matrix.shard }} running: ${shard_features[@]}"
+          echo "features=${shard_features[*]}" >> $GITHUB_OUTPUT
+
       - name: run tests
-        run: poetry run behave integration-tests/features --junit --junit-directory build/behave
+        run: |
+          for feature in ${{ steps.features.outputs.features }}; do
+            poetry run behave "$feature" --junit --junit-directory build/behave/shard-${{ matrix.shard }}
+          done
         env:
           AWS_DEFAULT_REGION: eu-west-1
+          SCEPTRE_TEST_SHARD: ${{ matrix.shard }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-shard-${{ matrix.shard }}
+          path: build/behave/shard-${{ matrix.shard }}
