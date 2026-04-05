@@ -575,6 +575,7 @@ class StackActions:
             },
         )
 
+    @add_stack_hooks
     def execute_change_set(self, change_set_name):
         """
         Executes the Change Set ``change_set_name``.
