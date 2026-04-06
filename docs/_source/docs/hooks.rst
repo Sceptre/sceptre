@@ -15,6 +15,7 @@ Hook points
 - ``before_delete``/``after_delete`` - Runs before/after Stack deletion.
 - ``before_launch``/``after_launch`` - Runs before/after Stack launch.
 - ``before_create_change_set``/``after_create_change_set`` - Runs before/after create change set.
+- ``before_execute_change_set``/``after_execute_change_set`` - Runs before/after execute change set.
 - ``before_validate``/``after_validate`` - Runs before/after Stack validation.
 - ``before_diff``/``after_diff`` - Runs before/after diffing the deployed stack with the local
   configuration.
