@@ -31,6 +31,54 @@ Template. Sceptre User Data is accessible within Templates as
 ``sceptre_user_data`` accesses the ``sceptre_user_data`` key in the Stack
 Config file.
 
+The following variables are available in Jinja2 Templates:
+
+- ``sceptre_user_data`` - The ``sceptre_user_data`` defined in the Stack Config file.
+- ``stack_group_config`` - The StackGroup Config, including both Sceptre-managed keys
+  (``project_code``, ``region``, ``template_bucket_name``, etc.) and any custom keys
+  defined in your ``config.yaml`` files.
+- ``stack_config`` - The Stack Config, including keys such as ``stack_name``,
+  ``parameters``, ``stack_tags``, ``dependencies``, and any other keys defined
+  in the stack's config file.
+
+Example
+~~~~~~~
+
+Given a ``config.yaml``:
+
+.. code-block:: yaml
+
+   project_code: my_project
+   region: us-east-1
+   environment: production
+
+All variables can be used together in a Jinja2 template:
+
+.. code-block:: jinja
+
+   AWSTemplateFormatVersion: '2010-09-09'
+   Description: 'VPC for {{ stack_group_config.project_code }} in {{ stack_group_config.region }}'
+   Resources:
+     VPC:
+       Type: AWS::EC2::VPC
+       Properties:
+         CidrBlock: {{ sceptre_user_data.cidr_block }}
+         Tags:
+           - Key: Project
+             Value: {{ stack_group_config.project_code }}
+           - Key: Environment
+             Value: {{ stack_group_config.environment }}
+           - Key: StackName
+             Value: {{ stack_config.stack_name }}
+
+
+.. note::
+
+   Keys referenced in templates must be defined somewhere in the StackGroup
+   config hierarchy. If a key is missing, Jinja2 will raise an
+   ``UndefinedError``. You can use Jinja2 defaults to handle optional keys:
+   ``{{ stack_group_config.team | default("unknown") }}``.
+
 
 Example
 ~~~~~~~

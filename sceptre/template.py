@@ -54,6 +54,7 @@ class Template(object):
         stack_group_config,
         connection_manager=None,
         s3_details=None,
+        stack_config=None,
     ):
         self.logger = StackLoggerAdapter(logging.getLogger(__name__), name)
         self.name = name
@@ -64,6 +65,7 @@ class Template(object):
         self.stack_group_config = stack_group_config
         self.connection_manager = connection_manager
         self.s3_details = s3_details
+        self.stack_config = stack_config
 
         self._registry = None
         self._body = None
@@ -92,6 +94,7 @@ class Template(object):
                 sceptre_user_data=self.sceptre_user_data,
                 connection_manager=self.connection_manager,
                 stack_group_config=self.stack_group_config,
+                stack_config=self.stack_config,
             )
             handler.validate()
             body = handler.handle()

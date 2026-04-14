@@ -75,7 +75,15 @@ class TestFile(object):
             stack_group_config={"project_path": project_path},
         )
         template_handler.handle()
-        mocked_render.assert_called_with(output_path, {"sceptre_user_data": None}, {})
+        mocked_render.assert_called_with(
+            output_path,
+            {
+                "sceptre_user_data": None,
+                "stack_group_config": {"project_path": project_path},
+                "stack_config": {},
+            },
+            {},
+        )
 
     @pytest.mark.parametrize(
         "project_path,path,output_path",

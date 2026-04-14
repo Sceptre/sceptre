@@ -49,6 +49,7 @@ class TemplateHandler:
         sceptre_user_data=None,
         connection_manager=None,
         stack_group_config=None,
+        stack_config=None,
     ):
         self.logger = StackLoggerAdapter(logging.getLogger(__name__), name)
         self.name = name
@@ -59,6 +60,10 @@ class TemplateHandler:
         if stack_group_config is None:
             stack_group_config = {}
         self.stack_group_config = stack_group_config
+
+        if stack_config is None:
+            stack_config = {}
+        self.stack_config = stack_config
 
     @abc.abstractmethod
     def schema(self):
@@ -90,3 +95,20 @@ class TemplateHandler:
             validate(instance=self.arguments, schema=self.schema())
         except ValidationError as e:
             raise TemplateHandlerArgumentsInvalidError(e)
+
+    def _get_jinja_vars(self):
+        """
+        Returns a dictionary of variables to pass to Jinja2 templates.
+
+        Includes ``sceptre_user_data``, ``stack_group_config``, and
+        ``stack_config`` so that Jinja2 templates can reference stack group
+        config values, stack config values, and ``sceptre_user_data``.
+
+        :returns: A dict of variables for Jinja2 template rendering.
+        :rtype: dict
+        """
+        return {
+            "sceptre_user_data": self.sceptre_user_data,
+            "stack_group_config": self.stack_group_config,
+            "stack_config": self.stack_config,
+        }
