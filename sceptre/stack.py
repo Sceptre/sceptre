@@ -412,6 +412,7 @@ class Stack:
                 stack_group_config=self.stack_group_config,
                 s3_details=self.s3_details,
                 connection_manager=self.connection_manager,
+                stack_config=self.config,
             )
         return self._template
 

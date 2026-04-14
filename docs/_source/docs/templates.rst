@@ -34,8 +34,29 @@ Config file.
 Stack Group Config is also accessible within Jinja2 Templates as
 ``stack_group_config``. This allows you to reference values such as
 ``project_code``, ``region``, and any custom keys defined in your
-StackGroup ``config.yaml`` files without having to duplicate them into
-``sceptre_user_data``.
+
+Stack Config is accessible within Jinja2 Templates as ``stack_config``.
+This contains the individual stack's configuration keys such as
+``stack_name``, ``parameters``, ``stack_tags``, and ``dependencies``.
+Note that ``sceptre_user_data`` is excluded from ``stack_config`` to avoid
+duplication, since it is already available as a top-level variable.
+
+.. note::
+
+   Keys referenced in templates must be defined somewhere in the StackGroup
+   config hierarchy or the stack config file. If a key is missing, Jinja2
+   will raise an ``UndefinedError``. You can use Jinja2 defaults to handle
+   optional keys: ``{{ stack_group_config.team | default("unknown") }}``.
+
+The following variables are available in Jinja2 Templates:
+
+- ``sceptre_user_data`` - The ``sceptre_user_data`` defined in the Stack Config file.
+- ``stack_group_config`` - The StackGroup Config, including both Sceptre-managed keys
+  (``project_code``, ``region``, ``template_bucket_name``, etc.) and any custom keys
+  defined in your ``config.yaml`` files.
+- ``stack_config`` - The Stack Config, including keys such as ``stack_name``,
+  ``parameters``, ``stack_tags``, and ``dependencies``. The ``sceptre_user_data``
+  key is excluded since it is available as a top-level variable.
 
 For example, given a ``config.yaml``:
 
@@ -45,7 +66,18 @@ For example, given a ``config.yaml``:
    region: us-east-1
    environment: production
 
-All keys are accessible in Jinja2 templates:
+And a stack config ``dev/vpc.yaml``:
+
+.. code-block:: yaml
+
+   template:
+     path: vpc.j2
+     type: file
+   stack_name: my-custom-vpc
+   sceptre_user_data:
+     cidr_block: 10.0.0.0/16
+
+All variables can be used together in a Jinja2 template:
 
 .. code-block:: jinja
 
@@ -61,20 +93,8 @@ All keys are accessible in Jinja2 templates:
              Value: {{ stack_group_config.project_code }}
            - Key: Environment
              Value: {{ stack_group_config.environment }}
-
-.. note::
-
-   Keys referenced in templates must be defined somewhere in the StackGroup
-   config hierarchy. If a key is missing, Jinja2 will raise an
-   ``UndefinedError``. You can use Jinja2 defaults to handle optional keys:
-   ``{{ stack_group_config.team | default("unknown") }}``.
-
-The following variables are available in Jinja2 Templates:
-
-- ``sceptre_user_data`` - The ``sceptre_user_data`` defined in the Stack Config file.
-- ``stack_group_config`` - The StackGroup Config, including both Sceptre-managed keys
-  (``project_code``, ``region``, ``template_bucket_name``, etc.) and any custom keys
-  defined in your ``config.yaml`` files.
+           - Key: StackName
+             Value: {{ stack_config.stack_name }}
 
 
 Example

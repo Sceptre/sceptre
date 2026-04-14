@@ -81,6 +81,7 @@ class TestStackActions(object):
             stack_group_config={},
             connection_manager=self.stack.connection_manager,
             s3_details=None,
+            stack_config={},
         )
         assert response == sentinel.template
 
