@@ -71,7 +71,6 @@ All variables can be used together in a Jinja2 template:
            - Key: StackName
              Value: {{ stack_config.stack_name }}
 
-
 .. note::
 
    Keys referenced in templates must be defined somewhere in the StackGroup
