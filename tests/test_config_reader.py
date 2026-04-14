@@ -319,6 +319,12 @@ class TestConfigReader(object):
             stack_group_config={
                 "project_path": self.context.project_path,
                 "custom_key": "custom_value",
+                "profile": "account_profile",
+                "project_code": "account_project_code",
+                "region": "region_region",
+                "required_version": ">1.0",
+                "template_bucket_name": "stack_group_template_bucket_name",
+                "dependencies": ["top/level"],
             },
             config=ANY,
         )

@@ -57,6 +57,7 @@ class TestTemplateHandlers(TestCase):
         stack_group_config = {
             "project_code": "my_project",
             "region": "us-east-1",
+            "environment": "production",
         }
         handler = MockTemplateHandler(
             name="mock",
