@@ -1,0 +1,13 @@
+{
+  "name": "Validate API Changes",
+  "version": "1.0.0",
+  "description": "Check for breaking changes when Lambda handler or API endpoint files are modified",
+  "when": {
+    "type": "fileEdited",
+    "patterns": ["**/handler.py", "**/handler_*.py", "lambda/**/*.py", "constructs/**/handler/*.py"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A Lambda handler or API endpoint file was modified. Check if any API endpoint signatures changed (URL path, HTTP method, request body shape, response shape). If so, verify that consuming code is updated accordingly. Flag any potential breaking changes."
+  }
+}

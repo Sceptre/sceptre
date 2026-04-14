@@ -1,0 +1,12 @@
+{
+  "name": "Generate Commit Message",
+  "version": "1.0.0",
+  "description": "Generate a conventional commit message based on staged changes (manually triggered)",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Look at the current git diff (staged and unstaged changes). Generate a conventional commit message following the format: type(scope): description. Types: feat, fix, docs, style, refactor, test, chore. Keep the first line under 50 characters. Add a body if the changes are complex. Then run the git commit with that message."
+  }
+}

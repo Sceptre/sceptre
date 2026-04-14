@@ -1,0 +1,13 @@
+{
+  "name": "Pre-commit Check",
+  "description": "Runs pre-commit hooks on staged files before a git commit is created",
+  "version": "1",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": [".*git.*commit.*"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "A git commit is about to be created. Before proceeding, run 'poetry pre-commit run' to check all staged files against the project's pre-commit hooks. If pre-commit reports failures, fix the issues before allowing the commit to proceed."
+  }
+}

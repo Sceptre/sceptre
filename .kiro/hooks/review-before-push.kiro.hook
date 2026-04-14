@@ -1,0 +1,13 @@
+{
+  "name": "Review Before Push",
+  "version": "1.0.0",
+  "description": "Remind to review changes before any git push operation",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": ["shell"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "If the command being executed is a 'git push', first verify: 1) All tests pass, 2) No hardcoded secrets in the diff, 3) Commit messages follow conventional format. If it's not a git push, proceed normally without any additional checks."
+  }
+}
