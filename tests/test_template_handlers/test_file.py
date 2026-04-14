@@ -80,6 +80,7 @@ class TestFile(object):
             {
                 "sceptre_user_data": None,
                 "stack_group_config": {"project_path": project_path},
+                "stack_config": {},
             },
             {},
         )

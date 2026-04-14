@@ -441,10 +441,12 @@ key within Jinja2 templates.
 .. note::
 
    In addition to ``sceptre_user_data``, Jinja2 templates also have access to
-   ``stack_group_config``, which contains both Sceptre-managed keys (such as
-   ``project_code`` and ``region``) and any custom keys from your StackGroup
-   ``config.yaml`` files. See the
-   `Templates <templates.html#jinja>`_ documentation for more details.
+   ``stack_group_config`` and ``stack_config``. ``stack_group_config`` contains
+   both Sceptre-managed keys (such as ``project_code`` and ``region``) and any
+   custom keys from your StackGroup ``config.yaml`` files. ``stack_config``
+   contains the stack's own configuration keys (such as ``stack_name`` and
+   ``parameters``). See the `Templates <templates.html#jinja>`_ documentation
+   for more details.
 
 sceptre_user_data_inheritance
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
