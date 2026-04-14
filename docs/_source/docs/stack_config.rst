@@ -438,6 +438,13 @@ Represents data to be passed to the ``sceptre_handler(sceptre_user_data)``
 function in Python templates or accessible under ``sceptre_user_data`` variable
 key within Jinja2 templates.
 
+.. note::
+
+   In addition to ``sceptre_user_data``, Jinja2 templates also have access to
+   ``stack_group_config``, which contains the resolved StackGroup Config values
+   such as ``project_code`` and ``region``. See the
+   `Templates <templates.html#jinja>`_ documentation for more details.
+
 sceptre_user_data_inheritance
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * Resolvable: No

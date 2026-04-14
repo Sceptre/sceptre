@@ -112,3 +112,35 @@ def test_render_jinja_template_non_existing_file():
             jinja_vars={"sceptre_user_data": {}},
             j2_environment={},
         )
+
+
+@patch("pathlib.Path.exists")
+def test_render_jinja_template_with_stack_group_config_and_j2_environment(mock_pathlib):
+    """Test that stack_group_config and j2_environment work together in Jinja2 templates."""
+    mock_pathlib.return_value = True
+    jinja_template_path = os.path.join(
+        os.getcwd(), "tests/fixtures/templates", "vpc_with_config.j2"
+    )
+    jinja_vars = {
+        "sceptre_user_data": {"vpc_cidr": "10.0.0.0/16"},
+        "stack_group_config": {
+            "project_code": "my_project",
+            "region": "us-east-1",
+        },
+    }
+    j2_environment = {
+        "lstrip_blocks": True,
+        "trim_blocks": True,
+    }
+    result = helper.render_jinja_template(
+        path=jinja_template_path,
+        jinja_vars=jinja_vars,
+        j2_environment=j2_environment,
+    )
+    result_yaml = yaml.safe_load(result)
+    assert result_yaml["Description"] == "VPC for my_project in us-east-1"
+    assert result_yaml["Resources"]["VPC"]["Properties"]["CidrBlock"] == "10.0.0.0/16"
+    assert (
+        result_yaml["Resources"]["VPC"]["Properties"]["Tags"][0]["Value"]
+        == "my_project"
+    )

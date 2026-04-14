@@ -31,6 +31,34 @@ Template. Sceptre User Data is accessible within Templates as
 ``sceptre_user_data`` accesses the ``sceptre_user_data`` key in the Stack
 Config file.
 
+Stack Group Config is also accessible within Jinja2 Templates as
+``stack_group_config``. This allows you to reference values such as
+``project_code``, ``region``, and any other keys defined in your
+StackGroup config files without having to duplicate them into
+``sceptre_user_data``.
+
+For example:
+
+.. code-block:: jinja
+
+   AWSTemplateFormatVersion: '2010-09-09'
+   Description: 'VPC for {{ stack_group_config.project_code }} in {{ stack_group_config.region }}'
+   Resources:
+     VPC:
+       Type: AWS::EC2::VPC
+       Properties:
+         CidrBlock: {{ sceptre_user_data.cidr_block }}
+         Tags:
+           - Key: Project
+             Value: {{ stack_group_config.project_code }}
+
+The following variables are available in Jinja2 Templates:
+
+- ``sceptre_user_data`` - The ``sceptre_user_data`` defined in the Stack Config file.
+- ``stack_group_config`` - The resolved StackGroup Config, including keys such as
+  ``project_code``, ``region``, ``template_bucket_name``, and any custom keys
+  defined in your ``config.yaml`` files.
+
 
 Example
 ~~~~~~~
