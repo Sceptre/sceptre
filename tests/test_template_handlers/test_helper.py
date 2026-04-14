@@ -126,6 +126,7 @@ def test_render_jinja_template_with_stack_group_config_and_j2_environment(mock_p
         "stack_group_config": {
             "project_code": "my_project",
             "region": "us-east-1",
+            "environment": "production",
         },
     }
     j2_environment = {
@@ -143,4 +144,8 @@ def test_render_jinja_template_with_stack_group_config_and_j2_environment(mock_p
     assert (
         result_yaml["Resources"]["VPC"]["Properties"]["Tags"][0]["Value"]
         == "my_project"
+    )
+    assert (
+        result_yaml["Resources"]["VPC"]["Properties"]["Tags"][1]["Value"]
+        == "production"
     )

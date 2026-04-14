@@ -675,13 +675,14 @@ class ConfigReader(object):
 
     def _parsed_stack_group_config(self, stack_group_config):
         """
-        Remove all config items that are supported by Sceptre and
-        remove the `project_path` and `stack_group_path` added by `read()`.
-        Return a dictionary that has only user-specified config items.
+        Return the stack group config with internal keys removed.
+
+        Removes only the ``stack_group_path`` key which is added internally
+        by ``read()``. All other keys, including Sceptre-managed keys
+        (e.g. ``project_code``, ``region``) and user-defined custom keys,
+        are preserved so they can be referenced in Jinja2 templates via
+        ``stack_group_config``.
         """
-        parsed_config = {
-            key: stack_group_config[key]
-            for key in set(stack_group_config) - set(CONFIG_MERGE_STRATEGIES)
-        }
-        parsed_config.pop("stack_group_path")
+        parsed_config = dict(stack_group_config)
+        parsed_config.pop("stack_group_path", None)
         return parsed_config
