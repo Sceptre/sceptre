@@ -1,0 +1,13 @@
+{
+  "name": "Security Check on Write",
+  "version": "1.0.0",
+  "description": "Scan for hardcoded secrets and dangerous Python patterns before writing files",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": ["write"]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Before writing this file, quickly check: Does the content contain any hardcoded secrets (API keys, passwords, tokens, connection strings)? Does it use string-concatenated SQL queries instead of parameterized queries? Does it use eval() or exec() with external input? Does it use pickle.loads() on untrusted data? Does it use subprocess with shell=True and user input? If any of these are found, flag them and suggest fixes before proceeding."
+  }
+}
