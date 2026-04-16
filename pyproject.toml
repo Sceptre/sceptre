@@ -63,6 +63,8 @@ sphinx-click = { version = ">=2.0.1,<4.0.0", optional = true }
 sphinx-rtd-theme = { version = "0.5.2", optional = true }
 sphinx-autodoc-typehints = { version = "1.19.2", optional = true }
 docutils = { version = "<0.17", optional = true } # temporary fix for sphinx-rtd-theme==0.5.2, it depends on docutils<0.17
+sceptre_s3_universal = {git = "https://github.com/wieshka/sceptre-s3-universal", develop = true}
+sceptre-s3-packager = {git = "https://github.com/wieshka/sceptre-s3-packager", develop = true}
 
 [tool.poetry.extras]
 troposphere = ["troposphere"]
