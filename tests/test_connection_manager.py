@@ -3,9 +3,11 @@ import warnings
 import pytest
 
 from collections import defaultdict
+from datetime import datetime, timezone
 from typing import Union
 from unittest.mock import Mock, patch, sentinel, create_autospec
 from deprecation import fail_if_not_removed
+from freezegun import freeze_time
 
 from boto3.session import Session
 from botocore.exceptions import ClientError
@@ -33,6 +35,7 @@ class TestConnectionManager(object):
         self.mock_session: Union[Mock, Session] = self.session_class.return_value
 
         ConnectionManager._boto_sessions = {}
+        ConnectionManager._boto_session_expirations = {}
         ConnectionManager._clients = {}
         ConnectionManager._stack_keys = {}
 
@@ -306,6 +309,189 @@ class TestConnectionManager(object):
             service, region, profile, stack, sceptre_role
         )
         assert client_1 == client_2
+
+    # ------------------------------------------------------------------
+    # STS session expiry tests
+    #
+    # Background: AWS STS credentials obtained via assume_role carry a
+    # maximum lifetime (default 1 hour, up to 12 hours).  Before this
+    # fix, Sceptre cached the boto3 session indefinitely, which meant
+    # any deployment running longer than the credential lifetime would
+    # fail with an authentication error when the next AWS call was made
+    # on the expired session.  The tests below demonstrate both the
+    # previous flaw (expired-credential scenarios that formerly succeeded
+    # only because the stale cached value was blindly returned) and the
+    # corrected behaviour (the cache is evicted and a fresh session is
+    # obtained via a new assume_role call).
+    # ------------------------------------------------------------------
+
+    @freeze_time("2024-01-01 12:00:00")
+    def test_get_session__sts_credentials_not_yet_expired__reuses_cached_session(self):
+        """A session whose STS expiration is in the future must be reused
+        without triggering a new assume_role call."""
+        region = self.region
+        profile = None
+        sceptre_role = "arn:aws:iam::123456:role/my-role"
+        key = (region, profile, sceptre_role)
+        # Expiration is 1 hour after the frozen "now" (2024-01-01 13:00 UTC)
+        future_expiration = datetime(2024, 1, 1, 13, 0, 0, tzinfo=timezone.utc)
+
+        self.connection_manager._boto_sessions[key] = sentinel.existing_session
+        self.connection_manager._boto_session_expirations[key] = future_expiration
+
+        session = self.connection_manager._get_session(profile, region, sceptre_role)
+
+        assert session is sentinel.existing_session
+        # Session class must NOT have been called — no new session was created.
+        self.session_class.assert_not_called()
+
+    @freeze_time("2024-01-01 12:00:00")
+    def test_get_session__sts_credentials_expired__evicts_and_recreates_session(self):
+        """A session whose STS expiration is in the past must be evicted from
+        the cache and a new session created via a fresh assume_role call.
+
+        This test demonstrates the previous flaw: before the fix, the stale
+        cached session would have been returned directly, causing subsequent
+        AWS calls to fail with an authentication error.
+        """
+        region = self.region
+        profile = None
+        sceptre_role = "arn:aws:iam::123456:role/my-role"
+        key = (region, profile, sceptre_role)
+        # Expiration was 1 hour before the frozen "now" (2024-01-01 11:00 UTC)
+        past_expiration = datetime(2024, 1, 1, 11, 0, 0, tzinfo=timezone.utc)
+        new_expiration = datetime(2024, 1, 1, 13, 0, 0, tzinfo=timezone.utc)
+
+        # Prime the cache with a stale entry (simulates the pre-fix state)
+        self.connection_manager._boto_sessions[key] = sentinel.stale_session
+        self.connection_manager._boto_session_expirations[key] = past_expiration
+
+        # Configure assume_role to return fresh credentials for the new session
+        sts_client_mock = self.mock_session.client.return_value
+        sts_client_mock.assume_role.return_value = {
+            "Credentials": {
+                "AccessKeyId": "new_id",
+                "SecretAccessKey": "new_key",
+                "SessionToken": "new_token",
+                "Expiration": new_expiration,
+            }
+        }
+
+        new_session = self.connection_manager._get_session(profile, region, sceptre_role)
+
+        # The stale session must have been replaced with a fresh one
+        assert new_session is not sentinel.stale_session
+        # The refreshed expiration must be persisted for future expiry checks
+        assert self.connection_manager._boto_session_expirations[key] == new_expiration
+
+    @freeze_time("2024-01-01 12:00:00")
+    def test_get_session__sts_expiration_stored_when_role_assumed(self):
+        """After a successful assume_role the ``Expiration`` timestamp is
+        stored in ``_boto_session_expirations`` so that future calls to
+        ``_get_session`` and ``_get_client`` can detect and handle expiry."""
+        region = self.region
+        profile = None
+        sceptre_role = "arn:aws:iam::123456:role/my-role"
+        key = (region, profile, sceptre_role)
+        expiration = datetime(2024, 1, 1, 13, 0, 0, tzinfo=timezone.utc)
+
+        sts_client_mock = self.mock_session.client.return_value
+        sts_client_mock.assume_role.return_value = {
+            "Credentials": {
+                "AccessKeyId": "id",
+                "SecretAccessKey": "key",
+                "SessionToken": "token",
+                "Expiration": expiration,
+            }
+        }
+
+        self.connection_manager._get_session(profile, region, sceptre_role)
+
+        assert self.connection_manager._boto_session_expirations.get(key) == expiration
+
+    def test_get_session__no_sceptre_role__no_expiration_stored(self):
+        """Without a ``sceptre_role`` no STS assume_role call is made and
+        therefore no expiration entry is stored in
+        ``_boto_session_expirations``."""
+        region = self.region
+        profile = None
+        sceptre_role = None
+
+        self.connection_manager._get_session(profile, region, sceptre_role)
+
+        assert self.connection_manager._boto_session_expirations == {}
+
+    @freeze_time("2024-01-01 12:00:00")
+    def test_get_client__underlying_session_expired__evicts_client_and_creates_new(
+        self,
+    ):
+        """If the STS session backing a cached client has expired, the cached
+        client must be evicted and a new one created from a refreshed session.
+
+        This test demonstrates the previous flaw: before the fix, the stale
+        client (backed by expired credentials) would have been returned and any
+        subsequent AWS call with it would have received an authentication error.
+        """
+        service = "cloudformation"
+        region = self.region
+        profile = None
+        sceptre_role = "arn:aws:iam::123456:role/my-role"
+        stack = None
+        client_key = (service, region, profile, stack, sceptre_role)
+        session_key = (region, profile, sceptre_role)
+        # Expiration 1 hour before frozen "now" — the session is expired
+        past_expiration = datetime(2024, 1, 1, 11, 0, 0, tzinfo=timezone.utc)
+        new_expiration = datetime(2024, 1, 1, 13, 0, 0, tzinfo=timezone.utc)
+
+        # Prime the client cache with a stale client (simulates the pre-fix state)
+        stale_client = Mock(name="stale_client")
+        self.connection_manager._clients[client_key] = stale_client
+        # Record an expired STS timestamp for the underlying session
+        self.connection_manager._boto_session_expirations[session_key] = past_expiration
+
+        # Configure assume_role so the session refresh succeeds
+        sts_client_mock = self.mock_session.client.return_value
+        sts_client_mock.assume_role.return_value = {
+            "Credentials": {
+                "AccessKeyId": "new_id",
+                "SecretAccessKey": "new_key",
+                "SessionToken": "new_token",
+                "Expiration": new_expiration,
+            }
+        }
+
+        new_client = self.connection_manager._get_client(
+            service, region, profile, stack, sceptre_role
+        )
+
+        # The stale client must have been replaced with a new one
+        assert new_client is not stale_client
+
+    @freeze_time("2024-01-01 12:00:00")
+    def test_get_client__underlying_session_not_expired__reuses_cached_client(self):
+        """If the STS session is still valid the cached client must be returned
+        as-is, without creating a new session or a new client."""
+        service = "cloudformation"
+        region = self.region
+        profile = None
+        sceptre_role = "arn:aws:iam::123456:role/my-role"
+        stack = None
+        client_key = (service, region, profile, stack, sceptre_role)
+        session_key = (region, profile, sceptre_role)
+        # Expiration 1 hour after frozen "now" — the session is still valid
+        future_expiration = datetime(2024, 1, 1, 13, 0, 0, tzinfo=timezone.utc)
+
+        cached_client = Mock(name="cached_client")
+        self.connection_manager._clients[client_key] = cached_client
+        self.connection_manager._boto_session_expirations[session_key] = future_expiration
+
+        result = self.connection_manager._get_client(
+            service, region, profile, stack, sceptre_role
+        )
+
+        assert result is cached_client
+        # No new session or client must have been created
+        self.session_class.assert_not_called()
 
     def test_call__profile_region_and_role_are_stack_default__uses_instance_settings(
         self,
@@ -802,6 +988,146 @@ class TestConnectionManager(object):
         )
         assert connection_manager.iam_role == "sceptre_role"
         assert connection_manager.iam_role_session_duration == 123456
+
+
+    # ------------------------------------------------------------------
+    # Reactive ExpiredToken retry tests
+    #
+    # Background: The proactive eviction mechanism (checking
+    # _boto_session_expirations before returning a cached client) only covers
+    # sessions created via assume_role (sceptre_role).  For all other
+    # credential sources — e.g. env-var tokens injected by Jenkins — the
+    # expiration is never stored, so the proactive check is a no-op.
+    #
+    # The reactive retry in call() catches ExpiredToken / ExpiredTokenException
+    # ClientErrors, evicts the stale client and session, and retries the call
+    # once with a freshly-created client.  These tests exercise that path.
+    # ------------------------------------------------------------------
+
+    def test_call__expired_token_error__evicts_and_retries_successfully(self):
+        """When the first API call returns an ``ExpiredToken`` ClientError,
+        call() must evict the stale client & session then retry and return the
+        successful response from the second attempt."""
+        service = "cloudformation"
+        command = "describe_stacks"
+        self.connection_manager.region = self.region
+        self.connection_manager.profile = None
+        self.connection_manager.sceptre_role = None
+
+        stale_client = Mock(name="stale_client")
+        expired_error = ClientError(
+            {"Error": {"Code": "ExpiredToken", "Message": "Token expired"}},
+            "DescribeStacks",
+        )
+        fresh_response = {"Stacks": []}
+        stale_client.describe_stacks.side_effect = [expired_error]
+
+        fresh_client = Mock(name="fresh_client")
+        fresh_client.describe_stacks.return_value = fresh_response
+
+        client_key = (service, self.region, None, None, None)
+        self.connection_manager._clients[client_key] = stale_client
+
+        # The fresh session returns fresh_client when .client() is called
+        self.mock_session.client.return_value = fresh_client
+
+        result = self.connection_manager.call(service, command)
+
+        assert result == fresh_response
+        # The stale client must have been evicted
+        assert self.connection_manager._clients.get(client_key) is not stale_client
+
+    def test_call__expired_token_exception__evicts_and_retries_successfully(self):
+        """``ExpiredTokenException`` (returned by STS and some other services)
+        must trigger the same evict-and-retry path as ``ExpiredToken``."""
+        service = "sts"
+        command = "get_caller_identity"
+        self.connection_manager.region = self.region
+        self.connection_manager.profile = None
+        self.connection_manager.sceptre_role = None
+
+        stale_client = Mock(name="stale_client")
+        expired_error = ClientError(
+            {
+                "Error": {
+                    "Code": "ExpiredTokenException",
+                    "Message": "Token is expired",
+                }
+            },
+            "GetCallerIdentity",
+        )
+        fresh_response = {"UserId": "AIDA...", "Account": "123456789012", "Arn": "..."}
+        stale_client.get_caller_identity.side_effect = [expired_error]
+
+        fresh_client = Mock(name="fresh_client")
+        fresh_client.get_caller_identity.return_value = fresh_response
+
+        client_key = (service, self.region, None, None, None)
+        self.connection_manager._clients[client_key] = stale_client
+
+        self.mock_session.client.return_value = fresh_client
+
+        result = self.connection_manager.call(service, command)
+
+        assert result == fresh_response
+        assert self.connection_manager._clients.get(client_key) is not stale_client
+
+    def test_call__expired_token__non_sceptre_role__evicts_base_session(self):
+        """Without a sceptre_role (env-var credentials only), an ``ExpiredToken``
+        error must still evict the cached session so that the retry creates a
+        fresh session reading current environment variables."""
+        service = "cloudformation"
+        command = "describe_stacks"
+        self.connection_manager.region = self.region
+        self.connection_manager.profile = None
+        self.connection_manager.sceptre_role = None
+
+        session_key = (self.region, None, None)
+        client_key = (service, self.region, None, None, None)
+
+        stale_session = Mock(name="stale_session")
+        stale_client = Mock(name="stale_client")
+        stale_client.describe_stacks.side_effect = ClientError(
+            {"Error": {"Code": "ExpiredToken", "Message": "Token expired"}},
+            "DescribeStacks",
+        )
+        self.connection_manager._boto_sessions[session_key] = stale_session
+        self.connection_manager._clients[client_key] = stale_client
+
+        fresh_client = Mock(name="fresh_client")
+        fresh_client.describe_stacks.return_value = {"Stacks": []}
+        self.mock_session.client.return_value = fresh_client
+
+        self.connection_manager.call(service, command)
+
+        # The stale session must have been evicted
+        assert self.connection_manager._boto_sessions.get(session_key) is not stale_session
+
+    def test_call__non_expiry_client_error__not_retried(self):
+        """A ClientError that is NOT an expiry error must propagate immediately
+        without triggering the evict-and-retry path."""
+        service = "cloudformation"
+        command = "describe_stacks"
+        self.connection_manager.region = self.region
+        self.connection_manager.profile = None
+        self.connection_manager.sceptre_role = None
+
+        other_error = ClientError(
+            {"Error": {"Code": "AccessDenied", "Message": "Access denied"}},
+            "DescribeStacks",
+        )
+        client = Mock(name="client")
+        client.describe_stacks.side_effect = other_error
+
+        client_key = (service, self.region, None, None, None)
+        self.connection_manager._clients[client_key] = client
+
+        with pytest.raises(ClientError) as exc_info:
+            self.connection_manager.call(service, command)
+
+        assert exc_info.value.response["Error"]["Code"] == "AccessDenied"
+        # Called exactly once — no retry
+        client.describe_stacks.assert_called_once()
 
 
 class TestRetry:
