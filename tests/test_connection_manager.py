@@ -377,7 +377,9 @@ class TestConnectionManager(object):
             }
         }
 
-        new_session = self.connection_manager._get_session(profile, region, sceptre_role)
+        new_session = self.connection_manager._get_session(
+            profile, region, sceptre_role
+        )
 
         # The stale session must have been replaced with a fresh one
         assert new_session is not sentinel.stale_session
@@ -483,7 +485,9 @@ class TestConnectionManager(object):
 
         cached_client = Mock(name="cached_client")
         self.connection_manager._clients[client_key] = cached_client
-        self.connection_manager._boto_session_expirations[session_key] = future_expiration
+        self.connection_manager._boto_session_expirations[session_key] = (
+            future_expiration
+        )
 
         result = self.connection_manager._get_client(
             service, region, profile, stack, sceptre_role
@@ -989,7 +993,6 @@ class TestConnectionManager(object):
         assert connection_manager.iam_role == "sceptre_role"
         assert connection_manager.iam_role_session_duration == 123456
 
-
     # ------------------------------------------------------------------
     # Reactive ExpiredToken retry tests
     #
@@ -1101,7 +1104,9 @@ class TestConnectionManager(object):
         self.connection_manager.call(service, command)
 
         # The stale session must have been evicted
-        assert self.connection_manager._boto_sessions.get(session_key) is not stale_session
+        assert (
+            self.connection_manager._boto_sessions.get(session_key) is not stale_session
+        )
 
     def test_call__non_expiry_client_error__not_retried(self):
         """A ClientError that is NOT an expiry error must propagate immediately

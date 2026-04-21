@@ -391,7 +391,12 @@ class ConnectionManager(object):
             self._boto_session_expirations.pop(key, None)
 
     def _evict_client_and_session(
-        self, service: str, region: str, profile: str, stack_name: str, sceptre_role: str
+        self,
+        service: str,
+        region: str,
+        profile: str,
+        stack_name: str,
+        sceptre_role: str,
     ) -> None:
         """Evict both the cached client and the underlying session for the given
         parameters.  Called reactively when AWS returns an ExpiredToken error so
@@ -547,7 +552,9 @@ class ConnectionManager(object):
                 self._evict_client_and_session(
                     service, region, profile, stack_name, sceptre_role
                 )
-                client = self._get_client(service, region, profile, stack_name, sceptre_role)
+                client = self._get_client(
+                    service, region, profile, stack_name, sceptre_role
+                )
                 return getattr(client, command)(**kwargs)
             raise
 
