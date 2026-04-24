@@ -6,46 +6,39 @@ inclusion: always
 
 ## Mandatory Checks Before Any Commit
 
-- [ ] No hardcoded secrets (API keys, passwords, tokens, connection strings)
-- [ ] All user inputs validated and sanitized
-- [ ] SQL injection prevention (parameterized queries only)
-- [ ] Authentication/authorization verified on protected endpoints
-- [ ] Error messages don't leak sensitive data or stack traces
-- [ ] No sensitive data in logs
+- [ ] No hardcoded secrets (AWS keys, passwords, tokens)
+- [ ] All tool inputs validated (path traversal, null bytes, absolute paths)
+- [ ] Error messages don't leak file system paths or stack traces to the agent
+- [ ] No sensitive data in logs (AWS credentials, account IDs)
 
-## Secret Management
+## Input Validation
 
-- NEVER hardcode secrets in source code
-- ALWAYS use environment variables or AWS Secrets Manager
-- Validate required secrets are present at startup
-- Rotate any secrets that may have been exposed
-- Use .env files locally, never commit them
+This is an MCP server that accepts tool parameters from AI agents. Validate at the boundary:
+- Reject path traversal (`..`) in `stack_path` parameters
+- Reject absolute paths — only relative paths within the Sceptre project
+- Reject null bytes in string parameters
+- Validate `sceptre_project_dir` exists and contains `config/`
 
-## OWASP Top 10 Awareness
+## AWS Credential Handling
 
-When writing code that handles user input, auth, or data:
-1. **Injection** — Always use parameterized queries (SQLAlchemy bind params, psycopg2 `%s` placeholders)
-2. **Broken Auth** — Hash passwords (bcrypt/argon2), validate tokens properly
-3. **Sensitive Data** — Encrypt PII, enforce HTTPS, sanitize logs
-4. **Broken Access Control** — Check auth on every endpoint
-5. **Misconfiguration** — No default creds, debug mode off in prod
-6. **Known Vulnerabilities** — Keep dependencies updated, run `pip-audit` or `safety check`
+- NEVER hardcode AWS credentials in source code
+- Use environment variables (`AWS_PROFILE`, `AWS_DEFAULT_REGION`) or IAM roles
+- Don't log AWS credentials, account IDs, or ARNs
+- Credentials flow through Sceptre's standard AWS credential chain
 
-## Dangerous Patterns to Flag Immediately
+## Dependency Security
+
+- Keep dependencies updated regularly
+- Run security audits (`poetry run pip-audit`)
+- Review third-party packages before adding
+- Commit `poetry.lock` for reproducible builds
+
+## Dangerous Patterns to Flag
 
 | Pattern | Severity | Fix |
 |---------|----------|-----|
-| Hardcoded secrets | CRITICAL | Use `os.environ` or Secrets Manager |
-| String-concatenated SQL | CRITICAL | Parameterized queries |
-| `eval()` / `exec()` with user input | CRITICAL | Never use with external data |
-| `pickle.loads()` on untrusted data | CRITICAL | Use JSON or safe deserialization |
-| No auth check on endpoint | CRITICAL | Add auth decorator/middleware |
-| Logging passwords/tokens | MEDIUM | Sanitize log output |
-| `subprocess.shell=True` with user input | HIGH | Use `subprocess.run()` with list args |
-
-## If a Security Issue Is Found
-
-1. STOP current work
-2. Fix the vulnerability immediately
-3. Rotate any exposed secrets
-4. Check for similar issues elsewhere in codebase
+| Hardcoded AWS keys | CRITICAL | Use environment variables |
+| Unvalidated `stack_path` | HIGH | Use `_validate_stack_path()` |
+| `eval()` / `exec()` with tool input | CRITICAL | Never use with external data |
+| Logging credentials or ARNs | MEDIUM | Sanitize log output |
+| Bare `except:` swallowing errors | MEDIUM | Use specific exception types |

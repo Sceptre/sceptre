@@ -66,7 +66,7 @@ When a file exceeds 500 lines:
 
 ### Dead Code Removal
 - Remove commented-out code (it's in git history)
-- Remove unused imports (use `autoflake` or `ruff`)
+- Remove unused imports (use `ruff`)
 - Remove unreachable branches
 - Remove unused functions/variables
 
@@ -75,7 +75,7 @@ When a file exceeds 500 lines:
 1. Identify the smell (large file, deep nesting, duplication, etc.)
 2. Verify test coverage exists for affected code
 3. Apply one refactoring pattern
-4. Run tests — must still pass (`pytest -q`)
+4. Run tests — must still pass (`poetry run pytest -q`)
 5. Commit
 6. Repeat
 

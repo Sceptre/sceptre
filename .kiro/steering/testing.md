@@ -14,11 +14,11 @@ All new code should have test coverage. Three test types required:
 
 ## Test-Driven Development
 
-Preferred workflow for new features:
+Preferred workflow for new features (see `tdd-workflow.md` for the full cycle):
 1. Write test first (RED) — test should fail
 2. Write minimal implementation (GREEN) — test should pass
 3. Refactor (IMPROVE) — clean up while tests stay green
-4. Verify coverage meets 80%+ (`pytest --cov`)
+4. Verify coverage meets 80%+ (`poetry run pytest --cov`)
 
 ## Test Quality
 
@@ -36,4 +36,4 @@ Preferred workflow for new features:
 1. Check test isolation (no shared state between tests)
 2. Verify mocks are correct and up to date
 3. Fix implementation, not tests (unless tests are wrong)
-4. Run tests in isolation to find ordering issues (`pytest -k "test_name"`)
+4. Run tests in isolation to find ordering issues (`poetry run pytest -k "test_name"`)
