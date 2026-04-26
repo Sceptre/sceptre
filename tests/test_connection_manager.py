@@ -383,6 +383,20 @@ class TestConnectionManager(object):
         assert new_session is not sentinel.stale_session
         # The refreshed expiration must be persisted for future expiry checks
         assert self.connection_manager._boto_session_expirations[key] == new_expiration
+        # assume_role must have been called exactly once with the correct role ARN,
+        # proving that the refresh did not simply recreate a bare base session.
+        sts_client_mock.assume_role.assert_called_once_with(
+            RoleArn=sceptre_role,
+            RoleSessionName="my-role-session",
+        )
+        # The session class must have been invoked with the credentials that were
+        # returned by assume_role, confirming the assumed-role session was created.
+        self.session_class.assert_any_call(
+            aws_access_key_id="new_id",
+            aws_secret_access_key="new_key",
+            aws_session_token="new_token",
+            region_name=region,
+        )
 
     @freeze_time("2024-01-01 12:00:00")
     def test_get_session__sts_expiration_stored_when_role_assumed(self):
@@ -990,6 +1004,88 @@ class TestConnectionManager(object):
         assert connection_manager.iam_role_session_duration == 123456
 
 
+    # ------------------------------------------------------------------
+    # assume_role failure / partial-cache-poisoning guard tests
+    #
+    # Background: before the fix, the base (non-assumed) session was stored
+    # in _boto_sessions[key] immediately after being created and BEFORE
+    # assume_role() was called.  If assume_role() raised (e.g. AccessDenied),
+    # the partial base session remained in the cache and was silently returned
+    # on every subsequent call for that key, bypassing assume_role entirely.
+    #
+    # After the fix, insertion into _boto_sessions[key] is deferred until the
+    # entire session-construction path (including assume_role) has completed
+    # successfully, so a failure leaves the cache empty and forces a retry.
+    # ------------------------------------------------------------------
+
+    def test_get_session__assume_role_raises__does_not_cache_partial_base_session(self):
+        """When assume_role() raises, no entry must be left in _boto_sessions
+        so that the next call to _get_session retries the full construction."""
+        region = self.region
+        profile = None
+        sceptre_role = "arn:aws:iam::123456:role/my-role"
+        key = (region, profile, sceptre_role)
+
+        access_denied = ClientError(
+            {
+                "Error": {
+                    "Code": "AccessDenied",
+                    "Message": "Not authorized to assume role",
+                }
+            },
+            "AssumeRole",
+        )
+        sts_client_mock = self.mock_session.client.return_value
+        sts_client_mock.assume_role.side_effect = access_denied
+
+        with pytest.raises(ClientError):
+            self.connection_manager._get_session(profile, region, sceptre_role)
+
+        # The partial base session must NOT have been cached under this key.
+        assert key not in self.connection_manager._boto_sessions
+
+    def test_get_session__assume_role_raises_then_succeeds__retries_assume_role_on_second_call(
+        self,
+    ):
+        """After a failed assume_role, a second _get_session call must attempt
+        assume_role again rather than returning the (non-assumed) base session
+        that was created internally during the first attempt."""
+        region = self.region
+        profile = None
+        sceptre_role = "arn:aws:iam::123456:role/my-role"
+        key = (region, profile, sceptre_role)
+
+        access_denied = ClientError(
+            {
+                "Error": {
+                    "Code": "AccessDenied",
+                    "Message": "Not authorized to assume role",
+                }
+            },
+            "AssumeRole",
+        )
+        success_response = {
+            "Credentials": {
+                "AccessKeyId": "new_id",
+                "SecretAccessKey": "new_key",
+                "SessionToken": "new_token",
+            }
+        }
+        sts_client_mock = self.mock_session.client.return_value
+        sts_client_mock.assume_role.side_effect = [access_denied, success_response]
+
+        # First call must propagate the AccessDenied error.
+        with pytest.raises(ClientError) as exc_info:
+            self.connection_manager._get_session(profile, region, sceptre_role)
+        assert exc_info.value.response["Error"]["Code"] == "AccessDenied"
+
+        # Second call must succeed and cache the proper assumed-role session.
+        session = self.connection_manager._get_session(profile, region, sceptre_role)
+        assert session is not None
+        assert key in self.connection_manager._boto_sessions
+
+        # assume_role must have been called on both the first and second attempt.
+        assert sts_client_mock.assume_role.call_count == 2
     # ------------------------------------------------------------------
     # Reactive ExpiredToken retry tests
     #

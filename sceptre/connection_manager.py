@@ -311,7 +311,6 @@ class ConnectionManager(object):
                 }
 
                 session = self._session_class(**config)
-                self._boto_sessions[key] = session
 
                 if session.get_credentials() is None:
                     raise InvalidAWSCredentialsError(
@@ -349,10 +348,17 @@ class ConnectionManager(object):
                             )
                         )
 
-                    self._boto_sessions[key] = session
                     expiration = credentials.get("Expiration")
                     if expiration is not None:
                         self._boto_session_expirations[key] = expiration
+
+                # Delay insertion into the cache until after the full session
+                # construction (including the optional assume_role call) has
+                # succeeded.  This prevents a failed assume_role from leaving a
+                # partial, non-assumed base session cached under this key, which
+                # would otherwise be silently returned on subsequent calls without
+                # ever retrying assume_role.
+                self._boto_sessions[key] = session
 
                 self.logger.debug(
                     "Using credential set from %s: %s",
@@ -391,7 +397,12 @@ class ConnectionManager(object):
             self._boto_session_expirations.pop(key, None)
 
     def _evict_client_and_session(
-        self, service: str, region: str, profile: str, stack_name: str, sceptre_role: str
+        self,
+        service: str,
+        region: str,
+        profile: Optional[str],
+        stack_name: Optional[str],
+        sceptre_role: Optional[str],
     ) -> None:
         """Evict both the cached client and the underlying session for the given
         parameters.  Called reactively when AWS returns an ExpiredToken error so
@@ -400,9 +411,10 @@ class ConnectionManager(object):
 
         :param service: The boto3 service name.
         :param region: The AWS region.
-        :param profile: The AWS profile name.
-        :param stack_name: The CloudFormation stack name.
-        :param sceptre_role: The IAM role ARN (or None).
+        :param profile: The AWS profile name, or ``None`` if no profile is configured.
+        :param stack_name: The CloudFormation stack name, or ``None`` when not
+            targeting a specific stack.
+        :param sceptre_role: The IAM role ARN, or ``None`` if no role is assumed.
         """
         client_key = (service, region, profile, stack_name, sceptre_role)
         session_key = (region, profile, sceptre_role)
