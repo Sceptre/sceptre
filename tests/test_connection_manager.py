@@ -1089,6 +1089,7 @@ class TestConnectionManager(object):
 
         # assume_role must have been called on both the first and second attempt.
         assert sts_client_mock.assume_role.call_count == 2
+
     # ------------------------------------------------------------------
     # Reactive ExpiredToken retry tests
     #
