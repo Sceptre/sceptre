@@ -559,7 +559,9 @@ class ConnectionManager(object):
                 self._evict_client_and_session(
                     service, region, profile, stack_name, sceptre_role
                 )
-                client = self._get_client(service, region, profile, stack_name, sceptre_role)
+                client = self._get_client(
+                    service, region, profile, stack_name, sceptre_role
+                )
                 return getattr(client, command)(**kwargs)
             raise
 
