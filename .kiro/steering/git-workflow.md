@@ -30,7 +30,7 @@ test(slack-ingress): add signature validation tests
 
 ## Before Committing
 
-- [ ] Run tests and verify they pass (`pytest -q`)
+- [ ] Run tests and verify they pass (`poetry run pytest -q`)
 - [ ] No hardcoded secrets or API keys
 - [ ] No `print()` or debug logging left in code
 - [ ] Changes are logically grouped (atomic commits)
@@ -38,7 +38,7 @@ test(slack-ingress): add signature validation tests
 
 ## Security
 
+See `security.md` for full guidelines. Key reminders for commits:
 - NEVER commit secrets, API keys, or passwords
-- Use environment variables or AWS Secrets Manager
 - Review diffs for sensitive information before pushing
 - Use .gitignore to exclude `cdk.out/`, `.venv/`, `__pycache__/`, `.env` files

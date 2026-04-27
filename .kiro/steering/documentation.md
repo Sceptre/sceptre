@@ -12,15 +12,17 @@ description: Documentation standards and conventions
 - Document non-obvious side effects and assumptions
 
 ## Project Documentation
-- Maintain a single comprehensive README per project
-- Include setup, configuration, and deployment instructions
-- Document environment variables and their purpose
-- Keep docs close to the code they describe
+- Documentation is written in reStructuredText (`.rst`) and built with Sphinx
+- Source files live in `docs/_source/docs/`
+- Build locally with `poetry run make html --directory docs`
+- Published via [readthedocs.org](https://sceptre.readthedocs.io) on every change
 
-## API Documentation
-- Document all endpoints with request/response examples
-- Include error response formats and status codes
-- Version API docs alongside code changes
+## Writing reStructuredText
+- Use `.rst` files, not Markdown, for project documentation
+- Section headings use underlines: `=` for titles, `-` for sections, `~` for subsections
+- Use `.. code-block:: yaml` (or `python`, `jinja`, `text`) for code examples
+- Use `.. note::` and `.. warning::` directives for callouts
+- Cross-reference other docs with backtick links: `` `Templates <templates.html#jinja>`_ ``
 
 ## Maintenance
 - Update docs when changing behavior

@@ -42,8 +42,7 @@ Activate this skill to perform a structured code review on recent changes.
 - `print()` statements left in production code (use `logging`)
 
 ### LOW — Style
-- PEP 8 formatting inconsistencies (should be caught by black/flake8)
-- Import ordering (should be caught by isort)
+- PEP 8 formatting inconsistencies (caught by flake8 for style, black for formatting)
 - Trailing whitespace
 
 ## Output Format

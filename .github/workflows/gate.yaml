@@ -12,8 +12,29 @@ on:
       - master
 
 jobs:
-  integration-tests:
+  code-changes:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    outputs:
+      python: ${{ steps.filter.outputs.python }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            python:
+              - 'tests/**'
+              - 'sceptre/**'
+              - 'integration-tests/**'
+              - 'pyproject.toml'
+              - 'poetry.lock'
+              - 'Dockerfile'
+              - '.github/workflows/*integration-tests.yaml'
+
+  integration-tests:
+    needs: code-changes
+    if: ${{ needs.code-changes.outputs.python == 'true' }}
     uses: "./.github/workflows/integration-tests.yaml"
     with:
       # role generated from https://github.com/Sceptre/sceptre-aws/blob/master/config/prod/gh-oidc-sceptre-tests.yaml

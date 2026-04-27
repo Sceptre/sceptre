@@ -22,12 +22,7 @@ MANY SMALL FILES > FEW LARGE FILES:
 
 ## Error Handling
 
-ALWAYS handle errors comprehensively:
-- Handle errors explicitly at every level
-- Use specific exception types, never bare `except:`
-- Log detailed error context with `logging` module
-- Never silently swallow errors
-- Use try/except with specific exceptions
+See `error-handling.md` for comprehensive error handling rules.
 
 ## Input Validation
 

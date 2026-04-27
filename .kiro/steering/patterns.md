@@ -16,13 +16,12 @@ inclusion: always
 
 - **Composition over inheritance** — Compose behaviors from small pieces
 - **Early returns** — Reduce nesting, handle edge cases first
-- **Strategy pattern** — Swap algorithms without changing callers
-- **Repository pattern** — Abstract data access behind a clean interface
-- **Middleware pattern** — Chain cross-cutting concerns (auth, logging, validation)
+- **Strategy pattern** — Swap algorithms without changing callers (e.g. deepdiff vs difflib)
+- **Helper layering** — Tool functions delegate to shared helpers for validation, execution, formatting
 
 ## Architecture Guidelines
 
-- Separate concerns: UI, business logic, data access
+- Separate concerns: validation, execution, formatting, error handling
 - Keep business logic framework-agnostic where possible
 - Use dependency injection for testability
 - Prefer pure functions — same input always produces same output

@@ -16,7 +16,7 @@ Activate this skill when implementing new features, fixing bugs, or refactoring 
 ### Step 2: Write Failing Tests (RED)
 - Write tests that describe the desired behavior
 - Cover happy path, edge cases, and error scenarios
-- Run tests — they MUST fail (`pytest -q`)
+- Run tests — they MUST fail (`poetry run pytest -q`)
 
 ### Step 3: Implement Minimal Code (GREEN)
 - Write the simplest code that makes all tests pass
@@ -29,7 +29,7 @@ Activate this skill when implementing new features, fixing bugs, or refactoring 
 - Run tests after each refactoring step
 
 ### Step 5: Verify Coverage
-- Check coverage is at 80%+: `pytest --cov --cov-report=term-missing -q`
+- Check coverage is at 80%+: `poetry run pytest --cov --cov-report=term-missing -q`
 - Add tests for any uncovered paths
 - Focus on meaningful coverage, not just line count
 
