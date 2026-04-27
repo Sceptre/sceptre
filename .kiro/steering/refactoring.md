@@ -66,7 +66,7 @@ When a file exceeds 500 lines:
 
 ### Dead Code Removal
 - Remove commented-out code (it's in git history)
-- Remove unused imports (use `ruff`)
+- Remove unused imports (use `flake8`)
 - Remove unreachable branches
 - Remove unused functions/variables
 
