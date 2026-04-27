@@ -24,7 +24,7 @@ This project uses **Poetry** as the package manager. Always use `poetry` command
 
 ## Maintenance
 - Update dependencies regularly, review changelogs
-- Run security audits (`poetry run pip-audit`)
+- Run security audits
 - Remove unused dependencies promptly (`poetry remove <package>`)
 - Test after every dependency update (`poetry run pytest`)
 

@@ -20,7 +20,6 @@ Activate this skill to perform a security audit on the codebase or recent change
 - Ensure error messages don't leak sensitive file system paths
 
 ### 3. Dependency Audit
-- Run `poetry run pip-audit`
 - Check for known CVEs in dependencies
 - Verify `poetry.lock` is committed
 - Remove unused dependencies

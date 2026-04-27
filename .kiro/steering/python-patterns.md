@@ -39,13 +39,9 @@ except ConnectionError as e:
 
 See `testing.md` for test requirements and `tdd-workflow.md` for the TDD cycle.
 
-## Type Checking (mypy)
+## Type Hints
 
-- Run with `poetry run mypy src/`
-- All functions in `src/` must have type annotations (`disallow_untyped_defs = true`)
-- Test files are exempt from strict typing (`tests.*` override in pyproject.toml)
+- Use type hints for function signatures and complex variables
 - Use `Any` sparingly — prefer specific types or generics
 - Use `Callable[..., str]` for callback parameters
 - Use `dict[str, Any]` over bare `dict` for return types
-- Use `ignore_missing_imports = true` for third-party libs without stubs (sceptre, fastmcp)
-- mypy runs in pre-commit (mirrors-mypy) and CI (type-check job)

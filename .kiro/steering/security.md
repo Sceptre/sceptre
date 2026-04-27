@@ -29,7 +29,7 @@ This is an MCP server that accepts tool parameters from AI agents. Validate at t
 ## Dependency Security
 
 - Keep dependencies updated regularly
-- Run security audits (`poetry run pip-audit`)
+- Run security audits
 - Review third-party packages before adding
 - Commit `poetry.lock` for reproducible builds
 
