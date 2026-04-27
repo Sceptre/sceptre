@@ -4,6 +4,15 @@ Categories: Added, Removed, Changed, Fixed, Nonfunctional, Deprecated
 
 ## Unreleased
 
+### Fixed
+ - Refresh expired STS sessions automatically in ``ConnectionManager``; long-running
+   deployments no longer fail with authentication errors after the STS credential
+   lifetime elapses when ``sceptre_role`` is configured.
+ - Catch ``ExpiredToken`` / ``ExpiredTokenException`` errors reactively in
+   ``ConnectionManager.call()`` and retry with a freshly-created session; this
+   covers **all** credential sources (env-var tokens, profiles, instance roles)
+   not just sessions created via ``sceptre_role`` assumption.
+
 ## 4.6.0 (2025.12.09)
 - [Resolves #1568] Adding concurrency options to throttle deployments (#1560)
 - [Resolve #1562] Fix safe loads path (#1563)
