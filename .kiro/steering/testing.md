@@ -8,9 +8,9 @@ inclusion: always
 
 All new code should have test coverage. Three test types required:
 
-1. **Unit Tests** — Individual functions, utilities, classes (`pytest`)
-2. **Integration Tests** — API endpoints, database operations, service interactions (`pytest` with fixtures)
-3. **E2E Tests** — Critical flows via integration test suites
+1. **Unit Tests** — Individual functions, utilities, classes (`pytest`, run with `poetry run tox`)
+2. **Integration Tests** — Service interactions (`pytest` with fixtures)
+3. **E2E Tests** — Critical flows using the `behave` BDD framework (see `e2e-testing.md`)
 
 ## Test-Driven Development
 
