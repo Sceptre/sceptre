@@ -5,7 +5,12 @@ import click
 from click import Context
 from colorama import Fore, Style
 
-from sceptre.cli.helpers import catch_exceptions, confirmation, stack_status_exit_code
+from sceptre.cli.helpers import (
+    catch_exceptions,
+    confirmation,
+    stack_status_exit_code,
+)
+from sceptre.cli.path_processor import process_path
 from sceptre.cli.prune import Pruner
 from sceptre.context import SceptreContext
 from sceptre.exceptions import DependencyDoesNotExistError
@@ -56,7 +61,14 @@ def launch_command(
     * If any stacks are marked with "obsolete: True", those stacks will neither be created nor updated.
     * Furthermore, if the "-p"/"--prune" flag is used, these stacks will be deleted prior to any
       other launch commands
+    * Supports path patterns via installed plugins (e.g., wildcard plugin for dev/*.yaml)
     """
+    # Process path using registered plugins (e.g., wildcard expansion)
+    project_path = ctx.obj.get("project_path")
+    path, force_confirm, matched_files = process_path(
+        path, project_path, "config", "launch"
+    )
+
     context = SceptreContext(
         command_path=path,
         command_params=ctx.params,

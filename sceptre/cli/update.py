@@ -4,9 +4,14 @@ import click
 
 from typing import Optional
 from sceptre.context import SceptreContext
-from sceptre.cli.helpers import catch_exceptions, confirmation
-from sceptre.cli.helpers import write, stack_status_exit_code
-from sceptre.cli.helpers import simplify_change_set_description
+from sceptre.cli.helpers import (
+    catch_exceptions,
+    confirmation,
+    write,
+    stack_status_exit_code,
+    simplify_change_set_description,
+)
+from sceptre.cli.path_processor import process_path
 from sceptre.stack_status import StackChangeSetStatus
 from sceptre.plan.plan import SceptrePlan
 
@@ -43,6 +48,8 @@ def update_command(
     """
     Updates a stack for a given config PATH. Or perform an update via
     change-set when the change-set flag is set.
+
+    Supports path patterns via installed plugins.
     \f
 
     :param path: Path to execute the command on.
@@ -55,6 +62,11 @@ def update_command(
     :type yes: bool
     :param disable_rollback: A flag to disable cloudformation rollback.
     """
+    # Process path using registered plugins (e.g., wildcard expansion)
+    project_path = ctx.obj.get("project_path")
+    path, force_confirm, matched_files = process_path(
+        path, project_path, "config", "update"
+    )
 
     context = SceptreContext(
         command_path=path,
