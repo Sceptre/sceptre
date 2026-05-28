@@ -90,3 +90,20 @@ class TemplateHandler:
             validate(instance=self.arguments, schema=self.schema())
         except ValidationError as e:
             raise TemplateHandlerArgumentsInvalidError(e)
+
+    def _get_jinja_vars(self):
+        """
+        Returns a dictionary of variables to pass to Jinja2 templates.
+
+        Includes ``sceptre_user_data`` and ``stack_group_config`` so that
+        Jinja2 templates can reference stack group config values such as
+        ``project_code`` and ``region`` directly, in addition to
+        ``sceptre_user_data``.
+
+        :returns: A dict of variables for Jinja2 template rendering.
+        :rtype: dict
+        """
+        return {
+            "sceptre_user_data": self.sceptre_user_data,
+            "stack_group_config": self.stack_group_config,
+        }

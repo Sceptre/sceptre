@@ -1,0 +1,12 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: VPC for {{ stack_group_config.project_code }} in {{ stack_group_config.region }}
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: {{ sceptre_user_data.vpc_cidr }}
+      Tags:
+        - Key: Project
+          Value: {{ stack_group_config.project_code }}
+        - Key: Environment
+          Value: {{ stack_group_config.environment }}

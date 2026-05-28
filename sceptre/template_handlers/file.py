@@ -44,7 +44,7 @@ class File(TemplateHandler):
             elif input_path.suffix in self.jinja_template_extensions:
                 return helper.render_jinja_template(
                     path,
-                    {"sceptre_user_data": self.sceptre_user_data},
+                    self._get_jinja_vars(),
                     self.stack_group_config.get("j2_environment", {}),
                 )
             elif input_path.suffix in self.python_template_extensions:

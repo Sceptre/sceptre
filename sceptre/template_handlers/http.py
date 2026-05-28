@@ -71,7 +71,7 @@ class Http(TemplateHandler):
                     if path.suffix in self.jinja_template_extensions:
                         template = helper.render_jinja_template(
                             f.name,
-                            {"sceptre_user_data": self.sceptre_user_data},
+                            self._get_jinja_vars(),
                             self.stack_group_config.get("j2_environment", {}),
                         )
                     elif path.suffix in self.python_template_extensions:
