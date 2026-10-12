@@ -1,0 +1,26 @@
+name: Auto-merge pre-commit updates
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+    paths:
+      - .pre-commit-config.yaml
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge:
+    if: >-
+      github.event.pull_request.user.login == 'pre-commit-ci[bot]' &&
+      github.event.pull_request.changed_files == 1
+    runs-on: ubuntu-latest
+    steps:
+      - run: gh pr merge "$PR_URL" --squash --auto
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
