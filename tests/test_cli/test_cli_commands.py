@@ -1123,6 +1123,20 @@ class TestCli:
         result = self.runner.invoke(cli, "diff stacks", catch_exceptions=False)
         assert result.exit_code == 0
 
+    @pytest.mark.parametrize("flag", ["ignore", "obsolete"])
+    def test_diff_command__all_stacks_are_filtered_out__returns_0_without_output(
+        self, flag
+    ):
+        stack = deepcopy(self.mock_stack)
+        setattr(stack, flag, True)
+        self.mock_config_reader.construct_stacks.return_value = ({stack}, {stack})
+
+        result = self.runner.invoke(cli, "diff stacks", catch_exceptions=False)
+
+        assert result.exit_code == 0
+        assert result.stdout == ""
+        self.mock_stack_actions.diff.assert_not_called()
+
     @pytest.mark.parametrize(["bar"], [("**********",), ("----------",)])
     def test_diff_command__bars_are_all_full_width_of_output(self, bar):
         stacks = {deepcopy(self.mock_stack) for _ in range(3)}

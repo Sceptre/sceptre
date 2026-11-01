@@ -186,7 +186,7 @@ def output_buffer_with_normalized_bar_lengths(
     :param output_stream: The stream to output the normalized buffer into
     """
     buffer.seek(0)
-    max_length = len(max(buffer, key=len))
+    max_length = len(max(buffer, key=len, default=""))
     buffer.seek(0)
     full_length_star_bar = "*" * max_length
     full_length_tilde_bar = "~" * max_length
