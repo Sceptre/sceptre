@@ -14,9 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pre-commit/action@v3.0.1
-        with:
-          extra_args: poetry-lock --all-files
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - run: poetry pre-commit run poetry-lock --all-files
+      - run: poetry pre-commit run cfn-python-lint --all-files
 
   packaging:
     runs-on: ubuntu-latest
