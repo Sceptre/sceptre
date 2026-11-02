@@ -4,10 +4,10 @@ name: check
 on:
   push:
     branches:
-      - '*'
+      - master
   pull_request:
     branches:
-      - '*'
+      - "*"
 
 jobs:
   pre-commit:
