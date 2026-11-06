@@ -4,19 +4,22 @@ name: check
 on:
   push:
     branches:
-      - '*'
+      - master
   pull_request:
     branches:
-      - '*'
+      - "*"
 
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pre-commit/action@v3.0.1
-        with:
-          extra_args: poetry-lock --all-files
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - name: Install dependencies
+        run: poetry install --no-interaction --all-extras
+      - run: poetry run pre-commit run poetry-lock --all-files
+      - run: poetry run pre-commit run cfn-python-lint --all-files
 
   packaging:
     runs-on: ubuntu-latest
