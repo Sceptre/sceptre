@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import functools
+import threading
 import logging
 import shlex
 
@@ -52,8 +52,37 @@ class StackOutputBase(Resolver):
                 )
             )
 
-    @functools.lru_cache(maxsize=4096)
+    _outputs_cache = {}
+    _outputs_cache_lock = threading.Lock()
+
     def _get_stack_outputs(
+        self, stack_name, profile=None, region=None, sceptre_role=None
+    ):
+        """
+        Returns the outputs of a Stack from a cache shared by all resolvers.
+        The first call fetches them from CloudFormation; the lock makes that
+        happen once when many threads resolve the same Stack.
+
+        :param stack_name: Name of the Stack to collect output for.
+        :type stack_name: str
+        :returns: A formatted version of the Stack outputs.
+        :rtype: dict
+        """
+        key = (stack_name, profile, region, sceptre_role)
+        with self._outputs_cache_lock:
+            if key not in self._outputs_cache:
+                self._outputs_cache[key] = self._fetch_stack_outputs(
+                    stack_name, profile, region, sceptre_role
+                )
+            return self._outputs_cache[key]
+
+    @classmethod
+    def clear_cache(cls):
+        """Empties the shared cache of Stack outputs."""
+        with cls._outputs_cache_lock:
+            cls._outputs_cache.clear()
+
+    def _fetch_stack_outputs(
         self, stack_name, profile=None, region=None, sceptre_role=None
     ):
         """
