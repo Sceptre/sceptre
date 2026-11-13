@@ -47,7 +47,6 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: .python-version
           cache: 'poetry'
 
       - name: Install dependencies
