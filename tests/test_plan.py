@@ -61,3 +61,15 @@ class TestSceptrePlan(object):
             plan = MagicMock(spec=SceptrePlan)
             plan.context = self.mock_context
             plan.invalid_command()
+
+    def test_execute_clears_the_stack_output_cache(self):
+        plan = SceptrePlan.__new__(SceptrePlan)
+        plan.command = "launch"
+        plan.launch_order = [set()]
+        plan.max_concurrency = None
+        with patch(
+            "sceptre.plan.plan.StackOutputBase.clear_cache"
+        ) as clear_cache, patch("sceptre.plan.plan.SceptrePlanExecutor") as executor:
+            plan._execute()
+        clear_cache.assert_called_once_with()
+        executor.assert_called_once_with("launch", [set()], max_concurrency=None)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import functools
+import threading
 import logging
 import shlex
 
@@ -52,8 +52,63 @@ class StackOutputBase(Resolver):
                 )
             )
 
-    @functools.lru_cache(maxsize=4096)
+    _outputs_cache = {}
+    _outputs_cache_locks = {}
+    _outputs_cache_lock = threading.Lock()
+
     def _get_stack_outputs(
+        self, stack_name, profile=None, region=None, sceptre_role=None
+    ):
+        """
+        Returns the outputs of a Stack from a cache shared by all resolvers.
+        The first call fetches them from CloudFormation. Resolvers that read
+        the same Stack in the same connection context wait for that one
+        fetch; other Stacks fetch in parallel.
+
+        :param stack_name: Name of the Stack to collect output for.
+        :type stack_name: str
+        :returns: A formatted version of the Stack outputs.
+        :rtype: dict
+        """
+        key = self._cache_key(stack_name, profile, region, sceptre_role)
+        with self._outputs_cache_lock:
+            if key in self._outputs_cache:
+                return self._outputs_cache[key]
+            key_lock = self._outputs_cache_locks.setdefault(key, threading.RLock())
+
+        with key_lock:
+            with self._outputs_cache_lock:
+                if key in self._outputs_cache:
+                    return self._outputs_cache[key]
+            outputs = self._fetch_stack_outputs(
+                stack_name, profile, region, sceptre_role
+            )
+            with self._outputs_cache_lock:
+                self._outputs_cache[key] = outputs
+            return outputs
+
+    def _cache_key(self, stack_name, profile, region, sceptre_role):
+        # ConnectionManager.call treats (None, None, None) as "use the
+        # defaults of this Stack's connection manager", so the key must hold
+        # those defaults, or two Stacks in different accounts would share an
+        # entry. The connection manager is read outside the locks, because
+        # creating it can resolve a sceptre_role that is itself a
+        # stack_output.
+        if (profile, region, sceptre_role) == (None, None, None):
+            connection_manager = self.stack.connection_manager
+            profile = connection_manager.profile
+            region = connection_manager.region
+            sceptre_role = connection_manager.sceptre_role
+        return (stack_name, profile, region, sceptre_role)
+
+    @classmethod
+    def clear_cache(cls):
+        """Empties the shared cache of Stack outputs."""
+        with cls._outputs_cache_lock:
+            cls._outputs_cache.clear()
+            cls._outputs_cache_locks.clear()
+
+    def _fetch_stack_outputs(
         self, stack_name, profile=None, region=None, sceptre_role=None
     ):
         """

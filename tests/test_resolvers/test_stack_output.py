@@ -235,6 +235,7 @@ class MockStackOutputBase(StackOutputBase):
 
 class TestStackOutputBaseResolver(object):
     def setup_method(self, test_method):
+        StackOutputBase.clear_cache()
         self.stack = MagicMock(spec=Stack)
         self.stack.name = "my/stack.yaml"
         self.stack._connection_manager = MagicMock(spec=ConnectionManager)
@@ -309,3 +310,29 @@ class TestStackOutputBaseResolver(object):
 
         with pytest.raises(ClientError):
             self.base_stack_output_resolver._get_stack_outputs(sentinel.stack_name)
+
+    def test_get_stack_outputs_shares_the_cache_between_resolvers(self):
+        self.stack.connection_manager.call.return_value = {
+            "Stacks": [{"Outputs": [{"OutputKey": "key", "OutputValue": "value"}]}]
+        }
+        resolvers = [MockStackOutputBase(None, self.stack) for _ in range(3)]
+
+        responses = [
+            resolver._get_stack_outputs("stack_name") for resolver in resolvers
+        ]
+
+        assert responses == [{"key": "value"}] * 3
+        assert self.stack.connection_manager.call.call_count == 1
+
+    def test_get_stack_outputs_does_not_cache_a_failed_call(self):
+        self.stack.connection_manager.call.side_effect = ClientError(
+            {"Error": {"Code": "500", "Message": "Boom!"}}, sentinel.operation
+        )
+
+        with pytest.raises(ClientError):
+            self.base_stack_output_resolver._get_stack_outputs("stack_name")
+
+        self.stack.connection_manager.call.side_effect = None
+        self.stack.connection_manager.call.return_value = {"Stacks": [{}]}
+
+        assert self.base_stack_output_resolver._get_stack_outputs("stack_name") == {}
