@@ -5,14 +5,10 @@ name: branch-integration-tests
 on:
   push:
     branches:
-      - '*'         # matches every branch that doesn't contain a '/'
-      - '*/*'       # matches every branch containing a single '/'
       - '**'        # matches every branch
-      - '!master'   # excludes master
 
 jobs:
   code-changes:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     outputs:
       python: ${{ steps.filter.outputs.python }}
@@ -33,7 +29,7 @@ jobs:
 
   integration-tests:
     needs: code-changes
-    if: ${{ github.ref != 'refs/heads/master' && needs.code-changes.outputs.python == 'true' }}
+    if: ${{ needs.code-changes.outputs.python == 'true' }}
     uses: "./.github/workflows/integration-tests.yaml"
     with:
       # role generated from https://github.com/Sceptre/sceptre-aws/blob/master/config/prod/gh-oidc-sceptre-tests.yaml
