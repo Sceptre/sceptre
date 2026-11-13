@@ -34,6 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
       - name: Install Poetry
         uses: snok/install-poetry@v1
       - name: Install dependencies
