@@ -21,6 +21,7 @@ from sceptre.diffing.stack_differ import StackDiff
 from sceptre.exceptions import ConfigFileNotFoundError
 from sceptre.helpers import sceptreise_path
 from sceptre.plan.executor import SceptrePlanExecutor
+from sceptre.resolvers.stack_output import StackOutputBase
 from sceptre.stack import Stack
 
 
@@ -55,6 +56,8 @@ class SceptrePlan(object):
 
     @require_resolved
     def _execute(self, *args):
+        # Outputs cached by an earlier plan in this process can be stale.
+        StackOutputBase.clear_cache()
         executor = SceptrePlanExecutor(
             self.command, self.launch_order, max_concurrency=self.max_concurrency
         )
